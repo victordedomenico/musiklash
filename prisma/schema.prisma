@@ -5,3 +5,306 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum AppRole {
+  admin
+  moderator
+  user
+
+  @@map("app_role")
+}
+
+model Profile {
+  id        String        @id @db.Uuid
+  username  String        @unique
+  role      AppRole       @default(user)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  brackets                  Bracket[]
+  games                     BracketGame[]
+  tierlists                 Tierlist[]
+  tierlistSessions          TierlistSession[]
+  blindtests                Blindtest[]
+  blindtestSessions         BlindtestSession[]
+  soloSessions              BattleFeatSoloSession[]
+  hostedRooms               BattleFeatRoom[]        @relation("RoomHost")
+  joinedRooms               BattleFeatRoom[]        @relation("RoomGuest")
+  hostedBlindtestRooms      BlindtestRoom[]         @relation("BlindtestRoomHost")
+  joinedBlindtestRooms      BlindtestRoom[]         @relation("BlindtestRoomGuest")
+
+  @@map("profiles")
+}
+
+model Bracket {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId    String   @map("owner_id") @db.Uuid
+  title      String
+  theme      String?
+  size       Int      @db.SmallInt
+  visibility String   @default("private")
+  coverUrl   String?  @map("cover_url")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  owner  Profile        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  tracks BracketTrack[]
+  games  BracketGame[]
+
+  @@index([ownerId])
+  @@index([visibility, createdAt(sort: Desc)])
+  @@map("brackets")
+}
+
+model BracketTrack {
+  bracketId     String  @map("bracket_id") @db.Uuid
+  seed          Int     @db.SmallInt
+  deezerTrackId BigInt  @map("deezer_track_id")
+  title         String
+  artist        String
+  previewUrl    String  @map("preview_url")
+  coverUrl      String? @map("cover_url")
+
+  bracket Bracket @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+
+  @@id([bracketId, seed])
+  @@map("bracket_tracks")
+}
+
+model BracketGame {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bracketId    String   @map("bracket_id") @db.Uuid
+  playerId     String?  @map("player_id") @db.Uuid
+  currentRound Int      @default(1) @map("current_round") @db.SmallInt
+  winnerSeed   Int?     @map("winner_seed") @db.SmallInt
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  bracket Bracket       @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  player  Profile?      @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  votes   BracketVote[]
+
+  @@index([bracketId])
+  @@index([playerId])
+  @@map("bracket_games")
+}
+
+model BracketVote {
+  gameId     String   @map("game_id") @db.Uuid
+  round      Int      @db.SmallInt
+  matchIndex Int      @map("match_index") @db.SmallInt
+  winnerSeed Int      @map("winner_seed") @db.SmallInt
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  game BracketGame @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@id([gameId, round, matchIndex])
+  @@map("bracket_votes")
+}
+
+// ─── Blindtests ───────────────────────────────────────────────────────────────
+
+model Blindtest {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId    String   @map("owner_id") @db.Uuid
+  title      String
+  visibility String   @default("private")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  owner    Profile            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  tracks   BlindtestTrack[]
+  sessions BlindtestSession[]
+  rooms    BlindtestRoom[]
+
+  @@index([ownerId])
+  @@index([visibility, createdAt(sort: Desc)])
+  @@map("blindtests")
+}
+
+model BlindtestRoom {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  blindtestId   String   @map("blindtest_id") @db.Uuid
+  hostId        String   @map("host_id") @db.Uuid
+  guestId       String?  @map("guest_id") @db.Uuid
+  status        String   @default("waiting") // waiting | playing | finished
+  currentTrack  Int      @default(0) @map("current_track") @db.SmallInt
+  hostAnswers   Json     @default("[]") @map("host_answers") @db.JsonB
+  guestAnswers  Json     @default("[]") @map("guest_answers") @db.JsonB
+  hostScore     Int      @default(0) @map("host_score")
+  guestScore    Int      @default(0) @map("guest_score")
+  hostReady       Boolean   @default(false) @map("host_ready")
+  guestReady      Boolean   @default(false) @map("guest_ready")
+  winnerId        String?   @map("winner_id") @db.Uuid
+  trackStartedAt  DateTime? @map("track_started_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  blindtest Blindtest @relation(fields: [blindtestId], references: [id], onDelete: Cascade)
+  host      Profile   @relation("BlindtestRoomHost",  fields: [hostId],  references: [id])
+  guest     Profile?  @relation("BlindtestRoomGuest", fields: [guestId], references: [id])
+
+  @@index([hostId])
+  @@index([blindtestId])
+  @@map("blindtest_rooms")
+}
+
+model BlindtestTrack {
+  blindtestId   String  @map("blindtest_id") @db.Uuid
+  position      Int     @db.SmallInt
+  deezerTrackId BigInt  @map("deezer_track_id")
+  title         String
+  artist        String
+  previewUrl    String  @map("preview_url")
+  coverUrl      String? @map("cover_url")
+
+  blindtest Blindtest @relation(fields: [blindtestId], references: [id], onDelete: Cascade)
+
+  @@id([blindtestId, position])
+  @@map("blindtest_tracks")
+}
+
+model BlindtestSession {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  blindtestId String   @map("blindtest_id") @db.Uuid
+  playerId    String?  @map("player_id") @db.Uuid
+  score       Int      @default(0)
+  maxScore    Int      @map("max_score") @default(0)
+  answers     Json     @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  blindtest Blindtest @relation(fields: [blindtestId], references: [id], onDelete: Cascade)
+  player    Profile?  @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@index([blindtestId])
+  @@map("blindtest_sessions")
+}
+
+// ─── Tierlists ────────────────────────────────────────────────────────────────
+
+model Tierlist {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId    String   @map("owner_id") @db.Uuid
+  title      String
+  theme      String?
+  visibility String   @default("private")
+  coverUrl   String?  @map("cover_url")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  owner    Profile           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  tracks   TierlistTrack[]
+  sessions TierlistSession[]
+
+  @@index([ownerId])
+  @@index([visibility, createdAt(sort: Desc)])
+  @@map("tierlists")
+}
+
+model TierlistTrack {
+  tierlistId    String  @map("tierlist_id") @db.Uuid
+  position      Int     @db.SmallInt
+  deezerTrackId BigInt  @map("deezer_track_id")
+  title         String
+  artist        String
+  previewUrl    String  @map("preview_url")
+  coverUrl      String? @map("cover_url")
+
+  tierlist Tierlist @relation(fields: [tierlistId], references: [id], onDelete: Cascade)
+
+  @@id([tierlistId, position])
+  @@map("tierlist_tracks")
+}
+
+// Stores the tier placements for one play session.
+// placements: { "S+": [0,2], "S": [1], "A": [3], ... } — array of track positions
+model TierlistSession {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tierlistId String   @map("tierlist_id") @db.Uuid
+  playerId   String?  @map("player_id") @db.Uuid
+  placements Json     @db.JsonB
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tierlist Tierlist @relation(fields: [tierlistId], references: [id], onDelete: Cascade)
+  player   Profile? @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@index([tierlistId])
+  @@map("tierlist_sessions")
+}
+
+// ─── BattleFeat ───────────────────────────────────────────────────────────────
+
+model RapArtist {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deezerArtistId BigInt   @unique @map("deezer_artist_id")
+  name           String
+  nameSlug       String   @map("name_slug")
+  popularityTier Int      @default(3) @map("popularity_tier") @db.SmallInt
+  fanCount       Int      @default(0) @map("fan_count")
+  pictureUrl     String?  @map("picture_url")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  featsAsA RapFeat[] @relation("FeatArtistA")
+  featsAsB RapFeat[] @relation("FeatArtistB")
+
+  @@index([nameSlug])
+  @@map("rap_artists")
+}
+
+model RapFeat {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  artistAId     String    @map("artist_a_id") @db.Uuid
+  artistBId     String    @map("artist_b_id") @db.Uuid
+  trackDeezerId BigInt?   @map("track_deezer_id")
+  trackTitle    String?   @map("track_title")
+
+  artistA RapArtist @relation("FeatArtistA", fields: [artistAId], references: [id], onDelete: Cascade)
+  artistB RapArtist @relation("FeatArtistB", fields: [artistBId], references: [id], onDelete: Cascade)
+
+  @@unique([artistAId, artistBId, trackDeezerId])
+  @@index([artistAId])
+  @@index([artistBId])
+  @@map("rap_feats")
+}
+
+model BattleFeatSoloSession {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  playerId         String?  @map("player_id") @db.Uuid
+  difficulty       Int      @db.SmallInt
+  startingArtistId String   @map("starting_artist_id") // Deezer ID (text)
+  moves            Json     @default("[]") @db.JsonB
+  score            Int      @default(0)
+  jokersUsed       Int      @default(0) @map("jokers_used")
+  status           String   @default("active")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  player Profile? @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@index([playerId])
+  @@index([difficulty, score(sort: Desc)])
+  @@map("battle_feat_solo_sessions")
+}
+
+model BattleFeatRoom {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hostId             String   @map("host_id") @db.Uuid
+  guestId            String?  @map("guest_id") @db.Uuid
+  status             String   @default("waiting")
+  startingArtistId   String?  @map("starting_artist_id") // Deezer ID (text)
+  startingArtistName String?  @map("starting_artist_name")
+  startingArtistPic  String?  @map("starting_artist_pic")
+  currentArtistId    String?  @map("current_artist_id") // Deezer ID (text)
+  currentArtistName  String?  @map("current_artist_name")
+  currentArtistPic   String?  @map("current_artist_pic")
+  currentTurnId      String?  @map("current_turn_id") @db.Uuid
+  usedArtistIds      Json     @default("[]") @map("used_artist_ids") @db.JsonB
+  moves              Json     @default("[]") @db.JsonB
+  hostScore          Int      @default(0) @map("host_score")
+  guestScore         Int      @default(0) @map("guest_score")
+  hostJokers         Int      @default(1) @map("host_jokers")
+  guestJokers        Int      @default(1) @map("guest_jokers")
+  winnerId           String?  @map("winner_id") @db.Uuid
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  host  Profile  @relation("RoomHost",  fields: [hostId],  references: [id])
+  guest Profile? @relation("RoomGuest", fields: [guestId], references: [id])
+
+  @@index([hostId])
+  @@map("battle_feat_rooms")
+}
