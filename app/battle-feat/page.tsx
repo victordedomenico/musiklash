@@ -124,7 +124,7 @@ export default async function BattleFeatLandingPage() {
             </Link>
           </div>
           <div className="space-y-2.5">
-            {topScores.map((s, i) => (
+            {topScores.map((s: (typeof topScores)[number], i: number) => (
               <Link
                 href={`/battle-feat/results/${s.id}`}
                 key={s.id}
