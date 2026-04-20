@@ -35,11 +35,6 @@ export default async function BlindtestRoomPage({
   const room = await getBlindtestRoomSnapshot(roomId);
   if (!room) notFound();
 
-  // Only host and guest (once joined) can access
-  const isHost = user.id === room.hostId;
-  const isGuest = user.id === room.guestId;
-  const isSpectator = !isHost && !isGuest;
-
   return (
     <div className="page-shell max-w-3xl py-10">
       <div className="mb-6">
@@ -52,7 +47,6 @@ export default async function BlindtestRoomPage({
       <BlindtestRoomClient
         initialRoom={room}
         userId={user.id}
-        isSpectator={isSpectator}
       />
     </div>
   );

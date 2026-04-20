@@ -1,9 +1,31 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import { TIERS } from "@/components/TierlistBoard";
+import {
+  DEFAULT_TIERS,
+  type TierConfig,
+  type TierlistSavePayload,
+} from "@/lib/tierlist-tiers";
 
 export const metadata = { title: "Résultats tierlist — MusiKlash" };
+
+function isTierlistSavePayload(
+  value: unknown,
+): value is TierlistSavePayload {
+  if (!value || typeof value !== "object") return false;
+  const payload = value as Partial<TierlistSavePayload>;
+  if (!Array.isArray(payload.tiers) || !payload.placements || typeof payload.placements !== "object") {
+    return false;
+  }
+  return payload.tiers.every((tier) =>
+    Boolean(
+      tier &&
+      typeof tier.id === "string" &&
+      typeof tier.label === "string" &&
+      typeof tier.color === "string",
+    ),
+  );
+}
 
 export default async function TierlistResultsPage({
   params,
@@ -33,7 +55,14 @@ export default async function TierlistResultsPage({
 
   if (!session || session.tierlist.id !== id) notFound();
 
-  const placements = session.placements as Record<string, number[]>;
+  const rawPlacements = session.placements as unknown;
+  const payload = isTierlistSavePayload(rawPlacements) ? rawPlacements : null;
+  const tiers: TierConfig[] = payload?.tiers ?? DEFAULT_TIERS;
+  const placements =
+    payload?.placements ??
+    ((rawPlacements && typeof rawPlacements === "object"
+      ? rawPlacements
+      : {}) as Record<string, number[]>);
   const trackByPosition = new Map(session.tierlist.tracks.map((t) => [t.position, t]));
 
   return (
@@ -47,7 +76,7 @@ export default async function TierlistResultsPage({
       </p>
 
       <div className="mt-8 space-y-2">
-        {TIERS.map((tier) => {
+        {tiers.map((tier) => {
           const positions = placements[tier.id] ?? [];
           if (positions.length === 0) return null;
           return (

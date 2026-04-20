@@ -8,10 +8,11 @@ import {
   House,
   Library,
   Search,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 
-type IconName = "home" | "search" | "create" | "library" | "guide";
+type IconName = "home" | "search" | "create" | "library" | "guide" | "settings";
 
 type NavItem = {
   href: string;
@@ -29,6 +30,7 @@ const iconMap: Record<IconName, LucideIcon> = {
   create: CirclePlus,
   library: Library,
   guide: BookOpen,
+  settings: Settings,
 };
 
 function isActivePath(pathname: string, href: string) {

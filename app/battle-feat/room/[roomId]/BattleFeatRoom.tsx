@@ -146,6 +146,8 @@ export default function BattleFeatRoom({
   }, []);
 
   const isHost = userId === room.hostId;
+  const isGuest = userId === room.guestId;
+  const isSpectator = !isHost && !isGuest;
   const isMyTurn = room.currentTurnId === userId;
   const myJokers = isHost ? room.hostJokers : room.guestJokers;
   const turnKey = `${room.status}:${room.currentTurnId ?? "none"}:${room.updatedAt}`;
@@ -302,7 +304,7 @@ export default function BattleFeatRoom({
   const timerProgress = ((TURN_SECONDS - timeLeft) / TURN_SECONDS) * 100;
 
   if (room.status === "waiting") {
-    const canJoin = !isHost && !room.guestId;
+    const canJoin = isSpectator && !room.guestId;
     const waitingForGuest = isHost && !room.guestId;
     const readyToStart = isHost && room.guestId;
 
@@ -358,7 +360,7 @@ export default function BattleFeatRoom({
             </div>
           ) : null}
 
-          {!isHost && room.guestId === userId ? (
+          {isGuest ? (
             <p className="mt-4 text-[color:var(--muted)]">
               En attente que l&apos;hôte lance la partie…
             </p>

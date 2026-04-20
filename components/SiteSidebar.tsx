@@ -35,6 +35,7 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
 
   const helperLinks = [
     { href: "/guide", label: t.nav.guide, icon: "guide" as const },
+    ...(user ? [{ href: "/settings", label: t.nav.settings, icon: "settings" as const }] : []),
   ];
 
   const authSection = user ? (

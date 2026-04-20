@@ -2,10 +2,11 @@
 
 import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
+import { type TierlistSavePayload } from "@/lib/tierlist-tiers";
 
 export async function saveTierlistSession(
   tierlistId: string,
-  placements: Record<string, number[]>,
+  payload: TierlistSavePayload,
 ) {
   let identity: { playerId: string };
   try {
@@ -23,7 +24,7 @@ export async function saveTierlistSession(
       data: {
         tierlistId,
         playerId: identity.playerId,
-        placements,
+        placements: payload,
       },
     });
     return { id: session.id };

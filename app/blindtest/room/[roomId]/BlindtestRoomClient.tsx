@@ -93,11 +93,9 @@ function OpponentStatus({
 export default function BlindtestRoomClient({
   initialRoom,
   userId,
-  isSpectator,
 }: {
   initialRoom: BlindtestRoomSnapshot;
   userId: string;
-  isSpectator: boolean;
 }) {
   const [room, setRoom] = useState(initialRoom);
   const [now, setNow] = useState(() => Date.now());
@@ -152,6 +150,7 @@ export default function BlindtestRoomClient({
 
   const isHost = userId === room.hostId;
   const isGuest = userId === room.guestId;
+  const isSpectator = !isHost && !isGuest;
   const myAnswers = (isHost ? room.hostAnswers : room.guestAnswers) as BlindtestAnswer[];
   const opponentAnswers = (isHost ? room.guestAnswers : room.hostAnswers) as BlindtestAnswer[];
   const opponentName = isHost ? (room.guestName ?? "Adversaire") : room.hostName;
@@ -391,7 +390,7 @@ export default function BlindtestRoomClient({
 
   // ── WAITING ────────────────────────────────────────────────────────────────
   if (room.status === "waiting") {
-    const canJoin = !isHost && !room.guestId && !isSpectator;
+    const canJoin = !isHost && !room.guestId;
     const waitingForGuest = isHost && !room.guestId;
     const readyToStart = isHost && !!room.guestId;
 

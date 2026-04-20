@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import TierlistBoard, { type TierItem } from "@/components/TierlistBoard";
+import { type TierlistSavePayload } from "@/lib/tierlist-tiers";
 import { saveTierlistSession } from "./actions";
 
 export default function TierlistPlayer({
@@ -17,10 +18,10 @@ export default function TierlistPlayer({
   const [error, setError] = useState<string | null>(null);
   const [saving, startTransition] = useTransition();
 
-  const handleSave = (placements: Record<string, number[]>) => {
+  const handleSave = (payload: TierlistSavePayload) => {
     setError(null);
     startTransition(async () => {
-      const res = await saveTierlistSession(tierlistId, placements);
+      const res = await saveTierlistSession(tierlistId, payload);
       if ("error" in res) {
         setError(res.error ?? "Erreur inconnue.");
       } else {

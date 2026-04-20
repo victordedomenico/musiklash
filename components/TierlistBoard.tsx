@@ -19,9 +19,15 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Play, Pause, Share2, RotateCcw, Download } from "lucide-react";
+import { Play, Pause, Share2, RotateCcw, Download, Plus, Trash2 } from "lucide-react";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { downloadNodeAsPng } from "@/lib/download-png";
+import {
+  DEFAULT_TIERS,
+  getNextTierColor,
+  type TierConfig,
+  type TierlistSavePayload,
+} from "@/lib/tierlist-tiers";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -38,21 +44,11 @@ type TierState = Record<string, TierItem[]>;
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-export const TIERS = [
-  { id: "S+", label: "S+", color: "#ff7f7f" },
-  { id: "S",  label: "S",  color: "#ffbf7f" },
-  { id: "A",  label: "A",  color: "#ffdf7f" },
-  { id: "B",  label: "B",  color: "#ffff7f" },
-  { id: "C",  label: "C",  color: "#bfff7f" },
-  { id: "D",  label: "D",  color: "#7fbfff" },
-  { id: "F",  label: "F",  color: "#bf7fff" },
-] as const;
-
 const POOL_ID = "__pool__";
 
-function buildInitialState(tracks: TierItem[]): TierState {
+function buildInitialState(tracks: TierItem[], tiers: TierConfig[]): TierState {
   const state: TierState = { [POOL_ID]: [...tracks] };
-  for (const t of TIERS) state[t.id] = [];
+  for (const t of tiers) state[t.id] = [];
   return state;
 }
 
@@ -138,30 +134,51 @@ function SortableTrack({
 }
 
 function TierRow({
-  tierId,
-  label,
-  color,
+  tier,
   items,
+  canDelete,
+  onLabelChange,
+  onDelete,
   onPreview,
   playingPosition,
 }: {
-  tierId: string;
-  label: string;
-  color: string;
+  tier: TierConfig;
   items: TierItem[];
+  canDelete: boolean;
+  onLabelChange: (tierId: string, nextLabel: string) => void;
+  onDelete: (tierId: string) => void;
   onPreview: (pos: number, deezerTrackId: number, url: string) => void;
   playingPosition: number | null;
 }) {
+  const { id: tierId, label, color } = tier;
   const sortableIds = items.map((i) => String(i.position));
   const { setNodeRef, isOver } = useDroppable({ id: tierId });
 
   return (
     <div className="flex min-h-[72px] items-stretch overflow-hidden rounded-xl border border-[color:var(--border)]">
       <div
-        className="flex items-center justify-center w-14 shrink-0 font-black text-xl text-white"
+        className="flex w-20 shrink-0 flex-col justify-center gap-1 px-1 py-2 text-white"
         style={{ backgroundColor: color }}
       >
-        {label}
+        <input
+          value={label}
+          onChange={(e) => onLabelChange(tierId, e.target.value)}
+          className="w-full rounded bg-black/20 px-1.5 py-1 text-center text-sm font-black tracking-wide outline-none placeholder:text-white/70 focus:bg-black/30"
+          aria-label={`Nom du tier ${label || tierId}`}
+          placeholder="Tier"
+          maxLength={16}
+        />
+        {canDelete ? (
+          <button
+            type="button"
+            onClick={() => onDelete(tierId)}
+            className="no-export mx-auto inline-flex rounded bg-black/25 p-1 transition hover:bg-black/35"
+            aria-label={`Supprimer le tier ${label || tierId}`}
+            title="Supprimer le tier"
+          >
+            <Trash2 size={12} />
+          </button>
+        ) : null}
       </div>
       <SortableContext items={sortableIds} strategy={horizontalListSortingStrategy}>
         <div
@@ -243,15 +260,21 @@ export default function TierlistBoard({
 }: {
   tierlistId?: string;
   tracks: TierItem[];
-  onSave: (placements: Record<string, number[]>) => void;
+  onSave: (payload: TierlistSavePayload) => void;
   saving: boolean;
 }) {
-  const [state, setState] = useState<TierState>(() => buildInitialState(tracks));
+  const [tiers, setTiers] = useState<TierConfig[]>(() =>
+    DEFAULT_TIERS.map((tier) => ({ ...tier })),
+  );
+  const [state, setState] = useState<TierState>(() =>
+    buildInitialState(tracks, DEFAULT_TIERS),
+  );
   const [activeId, setActiveId] = useState<string | null>(null);
   const [playingPosition, setPlayingPosition] = useState<number | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const exportRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const nextTierIndexRef = useRef(DEFAULT_TIERS.length);
   const { volume } = usePreviewVolume();
   // Cache des URLs fraîches (les URLs Deezer signées expirent)
   const freshUrlCache = useRef<Map<number, string>>(new Map());
@@ -333,11 +356,13 @@ export default function TierlistBoard({
     if (!activeContainer || !overContainer || activeContainer === overContainer) return;
 
     setState((prev) => {
-      const activeItems = [...prev[activeContainer]];
-      const overItems = [...prev[overContainer]];
+      const activeItems = [...(prev[activeContainer] ?? [])];
+      const overItems = [...(prev[overContainer] ?? [])];
       const activeIndex = activeItems.findIndex((i) => String(i.position) === activeId);
+      if (activeIndex === -1) return prev;
       const overIndex = overItems.findIndex((i) => String(i.position) === overId);
       const [moved] = activeItems.splice(activeIndex, 1);
+      if (!moved) return prev;
       const insertAt = overIndex >= 0 ? overIndex : overItems.length;
       overItems.splice(insertAt, 0, moved);
       return { ...prev, [activeContainer]: activeItems, [overContainer]: overItems };
@@ -353,7 +378,7 @@ export default function TierlistBoard({
     if (!container) return;
 
     setState((prev) => {
-      const items = prev[container];
+      const items = prev[container] ?? [];
       const oldIndex = items.findIndex((i) => String(i.position) === activeId);
       const newIndex = items.findIndex((i) => String(i.position) === overId);
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return prev;
@@ -367,16 +392,50 @@ export default function TierlistBoard({
 
   const handleSave = () => {
     const placements: Record<string, number[]> = {};
-    for (const tier of TIERS) {
-      placements[tier.id] = state[tier.id].map((i) => i.position);
+    for (const tier of tiers) {
+      placements[tier.id] = (state[tier.id] ?? []).map((i) => i.position);
     }
-    onSave(placements);
+    onSave({ tiers, placements });
   };
 
   const handleReset = () => {
     audioRef.current?.pause();
     setPlayingPosition(null);
-    setState(buildInitialState(tracks));
+    setState(buildInitialState(tracks, tiers));
+  };
+
+  const handleAddTier = () => {
+    const index = nextTierIndexRef.current;
+    const id = `tier-${index + 1}`;
+    const tier: TierConfig = {
+      id,
+      label: `Tier ${index + 1}`,
+      color: getNextTierColor(index),
+    };
+    nextTierIndexRef.current += 1;
+    setTiers((prev) => [...prev, tier]);
+    setState((prev) => ({ ...prev, [id]: [] }));
+  };
+
+  const handleDeleteTier = (tierId: string) => {
+    if (tiers.length <= 1) return;
+    setTiers((prev) => prev.filter((tier) => tier.id !== tierId));
+    setState((prev) => {
+      const removedItems = prev[tierId] ?? [];
+      const next: TierState = { ...prev, [POOL_ID]: [...(prev[POOL_ID] ?? []), ...removedItems] };
+      delete next[tierId];
+      return next;
+    });
+  };
+
+  const handleTierLabelChange = (tierId: string, nextLabel: string) => {
+    setTiers((prev) =>
+      prev.map((tier) =>
+        tier.id === tierId
+          ? { ...tier, label: nextLabel }
+          : tier,
+      ),
+    );
   };
 
   const handleDownload = async () => {
@@ -396,7 +455,7 @@ export default function TierlistBoard({
     }
   };
 
-  const poolItems = state[POOL_ID];
+  const poolItems = state[POOL_ID] ?? [];
   const placedCount = tracks.length - poolItems.length;
 
   return (
@@ -415,19 +474,30 @@ export default function TierlistBoard({
           <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--muted)]">
             Résultat tierlist
           </p>
-          <p className="text-xs text-[color:var(--muted)]">
-            {placedCount} / {tracks.length} classés
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-[color:var(--muted)]">
+              {placedCount} / {tracks.length} classés
+            </p>
+            <button
+              type="button"
+              onClick={handleAddTier}
+              className="no-export btn-ghost h-8 px-2 text-xs"
+            >
+              <Plus size={14} />
+              Ajouter un tier
+            </button>
+          </div>
         </div>
 
         <div className="space-y-3">
-          {TIERS.map((tier) => (
+          {tiers.map((tier) => (
             <TierRow
               key={tier.id}
-              tierId={tier.id}
-              label={tier.label}
-              color={tier.color}
-              items={state[tier.id]}
+              tier={tier}
+              items={state[tier.id] ?? []}
+              canDelete={tiers.length > 1}
+              onLabelChange={handleTierLabelChange}
+              onDelete={handleDeleteTier}
               onPreview={handlePreview}
               playingPosition={playingPosition}
             />
