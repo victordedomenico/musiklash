@@ -9,21 +9,33 @@ export default function Icon() {
     (
       <div
         style={{
-          background: "linear-gradient(135deg, #ef4444 0%, #f97316 100%)",
+          background: "linear-gradient(140deg, #ff2f6d 0%, #ff6b2c 100%)",
           width: "100%",
           height: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           borderRadius: "8px",
-          color: "white",
-          fontSize: "19px",
-          fontWeight: 900,
-          letterSpacing: "-1px",
-          fontFamily: "system-ui, sans-serif",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22)",
         }}
       >
-        M
+        <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
+          <path
+            d="M38 20L18 50L38 80"
+            stroke="white"
+            strokeWidth="10"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M62 20L82 50L62 80"
+            stroke="white"
+            strokeWidth="10"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx="50" cy="50" r="9.5" fill="white" />
+        </svg>
       </div>
     ),
     { ...size },

@@ -19,8 +19,9 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Play, Pause, Share2, RotateCcw } from "lucide-react";
+import { Play, Pause, Share2, RotateCcw, Download } from "lucide-react";
 import { usePreviewVolume } from "@/lib/audio-volume";
+import { downloadNodeAsPng } from "@/lib/download-png";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -81,22 +82,24 @@ function TrackChip({
         className="h-full w-full object-cover bg-[color:var(--surface-2)]"
         draggable={false}
       />
-      <button
-        type="button"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-          onPreview(item.position, item.deezerTrackId, item.previewUrl);
-        }}
-        className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition"
-        aria-label={isPlaying ? "Pause" : "Écouter"}
-      >
-        {isPlaying ? (
-          <Pause size={20} className="text-white" />
-        ) : (
-          <Play size={20} className="text-white" />
-        )}
-      </button>
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition group-hover:opacity-100">
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPreview(item.position, item.deezerTrackId, item.previewUrl);
+          }}
+          className="pointer-events-auto rounded-full bg-black/65 p-2 text-white transition hover:bg-black/80"
+          aria-label={isPlaying ? "Pause" : "Écouter"}
+        >
+          {isPlaying ? (
+            <Pause size={20} />
+          ) : (
+            <Play size={20} />
+          )}
+        </button>
+      </div>
       <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5 text-[9px] leading-tight truncate text-white">
         {item.title}
       </div>
@@ -246,6 +249,8 @@ export default function TierlistBoard({
   const [state, setState] = useState<TierState>(() => buildInitialState(tracks));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [playingPosition, setPlayingPosition] = useState<number | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const exportRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { volume } = usePreviewVolume();
   // Cache des URLs fraîches (les URLs Deezer signées expirent)
@@ -374,6 +379,23 @@ export default function TierlistBoard({
     setState(buildInitialState(tracks));
   };
 
+  const handleDownload = async () => {
+    if (!exportRef.current) return;
+    setIsDownloading(true);
+    try {
+      await downloadNodeAsPng(exportRef.current, {
+        filename: "tierlist-resultat.png",
+        backgroundColor: "var(--surface)",
+      });
+    } catch {
+      alert(
+        "Impossible de générer le PNG pour le moment. Vérifie que les pochettes sont bien chargées et réessaie.",
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const poolItems = state[POOL_ID];
   const placedCount = tracks.length - poolItems.length;
 
@@ -385,34 +407,57 @@ export default function TierlistBoard({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="space-y-3">
-        {TIERS.map((tier) => (
-          <TierRow
-            key={tier.id}
-            tierId={tier.id}
-            label={tier.label}
-            color={tier.color}
-            items={state[tier.id]}
-            onPreview={handlePreview}
-            playingPosition={playingPosition}
-          />
-        ))}
+      <div
+        ref={exportRef}
+        className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3 md:p-4"
+      >
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--muted)]">
+            Résultat tierlist
+          </p>
+          <p className="text-xs text-[color:var(--muted)]">
+            {placedCount} / {tracks.length} classés
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {TIERS.map((tier) => (
+            <TierRow
+              key={tier.id}
+              tierId={tier.id}
+              label={tier.label}
+              color={tier.color}
+              items={state[tier.id]}
+              onPreview={handlePreview}
+              playingPosition={playingPosition}
+            />
+          ))}
+        </div>
+
+        {/* Pool (morceaux non placés) */}
+        <PoolZone
+          poolItems={poolItems}
+          tracks={tracks}
+          onPreview={handlePreview}
+          playingPosition={playingPosition}
+        />
       </div>
 
-      {/* Pool (morceaux non placés) */}
-      <PoolZone
-        poolItems={poolItems}
-        tracks={tracks}
-        onPreview={handlePreview}
-        playingPosition={playingPosition}
-      />
-
       {/* Actions */}
-      <div className="mt-6 flex flex-col gap-3 border-t border-[color:var(--border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="no-export mt-6 flex flex-col gap-3 border-t border-[color:var(--border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-[color:var(--muted)]">
           {placedCount} / {tracks.length} morceaux classés
         </p>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="btn-primary w-full justify-center text-sm disabled:opacity-50 sm:w-auto"
+          >
+            <Download size={14} />
+            {isDownloading ? "Génération…" : "Télécharger en PNG"}
+          </button>
           <button type="button" onClick={handleReset} className="btn-ghost w-full justify-center text-sm sm:w-auto">
             <RotateCcw size={14} /> Réinitialiser
           </button>

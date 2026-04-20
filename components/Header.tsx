@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import ThemeToggle from "./ThemeToggle";
 import LocaleToggle from "./LocaleToggle";
 import { getCookieConsent, hasPreferencesConsent } from "@/lib/cookie-consent";
+import { BrandMark } from "@/components/BrandLogo";
 
 export default async function Header() {
   const supabase = await createClient();
@@ -30,12 +31,7 @@ export default async function Header() {
           className="flex items-center gap-2 font-extrabold tracking-tight"
           style={{ fontSize: "1.1rem", letterSpacing: "-0.03em", color: "var(--foreground)" }}
         >
-          <span
-            className="flex h-7 w-7 items-center justify-center rounded-lg"
-            style={{ background: "linear-gradient(135deg, #ef4444, #f97316)" }}
-          >
-            <Music size={15} className="text-white" />
-          </span>
+          <BrandMark size={28} />
           Musi<span style={{ color: "var(--accent)" }}>Klash</span>
         </Link>
 

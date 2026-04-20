@@ -7,6 +7,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import LocaleToggle from "@/components/LocaleToggle";
 import SidebarNavLinks from "@/components/SidebarNavLinks";
 import SidebarVolumeControl from "@/components/SidebarVolumeControl";
+import { BrandMark } from "@/components/BrandLogo";
 import { getGuestIdentityFromCookies } from "@/lib/guest";
 
 type SiteSidebarProps = {
@@ -109,12 +110,7 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
             style={{ borderColor: "var(--border-strong)" }}
           >
             <div className="flex min-w-0 items-center gap-3">
-              <div
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white"
-                style={{ background: "linear-gradient(135deg, #ff2f6d 0%, #ff5a2a 100%)" }}
-              >
-                <span className="text-sm font-black">K</span>
-              </div>
+              <BrandMark size={36} />
               <div className="min-w-0">
                 <p className="truncate text-base font-black leading-none" style={{ color: "var(--foreground)" }}>
                   MusiKlash
@@ -163,12 +159,7 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
 
       <aside className="site-sidebar hidden rounded-2xl border p-3 sm:p-4 lg:block lg:rounded-3xl lg:p-5">
         <div className="mb-6 flex items-center gap-3 px-1 lg:mb-8">
-          <div
-            className="flex h-11 w-11 items-center justify-center rounded-2xl text-white"
-            style={{ background: "linear-gradient(135deg, #ff2f6d 0%, #ff5a2a 100%)" }}
-          >
-            <span className="text-lg font-black">K</span>
-          </div>
+          <BrandMark size={44} />
           <div>
             <p
               className="text-[1.45rem] font-black leading-none tracking-tight sm:text-[1.65rem]"
