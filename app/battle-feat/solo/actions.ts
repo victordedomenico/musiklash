@@ -1,8 +1,8 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import prisma from "@/lib/prisma";
 import type { FeatMove } from "@/lib/battle-feat";
+import { resolvePlayerIdentity } from "@/lib/guest";
 
 export async function saveSoloSession(
   difficulty: number,
@@ -11,15 +11,21 @@ export async function saveSoloSession(
   score: number,
   jokersUsed: number,
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let identity: { playerId: string };
+  try {
+    identity = await resolvePlayerIdentity();
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error
+        ? err.message
+        : "Impossible de créer une session invitée pour le moment.";
+    return { error: msg };
+  }
 
   try {
     const session = await prisma.battleFeatSoloSession.create({
       data: {
-        playerId: user?.id ?? null,
+        playerId: identity.playerId,
         difficulty,
         startingArtistId: String(startingArtistId),
         moves: moves as unknown as import("@prisma/client").Prisma.JsonArray,

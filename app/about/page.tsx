@@ -14,20 +14,20 @@ export default function AboutPage() {
         </p>
 
         <section className="mt-10 space-y-4">
-          <h2 className="text-2xl font-bold">L'idée</h2>
+          <h2 className="text-2xl font-bold">L&apos;idée</h2>
           <p style={{ color: "var(--muted-strong)", lineHeight: 1.75 }}>
-            MusiKlash est né d'une frustration : les débats sur la musique ne se concluent jamais.
-            Quel est le meilleur son de cet artiste ? L'album le plus fort ? Plutôt que de tourner
+            MusiKlash est né d&apos;une frustration : les débats sur la musique ne se concluent jamais.
+            Quel est le meilleur son de cet artiste ? L&apos;album le plus fort ? Plutôt que de tourner
             en rond, on a construit un outil pour trancher — écoute par écoute, duel par duel.
           </p>
           <p style={{ color: "var(--muted-strong)", lineHeight: 1.75 }}>
-            N'importe qui peut créer un tournoi en quelques clics, l'écouter via les extraits Deezer
+            N&apos;importe qui peut créer un tournoi en quelques clics, l&apos;écouter via les extraits Deezer
             et partager le verdict avec ses amis ou la communauté.
           </p>
         </section>
 
         <section className="mt-10 space-y-4">
-          <h2 className="text-2xl font-bold">Ce qu'on propose</h2>
+          <h2 className="text-2xl font-bold">Ce qu&apos;on propose</h2>
           <div className="grid gap-3 sm:grid-cols-3 mt-2">
             {[
               { icon: <Swords size={18} />, title: "Brackets", desc: "Tournois à élimination directe de 4 à 32 morceaux." },

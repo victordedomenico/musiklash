@@ -1,8 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import prisma from "@/lib/prisma";
+import { resolvePlayerIdentity } from "@/lib/guest";
 
 export type BlindtestTrackInput = {
   deezer_track_id: number;
@@ -21,15 +21,22 @@ export async function createBlindtest(input: {
   if (input.tracks.length < 3) return { error: "Il faut au moins 3 morceaux." };
   if (input.tracks.length > 50) return { error: "50 morceaux maximum." };
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Tu dois être connecté." };
+  let identity: { playerId: string };
+  try {
+    identity = await resolvePlayerIdentity();
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error
+        ? err.message
+        : "Impossible de créer une session invitée pour le moment.";
+    return { error: msg };
+  }
 
   let blindtestId: string;
   try {
     const bt = await prisma.blindtest.create({
       data: {
-        ownerId: user.id,
+        ownerId: identity.playerId,
         title: input.title.trim(),
         visibility: input.visibility,
         tracks: {

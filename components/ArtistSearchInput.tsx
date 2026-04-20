@@ -27,8 +27,6 @@ export default function ArtistSearchInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const excludeIdsRef = useRef(excludeIds);
-  excludeIdsRef.current = excludeIds;
 
   const search = useCallback(async (q: string) => {
     abortRef.current?.abort();
@@ -45,7 +43,7 @@ export default function ArtistSearchInput({
         signal: controller.signal,
       });
       const json = (await res.json()) as { data: ArtistResult[] };
-      const filtered = json.data.filter((a) => !excludeIdsRef.current.includes(a.id));
+      const filtered = json.data.filter((a) => !excludeIds.includes(a.id));
       setResults(filtered);
       setOpen(filtered.length > 0);
       setHighlightIdx(-1);
@@ -54,7 +52,7 @@ export default function ArtistSearchInput({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [excludeIds]);
 
   useEffect(() => {
     const timer = setTimeout(() => search(query), 300);

@@ -1,20 +1,28 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import { resolvePlayerIdentity } from "@/lib/guest";
 
 export async function saveTierlistSession(
   tierlistId: string,
   placements: Record<string, number[]>,
 ) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  let identity: { playerId: string };
+  try {
+    identity = await resolvePlayerIdentity();
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error
+        ? err.message
+        : "Impossible de créer une session invitée pour le moment.";
+    return { error: msg };
+  }
 
   try {
     const session = await prisma.tierlistSession.create({
       data: {
         tierlistId,
-        playerId: user?.id ?? null,
+        playerId: identity.playerId,
         placements,
       },
     });

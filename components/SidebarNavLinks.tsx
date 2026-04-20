@@ -8,11 +8,10 @@ import {
   House,
   Library,
   Search,
-  Settings,
   type LucideIcon,
 } from "lucide-react";
 
-type IconName = "home" | "search" | "create" | "library" | "guide" | "settings";
+type IconName = "home" | "search" | "create" | "library" | "guide";
 
 type NavItem = {
   href: string;
@@ -30,7 +29,6 @@ const iconMap: Record<IconName, LucideIcon> = {
   create: CirclePlus,
   library: Library,
   guide: BookOpen,
-  settings: Settings,
 };
 
 function isActivePath(pathname: string, href: string) {
@@ -51,7 +49,7 @@ export default function SidebarNavLinks({ links }: Readonly<SidebarNavLinksProps
           <Link
             key={href}
             href={href}
-            className="flex items-center gap-3 rounded-2xl px-4 py-3 text-[1.02rem] transition"
+            className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-[0.95rem] transition sm:px-4 sm:py-3 sm:text-[1.02rem]"
             style={{
               color: active ? "var(--foreground)" : "var(--muted-strong)",
               background: active ? "var(--surface-2)" : "transparent",

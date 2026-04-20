@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Play, Pause, Check, X, SkipForward } from "lucide-react";
+import { usePreviewVolume } from "@/lib/audio-volume";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -112,20 +113,43 @@ export default function BlindtestGame({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const freshUrlRef = useRef("");
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const { volume } = usePreviewVolume();
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = volume;
+  }, [volume]);
 
   // Refs so the timer always sees fresh values without re-running
   const guessRef = useRef({ title: "", artist: "" });
-  guessRef.current = { title: guessTitle, artist: guessArtist };
   const idxRef = useRef(idx);
-  idxRef.current = idx;
   const phaseRef = useRef<Phase>("loading");
-  phaseRef.current = phase;
+
+  useEffect(() => {
+    guessRef.current = { title: guessTitle, artist: guessArtist };
+  }, [guessTitle, guessArtist]);
+
+  useEffect(() => {
+    idxRef.current = idx;
+  }, [idx]);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
+  useEffect(() => {
+    return () => {
+      if (!audioRef.current) return;
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+      audioRef.current = null;
+    };
+  }, []);
 
   // ── Fetch fresh preview URL for current track ─────────────────────────────
   useEffect(() => {
     const track = tracks[idx];
-    setPhase("loading");
-    setAudioPlaying(false);
     freshUrlRef.current = "";
     audioRef.current?.pause();
 
@@ -133,9 +157,13 @@ export default function BlindtestGame({
       .then((r) => r.json())
       .then((d: { preview?: string }) => {
         freshUrlRef.current = d.preview ?? "";
+        setTimeLeft(TIMER_SECONDS);
         setPhase("playing");
       })
-      .catch(() => setPhase("playing"));
+      .catch(() => {
+        setTimeLeft(TIMER_SECONDS);
+        setPhase("playing");
+      });
   }, [idx, tracks]);
 
   // ── Auto-play when phase becomes "playing" ────────────────────────────────
@@ -150,13 +178,14 @@ export default function BlindtestGame({
     const a = audioRef.current;
     a.onended = () => setAudioPlaying(false);
     a.pause();
+    a.volume = volume;
     a.src = url;
     a.load();
     setAudioPlaying(true);
     a.play().catch(() => setAudioPlaying(false));
 
     return () => { a.pause(); };
-  }, [phase]);
+  }, [phase, volume]);
 
   // ── Stable submit (uses refs to avoid stale closures in timer) ────────────
   const submit = useCallback(() => {
@@ -190,8 +219,6 @@ export default function BlindtestGame({
   // ── Timer ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== "playing") return;
-    setTimeLeft(TIMER_SECONDS);
-
     const id = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
@@ -220,6 +247,8 @@ export default function BlindtestGame({
     }
     setGuessTitle("");
     setGuessArtist("");
+    setPhase("loading");
+    setAudioPlaying(false);
     setIdx((i) => i + 1);
     setTimeout(() => titleInputRef.current?.focus(), 300);
   }, [idx, tracks.length, onComplete]);

@@ -6,22 +6,22 @@ export default function TermsPage() {
   return (
     <div className="refit-doc-page">
       <div className="mx-auto max-w-3xl px-4 py-12">
-        <h1 className="text-4xl font-black mb-2">Conditions d'utilisation</h1>
+        <h1 className="text-4xl font-black mb-2">Conditions d&apos;utilisation</h1>
         <p style={{ color: "var(--muted)" }}>Dernière mise à jour : avril 2026</p>
 
         <div className="mt-10 space-y-8" style={{ color: "var(--muted-strong)", lineHeight: 1.8 }}>
           <section className="space-y-3">
             <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Acceptation</h2>
             <p>
-              En utilisant MusiKlash, vous acceptez les présentes conditions. Si vous n'êtes pas
-              d'accord, veuillez ne pas utiliser la plateforme.
+              En utilisant MusiKlash, vous acceptez les présentes conditions. Si vous n&apos;êtes pas
+              d&apos;accord, veuillez ne pas utiliser la plateforme.
             </p>
           </section>
 
           <section className="space-y-3">
             <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Accès au service</h2>
             <p>
-              MusiKlash est accessible gratuitement. La création d'un compte est requise pour
+              MusiKlash est accessible gratuitement. La création d&apos;un compte est requise pour
               créer et sauvegarder du contenu. Nous nous réservons le droit de suspendre ou de
               supprimer un compte qui violerait ces conditions.
             </p>
@@ -39,8 +39,8 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Propriété intellectuelle</h2>
             <p>
-              Le contenu musical est fourni par l'API Deezer et reste la propriété des ayants droit.
-              L'interface, le code et les éléments de MusiKlash sont protégés par le droit d'auteur
+              Le contenu musical est fourni par l&apos;API Deezer et reste la propriété des ayants droit.
+              L&apos;interface, le code et les éléments de MusiKlash sont protégés par le droit d&apos;auteur
               © 2026 MusiKlash.
             </p>
           </section>
@@ -48,9 +48,9 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Limitation de responsabilité</h2>
             <p>
-              MusiKlash est fourni "en l'état", sans garantie d'aucune sorte. Nous ne pouvons être
-              tenus responsables d'une interruption de service, de la disponibilité des extraits
-              musicaux Deezer, ni d'un quelconque préjudice résultant de l'utilisation de la
+              MusiKlash est fourni &quot;en l&apos;état&quot;, sans garantie d&apos;aucune sorte. Nous ne pouvons être
+              tenus responsables d&apos;une interruption de service, de la disponibilité des extraits
+              musicaux Deezer, ni d&apos;un quelconque préjudice résultant de l&apos;utilisation de la
               plateforme.
             </p>
           </section>

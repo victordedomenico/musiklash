@@ -6,6 +6,7 @@ import { getI18n } from "@/lib/i18n";
 import { cookies } from "next/headers";
 import ThemeToggle from "./ThemeToggle";
 import LocaleToggle from "./LocaleToggle";
+import { getCookieConsent, hasPreferencesConsent } from "@/lib/cookie-consent";
 
 export default async function Header() {
   const supabase = await createClient();
@@ -15,7 +16,9 @@ export default async function Header() {
 
   const { t, locale } = await getI18n();
   const cookieStore = await cookies();
-  const theme = cookieStore.get("theme")?.value === "light" ? "light" : "dark";
+  const consent = await getCookieConsent();
+  const canUsePreferenceCookies = hasPreferencesConsent(consent);
+  const theme = canUsePreferenceCookies && cookieStore.get("theme")?.value === "light" ? "light" : "dark";
 
   return (
     <header className="sticky top-0 z-40 w-full" style={{ background: "color-mix(in srgb, var(--background) 88%, transparent)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)" }}>

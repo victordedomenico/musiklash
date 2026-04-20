@@ -12,6 +12,21 @@ type ConnectedArtist = {
   trackTitle: string | null;
 };
 
+const SOLO_AI_POOL_BY_DIFFICULTY: Record<number, number> = {
+  1: 165,
+  2: 673,
+  3: 994,
+};
+const SOLO_AI_POOL_MAX = SOLO_AI_POOL_BY_DIFFICULTY[3];
+const SOLO_AI_POOL_CACHE_TTL_MS = 5 * 60 * 1000;
+
+let soloAiPoolCache:
+  | {
+      updatedAt: number;
+      idsByDifficulty: Record<number, Set<string>>;
+    }
+  | null = null;
+
 function normalizeMoves(moves: unknown): FeatMove[] {
   return Array.isArray(moves) ? (moves as FeatMove[]) : [];
 }
@@ -189,6 +204,63 @@ function normalizePreviewUrl(previewUrl: string | null | undefined): string | nu
   return previewUrl.replace(/^http:\/\//i, "https://");
 }
 
+function shuffle<T>(values: T[]): T[] {
+  const out = [...values];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = out[i];
+    out[i] = out[j];
+    out[j] = tmp;
+  }
+  return out;
+}
+
+function dedupeByArtistId(candidates: DeezerArtistMove[]): DeezerArtistMove[] {
+  const byId = new Map<string, DeezerArtistMove>();
+  for (const candidate of candidates) {
+    const existing = byId.get(candidate.id);
+    if (!existing || candidate.fanCount > existing.fanCount) {
+      byId.set(candidate.id, candidate);
+    }
+  }
+  return [...byId.values()];
+}
+
+async function getSoloAiPoolIdsForDifficulty(difficulty: number): Promise<Set<string> | null> {
+  if (difficulty < 1 || difficulty > 3) return null;
+  const now = Date.now();
+  if (soloAiPoolCache && now - soloAiPoolCache.updatedAt < SOLO_AI_POOL_CACHE_TTL_MS) {
+    return soloAiPoolCache.idsByDifficulty[difficulty] ?? null;
+  }
+
+  const artists = await prisma.rapArtist.findMany({
+    select: { deezerArtistId: true, fanCount: true },
+    orderBy: [{ fanCount: "desc" }, { name: "asc" }],
+    take: SOLO_AI_POOL_MAX,
+  });
+  if (artists.length === 0) return null;
+
+  const orderedIds = artists.map((artist) => String(artist.deezerArtistId));
+  soloAiPoolCache = {
+    updatedAt: now,
+    idsByDifficulty: {
+      1: new Set(orderedIds.slice(0, SOLO_AI_POOL_BY_DIFFICULTY[1])),
+      2: new Set(orderedIds.slice(0, SOLO_AI_POOL_BY_DIFFICULTY[2])),
+      3: new Set(orderedIds.slice(0, SOLO_AI_POOL_BY_DIFFICULTY[3])),
+    },
+  };
+
+  return soloAiPoolCache.idsByDifficulty[difficulty] ?? null;
+}
+
+function applySoloAiPoolFilter(
+  candidates: DeezerArtistMove[],
+  allowedIds: Set<string> | null,
+): DeezerArtistMove[] {
+  if (!allowedIds) return candidates;
+  return candidates.filter((candidate) => allowedIds.has(candidate.id));
+}
+
 function pickByDifficulty(
   candidates: DeezerArtistMove[],
   difficulty: number,
@@ -257,6 +329,58 @@ async function getFeatCandidates(artistId: string): Promise<FeatCandidate[]> {
     }
   }
   return out;
+}
+
+async function resolveDeezerMovesFromCandidates(
+  candidates: FeatCandidate[],
+  usedIds: string[],
+  searchLimit = 12,
+): Promise<DeezerArtistMove[]> {
+  const toSearch = candidates.slice(0, searchLimit);
+  const results = await Promise.all(
+    toSearch.map(async ({ name, slug, artistId, trackTitle, previewUrl }) => {
+      if (artistId && !usedIds.includes(artistId)) {
+        try {
+          const artistHits = await searchArtists(name, 5);
+          const artistMatch = artistHits.find((a) => String(a.id) === artistId);
+          if (artistMatch) {
+            const tier = popularityTier(artistMatch.nb_fan ?? 0);
+            return {
+              id: String(artistMatch.id),
+              name: artistMatch.name,
+              pictureUrl: artistMatch.picture_medium ?? artistMatch.picture_small ?? null,
+              fanCount: artistMatch.nb_fan ?? 0,
+              popularityTier: tier,
+              trackTitle,
+              previewUrl,
+            };
+          }
+        } catch {
+          // fallback to slug matching below
+        }
+      }
+      try {
+        const hits = await searchArtists(name, 3);
+        const match = hits.find((a) => slugifyName(a.name) === slug) ?? hits[0];
+        if (!match) return null;
+        if (usedIds.includes(String(match.id))) return null;
+        const tier = popularityTier(match.nb_fan ?? 0);
+        return {
+          id: String(match.id),
+          name: match.name,
+          pictureUrl: match.picture_medium ?? match.picture_small ?? null,
+          fanCount: match.nb_fan ?? 0,
+          popularityTier: tier,
+          trackTitle,
+          previewUrl,
+        };
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  return dedupeByArtistId(results.filter(Boolean) as DeezerArtistMove[]);
 }
 
 export async function validateFeatLinkDeezer(
@@ -329,54 +453,14 @@ export async function pickAiMoveDeezer(
   const candidates = await getFeatCandidates(currentArtistId);
   if (candidates.length === 0) return null;
 
-  // Search Deezer for up to 12 feat artists in parallel
-  const toSearch = candidates.slice(0, 12);
-  const results = await Promise.all(
-    toSearch.map(async ({ name, slug, artistId, trackTitle, previewUrl }) => {
-      if (artistId && !usedIds.includes(artistId)) {
-        try {
-          const artistHits = await searchArtists(name, 5);
-          const artistMatch = artistHits.find((a) => String(a.id) === artistId);
-          if (artistMatch) {
-            const tier = popularityTier(artistMatch.nb_fan ?? 0);
-            return {
-              id: String(artistMatch.id),
-              name: artistMatch.name,
-              pictureUrl: artistMatch.picture_medium ?? artistMatch.picture_small ?? null,
-              fanCount: artistMatch.nb_fan ?? 0,
-              popularityTier: tier,
-              trackTitle,
-              previewUrl,
-            };
-          }
-        } catch {
-          // fallback to slug matching below
-        }
-      }
-      try {
-        const hits = await searchArtists(name, 3);
-        const match = hits.find((a) => slugifyName(a.name) === slug) ?? hits[0];
-        if (!match) return null;
-        if (usedIds.includes(String(match.id))) return null;
-        const tier = popularityTier(match.nb_fan ?? 0);
-        return {
-          id: String(match.id),
-          name: match.name,
-          pictureUrl: match.picture_medium ?? match.picture_small ?? null,
-          fanCount: match.nb_fan ?? 0,
-          popularityTier: tier,
-          trackTitle,
-          previewUrl,
-        };
-      } catch {
-        return null;
-      }
-    }),
-  );
-
-  const valid = results.filter(Boolean) as DeezerArtistMove[];
+  const valid = await resolveDeezerMovesFromCandidates(candidates, usedIds, 18);
   if (valid.length === 0) return null;
-  return pickByDifficulty(valid, difficulty);
+
+  const allowedIds = await getSoloAiPoolIdsForDifficulty(difficulty);
+  const scoped = applySoloAiPoolFilter(valid, allowedIds);
+  if (scoped.length === 0) return null;
+
+  return pickByDifficulty(scoped, difficulty);
 }
 
 export async function pickJokerMoveDeezer(
@@ -386,50 +470,28 @@ export async function pickJokerMoveDeezer(
   const candidates = await getFeatCandidates(currentArtistId);
   if (candidates.length === 0) return null;
 
-  const toSearch = candidates.slice(0, 12);
-  const results = await Promise.all(
-    toSearch.map(async ({ name, slug, artistId, trackTitle, previewUrl }) => {
-      if (artistId && !usedIds.includes(artistId)) {
-        try {
-          const artistHits = await searchArtists(name, 5);
-          const artistMatch = artistHits.find((a) => String(a.id) === artistId);
-          if (artistMatch) {
-            return {
-              id: String(artistMatch.id),
-              name: artistMatch.name,
-              pictureUrl: artistMatch.picture_medium ?? artistMatch.picture_small ?? null,
-              fanCount: artistMatch.nb_fan ?? 0,
-              popularityTier: popularityTier(artistMatch.nb_fan ?? 0),
-              trackTitle,
-              previewUrl,
-            };
-          }
-        } catch {
-          // fallback to slug matching below
-        }
-      }
-      try {
-        const hits = await searchArtists(name, 3);
-        const match = hits.find((a) => slugifyName(a.name) === slug) ?? hits[0];
-        if (!match) return null;
-        if (usedIds.includes(String(match.id))) return null;
-        return {
-          id: String(match.id),
-          name: match.name,
-          pictureUrl: match.picture_medium ?? match.picture_small ?? null,
-          fanCount: match.nb_fan ?? 0,
-          popularityTier: popularityTier(match.nb_fan ?? 0),
-          trackTitle,
-          previewUrl,
-        };
-      } catch {
-        return null;
-      }
-    }),
-  );
-
-  const valid = results.filter(Boolean) as DeezerArtistMove[];
+  const valid = await resolveDeezerMovesFromCandidates(candidates, usedIds, 18);
   if (valid.length === 0) return null;
   // Return most popular
   return valid.sort((a, b) => b.fanCount - a.fanCount)[0];
+}
+
+export async function getSoloEasyOptionsDeezer(
+  currentArtistId: string,
+  usedIds: string[],
+  optionCount = 4,
+): Promise<DeezerArtistMove[]> {
+  const candidates = await getFeatCandidates(currentArtistId);
+  if (candidates.length === 0) return [];
+
+  const valid = await resolveDeezerMovesFromCandidates(candidates, usedIds, 20);
+  if (valid.length === 0) return [];
+
+  const easyPoolIds = await getSoloAiPoolIdsForDifficulty(1);
+  const scoped = applySoloAiPoolFilter(valid, easyPoolIds);
+  if (scoped.length === 0) return [];
+
+  const mainstream = scoped.filter((artist) => artist.popularityTier <= 1);
+  const source = mainstream.length > 0 ? mainstream : scoped;
+  return shuffle(source).slice(0, Math.max(1, optionCount));
 }

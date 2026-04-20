@@ -1,8 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import prisma from "@/lib/prisma";
+import { resolvePlayerIdentity } from "@/lib/guest";
 
 export type TierlistTrackInput = {
   deezer_track_id: number;
@@ -24,17 +24,22 @@ export async function createTierlist(input: {
   if (input.tracks.length > 50)
     return { error: "50 morceaux maximum." };
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Tu dois être connecté." };
+  let identity: { playerId: string };
+  try {
+    identity = await resolvePlayerIdentity();
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error
+        ? err.message
+        : "Impossible de créer une session invitée pour le moment.";
+    return { error: msg };
+  }
 
   let tierlistId: string;
   try {
     const tl = await prisma.tierlist.create({
       data: {
-        ownerId: user.id,
+        ownerId: identity.playerId,
         title: input.title.trim(),
         theme: input.theme.trim() || null,
         visibility: input.visibility,

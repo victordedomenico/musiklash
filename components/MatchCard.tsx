@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
+import { usePreviewVolume } from "@/lib/audio-volume";
 
 export type BracketTrack = {
   seed: number;
@@ -33,6 +34,7 @@ export default function MatchCard({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(30);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { volume } = usePreviewVolume();
   // Fresh preview URLs fetched on mount (les URLs Deezer signées expirent)
   const [previewA, setPreviewA] = useState(a.preview_url);
   const [previewB, setPreviewB] = useState(b.preview_url);
@@ -44,9 +46,18 @@ export default function MatchCard({
 
   useEffect(() => {
     return () => {
-      audioRef.current?.pause();
+      if (!audioRef.current) return;
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+      audioRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = volume;
+  }, [volume]);
 
   const toggle = (seed: number, url: string) => {
     if (!audioRef.current) {
@@ -61,6 +72,7 @@ export default function MatchCard({
       audioRef.current.onloadedmetadata = () => {
         setDuration(audioRef.current?.duration ?? 30);
       };
+      audioRef.current.volume = volume;
     }
     const el = audioRef.current;
     if (playing === seed) {
@@ -69,6 +81,7 @@ export default function MatchCard({
       return;
     }
     el.pause();
+    el.volume = volume;
     el.src = url;
     el.load();
     setPlaying(seed);
@@ -87,11 +100,11 @@ export default function MatchCard({
   };
 
   return (
-    <div className="card p-6">
+    <div className="card p-4 sm:p-6">
       <p className="text-center text-xs font-semibold uppercase tracking-wider text-[color:var(--muted)]">
         {roundLabel}
       </p>
-      <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-[1fr_auto_1fr] md:gap-4 items-center">
+      <div className="mt-4 grid grid-cols-1 items-center gap-6 md:grid-cols-[1fr_auto_1fr] md:gap-4">
         <Side
           track={a}
           previewUrl={previewA}
@@ -151,7 +164,7 @@ function Side({
       <img
         src={track.cover_url ?? ""}
         alt=""
-        className="h-40 w-40 md:h-48 md:w-48 rounded-xl object-cover shadow-lg bg-[color:var(--surface-2)]"
+        className="h-32 w-32 rounded-xl bg-[color:var(--surface-2)] object-cover shadow-lg sm:h-40 sm:w-40 md:h-48 md:w-48"
       />
       <div className="mt-4 w-full px-2 max-w-[240px]">
         <p className="font-semibold line-clamp-1">{track.title}</p>
@@ -178,11 +191,11 @@ function Side({
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-2 flex gap-2 w-full">
+          <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row">
             <button
               type="button"
               onClick={() => onToggle(track.seed, previewUrl)}
-            className="btn-ghost flex-1 justify-center text-sm"
+            className="btn-ghost w-full justify-center text-sm sm:flex-1"
             >
               {playing ? <Pause size={14} className="shrink-0" /> : <Play size={14} className="shrink-0" />}
               {playing ? "Pause" : "Écouter"}
@@ -190,7 +203,7 @@ function Side({
             <button
               type="button"
               onClick={() => onPick(track.seed)}
-            className="btn-primary flex-1 justify-center text-sm"
+            className="btn-primary w-full justify-center text-sm sm:flex-1"
             >
               Voter
             </button>

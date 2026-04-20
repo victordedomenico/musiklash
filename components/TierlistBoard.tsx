@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -20,6 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Play, Pause, Share2, RotateCcw } from "lucide-react";
+import { usePreviewVolume } from "@/lib/audio-volume";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -152,7 +153,7 @@ function TierRow({
   const { setNodeRef, isOver } = useDroppable({ id: tierId });
 
   return (
-    <div className="flex items-stretch min-h-[72px] border border-[color:var(--border)] rounded-xl overflow-hidden">
+    <div className="flex min-h-[72px] items-stretch overflow-hidden rounded-xl border border-[color:var(--border)]">
       <div
         className="flex items-center justify-center w-14 shrink-0 font-black text-xl text-white"
         style={{ backgroundColor: color }}
@@ -162,7 +163,7 @@ function TierRow({
       <SortableContext items={sortableIds} strategy={horizontalListSortingStrategy}>
         <div
           ref={setNodeRef}
-          className={`flex flex-wrap gap-2 p-2 flex-1 min-h-[72px] transition-colors ${
+          className={`flex min-h-[72px] flex-1 flex-wrap gap-2 p-2 transition-colors ${
             isOver
               ? "bg-[color:var(--accent)]/10"
               : "bg-[color:var(--surface)]"
@@ -246,8 +247,24 @@ export default function TierlistBoard({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [playingPosition, setPlayingPosition] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { volume } = usePreviewVolume();
   // Cache des URLs fraîches (les URLs Deezer signées expirent)
   const freshUrlCache = useRef<Map<number, string>>(new Map());
+
+  useEffect(() => {
+    return () => {
+      if (!audioRef.current) return;
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+      audioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = volume;
+  }, [volume]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -257,6 +274,7 @@ export default function TierlistBoard({
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.onended = () => setPlayingPosition(null);
+      audioRef.current.volume = volume;
     }
     const a = audioRef.current;
     if (playingPosition === pos) {
@@ -279,6 +297,7 @@ export default function TierlistBoard({
     }
 
     a.pause();
+    a.volume = volume;
     a.src = url;
     a.load();
     setPlayingPosition(pos);
@@ -286,7 +305,7 @@ export default function TierlistBoard({
       console.warn("Audio playback failed:", err);
       setPlayingPosition(null);
     });
-  }, [playingPosition]);
+  }, [playingPosition, volume]);
 
   const findContainer = (id: string) => {
     for (const [key, items] of Object.entries(state)) {
@@ -389,19 +408,19 @@ export default function TierlistBoard({
       />
 
       {/* Actions */}
-      <div className="mt-6 flex items-center justify-between border-t border-[color:var(--border)] pt-4">
+      <div className="mt-6 flex flex-col gap-3 border-t border-[color:var(--border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-[color:var(--muted)]">
           {placedCount} / {tracks.length} morceaux classés
         </p>
-        <div className="flex gap-2">
-          <button type="button" onClick={handleReset} className="btn-ghost text-sm">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <button type="button" onClick={handleReset} className="btn-ghost w-full justify-center text-sm sm:w-auto">
             <RotateCcw size={14} /> Réinitialiser
           </button>
           <button
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="btn-primary text-sm disabled:opacity-50"
+            className="btn-primary w-full justify-center text-sm disabled:opacity-50 sm:w-auto"
           >
             <Share2 size={14} />
             {saving ? "Sauvegarde…" : "Sauvegarder et partager"}

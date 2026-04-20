@@ -89,12 +89,14 @@ body {
   font-weight: 400;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 .site-layout {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
+  width: 100%;
   max-width: 1800px;
   margin: 0 auto;
   padding: 0.75rem;
@@ -117,6 +119,8 @@ body {
   background: var(--surface);
   color: var(--foreground);
   padding: 1rem;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 .refit-doc-page {
@@ -148,6 +152,13 @@ body {
     padding: 1.25rem;
   }
 
+  .site-sidebar {
+    position: sticky;
+    top: 1.25rem;
+    max-height: calc(100vh - 2.5rem);
+    overflow-y: auto;
+  }
+
   .site-main {
     padding: 1.25rem;
   }
@@ -160,6 +171,18 @@ body {
   .refit-doc-page > div > section,
   .refit-doc-page details {
     padding: 1.25rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .site-layout {
+    gap: 0.75rem;
+    padding: 0.5rem;
+  }
+
+  .site-main {
+    border-radius: 1.1rem;
+    padding: 0.9rem;
   }
 }
 

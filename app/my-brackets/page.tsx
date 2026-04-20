@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { getGuestIdentityFromCookies } from "@/lib/guest";
 import BracketCard, { type BracketSummary } from "@/components/BracketCard";
 import TierlistCard, { type TierlistSummary } from "@/components/TierlistCard";
 import BlindtestCard, { type BlindtestSummary } from "@/components/BlindtestCard";
@@ -28,51 +28,54 @@ export default async function MyBracketsPage({
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const guestIdentity = user ? null : await getGuestIdentityFromCookies();
+  const activePlayerId = user?.id ?? guestIdentity?.id ?? null;
 
   const visFilter =
     filter === "private" || filter === "public" ? { visibility: filter } : {};
 
-  const [brackets, tierlists, blindtests, soloSessions, battleFeatRooms] = await Promise.all([
-    prisma.bracket.findMany({
-      where: { ownerId: user.id, ...visFilter },
-      select: { id: true, title: true, theme: true, size: true, visibility: true, coverUrl: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.tierlist.findMany({
-      where: { ownerId: user.id, ...visFilter },
-      select: { id: true, title: true, theme: true, visibility: true, coverUrl: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.blindtest.findMany({
-      where: { ownerId: user.id, ...visFilter },
-      select: {
-        id: true,
-        title: true,
-        visibility: true,
-        _count: { select: { tracks: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.battleFeatSoloSession.findMany({
-      where: { playerId: user.id },
-      select: { id: true, difficulty: true, score: true, status: true, createdAt: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.battleFeatRoom.findMany({
-      where: {
-        OR: [{ hostId: user.id }, { guestId: user.id }],
-      },
-      select: {
-        id: true,
-        status: true,
-        hostScore: true,
-        guestScore: true,
-        createdAt: true,
-      },
-      orderBy: { updatedAt: "desc" },
-    }),
-  ]);
+  const [brackets, tierlists, blindtests, soloSessions, battleFeatRooms] = activePlayerId
+    ? await Promise.all([
+        prisma.bracket.findMany({
+          where: { ownerId: activePlayerId, ...visFilter },
+          select: { id: true, title: true, theme: true, size: true, visibility: true, coverUrl: true },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.tierlist.findMany({
+          where: { ownerId: activePlayerId, ...visFilter },
+          select: { id: true, title: true, theme: true, visibility: true, coverUrl: true },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.blindtest.findMany({
+          where: { ownerId: activePlayerId, ...visFilter },
+          select: {
+            id: true,
+            title: true,
+            visibility: true,
+            _count: { select: { tracks: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.battleFeatSoloSession.findMany({
+          where: { playerId: activePlayerId },
+          select: { id: true, difficulty: true, score: true, status: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.battleFeatRoom.findMany({
+          where: {
+            OR: [{ hostId: activePlayerId }, { guestId: activePlayerId }],
+          },
+          select: {
+            id: true,
+            status: true,
+            hostScore: true,
+            guestScore: true,
+            createdAt: true,
+          },
+          orderBy: { updatedAt: "desc" },
+        }),
+      ])
+    : [[], [], [], [], []];
 
   const bracketList = brackets.map((b) => ({ ...b, cover_url: b.coverUrl })) as BracketSummary[];
   const tierlistList = tierlists.map((t) => ({ ...t, coverUrl: t.coverUrl })) as TierlistSummary[];
@@ -115,15 +118,21 @@ export default async function MyBracketsPage({
       : "Nouveau bracket";
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] py-6">
+    <div className="mx-auto w-full max-w-[1500px] px-1 py-5 sm:px-2 sm:py-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-7xl font-black tracking-[-0.04em]">Ma Bibliothèque</h1>
-          <p className="mt-2 text-3xl" style={{ color: "#8f93a0" }}>
+          <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl lg:text-7xl">
+            Ma Bibliothèque
+          </h1>
+          <p className="mt-2 text-base sm:text-xl lg:text-3xl" style={{ color: "#8f93a0" }}>
             Gérez vos créations et l&apos;historique de vos défis.
           </p>
         </div>
-        <Link href={createHref} className="inline-flex items-center gap-2 rounded-2xl px-6 py-4 text-2xl font-bold" style={{ background: "#ff2f6d", color: "#fff" }}>
+        <Link
+          href={createHref}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-base font-bold sm:w-auto sm:px-6 sm:py-4 sm:text-xl lg:text-2xl"
+          style={{ background: "#ff2f6d", color: "#fff" }}
+        >
           <Play size={18} /> {createLabel.replace("Nouveau ", "Nouveau ")}
         </Link>
       </div>
@@ -133,9 +142,17 @@ export default async function MyBracketsPage({
           Compte créé 🎉 tu peux maintenant créer ton premier bracket ou ta première tierlist.
         </p>
       ) : null}
+      {!user ? (
+        <p className="mt-4 rounded-2xl border p-3 text-sm text-[color:var(--muted)]" style={{ borderColor: "#2a3242", background: "#131822" }}>
+          Tu es en mode invité{guestIdentity?.username ? ` (${guestIdentity.username})` : ""}. Tes parties et créations restent liées à ce pseudo sur cet appareil.
+        </p>
+      ) : null}
 
-      <div className="mt-8 flex flex-wrap gap-3">
-        <div className="inline-flex gap-2 rounded-2xl border p-1" style={{ borderColor: "#283041", background: "#181b24" }}>
+      <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:flex-wrap">
+        <div
+          className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
+          style={{ borderColor: "#283041", background: "#181b24" }}
+        >
         <TabItem current={tab} value="brackets" label={`Brackets (${brackets.length})`} />
         <TabItem current={tab} value="tierlists" label={`Tierlists (${tierlists.length})`} />
         <TabItem current={tab} value="blindtests" label={`Blindtests (${blindtests.length})`} />
@@ -144,7 +161,10 @@ export default async function MyBracketsPage({
 
       {/* Visibility filter */}
       {tab !== "battlefeat" ? (
-        <div className="inline-flex gap-2 rounded-2xl border p-1" style={{ borderColor: "#283041", background: "#181b24" }}>
+        <div
+          className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
+          style={{ borderColor: "#283041", background: "#181b24" }}
+        >
           <FilterLink current={filter} value="all" label="Tous" tab={tab} />
           <FilterLink current={filter} value="private" label="Privé" tab={tab} />
           <FilterLink current={filter} value="public" label="Public" tab={tab} />
@@ -236,7 +256,7 @@ function TabItem({ current, value, label }: { current: Tab; value: Tab; label: s
   return (
     <Link
       href={`/my-brackets?tab=${value}`}
-      className="rounded-xl px-5 py-2 text-sm font-bold tracking-wide no-underline"
+      className="whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold tracking-wide no-underline sm:px-5 sm:text-sm"
       style={{
         background: active ? "#f3f4f6" : "transparent",
         color: active ? "#09090b" : "#868b98",
@@ -265,7 +285,7 @@ function FilterLink({
   return (
     <Link
       href={href}
-      className="rounded-xl px-5 py-2 text-sm font-bold tracking-wide no-underline"
+      className="whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold tracking-wide no-underline sm:px-5 sm:text-sm"
       style={{
         background: current === value ? "#2f3442" : "transparent",
         color: current === value ? "#ffffff" : "#868b98",
@@ -278,8 +298,13 @@ function FilterLink({
 
 function EmptyState({ label, cta, href }: { label: string; cta: string; href: string }) {
   return (
-    <div className="mt-10 rounded-[34px] border p-16 text-center" style={{ borderColor: "#232b3a", background: "#10141d" }}>
-      <p className="text-3xl font-semibold" style={{ color: "#9298a8" }}>{label}</p>
+    <div
+      className="mt-10 rounded-[24px] border p-7 text-center sm:rounded-[28px] sm:p-10 lg:rounded-[34px] lg:p-16"
+      style={{ borderColor: "#232b3a", background: "#10141d" }}
+    >
+      <p className="text-lg font-semibold sm:text-2xl lg:text-3xl" style={{ color: "#9298a8" }}>
+        {label}
+      </p>
       <Link href={href} className="btn-primary mt-8 inline-flex">
         <Plus size={16} /> {cta}
       </Link>

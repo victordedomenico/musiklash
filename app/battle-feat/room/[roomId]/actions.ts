@@ -11,7 +11,7 @@ import {
 } from "@/lib/battle-feat-server";
 import type { RoomEvent } from "@/lib/battle-feat";
 
-const TURN_SECONDS = 30;
+const TURN_SECONDS = 20;
 
 type MoveArtistInput = {
   id: string;

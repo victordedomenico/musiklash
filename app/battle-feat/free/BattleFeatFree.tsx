@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Swords,
@@ -18,6 +18,7 @@ import {
 import ArtistSearchInput from "@/components/ArtistSearchInput";
 import type { ArtistResult, FeatMove } from "@/lib/battle-feat";
 import { saveSoloSession } from "@/app/battle-feat/solo/actions";
+import { usePreviewVolume } from "@/lib/audio-volume";
 
 type Phase = "setup" | "playing" | "validating" | "joker" | "game-over";
 
@@ -110,6 +111,7 @@ export default function BattleFeatFree() {
     previewUrl: string;
   } | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const { volume } = usePreviewVolume();
 
   const lastMove = moves.length > 0 ? moves[moves.length - 1] : null;
   const currentArtistId = lastMove?.artistId ?? startingArtist?.id ?? "";
@@ -120,6 +122,11 @@ export default function BattleFeatFree() {
     ...moves.map((m) => m.artistId),
   ];
 
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = volume;
+  }, [volume]);
+
   // ── Audio ─────────────────────────────────────────────────────────────────
   const playPreview = useCallback(
     (title: string | null, previewUrl: string | null) => {
@@ -128,12 +135,12 @@ export default function BattleFeatFree() {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = url;
-        audioRef.current.volume = 0.7;
+        audioRef.current.volume = volume;
         setNowPlaying({ title: title ?? "Extrait", previewUrl: url });
         void audioRef.current.play().catch(() => null);
       } else {
         const audio = new Audio(url);
-        audio.volume = 0.7;
+        audio.volume = volume;
         audio.onplay = () => setIsPlaying(true);
         audio.onpause = () => setIsPlaying(false);
         audio.onended = () => {
@@ -145,7 +152,7 @@ export default function BattleFeatFree() {
         void audio.play().catch(() => null);
       }
     },
-    [],
+    [volume],
   );
 
   const togglePlayPause = () => {
@@ -153,6 +160,17 @@ export default function BattleFeatFree() {
     if (audioRef.current.paused) void audioRef.current.play().catch(() => null);
     else audioRef.current.pause();
   };
+
+  // Stop and dispose audio when leaving the page.
+  useEffect(() => {
+    return () => {
+      if (!audioRef.current) return;
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+      audioRef.current = null;
+    };
+  }, []);
 
   // ── Start ─────────────────────────────────────────────────────────────────
   const startGame = () => {

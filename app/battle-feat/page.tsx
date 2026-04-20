@@ -32,8 +32,8 @@ export default async function BattleFeatLandingPage() {
   const diffLabel: Record<number, string> = { 1: "Facile", 2: "Normal", 3: "Difficile" };
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] py-6">
-      <div className="mb-10 text-center">
+    <div className="mx-auto w-full max-w-[1280px] px-1 py-5 sm:px-2 sm:py-6">
+      <div className="mb-8 text-center sm:mb-10">
         <div
           className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black uppercase tracking-[0.2em]"
           style={{ color: "#ff4b7d", borderColor: "rgba(255,75,125,0.35)", background: "rgba(114,18,47,0.35)" }}
@@ -41,8 +41,10 @@ export default async function BattleFeatLandingPage() {
           <Zap size={12} />
           Mode BattleFeat
         </div>
-        <h1 className="mt-3 text-6xl font-black tracking-[-0.04em] md:text-7xl">BattleFeat</h1>
-        <p className="mx-auto mt-3 max-w-3xl text-xl md:text-2xl" style={{ color: "#8f93a0" }}>
+        <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-5xl md:text-6xl lg:text-7xl">
+          BattleFeat
+        </h1>
+        <p className="mx-auto mt-3 max-w-3xl text-base sm:text-lg md:text-xl lg:text-2xl" style={{ color: "#8f93a0" }}>
           Enchaînez les artistes qui ont collaboré ensemble. Solo contre IA ou duel multijoueur,
           jusqu&apos;au blocage final.
         </p>
@@ -59,7 +61,7 @@ export default async function BattleFeatLandingPage() {
               <Bot size={24} style={{ color: "#ff4b7d" }} />
             </div>
             <div>
-              <h2 className="text-2xl font-black">Solo vs IA</h2>
+              <h2 className="text-xl font-black sm:text-2xl">Solo vs IA</h2>
               <p className="text-sm" style={{ color: "#8f93a0" }}>3 niveaux de difficulté</p>
             </div>
           </div>
@@ -82,7 +84,7 @@ export default async function BattleFeatLandingPage() {
               <Users size={24} className="text-blue-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-black">Multijoueur</h2>
+              <h2 className="text-xl font-black sm:text-2xl">Multijoueur</h2>
               <p className="text-sm" style={{ color: "#8f93a0" }}>En temps réel</p>
             </div>
           </div>
@@ -97,7 +99,7 @@ export default async function BattleFeatLandingPage() {
       </div>
 
       {(artistCount > 0 || featCount > 0) && (
-        <div className="mb-8 grid grid-cols-2 gap-4">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border p-5 text-center" style={{ borderColor: "#2a3242", background: "#10141d" }}>
             <p className="text-3xl font-black text-[#ff4b7d]">{artistCount}</p>
             <p className="text-xs uppercase tracking-[0.12em]" style={{ color: "#8f93a0" }}>artistes graphe</p>
@@ -111,8 +113,8 @@ export default async function BattleFeatLandingPage() {
 
       {topScores.length > 0 && (
         <div className="rounded-[30px] border p-6" style={{ borderColor: "#2a3242", background: "#10141d" }}>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-2xl font-black">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="flex items-center gap-2 text-xl font-black sm:text-2xl">
               <Trophy size={18} className="text-yellow-400" />
               Classement
             </h2>

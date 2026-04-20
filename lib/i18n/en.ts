@@ -32,6 +32,7 @@ export const en: Dictionary = {
   },
   sidebar: {
     tagline: "Arena of sound",
+    previewVolume: "Preview volume",
   },
   homeHero: {
     newBadge: "New: multiplayer BattleFeat",

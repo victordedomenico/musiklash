@@ -18,16 +18,21 @@ import {
 import ArtistSearchInput from "@/components/ArtistSearchInput";
 import type { ArtistResult, FeatMove } from "@/lib/battle-feat";
 import { saveSoloSession } from "./actions";
+import { usePreviewVolume } from "@/lib/audio-volume";
 
 type Phase = "setup" | "player-turn" | "validating" | "ai-thinking" | "joker" | "game-over";
 
-const TIMER_BY_DIFFICULTY: Record<number, number> = { 1: 30, 2: 20, 3: 10 };
+const TIMER_BY_DIFFICULTY: Record<number, number> = { 1: 20, 2: 20, 3: 10 };
 
 const difficultyConfig = [
-  { label: "Facile", value: 1, color: "text-green-400", border: "border-green-400/40", bg: "bg-green-400/10", desc: "30 sec — IA facile" },
-  { label: "Normal", value: 2, color: "text-yellow-400", border: "border-yellow-400/40", bg: "bg-yellow-400/10", desc: "20 sec — IA normale" },
-  { label: "Difficile", value: 3, color: "text-red-400", border: "border-red-400/40", bg: "bg-red-400/10", desc: "10 sec — IA forte" },
+  { label: "Facile", value: 1, color: "text-green-400", border: "border-green-400/40", bg: "bg-green-400/10", desc: "20 sec — IA mainstream (165) + 4 options" },
+  { label: "Normal", value: 2, color: "text-yellow-400", border: "border-yellow-400/40", bg: "bg-yellow-400/10", desc: "20 sec — IA élargie (673)" },
+  { label: "Difficile", value: 3, color: "text-red-400", border: "border-red-400/40", bg: "bg-red-400/10", desc: "10 sec — IA niche (994)" },
 ] as const;
+
+function getTimestamp() {
+  return Date.now();
+}
 
 function ArtistChip({
   name,
@@ -106,11 +111,19 @@ export default function BattleFeatSolo() {
   const [gameOverWinner, setGameOverWinner] = useState<"player" | "ai" | null>(null);
   const [saving, setSaving] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [easyOptions, setEasyOptions] = useState<ArtistResult[]>([]);
+  const [roundMessage, setRoundMessage] = useState("");
 
   // Audio player
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [nowPlaying, setNowPlaying] = useState<{ title: string; previewUrl: string } | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const { volume } = usePreviewVolume();
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = volume;
+  }, [volume]);
 
   const turnSeconds = TIMER_BY_DIFFICULTY[difficulty] ?? 20;
 
@@ -121,6 +134,7 @@ export default function BattleFeatSolo() {
     ...(startingArtist ? [startingArtist.id] : []),
     ...moves.map((m) => m.artistId),
   ];
+  const usedIdsKey = usedIds.join(",");
 
   // ── Audio ─────────────────────────────────────────────────────────────────
   const playPreview = useCallback((title: string | null, previewUrl: string | null) => {
@@ -129,12 +143,12 @@ export default function BattleFeatSolo() {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = safePreviewUrl;
-      audioRef.current.volume = 0.7;
+      audioRef.current.volume = volume;
       setNowPlaying({ title: title ?? "Extrait", previewUrl: safePreviewUrl });
       void audioRef.current.play().catch(() => null);
     } else {
       const audio = new Audio(safePreviewUrl);
-      audio.volume = 0.7;
+      audio.volume = volume;
       audio.onplay = () => setIsPlaying(true);
       audio.onpause = () => setIsPlaying(false);
       audio.onended = () => { setIsPlaying(false); setNowPlaying(null); };
@@ -142,7 +156,7 @@ export default function BattleFeatSolo() {
       setNowPlaying({ title: title ?? "Extrait", previewUrl: safePreviewUrl });
       void audio.play().catch(() => null);
     }
-  }, []);
+  }, [volume]);
 
   const togglePlayPause = () => {
     if (!audioRef.current) return;
@@ -157,9 +171,19 @@ export default function BattleFeatSolo() {
   useEffect(() => {
     if (phase === "game-over" || phase === "setup") {
       audioRef.current?.pause();
-      setNowPlaying(null);
     }
   }, [phase]);
+
+  // Stop and dispose audio when leaving the page.
+  useEffect(() => {
+    return () => {
+      if (!audioRef.current) return;
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+      audioRef.current = null;
+    };
+  }, []);
 
   // ── Start ─────────────────────────────────────────────────────────────────
   const startGame = () => {
@@ -170,6 +194,9 @@ export default function BattleFeatSolo() {
     setJokers(1);
     setJokersUsed(0);
     setSessionId(null);
+    setEasyOptions([]);
+    setRoundMessage("");
+    setTimeLeft(turnSeconds);
     setPhase("player-turn");
   };
 
@@ -211,7 +238,6 @@ export default function BattleFeatSolo() {
   // ── Timer (only during player-turn) ──────────────────────────────────────
   useEffect(() => {
     if (phase !== "player-turn") return;
-    setTimeLeft(turnSeconds);
     const id = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
@@ -223,8 +249,36 @@ export default function BattleFeatSolo() {
       });
     }, 1000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]); // re-runs each time phase becomes "player-turn" → timer resets
+
+  useEffect(() => {
+    if (phase !== "player-turn" || difficulty !== 1 || !currentArtistId) {
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/battle-feat/options", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ currentArtistId, usedIds }),
+        });
+        const json = (await res.json()) as { options: ArtistResult[] };
+        if (!cancelled) {
+          setEasyOptions(json.options ?? []);
+        }
+      } catch {
+        if (!cancelled) {
+          setEasyOptions([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, difficulty, currentArtistId, usedIdsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── AI move ───────────────────────────────────────────────────────────────
   const triggerAiMove = useCallback(
@@ -233,6 +287,7 @@ export default function BattleFeatSolo() {
       currentPlayerScore: number,
       artistId: string,
       currentUsedIds: string[],
+      currentJokers: number,
       currentJokersUsed: number,
     ) => {
       try {
@@ -252,13 +307,15 @@ export default function BattleFeatSolo() {
         };
 
         if (!json.artist) {
-          await endGame(
-            "L'IA n'a plus de featuring disponible. Tu gagnes !",
-            "player",
-            currentMoves,
-            currentPlayerScore,
-            currentJokersUsed,
+          const nextJokers = Math.min(1, currentJokers + 1);
+          setJokers(nextJokers);
+          setRoundMessage(
+            nextJokers > currentJokers
+              ? "Impasse IA : bonus joker gagné, la partie continue."
+              : "Impasse IA : la partie continue.",
           );
+          setTimeLeft(turnSeconds);
+          setPhase("player-turn");
           return;
         }
 
@@ -268,17 +325,19 @@ export default function BattleFeatSolo() {
           pictureUrl: json.artist.pictureUrl,
           trackTitle: json.artist.trackTitle,
           previewUrl: json.artist.previewUrl,
-          ts: Date.now(),
+          ts: getTimestamp(),
           isAi: true,
         };
         setMoves([...currentMoves, aiMove]);
         setAiScore((s) => s + 1);
+        setRoundMessage("");
+        setTimeLeft(turnSeconds);
         setPhase("player-turn");
       } catch {
         await endGame("Erreur réseau.", "ai", currentMoves, currentPlayerScore, currentJokersUsed);
       }
     },
-    [difficulty, endGame],
+    [difficulty, endGame, turnSeconds],
   );
 
   // ── Submit player move ────────────────────────────────────────────────────
@@ -319,14 +378,16 @@ export default function BattleFeatSolo() {
         pictureUrl: artist.pictureUrl,
         trackTitle: json.trackTitle ?? null,
         previewUrl: json.previewUrl ?? null,
-        ts: Date.now(),
+        ts: getTimestamp(),
         isAi: false,
       };
       const newMoves = [...moves, move];
       const newPlayerScore = playerScore + 1;
+      const remainingJokers = consumeJoker ? Math.max(0, jokers - 1) : jokers;
 
       setMoves(newMoves);
       setPlayerScore(newPlayerScore);
+      setRoundMessage("");
       if (consumeJoker) {
         setJokers((v) => Math.max(0, v - 1));
         setJokersUsed(finalJokersUsed);
@@ -338,6 +399,7 @@ export default function BattleFeatSolo() {
         newPlayerScore,
         artist.id,
         [...usedIds, artist.id],
+        remainingJokers,
         finalJokersUsed,
       );
     } catch {
@@ -623,6 +685,11 @@ export default function BattleFeatSolo() {
             </span>
           )}
         </div>
+        {roundMessage && (
+          <p className="rounded-lg border border-yellow-400/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-200">
+            {roundMessage}
+          </p>
+        )}
 
         {isAiThinking ? (
           <div className="flex items-center justify-center gap-3 py-4 text-blue-400">
@@ -638,12 +705,50 @@ export default function BattleFeatSolo() {
           </div>
         ) : (
           <>
-            <ArtistSearchInput
-              onSelect={submitMove}
-              excludeIds={usedIds}
-              placeholder={`Artiste avec un feat avec ${currentArtistName}…`}
-              autoFocus
-            />
+            {difficulty === 1 ? (
+              <div className="space-y-3">
+                <p className="text-xs text-[color:var(--muted)]">
+                  Mode facile: 4 propositions directes.
+                </p>
+                {easyOptions.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {easyOptions.map((artist) => (
+                      <button
+                        key={artist.id}
+                        type="button"
+                        onClick={() => submitMove(artist)}
+                        className="flex items-center gap-2 rounded-lg border border-[color:var(--border)] px-3 py-2 text-left hover:bg-[color:var(--surface-2)]"
+                      >
+                        {artist.pictureUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={artist.pictureUrl} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className="h-7 w-7 rounded-full bg-[color:var(--surface-2)]" />
+                        )}
+                        <span className="truncate text-sm font-medium">{artist.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-[color:var(--muted)]">
+                    Pas de proposition automatique pour ce tour.
+                  </p>
+                )}
+                <ArtistSearchInput
+                  onSelect={submitMove}
+                  excludeIds={usedIds}
+                  placeholder={`Ou cherche un artiste avec ${currentArtistName}…`}
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <ArtistSearchInput
+                onSelect={submitMove}
+                excludeIds={usedIds}
+                placeholder={`Artiste avec un feat avec ${currentArtistName}…`}
+                autoFocus
+              />
+            )}
             {jokers > 0 && (
               <button onClick={handleJoker} className="btn-ghost w-full text-sm">
                 <Zap size={14} className="text-yellow-400" />

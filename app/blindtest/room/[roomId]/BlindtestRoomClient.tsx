@@ -22,6 +22,7 @@ import type { BlindtestRoomSnapshot, BlindtestRoomBroadcastPayload } from "@/lib
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
 import { POINTS_TITLE, POINTS_ARTIST } from "@/components/BlindtestGame";
 import { joinRoom, startGame, submitAnswer, nextTrack, rematch } from "./actions";
+import { usePreviewVolume } from "@/lib/audio-volume";
 
 const TIMER_SECONDS = 30;
 
@@ -115,14 +116,39 @@ export default function BlindtestRoomClient({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const freshUrlRef = useRef("");
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const { volume } = usePreviewVolume();
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = volume;
+  }, [volume]);
 
   // Refs to avoid stale closures
   const guessRef = useRef({ title: "", artist: "" });
-  guessRef.current = { title: guessTitle, artist: guessArtist };
   const phaseRef = useRef<Phase>("loading");
-  phaseRef.current = phase;
   const roomRef = useRef(room);
-  roomRef.current = room;
+
+  useEffect(() => {
+    guessRef.current = { title: guessTitle, artist: guessArtist };
+  }, [guessTitle, guessArtist]);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+
+  useEffect(() => {
+    roomRef.current = room;
+  }, [room]);
+
+  useEffect(() => {
+    return () => {
+      if (!audioRef.current) return;
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+      audioRef.current = null;
+    };
+  }, []);
 
   const isHost = userId === room.hostId;
   const isGuest = userId === room.guestId;
@@ -193,10 +219,8 @@ export default function BlindtestRoomClient({
     const track = room.blindtest.tracks[room.currentTrack];
     if (!track) return;
 
-    setPhase("loading");
     freshUrlRef.current = "";
     audioRef.current?.pause();
-    setAudioPlaying(false);
 
     fetch(`/api/deezer/track/${track.deezerTrackId}`)
       .then((r) => r.json())
@@ -217,7 +241,9 @@ export default function BlindtestRoomClient({
     if (!audioRef.current) audioRef.current = new Audio();
     const a = audioRef.current;
     a.onended = () => setAudioPlaying(false);
+    a.onpause = () => setAudioPlaying(false);
     a.pause();
+    a.volume = volume;
     a.src = url;
     a.load();
     setAudioPlaying(true);
@@ -226,7 +252,7 @@ export default function BlindtestRoomClient({
     return () => {
       a.pause();
     };
-  }, [phase]);
+  }, [phase, volume]);
 
   // ── Timer tick ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -362,7 +388,6 @@ export default function BlindtestRoomClient({
   const timerProgress = ((TIMER_SECONDS - timeLeft) / TIMER_SECONDS) * 100;
   const track = room.blindtest.tracks[room.currentTrack];
   const myScore = isHost ? room.hostScore : room.guestScore;
-  const opponentScore = isHost ? room.guestScore : room.hostScore;
 
   // ── WAITING ────────────────────────────────────────────────────────────────
   if (room.status === "waiting") {
@@ -631,7 +656,6 @@ export default function BlindtestRoomClient({
   // ── PLAYING ────────────────────────────────────────────────────────────────
   if (!track) return null;
 
-  const canAdvance = isHost && (phase === "revealed" || hasSubmittedThisTrack) && timeLeft === 0;
   const trackCount = room.blindtest.tracks.length;
   const isLastTrack = room.currentTrack + 1 >= trackCount;
 

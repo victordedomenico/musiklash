@@ -10,11 +10,17 @@ export default function LocaleToggle({ current }: { current: "fr" | "en" }) {
   const [pending, startTransition] = useTransition();
 
   function toggle() {
+    const previous = locale;
     const next = locale === "fr" ? "en" : "fr";
     setLocaleState(next);
     startTransition(async () => {
-      await setLocale(next);
-      router.refresh();
+      const result = await setLocale(next);
+      if (result?.persisted) {
+        router.refresh();
+        return;
+      }
+      setLocaleState(previous);
+      router.push("/cookies");
     });
   }
 

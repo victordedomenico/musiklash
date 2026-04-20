@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import "./globals.css";
 import SiteSidebar from "@/components/SiteSidebar";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
+import { getCookieConsent, hasPreferencesConsent } from "@/lib/cookie-consent";
 
 export const metadata: Metadata = {
   title: "MusiKlash — Fais s'affronter tes sons",
@@ -15,8 +17,10 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
-  const theme = cookieStore.get("theme")?.value === "light" ? "light" : "dark";
-  const locale = cookieStore.get("locale")?.value === "en" ? "en" : "fr";
+  const cookieConsent = await getCookieConsent();
+  const canUsePreferenceCookies = hasPreferencesConsent(cookieConsent);
+  const theme = canUsePreferenceCookies && cookieStore.get("theme")?.value === "light" ? "light" : "dark";
+  const locale = canUsePreferenceCookies && cookieStore.get("locale")?.value === "en" ? "en" : "fr";
 
   return (
     <html
@@ -30,6 +34,7 @@ export default async function RootLayout({
           <SiteSidebar theme={theme} locale={locale} />
           <main className="site-main">{children}</main>
         </div>
+        <CookieConsentBanner initialConsent={cookieConsent} />
       </body>
     </html>
   );

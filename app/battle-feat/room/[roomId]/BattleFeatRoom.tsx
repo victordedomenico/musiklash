@@ -33,8 +33,9 @@ import {
   submitMove,
   useJoker as playJoker,
 } from "./actions";
+import { usePreviewVolume } from "@/lib/audio-volume";
 
-const TURN_SECONDS = 30;
+const TURN_SECONDS = 20;
 
 function ArtistBadge({
   name,
@@ -100,17 +101,24 @@ export default function BattleFeatRoom({
   const channelRef = useRef<RealtimeChannel | null>(null);
   const timeoutClaimRef = useRef<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { volume } = usePreviewVolume();
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = volume;
+  }, [volume]);
 
   const playPreview = useCallback((title: string | null, previewUrl: string | null) => {
     if (!previewUrl) return;
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = previewUrl;
+      audioRef.current.volume = volume;
       setNowPlaying({ title: title ?? "Extrait" });
       void audioRef.current.play().catch(() => null);
     } else {
       const audio = new Audio(previewUrl);
-      audio.volume = 0.7;
+      audio.volume = volume;
       audio.onplay = () => setIsPlaying(true);
       audio.onpause = () => setIsPlaying(false);
       audio.onended = () => { setIsPlaying(false); setNowPlaying(null); };
@@ -118,13 +126,24 @@ export default function BattleFeatRoom({
       setNowPlaying({ title: title ?? "Extrait" });
       void audio.play().catch(() => null);
     }
-  }, []);
+  }, [volume]);
 
   const togglePlayPause = () => {
     if (!audioRef.current) return;
     if (audioRef.current.paused) void audioRef.current.play().catch(() => null);
     else audioRef.current.pause();
   };
+
+  // Stop and dispose audio when leaving the page.
+  useEffect(() => {
+    return () => {
+      if (!audioRef.current) return;
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+      audioRef.current = null;
+    };
+  }, []);
 
   const isHost = userId === room.hostId;
   const isMyTurn = room.currentTurnId === userId;

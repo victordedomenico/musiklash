@@ -8,7 +8,7 @@ import {
   POINTS_TITLE,
   POINTS_ARTIST,
 } from "@/lib/blindtest-room";
-import type { BlindtestRoomEvent, BlindtestRoomSnapshot } from "@/lib/blindtest-room";
+import type { BlindtestRoomEvent } from "@/lib/blindtest-room";
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
 import type { Prisma } from "@prisma/client";
 

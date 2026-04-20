@@ -69,13 +69,18 @@ export default async function ExplorePage({
   const isEmpty = activeList.length === 0;
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] py-6">
+    <div className="mx-auto w-full max-w-[1500px] px-1 py-5 sm:px-2 sm:py-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-7xl font-black tracking-[-0.04em]">{e.title}</h1>
-          <p className="mt-2 text-3xl" style={{ color: "#8f93a0" }}>{e.subtitle}</p>
+          <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl lg:text-7xl">{e.title}</h1>
+          <p className="mt-2 text-base sm:text-xl lg:text-3xl" style={{ color: "#8f93a0" }}>
+            {e.subtitle}
+          </p>
         </div>
-        <div className="inline-flex gap-2 rounded-2xl border p-1" style={{ borderColor: "#283041", background: "#181b24" }}>
+        <div
+          className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
+          style={{ borderColor: "#283041", background: "#181b24" }}
+        >
           {[
             { key: "brackets", label: "TOUS" },
             { key: "tierlists", label: "TIERLIST" },
@@ -86,7 +91,7 @@ export default async function ExplorePage({
               <Link
                 key={item.key}
                 href={`/explore?tab=${item.key}${term ? `&q=${encodeURIComponent(term)}` : ""}`}
-                className="rounded-xl px-6 py-2 text-sm font-bold tracking-wide no-underline"
+                className="whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold tracking-wide no-underline sm:px-5 sm:text-sm lg:px-6"
                 style={{
                   background: active ? "#f3f4f6" : "transparent",
                   color: active ? "#09090b" : "#868b98",
@@ -105,7 +110,7 @@ export default async function ExplorePage({
           defaultValue={term ?? ""}
           name="q"
           placeholder={e.searchPlaceholder}
-          className="input h-20 rounded-[26px] pl-14 text-4xl"
+          className="input h-14 rounded-2xl pl-11 text-lg sm:h-16 sm:rounded-[22px] sm:pl-12 sm:text-2xl lg:h-20 lg:rounded-[26px] lg:pl-14 lg:text-4xl"
           style={{ background: "#171a23", borderColor: "#2a3242" }}
         />
         <input type="hidden" name="tab" value={tab} />
@@ -124,7 +129,10 @@ export default async function ExplorePage({
       </div>
 
       {isEmpty ? (
-        <div className="mt-10 rounded-[34px] border p-14 text-center" style={{ borderColor: "#232b3a", background: "#10141d" }}>
+        <div
+          className="mt-10 rounded-[26px] border p-7 text-center sm:rounded-[30px] sm:p-10 lg:rounded-[34px] lg:p-14"
+          style={{ borderColor: "#232b3a", background: "#10141d" }}
+        >
           <p className="text-lg font-semibold">
             {e.emptyTitle}{" "}
             {term ? e.emptyFor.replace("{term}", term) : e.emptyDefault}.

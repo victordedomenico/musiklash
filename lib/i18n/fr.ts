@@ -30,6 +30,7 @@ export interface Dictionary {
   };
   sidebar: {
     tagline: string;
+    previewVolume: string;
   };
   homeHero: {
     newBadge: string;
@@ -156,6 +157,7 @@ export const fr: Dictionary = {
   },
   sidebar: {
     tagline: "L'arène du son",
+    previewVolume: "Volume des extraits",
   },
   homeHero: {
     newBadge: "Nouveau : BattleFeat multijoueur",

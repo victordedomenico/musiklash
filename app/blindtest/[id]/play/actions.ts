@@ -1,8 +1,8 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import prisma from "@/lib/prisma";
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
+import { resolvePlayerIdentity } from "@/lib/guest";
 
 export async function saveBlindtestSession(
   blindtestId: string,
@@ -10,14 +10,22 @@ export async function saveBlindtestSession(
   score: number,
   maxScore: number,
 ) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  let identity: { playerId: string };
+  try {
+    identity = await resolvePlayerIdentity();
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error
+        ? err.message
+        : "Impossible de créer une session invitée pour le moment.";
+    return { error: msg };
+  }
 
   try {
     const session = await prisma.blindtestSession.create({
       data: {
         blindtestId,
-        playerId: user?.id ?? null,
+        playerId: identity.playerId,
         score,
         maxScore,
         answers: answers as unknown as import("@prisma/client").Prisma.JsonArray,

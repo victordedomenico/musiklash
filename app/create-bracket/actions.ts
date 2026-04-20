@@ -1,8 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { isValidSize, effectiveBracketSize } from "@/lib/bracket";
+import { resolvePlayerIdentity } from "@/lib/guest";
 
 export type SelectedTrack = {
   deezer_track_id: number;
@@ -39,14 +39,15 @@ export async function createBracket(input: {
   const storedSize = effectiveBracketSize(input.tracks.length);
 
   const prisma = (await import("@/lib/prisma")).default;
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { error: "Tu dois être connecté." };
+  let identity: { playerId: string };
+  try {
+    identity = await resolvePlayerIdentity();
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error
+        ? err.message
+        : "Impossible de créer une session invitée pour le moment.";
+    return { error: msg };
   }
 
   let bracketId: string;
@@ -54,7 +55,7 @@ export async function createBracket(input: {
   try {
     const bracket = await prisma.bracket.create({
       data: {
-        ownerId: user.id,
+        ownerId: identity.playerId,
         title: input.title.trim(),
         theme: input.theme.trim() || null,
         size: storedSize,

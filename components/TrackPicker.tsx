@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { DeezerTrack, DeezerAlbum, DeezerArtist, DeezerAlbumTrack } from "@/lib/deezer";
 import type { SelectedTrack } from "@/app/create-bracket/actions";
+import { usePreviewVolume } from "@/lib/audio-volume";
 
 type Props = {
   size: number;
@@ -47,11 +48,7 @@ function useDebouncedSearch<T>(
     return () => { ctrl.abort(); clearTimeout(timer); };
   }, [query, endpoint, enabled]);
 
-  useEffect(() => {
-    if (!query.trim()) setData([]);
-  }, [query]);
-
-  return { data, loading };
+  return { data: query.trim() ? data : [], loading };
 }
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
@@ -144,7 +141,7 @@ function AlbumTracksView({
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-3">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <button type="button" onClick={onBack} className="btn-ghost btn-xs px-2">
           <ChevronLeft size={16} />
         </button>
@@ -162,7 +159,7 @@ function AlbumTracksView({
           <button
             type="button"
             onClick={onAddAll}
-            className="btn-primary text-xs shrink-0"
+            className="btn-primary w-full justify-center text-xs sm:w-auto sm:shrink-0"
           >
             <ListMusic size={13} />
             Tout ajouter
@@ -216,6 +213,22 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
   const [tab, setTab] = useState<Tab>("track");
   const [playingId, setPlayingId] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { volume } = usePreviewVolume();
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = volume;
+  }, [volume]);
+
+  useEffect(() => {
+    return () => {
+      if (!audioRef.current) return;
+      audioRef.current.pause();
+      audioRef.current.src = "";
+      audioRef.current.load();
+      audioRef.current = null;
+    };
+  }, []);
 
   // Track tab
   const [trackQuery, setTrackQuery] = useState("");
@@ -239,7 +252,6 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
   const [openedAlbum, setOpenedAlbum] = useState<DeezerAlbum | null>(null);
   const [albumTracks, setAlbumTracks] = useState<DeezerAlbumTrack[]>([]);
   const [albumTracksLoading, setAlbumTracksLoading] = useState(false);
-  const [albumSource, setAlbumSource] = useState<"album" | "artist">("album");
 
   // Artist tab – discography view
   const [openedArtist, setOpenedArtist] = useState<DeezerArtist | null>(null);
@@ -256,10 +268,12 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.onended = () => setPlayingId(null);
+      audioRef.current.volume = volume;
     }
     const a = audioRef.current;
     if (playingId === id) { a.pause(); setPlayingId(null); return; }
     a.pause();
+    a.volume = volume;
     a.src = url;
     a.load();
     setPlayingId(id);
@@ -310,9 +324,8 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
 
   const remove = (id: number) => onChange(selected.filter((s) => s.deezer_track_id !== id));
 
-  const openAlbum = async (album: DeezerAlbum, source: "album" | "artist") => {
+  const openAlbum = async (album: DeezerAlbum) => {
     setOpenedAlbum(album);
-    setAlbumSource(source);
     setAlbumTracks([]);
     setAlbumTracksLoading(true);
     try {
@@ -435,7 +448,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
           <StatusLine loading={albumLoading} count={albumResults.length} />
           <ul className="mt-2 max-h-[440px] overflow-y-auto space-y-2 pr-1">
             {albumResults.map((album) => (
-              <AlbumCard key={album.id} album={album} onClick={() => openAlbum(album, "album")} />
+              <AlbumCard key={album.id} album={album} onClick={() => openAlbum(album)} />
             ))}
           </ul>
         </div>
@@ -447,7 +460,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
       if (openedArtist) {
         return (
           <div>
-            <div className="flex items-center gap-2 mb-3">
+            <div className="mb-3 flex items-center gap-2">
               <button type="button" onClick={backFromArtistAlbums} className="btn-ghost btn-xs px-2">
                 <ChevronLeft size={16} />
               </button>
@@ -467,7 +480,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
                   <AlbumCard
                     key={album.id}
                     album={album}
-                    onClick={() => openAlbum(album, "artist")}
+                    onClick={() => openAlbum(album)}
                   />
                 ))}
               </ul>
@@ -519,17 +532,17 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2">
       {/* Left: search panel */}
       <div>
         {/* Tabs */}
-        <div className="mb-4 flex gap-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-2)] p-1">
+        <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-2)] p-1">
           {tabs.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-1.5 flex-1 justify-center text-xs font-medium py-1.5 px-2 rounded-md transition-colors ${
+              className={`flex min-w-max items-center gap-1.5 justify-center whitespace-nowrap rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:flex-1 sm:min-w-0 ${
                 tab === t.id
                   ? "bg-[color:var(--surface)] shadow-sm text-[color:var(--foreground)]"
                   : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
