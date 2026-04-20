@@ -95,6 +95,19 @@ function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function isFallbackGuestEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return email.endsWith("@guest.bracketfight.local");
+}
+
+function buildFallbackGuestCredentials() {
+  const token = crypto.randomUUID().replace(/-/g, "");
+  return {
+    email: `guest_${token}@guest.bracketfight.local`,
+    password: `Gst!${token}${crypto.randomUUID().slice(0, 8)}`,
+  };
+}
+
 async function getProfileWithRetry(userId: string, maxAttempts = 5) {
   for (let i = 0; i < maxAttempts; i += 1) {
     const profile = await prisma.profile.findUnique({
@@ -115,12 +128,46 @@ async function ensureAnonymousUser() {
   if (user) return user;
 
   const { data, error } = await supabase.auth.signInAnonymously();
-  if (error || !data.user) {
+  const anonErrorMsg = error?.message;
+  if (!error && data.user) {
+    return data.user;
+  }
+
+  // Fallback when anonymous sign-ins are disabled:
+  // create a temporary guest account with random credentials.
+  const fallback = buildFallbackGuestCredentials();
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    email: fallback.email,
+    password: fallback.password,
+  });
+  const signUpErrorMsg = signUpError?.message;
+
+  if (signUpError || !signUpData.user) {
+    const details = signUpErrorMsg ?? anonErrorMsg ?? "inconnu";
     throw new Error(
-      "Impossible de créer une session invitée. Active `enable_anonymous_sign_ins = true` dans Supabase Auth.",
+      `Impossible de créer une session invitée. Active les connexions anonymes dans Supabase Auth ou connecte-toi avec un compte. (${details})`,
     );
   }
-  return data.user;
+
+  if (signUpData.session) {
+    return signUpData.user;
+  }
+
+  // Some projects require email confirmation before issuing a session.
+  // Try direct login with generated credentials.
+  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    email: fallback.email,
+    password: fallback.password,
+  });
+
+  if (signInError || !signInData.user) {
+    const details = signInError?.message ?? signUpErrorMsg ?? anonErrorMsg ?? "inconnu";
+    throw new Error(
+      `Impossible de créer une session invitée. Active les connexions anonymes dans Supabase Auth ou connecte-toi avec un compte. (${details})`,
+    );
+  }
+
+  return signInData.user;
 }
 
 async function clearGuestCookies() {
@@ -130,8 +177,19 @@ async function clearGuestCookies() {
 }
 
 export async function resolvePlayerIdentity() {
+  // Reuse existing guest identity from cookies when available.
+  // This avoids blocking returning guests if anonymous sign-ins are temporarily unavailable.
+  const cookieGuest = await getGuestIdentityFromCookies();
+  if (cookieGuest) {
+    return {
+      playerId: cookieGuest.id,
+      username: cookieGuest.username,
+      isGuest: true,
+    };
+  }
+
   const user = await ensureAnonymousUser();
-  const isGuest = Boolean(user.is_anonymous);
+  const isGuest = Boolean(user.is_anonymous) || isFallbackGuestEmail(user.email);
   const profile = await getProfileWithRetry(user.id);
   if (!profile) {
     throw new Error("Profil utilisateur introuvable après création de session.");
@@ -180,7 +238,8 @@ export async function setGuestUsername(preferredUsername: string) {
   }
 
   const user = await ensureAnonymousUser();
-  if (!user.is_anonymous) {
+  const isGuest = Boolean(user.is_anonymous) || isFallbackGuestEmail(user.email);
+  if (!isGuest) {
     return { error: "Le pseudo invité est modifiable uniquement en mode invité." };
   }
 
@@ -209,7 +268,7 @@ export async function getGuestIdentityFromCookies() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user?.is_anonymous) {
+  if (user && (user.is_anonymous || isFallbackGuestEmail(user.email))) {
     const profile = await prisma.profile.findUnique({
       where: { id: user.id },
       select: { username: true },
@@ -218,6 +277,10 @@ export async function getGuestIdentityFromCookies() {
       id: user.id,
       username: profile?.username ?? "Anonyme",
     };
+  }
+
+  if (user && !user.is_anonymous) {
+    return null;
   }
 
   const cookieStore = await cookies();
