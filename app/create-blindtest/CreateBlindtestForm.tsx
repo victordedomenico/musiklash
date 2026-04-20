@@ -5,7 +5,7 @@ import TrackPicker from "@/components/TrackPicker";
 import { createBlindtest, type BlindtestTrackInput } from "./actions";
 import Input from "@/components/ui/Input";
 
-export default function CreateBlindtestForm() {
+export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }) {
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState<"private" | "public">("private");
   const [tracks, setTracks] = useState<BlindtestTrackInput[]>([]);
@@ -20,7 +20,7 @@ export default function CreateBlindtestForm() {
       return;
     }
     startTransition(async () => {
-      const res = await createBlindtest({ title, visibility, tracks });
+      const res = await createBlindtest({ title, visibility, tracks, mode });
       if (res?.error) setError(res.error);
     });
   };
