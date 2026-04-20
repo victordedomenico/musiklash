@@ -29,6 +29,7 @@ import {
   endGameTimeout,
   joinRoom,
   rematch,
+  refreshRoomState,
   startGame,
   submitMove,
   useJoker as playJoker,
@@ -91,6 +92,7 @@ export default function BattleFeatRoom({
   userId: string;
 }) {
   const [room, setRoom] = useState(initialRoom);
+  const roomRef = useRef(room);
   const [now, setNow] = useState(() => Date.now());
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -102,6 +104,10 @@ export default function BattleFeatRoom({
   const timeoutClaimRef = useRef<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { volume } = usePreviewVolume();
+
+  useEffect(() => {
+    roomRef.current = room;
+  }, [room]);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -186,6 +192,31 @@ export default function BattleFeatRoom({
       void supabase.removeChannel(channel);
     };
   }, [initialRoom.id]);
+
+  // While waiting, poll DB — broadcast alone is not always delivered to every tab.
+  useEffect(() => {
+    if (room.status !== "waiting") return;
+
+    const pull = () => {
+      void refreshRoomState(initialRoom.id).then((r) => {
+        if (!r.ok) return;
+        const cur = roomRef.current;
+        const next = r.room;
+        if (
+          next.guestId !== cur.guestId ||
+          next.status !== cur.status ||
+          next.updatedAt !== cur.updatedAt
+        ) {
+          setRoom(next);
+          setNow(Date.now());
+        }
+      });
+    };
+
+    pull();
+    const id = window.setInterval(pull, 2500);
+    return () => window.clearInterval(id);
+  }, [room.status, initialRoom.id]);
 
   useEffect(() => {
     timeoutClaimRef.current = null;

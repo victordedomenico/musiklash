@@ -21,7 +21,14 @@ import Link from "next/link";
 import type { BlindtestRoomSnapshot, BlindtestRoomBroadcastPayload } from "@/lib/blindtest-room";
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
 import { POINTS_TITLE, POINTS_ARTIST } from "@/components/BlindtestGame";
-import { joinRoom, startGame, submitAnswer, nextTrack, rematch } from "./actions";
+import {
+  joinRoom,
+  startGame,
+  submitAnswer,
+  nextTrack,
+  rematch,
+  refreshRoomState,
+} from "./actions";
 import { usePreviewVolume } from "@/lib/audio-volume";
 
 const TIMER_SECONDS = 30;
@@ -192,10 +199,11 @@ export default function BlindtestRoomClient({
 
         // Reset local track state when track changes
         const prevTrack = roomRef.current.currentTrack;
+        const ev = sync.event;
         if (
           sync.room.currentTrack !== prevTrack ||
-          sync.event.type === "game-start" ||
-          sync.event.type === "rematch"
+          ev?.type === "game-start" ||
+          ev?.type === "rematch"
         ) {
           setPhase("loading");
           setGuessTitle("");
@@ -211,6 +219,32 @@ export default function BlindtestRoomClient({
       void supabase.removeChannel(channel);
     };
   }, [initialRoom.id]);
+
+  // While waiting, poll DB — broadcast alone is not always delivered to every tab.
+  useEffect(() => {
+    if (room.status !== "waiting") return;
+
+    const pull = () => {
+      void refreshRoomState(initialRoom.id).then((r) => {
+        if (!r.ok) return;
+        const cur = roomRef.current;
+        const next = r.room;
+        if (
+          next.guestId !== cur.guestId ||
+          next.status !== cur.status ||
+          next.updatedAt !== cur.updatedAt ||
+          next.currentTrack !== cur.currentTrack
+        ) {
+          setRoom(next);
+          setNow(Date.now());
+        }
+      });
+    };
+
+    pull();
+    const id = window.setInterval(pull, 2500);
+    return () => window.clearInterval(id);
+  }, [room.status, initialRoom.id]);
 
   // ── Fetch fresh preview URL ────────────────────────────────────────────────
   useEffect(() => {

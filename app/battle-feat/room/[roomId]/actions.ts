@@ -34,6 +34,16 @@ async function buildRoomResponse(roomId: string, event?: RoomEvent) {
   return { ok: true, room, event };
 }
 
+/** Re-fetch room from DB — fallback when Realtime broadcast does not reach every client. */
+export async function refreshRoomState(roomId: string) {
+  const user = await requireUser();
+  if (!user) return { ok: false, error: "Non authentifié" } as const;
+
+  const room = await getBattleFeatRoomSnapshot(roomId);
+  if (!room) return { ok: false, error: "Room introuvable" } as const;
+  return { ok: true, room } as const;
+}
+
 function getWinnerId(room: { hostId: string; guestId: string | null }, loserId: string) {
   return loserId === room.hostId ? room.guestId : room.hostId;
 }

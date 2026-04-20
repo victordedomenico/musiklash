@@ -31,6 +31,16 @@ async function buildResponse(roomId: string, event: BlindtestRoomEvent) {
   return { ok: true as const, room, event };
 }
 
+/** Re-fetch room from DB — fallback when Realtime broadcast does not reach every client. */
+export async function refreshRoomState(roomId: string) {
+  const user = await requireUser();
+  if (!user) return { ok: false as const, error: "Non authentifié" };
+
+  const room = await getBlindtestRoomSnapshot(roomId);
+  if (!room) return { ok: false as const, error: "Room introuvable" };
+  return { ok: true as const, room };
+}
+
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 export async function joinRoom(roomId: string) {
