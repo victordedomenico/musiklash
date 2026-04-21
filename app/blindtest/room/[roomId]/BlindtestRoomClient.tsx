@@ -221,9 +221,9 @@ export default function BlindtestRoomClient({
     };
   }, [initialRoom.id]);
 
-  // While waiting, poll DB — broadcast alone is not always delivered to every tab.
+  // Poll DB as a safety net — broadcast alone is not always delivered to every tab.
   useEffect(() => {
-    if (room.status !== "waiting") return;
+    if (room.status !== "waiting" && room.status !== "playing") return;
 
     const pull = () => {
       void refreshRoomState(initialRoom.id).then((r) => {
@@ -234,7 +234,9 @@ export default function BlindtestRoomClient({
           next.guestId !== cur.guestId ||
           next.status !== cur.status ||
           next.updatedAt !== cur.updatedAt ||
-          next.currentTrack !== cur.currentTrack
+          next.currentTrack !== cur.currentTrack ||
+          next.hostAnswers.length !== cur.hostAnswers.length ||
+          next.guestAnswers.length !== cur.guestAnswers.length
         ) {
           setRoom(next);
           setNow(Date.now());

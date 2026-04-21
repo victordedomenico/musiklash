@@ -193,9 +193,9 @@ export default function BattleFeatRoom({
     };
   }, [initialRoom.id]);
 
-  // While waiting, poll DB — broadcast alone is not always delivered to every tab.
+  // Poll DB as a safety net — broadcast alone is not always delivered to every tab.
   useEffect(() => {
-    if (room.status !== "waiting") return;
+    if (room.status !== "waiting" && room.status !== "playing") return;
 
     const pull = () => {
       void refreshRoomState(initialRoom.id).then((r) => {
@@ -205,6 +205,8 @@ export default function BattleFeatRoom({
         if (
           next.guestId !== cur.guestId ||
           next.status !== cur.status ||
+          next.currentTurnId !== cur.currentTurnId ||
+          next.moves.length !== cur.moves.length ||
           next.updatedAt !== cur.updatedAt
         ) {
           setRoom(next);
