@@ -4,6 +4,7 @@ import "./globals.css";
 import SiteSidebar from "@/components/SiteSidebar";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { getCookieConsent, hasPreferencesConsent } from "@/lib/cookie-consent";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "MusiKlash — Fais s'affronter tes sons",
@@ -35,6 +36,7 @@ export default async function RootLayout({
           <main className="site-main">{children}</main>
         </div>
         <CookieConsentBanner initialConsent={cookieConsent} />
+        <Analytics />
       </body>
     </html>
   );
