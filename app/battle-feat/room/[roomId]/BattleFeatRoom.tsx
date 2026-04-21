@@ -13,6 +13,7 @@ import {
   Clock,
   User,
   Zap,
+  AlertTriangle,
   Loader2,
   ArrowRight,
   Play,
@@ -37,6 +38,8 @@ import {
 import { usePreviewVolume } from "@/lib/audio-volume";
 
 const TURN_SECONDS = 20;
+const PRESENCE_GRACE_SECONDS = 45;
+const PRESENCE_WARNING_SECONDS = 12;
 
 function ArtistBadge({
   name,
@@ -154,8 +157,30 @@ export default function BattleFeatRoom({
   const isHost = userId === room.hostId;
   const isGuest = userId === room.guestId;
   const isSpectator = !isHost && !isGuest;
+  const hostOnline = useMemo(() => {
+    if (!room.hostLastSeenAt) return false;
+    const ts = Date.parse(room.hostLastSeenAt);
+    if (Number.isNaN(ts)) return false;
+    return now - ts <= PRESENCE_GRACE_SECONDS * 1000;
+  }, [now, room.hostLastSeenAt]);
+  const guestOnline = useMemo(() => {
+    if (!room.guestId || !room.guestLastSeenAt) return false;
+    const ts = Date.parse(room.guestLastSeenAt);
+    if (Number.isNaN(ts)) return false;
+    return now - ts <= PRESENCE_GRACE_SECONDS * 1000;
+  }, [now, room.guestId, room.guestLastSeenAt]);
   const isMyTurn = room.currentTurnId === userId;
   const myJokers = isHost ? room.hostJokers : room.guestJokers;
+  const opponentDisconnectInfo = useMemo(() => {
+    if (room.status === "finished" || isSpectator || !room.guestId) return null;
+    const opponentLastSeenAt = isHost ? room.guestLastSeenAt : room.hostLastSeenAt;
+    if (!opponentLastSeenAt) return { remaining: 0 };
+    const ts = Date.parse(opponentLastSeenAt);
+    if (Number.isNaN(ts)) return { remaining: 0 };
+    const elapsed = Math.max(0, Math.floor((now - ts) / 1000));
+    if (elapsed < PRESENCE_WARNING_SECONDS) return null;
+    return { remaining: Math.max(0, PRESENCE_GRACE_SECONDS - elapsed) };
+  }, [isHost, isSpectator, now, room.guestId, room.guestLastSeenAt, room.hostLastSeenAt, room.status]);
   const turnKey = `${room.status}:${room.currentTurnId ?? "none"}:${room.updatedAt}`;
 
   const timeLeft = useMemo(() => {
@@ -225,7 +250,7 @@ export default function BattleFeatRoom({
   }, [turnKey]);
 
   useEffect(() => {
-    if (room.status !== "playing") return;
+    if (room.status !== "waiting" && room.status !== "playing") return;
 
     const intervalId = window.setInterval(() => {
       setNow(Date.now());
@@ -398,6 +423,38 @@ export default function BattleFeatRoom({
               En attente que l&apos;hôte lance la partie…
             </p>
           ) : null}
+
+          {opponentDisconnectInfo ? (
+            <p className="mt-4 flex items-center justify-center gap-2 text-sm text-amber-300">
+              <AlertTriangle size={14} />
+              Adversaire déconnecté. Victoire automatique dans {opponentDisconnectInfo.remaining}s s&apos;il ne
+              revient pas.
+            </p>
+          ) : null}
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
+            <span className="text-[color:var(--muted)]">{room.hostUsername}</span>
+            <span
+              className={`rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${
+                hostOnline ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
+              }`}
+            >
+              {hostOnline ? "Connecté" : "Déconnecté"}
+            </span>
+            {room.guestUsername ? (
+              <>
+                <span className="text-[color:var(--muted)]">·</span>
+                <span className="text-[color:var(--muted)]">{room.guestUsername}</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${
+                    guestOnline ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
+                  }`}
+                >
+                  {guestOnline ? "Connecté" : "Déconnecté"}
+                </span>
+              </>
+            ) : null}
+          </div>
         </div>
 
         {error ? <p className="text-center text-sm text-red-400">{error}</p> : null}
@@ -492,6 +549,37 @@ export default function BattleFeatRoom({
           {room.guestUsername ?? "?"}: {room.guestScore}
         </span>
       </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
+        <span className="text-[color:var(--muted)]">{room.hostUsername}</span>
+        <span
+          className={`rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${
+            hostOnline ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
+          }`}
+        >
+          {hostOnline ? "Connecté" : "Déconnecté"}
+        </span>
+        {room.guestUsername ? (
+          <>
+            <span className="text-[color:var(--muted)]">·</span>
+            <span className="text-[color:var(--muted)]">{room.guestUsername}</span>
+            <span
+              className={`rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${
+                guestOnline ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
+              }`}
+            >
+              {guestOnline ? "Connecté" : "Déconnecté"}
+            </span>
+          </>
+        ) : null}
+      </div>
+
+      {opponentDisconnectInfo ? (
+        <p className="flex items-center justify-center gap-2 rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          <AlertTriangle size={14} />
+          Adversaire déconnecté. Victoire automatique dans {opponentDisconnectInfo.remaining}s.
+        </p>
+      ) : null}
 
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-[color:var(--surface-2)]">
         <div

@@ -12,6 +12,8 @@ import {
 import type { RoomEvent } from "@/lib/battle-feat";
 
 const TURN_SECONDS = 20;
+const PRESENCE_HEARTBEAT_MIN_SECONDS = 10;
+const PRESENCE_GRACE_SECONDS = 45;
 
 type MoveArtistInput = {
   id: string;
@@ -39,6 +41,7 @@ export async function refreshRoomState(roomId: string) {
   const user = await requirePlayer();
   if (!user) return { ok: false, error: "Non authentifié" } as const;
 
+  await touchPresenceAndResolve(roomId, user.id);
   const room = await getBattleFeatRoomSnapshot(roomId);
   if (!room) return { ok: false, error: "Room introuvable" } as const;
   return { ok: true, room } as const;
@@ -54,6 +57,71 @@ function normalizeUsedArtistIds(value: unknown) {
 
 function normalizeMoves(value: unknown) {
   return Array.isArray(value) ? (value as Prisma.JsonArray) : ([] as Prisma.JsonArray);
+}
+
+function isPresenceStale(lastSeenAt: Date | null, nowMs: number) {
+  if (!lastSeenAt) return true;
+  return nowMs - lastSeenAt.getTime() > PRESENCE_GRACE_SECONDS * 1000;
+}
+
+function shouldHeartbeat(lastSeenAt: Date | null, nowMs: number) {
+  if (!lastSeenAt) return true;
+  return nowMs - lastSeenAt.getTime() >= PRESENCE_HEARTBEAT_MIN_SECONDS * 1000;
+}
+
+async function touchPresenceAndResolve(roomId: string, playerId: string): Promise<void> {
+  const room = await prisma.battleFeatRoom.findUnique({
+    where: { id: roomId },
+    select: {
+      id: true,
+      hostId: true,
+      guestId: true,
+      status: true,
+      hostLastSeenAt: true,
+      guestLastSeenAt: true,
+    },
+  });
+  if (!room || room.status === "finished") return;
+
+  const now = new Date();
+  const nowMs = now.getTime();
+  const isHost = playerId === room.hostId;
+  const isGuest = playerId === room.guestId;
+
+  if (isHost && shouldHeartbeat(room.hostLastSeenAt, nowMs)) {
+    await prisma.battleFeatRoom.update({ where: { id: room.id }, data: { hostLastSeenAt: now } });
+    room.hostLastSeenAt = now;
+  } else if (isGuest && shouldHeartbeat(room.guestLastSeenAt, nowMs)) {
+    await prisma.battleFeatRoom.update({ where: { id: room.id }, data: { guestLastSeenAt: now } });
+    room.guestLastSeenAt = now;
+  }
+
+  const hostStale = isPresenceStale(room.hostLastSeenAt, nowMs);
+  const guestStale = room.guestId ? isPresenceStale(room.guestLastSeenAt, nowMs) : false;
+
+  if (room.status === "waiting" && room.guestId && guestStale && !hostStale) {
+    await prisma.battleFeatRoom.update({
+      where: { id: room.id },
+      data: { guestId: null, guestLastSeenAt: null },
+    });
+    return;
+  }
+
+  if (room.status === "waiting" && room.guestId && hostStale && !guestStale) {
+    await prisma.battleFeatRoom.update({
+      where: { id: room.id },
+      data: { status: "finished", winnerId: room.guestId },
+    });
+    return;
+  }
+
+  if (room.status === "playing" && room.guestId && hostStale !== guestStale) {
+    const winnerId = hostStale ? room.guestId : room.hostId;
+    await prisma.battleFeatRoom.update({
+      where: { id: room.id },
+      data: { status: "finished", winnerId, currentTurnId: null },
+    });
+  }
 }
 
 async function finishRoomWithLoss(
@@ -100,6 +168,8 @@ async function applyMoveToRoom(
     moves,
     hostScore: actorIsHost ? { increment: 1 } : undefined,
     guestScore: actorIsHost ? undefined : { increment: 1 },
+    hostLastSeenAt: actorIsHost ? new Date() : undefined,
+    guestLastSeenAt: actorIsHost ? undefined : new Date(),
   };
 
   if (options?.decrementJokerField === "hostJokers") updateData.hostJokers = { decrement: 1 };
@@ -119,7 +189,10 @@ export async function joinRoom(roomId: string) {
   if (room.guestId && room.guestId !== user.id) return { ok: false, error: "Room pleine" } as const;
   if (room.hostId === user.id) return { ok: false, error: "Tu es déjà l'hôte" } as const;
 
-  await prisma.battleFeatRoom.update({ where: { id: roomId }, data: { guestId: user.id } });
+  await prisma.battleFeatRoom.update({
+    where: { id: roomId },
+    data: { guestId: user.id, guestLastSeenAt: new Date() },
+  });
 
   const snapshot = await getBattleFeatRoomSnapshot(roomId);
   if (!snapshot) return { error: "Room introuvable" };
@@ -163,6 +236,8 @@ export async function startGame(
       guestScore: 0,
       hostJokers: 1,
       guestJokers: 1,
+      hostLastSeenAt: new Date(),
+      guestLastSeenAt: new Date(),
     },
   });
 
@@ -302,6 +377,8 @@ export async function rematch(roomId: string) {
       hostJokers: 1,
       guestJokers: 1,
       winnerId: null,
+      hostLastSeenAt: room.hostId === user.id ? new Date() : room.hostLastSeenAt,
+      guestLastSeenAt: room.guestId === user.id ? new Date() : room.guestLastSeenAt,
     },
   });
 

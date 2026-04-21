@@ -181,6 +181,8 @@ export async function getBattleFeatRoomSnapshot(
     hostJokers: room.hostJokers,
     guestJokers: room.guestJokers,
     winnerId: room.winnerId,
+    hostLastSeenAt: room.hostLastSeenAt?.toISOString() ?? null,
+    guestLastSeenAt: room.guestLastSeenAt?.toISOString() ?? null,
     hostUsername: room.host.username,
     guestUsername: room.guest?.username ?? null,
     updatedAt: room.updatedAt.toISOString(),

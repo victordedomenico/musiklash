@@ -8,6 +8,7 @@ import {
   Copy,
   Check,
   X,
+  AlertTriangle,
   Trophy,
   Loader2,
   Play,
@@ -33,6 +34,8 @@ import { usePreviewVolume } from "@/lib/audio-volume";
 import { isSingleArtistBlindtest } from "@/lib/blindtest-utils";
 
 const TIMER_SECONDS = 30;
+const PRESENCE_GRACE_SECONDS = 45;
+const PRESENCE_WARNING_SECONDS = 12;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -159,9 +162,31 @@ export default function BlindtestRoomClient({
   const isHost = userId === room.hostId;
   const isGuest = userId === room.guestId;
   const isSpectator = !isHost && !isGuest;
+  const hostOnline = useMemo(() => {
+    if (!room.hostLastSeenAt) return false;
+    const ts = Date.parse(room.hostLastSeenAt);
+    if (Number.isNaN(ts)) return false;
+    return now - ts <= PRESENCE_GRACE_SECONDS * 1000;
+  }, [now, room.hostLastSeenAt]);
+  const guestOnline = useMemo(() => {
+    if (!room.guestId || !room.guestLastSeenAt) return false;
+    const ts = Date.parse(room.guestLastSeenAt);
+    if (Number.isNaN(ts)) return false;
+    return now - ts <= PRESENCE_GRACE_SECONDS * 1000;
+  }, [now, room.guestId, room.guestLastSeenAt]);
   const myAnswers = (isHost ? room.hostAnswers : room.guestAnswers) as BlindtestAnswer[];
   const opponentAnswers = (isHost ? room.guestAnswers : room.hostAnswers) as BlindtestAnswer[];
   const opponentName = isHost ? (room.guestName ?? "Adversaire") : room.hostName;
+  const opponentDisconnectInfo = useMemo(() => {
+    if (room.status === "finished" || isSpectator || !room.guestId) return null;
+    const opponentLastSeenAt = isHost ? room.guestLastSeenAt : room.hostLastSeenAt;
+    if (!opponentLastSeenAt) return { remaining: 0 };
+    const ts = Date.parse(opponentLastSeenAt);
+    if (Number.isNaN(ts)) return { remaining: 0 };
+    const elapsed = Math.max(0, Math.floor((now - ts) / 1000));
+    if (elapsed < PRESENCE_WARNING_SECONDS) return null;
+    return { remaining: Math.max(0, PRESENCE_GRACE_SECONDS - elapsed) };
+  }, [isHost, isSpectator, now, room.guestId, room.guestLastSeenAt, room.hostLastSeenAt, room.status]);
 
   const hasSubmittedThisTrack = myAnswers.some((a) => a.position === room.currentTrack);
   const opponentSubmittedThisTrack = opponentAnswers.some(
@@ -292,7 +317,7 @@ export default function BlindtestRoomClient({
 
   // ── Timer tick ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (room.status !== "playing") return;
+    if (room.status !== "waiting" && room.status !== "playing") return;
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, [room.status, room.currentTrack]);
@@ -511,6 +536,14 @@ export default function BlindtestRoomClient({
             </p>
           )}
 
+          {opponentDisconnectInfo ? (
+            <p className="mt-4 flex items-center justify-center gap-2 text-sm text-amber-300">
+              <AlertTriangle size={14} />
+              Adversaire déconnecté. Victoire automatique dans {opponentDisconnectInfo.remaining}s s&apos;il ne
+              revient pas.
+            </p>
+          ) : null}
+
           {isSpectator && !room.guestId && (
             <p className="mt-4 text-sm text-[color:var(--muted)]">
               La room est en attente d&apos;un deuxième joueur.
@@ -532,6 +565,15 @@ export default function BlindtestRoomClient({
                 {room.hostName[0].toUpperCase()}
               </div>
               <span className="font-medium">{room.hostName}</span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                  hostOnline
+                    ? "bg-emerald-500/15 text-emerald-300"
+                    : "bg-rose-500/15 text-rose-300"
+                }`}
+              >
+                {hostOnline ? "Connecté" : "Déconnecté"}
+              </span>
               <span className="ml-auto text-xs text-[color:var(--muted)]">Hôte</span>
             </div>
             {room.guestName ? (
@@ -543,6 +585,15 @@ export default function BlindtestRoomClient({
                   {room.guestName[0].toUpperCase()}
                 </div>
                 <span className="font-medium">{room.guestName}</span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                    guestOnline
+                      ? "bg-emerald-500/15 text-emerald-300"
+                      : "bg-rose-500/15 text-rose-300"
+                  }`}
+                >
+                  {guestOnline ? "Connecté" : "Déconnecté"}
+                </span>
               </div>
             ) : (
               <div className="flex items-center gap-3 opacity-50">
@@ -935,6 +986,13 @@ export default function BlindtestRoomClient({
           answered={opponentSubmittedThisTrack}
         />
       )}
+
+      {opponentDisconnectInfo ? (
+        <p className="flex items-center justify-center gap-2 rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          <AlertTriangle size={14} />
+          Adversaire déconnecté. Victoire automatique dans {opponentDisconnectInfo.remaining}s.
+        </p>
+      ) : null}
 
       {/* Host: timer + next track hint */}
       {isHost && phase === "revealed" && !bothPlayersAnsweredThisTrack && timeLeft > 0 && (

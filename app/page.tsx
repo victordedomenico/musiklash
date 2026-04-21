@@ -1,13 +1,17 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { CirclePlus } from "lucide-react";
 import { getI18n } from "@/lib/i18n";
-import { detectCountryCode, getTopAlbumsByCountry } from "@/lib/top-albums";
+import { getTopAlbumsByCountry } from "@/lib/top-albums";
+
+const homeTopAlbumsCountryFromEnv = process.env.HOME_TOP_ALBUMS_COUNTRY?.trim().toUpperCase();
+const HOME_TOP_ALBUMS_COUNTRY =
+  homeTopAlbumsCountryFromEnv && /^[A-Z]{2}$/.test(homeTopAlbumsCountryFromEnv)
+    ? homeTopAlbumsCountryFromEnv
+    : "FR";
 
 export default async function Home() {
   const { t, locale } = await getI18n();
-  const requestHeaders = await headers();
-  const countryCode = detectCountryCode(requestHeaders);
+  const countryCode = HOME_TOP_ALBUMS_COUNTRY;
   const topAlbums = await getTopAlbumsByCountry(countryCode, 18);
   const countryName =
     typeof Intl.DisplayNames === "function"

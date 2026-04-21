@@ -8,10 +8,14 @@ import {
   isSingleArtistBlindtest,
   POINTS_TITLE,
   POINTS_ARTIST,
+  toBlindtestRoomSnapshot,
 } from "@/lib/blindtest-room";
 import type { BlindtestRoomEvent } from "@/lib/blindtest-room";
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
 import type { Prisma } from "@prisma/client";
+
+const PRESENCE_HEARTBEAT_MIN_SECONDS = 10;
+const PRESENCE_GRACE_SECONDS = 45;
 
 // ─── Auth helper ────────────────────────────────────────────────────────────
 
@@ -21,6 +25,78 @@ async function requirePlayer() {
     return { id: identity.playerId };
   } catch {
     return null;
+  }
+}
+
+function isPresenceStale(lastSeenAt: Date | null, nowMs: number) {
+  if (!lastSeenAt) return true;
+  return nowMs - lastSeenAt.getTime() > PRESENCE_GRACE_SECONDS * 1000;
+}
+
+function shouldHeartbeat(lastSeenAt: Date | null, nowMs: number) {
+  if (!lastSeenAt) return true;
+  return nowMs - lastSeenAt.getTime() >= PRESENCE_HEARTBEAT_MIN_SECONDS * 1000;
+}
+
+async function touchPresenceAndResolve(roomId: string, playerId: string): Promise<void> {
+  const room = await prisma.blindtestRoom.findUnique({
+    where: { id: roomId },
+    select: {
+      id: true,
+      hostId: true,
+      guestId: true,
+      status: true,
+      winnerId: true,
+      hostLastSeenAt: true,
+      guestLastSeenAt: true,
+    },
+  });
+  if (!room || room.status === "finished") return;
+
+  const now = new Date();
+  const nowMs = now.getTime();
+  const isHost = playerId === room.hostId;
+  const isGuest = playerId === room.guestId;
+
+  if (isHost && shouldHeartbeat(room.hostLastSeenAt, nowMs)) {
+    await prisma.blindtestRoom.update({
+      where: { id: room.id },
+      data: { hostLastSeenAt: now },
+    });
+    room.hostLastSeenAt = now;
+  } else if (isGuest && shouldHeartbeat(room.guestLastSeenAt, nowMs)) {
+    await prisma.blindtestRoom.update({
+      where: { id: room.id },
+      data: { guestLastSeenAt: now },
+    });
+    room.guestLastSeenAt = now;
+  }
+
+  const hostStale = isPresenceStale(room.hostLastSeenAt, nowMs);
+  const guestStale = room.guestId ? isPresenceStale(room.guestLastSeenAt, nowMs) : false;
+
+  if (room.status === "waiting" && room.guestId && guestStale && !hostStale) {
+    await prisma.blindtestRoom.update({
+      where: { id: room.id },
+      data: { guestId: null, guestLastSeenAt: null },
+    });
+    return;
+  }
+
+  if (room.status === "waiting" && room.guestId && hostStale && !guestStale) {
+    await prisma.blindtestRoom.update({
+      where: { id: room.id },
+      data: { status: "finished", winnerId: room.guestId, trackStartedAt: null },
+    });
+    return;
+  }
+
+  if (room.status === "playing" && room.guestId && hostStale !== guestStale) {
+    const winnerId = hostStale ? room.guestId : room.hostId;
+    await prisma.blindtestRoom.update({
+      where: { id: room.id },
+      data: { status: "finished", winnerId, trackStartedAt: null },
+    });
   }
 }
 
@@ -37,9 +113,23 @@ export async function refreshRoomState(roomId: string) {
   const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
-  const room = await getBlindtestRoomSnapshot(roomId);
+  await touchPresenceAndResolve(roomId, user.id);
+  const room = await prisma.blindtestRoom.findUnique({
+    where: { id: roomId },
+    include: {
+      blindtest: {
+        select: {
+          id: true,
+          title: true,
+          tracks: { orderBy: { position: "asc" } },
+        },
+      },
+      host: { select: { id: true, username: true } },
+      guest: { select: { id: true, username: true } },
+    },
+  });
   if (!room) return { ok: false as const, error: "Room introuvable" };
-  return { ok: true as const, room };
+  return { ok: true as const, room: toBlindtestRoomSnapshot(room) };
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -56,7 +146,7 @@ export async function joinRoom(roomId: string) {
 
   await prisma.blindtestRoom.update({
     where: { id: roomId },
-    data: { guestId: user.id },
+    data: { guestId: user.id, guestLastSeenAt: new Date() },
   });
 
   const snapshot = await getBlindtestRoomSnapshot(roomId);
@@ -91,6 +181,8 @@ export async function startGame(roomId: string) {
       guestScore: 0,
       winnerId: null,
       trackStartedAt: now,
+      hostLastSeenAt: now,
+      guestLastSeenAt: now,
     },
   });
 
@@ -157,6 +249,7 @@ export async function submitAnswer(
       data: {
         hostAnswers: newAnswers,
         hostScore: { increment: points },
+        hostLastSeenAt: new Date(),
       },
     });
   } else {
@@ -165,6 +258,7 @@ export async function submitAnswer(
       data: {
         guestAnswers: newAnswers,
         guestScore: { increment: points },
+        guestLastSeenAt: new Date(),
       },
     });
   }
@@ -235,6 +329,7 @@ export async function nextTrack(roomId: string) {
     data: {
       currentTrack: { increment: 1 },
       trackStartedAt: now,
+      hostLastSeenAt: now,
     },
   });
 
@@ -269,6 +364,8 @@ export async function rematch(roomId: string) {
       guestScore: 0,
       winnerId: null,
       trackStartedAt: null,
+      hostLastSeenAt: room.hostId === user.id ? new Date() : room.hostLastSeenAt,
+      guestLastSeenAt: room.guestId === user.id ? new Date() : room.guestLastSeenAt,
     },
   });
 

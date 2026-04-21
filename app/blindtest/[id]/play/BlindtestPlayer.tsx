@@ -53,7 +53,7 @@ export default function BlindtestPlayer({
   if (finalAnswers) {
     const maxScore = tracks.length * POINTS_PER_TRACK;
     const pct = Math.round((finalScore / maxScore) * 100);
-    const outcome = pct >= 50 ? "victory" : "defeat";
+    const outcome = pct === 50 ? "draw" : pct > 50 ? "victory" : "defeat";
     const shareUrl =
       sessionId && typeof window !== "undefined"
         ? `${window.location.origin}/blindtest/${blindtestId}/results/${sessionId}`

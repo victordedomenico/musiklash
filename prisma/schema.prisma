@@ -131,6 +131,8 @@ model BlindtestRoom {
   guestScore    Int      @default(0) @map("guest_score")
   hostReady       Boolean   @default(false) @map("host_ready")
   guestReady      Boolean   @default(false) @map("guest_ready")
+  hostLastSeenAt  DateTime? @default(now()) @map("host_last_seen_at") @db.Timestamptz
+  guestLastSeenAt DateTime? @map("guest_last_seen_at") @db.Timestamptz
   winnerId        String?   @map("winner_id") @db.Uuid
   trackStartedAt  DateTime? @map("track_started_at") @db.Timestamptz
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
@@ -300,6 +302,8 @@ model BattleFeatRoom {
   guestScore         Int      @default(0) @map("guest_score")
   hostJokers         Int      @default(1) @map("host_jokers")
   guestJokers        Int      @default(1) @map("guest_jokers")
+  hostLastSeenAt     DateTime? @default(now()) @map("host_last_seen_at") @db.Timestamptz
+  guestLastSeenAt    DateTime? @map("guest_last_seen_at") @db.Timestamptz
   winnerId           String?  @map("winner_id") @db.Uuid
   visibility         String   @default("private")
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz

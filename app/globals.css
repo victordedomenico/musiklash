@@ -243,6 +243,29 @@ body {
   }
 }
 
+@keyframes challenge-draw-drift {
+  0% {
+    transform: translate3d(0, -12vh, 0) scale(0.92);
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.78;
+  }
+  100% {
+    transform: translate3d(0, 96vh, 0) scale(1.06);
+    opacity: 0;
+  }
+}
+
+@keyframes challenge-draw-glow {
+  0% {
+    opacity: 0.28;
+  }
+  100% {
+    opacity: 0.54;
+  }
+}
+
 .home-covers-mask {
   position: relative;
   overflow: hidden;

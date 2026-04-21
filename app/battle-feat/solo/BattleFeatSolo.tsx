@@ -507,7 +507,12 @@ export default function BattleFeatSolo() {
 
   // ── GAME OVER ─────────────────────────────────────────────────────────────
   if (phase === "game-over") {
-    const outcome = gameOverWinner === "player" ? "victory" : "defeat";
+    const isDraw = playerScore === aiScore;
+    const outcome = isDraw
+      ? "draw"
+      : gameOverWinner === "player"
+        ? "victory"
+        : "defeat";
 
     return (
       <div className="space-y-6">
@@ -515,10 +520,20 @@ export default function BattleFeatSolo() {
         <div className="card p-8 text-center">
           <Trophy
             size={48}
-            className={`mx-auto mb-4 ${gameOverWinner === "player" ? "text-yellow-400" : "text-[color:var(--muted)]"}`}
+            className={`mx-auto mb-4 ${
+              isDraw
+                ? "text-sky-400"
+                : gameOverWinner === "player"
+                  ? "text-yellow-400"
+                  : "text-[color:var(--muted)]"
+            }`}
           />
           <h2 className="text-2xl font-black">
-            {gameOverWinner === "player" ? "Victoire !" : "Partie terminée !"}
+            {isDraw
+              ? "Égalité !"
+              : gameOverWinner === "player"
+                ? "Victoire !"
+                : "Partie terminée !"}
           </h2>
           <p className="mt-2 text-[color:var(--muted)]">{gameOverReason}</p>
           <div className="mt-6 flex items-center justify-center gap-8">

@@ -17,6 +17,8 @@ export type BlindtestRoomSnapshot = {
   hostScore: number;
   guestScore: number;
   winnerId: string | null;
+  hostLastSeenAt: string | null;
+  guestLastSeenAt: string | null;
   updatedAt: string; // ISO string
   trackStartedAt: string | null; // ISO string — authoritative track-start anchor for timer sync
   blindtest: {
@@ -84,6 +86,8 @@ export function toBlindtestRoomSnapshot(room: NonNullable<RoomWithRelations>): B
     hostScore: room.hostScore,
     guestScore: room.guestScore,
     winnerId: room.winnerId,
+    hostLastSeenAt: room.hostLastSeenAt?.toISOString() ?? null,
+    guestLastSeenAt: room.guestLastSeenAt?.toISOString() ?? null,
     updatedAt: room.updatedAt.toISOString(),
     trackStartedAt: room.trackStartedAt?.toISOString() ?? null,
     hostName: room.host.username,

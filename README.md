@@ -59,6 +59,12 @@ Optionnel (seed/admin):
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 ```
 
+Optionnel (top albums de la home):
+
+```env
+HOME_TOP_ALBUMS_COUNTRY=FR
+```
+
 ### 4) Lancer l'application
 
 ```bash

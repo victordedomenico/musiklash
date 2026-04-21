@@ -88,6 +88,8 @@ export type BattleFeatRoomSnapshot = {
   hostJokers: number;
   guestJokers: number;
   winnerId: string | null;
+  hostLastSeenAt: string | null;
+  guestLastSeenAt: string | null;
   hostUsername: string;
   guestUsername: string | null;
   updatedAt: string;
