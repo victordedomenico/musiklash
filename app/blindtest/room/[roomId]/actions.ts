@@ -81,9 +81,18 @@ async function touchPresenceAndResolve(roomId: string, playerId: string): Promis
   }
 
   if (room.status === "waiting" && room.guestId && hostStale && !guestStale) {
+    // Host left the lobby before the game started — promote the guest to host
+    // so the session can continue (wait for a new opponent, rematch, etc.)
+    // instead of declaring a spurious winner.
     await prisma.blindtestRoom.update({
       where: { id: room.id },
-      data: { status: "finished", winnerId: room.guestId, trackStartedAt: null },
+      data: {
+        hostId: room.guestId,
+        guestId: null,
+        hostLastSeenAt: room.guestLastSeenAt ?? new Date(),
+        guestLastSeenAt: null,
+        trackStartedAt: null,
+      },
     });
     return;
   }
@@ -350,6 +359,12 @@ export async function rematch(roomId: string) {
     return { ok: false as const, error: "Tu n'es pas dans cette room" };
   }
 
+  // Reset both presence timestamps: the results screen does not poll, so the
+  // non-caller's `lastSeenAt` can be many seconds stale. Starting a fresh grace
+  // window here prevents a spurious "opponent disconnected" warning right after
+  // the room returns to "waiting". Real absence is detected normally by the
+  // heartbeat that follows.
+  const now = new Date();
   await prisma.blindtestRoom.update({
     where: { id: roomId },
     data: {
@@ -361,8 +376,8 @@ export async function rematch(roomId: string) {
       guestScore: 0,
       winnerId: null,
       trackStartedAt: null,
-      hostLastSeenAt: room.hostId === user.id ? new Date() : room.hostLastSeenAt,
-      guestLastSeenAt: room.guestId === user.id ? new Date() : room.guestLastSeenAt,
+      hostLastSeenAt: now,
+      guestLastSeenAt: now,
     },
   });
 
