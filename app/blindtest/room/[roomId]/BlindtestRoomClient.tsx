@@ -424,6 +424,7 @@ export default function BlindtestRoomClient({
   const timerProgress = ((TIMER_SECONDS - timeLeft) / TIMER_SECONDS) * 100;
   const track = room.blindtest.tracks[room.currentTrack];
   const myScore = isHost ? room.hostScore : room.guestScore;
+  const bothPlayersAnsweredThisTrack = hasSubmittedThisTrack && opponentSubmittedThisTrack;
 
   const singleArtistBlindtest = useMemo(
     () => isSingleArtistBlindtest(room.blindtest.tracks),
@@ -890,9 +891,13 @@ export default function BlindtestRoomClient({
                   <button
                     type="button"
                     onClick={handleNextTrack}
-                    disabled={submitting || timeLeft > 0}
+                    disabled={submitting || (!bothPlayersAnsweredThisTrack && timeLeft > 0)}
                     className="btn-primary"
-                    title={timeLeft > 0 ? `Encore ${timeLeft}s…` : ""}
+                    title={
+                      !bothPlayersAnsweredThisTrack && timeLeft > 0
+                        ? `Encore ${timeLeft}s…`
+                        : ""
+                    }
                   >
                     {submitting ? (
                       <Loader2 size={14} className="animate-spin" />
@@ -932,7 +937,7 @@ export default function BlindtestRoomClient({
       )}
 
       {/* Host: timer + next track hint */}
-      {isHost && phase === "revealed" && timeLeft > 0 && (
+      {isHost && phase === "revealed" && !bothPlayersAnsweredThisTrack && timeLeft > 0 && (
         <p className="text-center text-sm text-[color:var(--muted)]">
           Le bouton &quot;Suivant&quot; sera disponible dans {timeLeft}s…
         </p>
