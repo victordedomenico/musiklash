@@ -49,7 +49,7 @@ export default function BattleFeatChallengeCard({
       <div className="media-thumb relative">
         {thumb}
         <span className="media-pill absolute right-2 top-2">
-          <Zap size={12} /> Challenge
+          <Zap size={12} /> Solo
         </span>
         <span className="media-pill absolute left-2 top-2">
           {vis === "public" ? (

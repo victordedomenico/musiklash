@@ -21,8 +21,6 @@ export interface Dictionary {
     modeSoloAiDesc: string;
     modeMulti: string;
     modeMultiDesc: string;
-    modeChallenge: string;
-    modeChallengeDesc: string;
     settings: string;
     assistance: string;
     login: string;
@@ -216,8 +214,6 @@ export const fr: Dictionary = {
     modeSoloAiDesc: "Affronte l'intelligence artificielle",
     modeMulti: "Multijoueur",
     modeMultiDesc: "2 joueurs ou plus en temps réel",
-    modeChallenge: "Challenge rejouable",
-    modeChallengeDesc: "Crée un challenge que d'autres peuvent tenter",
     settings: "Paramètres",
     assistance: "Assistance",
     login: "Connexion",
@@ -286,7 +282,7 @@ export const fr: Dictionary = {
     createBracket: "Créer un bracket",
     createTierlist: "Créer une tierlist",
     createBlindtest: "Créer un blindtest",
-    createBattleFeatChallenge: "Créer un challenge BattleFeat",
+    createBattleFeatChallenge: "Créer un BattleFeat solo",
     battleFeatTitle: "BattleFeat",
     battleFeatDesc:
       "Le jeu de la chaîne de featurings ! Enchaîne les artistes qui ont collaboré ensemble.",
@@ -303,7 +299,7 @@ export const fr: Dictionary = {
     sectionBlindtestCreations: "Blindtests — Créations publiques",
     sectionBlindtestRooms: "Blindtests — Rooms publiques",
     sectionBattleFeatSolo: "BattleFeat publics — Modes solo",
-    sectionBattleFeatChallenges: "BattleFeat — Challenges publics",
+    sectionBattleFeatChallenges: "BattleFeat — Solos publics",
     sectionBattleFeatRooms: "BattleFeat — Rooms rejoignables",
     seeAll: "Voir tout",
   },

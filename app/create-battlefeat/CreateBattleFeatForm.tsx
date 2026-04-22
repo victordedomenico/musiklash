@@ -70,7 +70,7 @@ export default function CreateBattleFeatForm() {
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="card p-6 space-y-4">
         <div>
-          <label className="text-sm font-medium">Titre du challenge</label>
+          <label className="text-sm font-medium">Titre du BattleFeat solo</label>
           <Input
             required
             className="mt-1"
@@ -173,7 +173,7 @@ export default function CreateBattleFeatForm() {
         className="btn-primary w-full py-3 text-lg disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {pending ? <Loader2 size={18} className="animate-spin" /> : <Swords size={20} />}
-        Créer le challenge
+        Créer le BattleFeat solo
       </button>
     </form>
   );

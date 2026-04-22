@@ -27,6 +27,25 @@ export const metadata: Metadata = { title: "Ma bibliothèque — MusiKlash" };
 type Visibility = "all" | "private" | "public";
 type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat";
 
+type BattleFeatSoloChallengeDelegate = {
+  findMany: (args: {
+    where: Record<string, unknown>;
+    select: Record<string, boolean>;
+    orderBy: { createdAt: "desc" | "asc" };
+  }) => Promise<
+    Array<{
+      id: string;
+      title: string;
+      difficulty: number;
+      visibility: "public" | "private";
+      startingArtistId: string;
+      startingArtistName: string;
+      startingArtistPic: string | null;
+      createdAt: Date;
+    }>
+  >;
+};
+
 function modelHasField(modelName: string, fieldName: string): boolean {
   const runtimeDataModel = (
     prisma as unknown as {
@@ -60,6 +79,11 @@ export default async function MyBracketsPage({
   const hasBattleFeatRoomParticipants = modelHasField("BattleFeatRoom", "participants");
   const hasBattleFeatRoomHostScore = modelHasField("BattleFeatRoom", "hostScore");
   const hasBattleFeatRoomGuestScore = modelHasField("BattleFeatRoom", "guestScore");
+  const battleFeatSoloChallengeDelegate = (
+    prisma as unknown as {
+      battleFeatSoloChallenge?: BattleFeatSoloChallengeDelegate;
+    }
+  ).battleFeatSoloChallenge;
 
   const [
     brackets,
@@ -128,20 +152,22 @@ export default async function MyBracketsPage({
           },
           orderBy: { createdAt: "desc" },
         }),
-        prisma.battleFeatSoloChallenge.findMany({
-          where: { ownerId: activePlayerId, ...visFilter },
-          select: {
-            id: true,
-            title: true,
-            difficulty: true,
-            visibility: true,
-            startingArtistId: true,
-            startingArtistName: true,
-            startingArtistPic: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: "desc" },
-        }),
+        battleFeatSoloChallengeDelegate
+          ? battleFeatSoloChallengeDelegate.findMany({
+              where: { ownerId: activePlayerId, ...visFilter },
+              select: {
+                id: true,
+                title: true,
+                difficulty: true,
+                visibility: true,
+                startingArtistId: true,
+                startingArtistName: true,
+                startingArtistPic: true,
+                createdAt: true,
+              },
+              orderBy: { createdAt: "desc" },
+            })
+          : Promise.resolve([]),
         prisma.battleFeatRoom.findMany({
           where: {
             hostId: activePlayerId,
@@ -375,7 +401,7 @@ export default async function MyBracketsPage({
       : tab === "blindtests"
       ? "Nouveau blindtest"
       : tab === "battlefeat"
-      ? "Nouveau challenge"
+      ? "Nouveau BattleFeat solo"
       : "Nouveau bracket";
 
   return (
@@ -690,7 +716,7 @@ export default async function MyBracketsPage({
         battleFeatList.length === 0 && battleFeatChallengeList.length === 0 && battleFeatRoomList.length === 0 ? (
           <EmptyState
             label="Aucune partie BattleFeat pour le moment"
-            cta="Créer un challenge"
+            cta="Créer un BattleFeat solo"
             href="/create-battlefeat"
           />
         ) : (
@@ -700,7 +726,7 @@ export default async function MyBracketsPage({
                 <div>
                   <h2 className="text-2xl font-bold">Mes créations</h2>
                   <p className="text-sm text-[color:var(--muted)]">
-                    Tes challenges BattleFeat rejouables.
+                    Tes BattleFeats solo rejouables.
                   </p>
                 </div>
                 <CardsGrid>

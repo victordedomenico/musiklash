@@ -30,8 +30,6 @@ export type CreateHubLabels = {
   modeSoloAiDesc: string;
   modeMulti: string;
   modeMultiDesc: string;
-  modeChallenge: string;
-  modeChallengeDesc: string;
 };
 
 type Step = "main" | "blindtest" | "battlefeat";
@@ -137,14 +135,6 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
       href: "/battle-feat/room/new",
       accent: "#3b82f6",
       bg: "rgba(59,130,246,0.12)",
-    },
-    {
-      icon: Zap,
-      label: labels.modeChallenge,
-      desc: labels.modeChallengeDesc,
-      href: "/create-battlefeat",
-      accent: "#f59e0b",
-      bg: "rgba(245,158,11,0.12)",
     },
   ];
 

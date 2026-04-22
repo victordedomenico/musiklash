@@ -53,7 +53,7 @@ export async function createBattleFeatChallenge(input: CreateBattleFeatChallenge
     if (err && typeof err === "object" && "digest" in err) {
       throw err;
     }
-    const msg = err instanceof Error ? err.message : "Erreur création challenge.";
+    const msg = err instanceof Error ? err.message : "Erreur création BattleFeat solo.";
     return { error: msg };
   }
 }

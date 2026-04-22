@@ -20,6 +20,27 @@ export const metadata: Metadata = { title: "Explorer — MusiKlash" };
 
 type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat";
 
+type BattleFeatSoloChallengeDelegate = {
+  findMany: (args: {
+    where: Record<string, unknown>;
+    select: Record<string, unknown>;
+    orderBy: { createdAt: "desc" | "asc" };
+    take: number;
+  }) => Promise<
+    Array<{
+      id: string;
+      title: string;
+      difficulty: number;
+      visibility: "public" | "private";
+      startingArtistId: string;
+      startingArtistName: string;
+      startingArtistPic: string | null;
+      createdAt: Date;
+      owner: { username: string } | null;
+    }>
+  >;
+};
+
 function parseTab(raw: string | undefined): Tab {
   const v = ["all", "brackets", "tierlists", "blindtests", "battlefeat"] as const;
   return raw && (v as readonly string[]).includes(raw) ? (raw as Tab) : "all";
@@ -75,6 +96,11 @@ export default async function ExplorePage({
   const hasBattleFeatRoomParticipants = modelHasField("BattleFeatRoom", "participants");
   const hasBattleFeatRoomHostScore = modelHasField("BattleFeatRoom", "hostScore");
   const hasBattleFeatRoomGuestScore = modelHasField("BattleFeatRoom", "guestScore");
+  const battleFeatSoloChallengeDelegate = (
+    prisma as unknown as {
+      battleFeatSoloChallenge?: BattleFeatSoloChallengeDelegate;
+    }
+  ).battleFeatSoloChallenge;
 
   if (loadBattlefeat) {
     await ensureBattleFeatVisibilityColumns(prisma);
@@ -143,8 +169,8 @@ export default async function ExplorePage({
           take: takeGrid,
         })
       : Promise.resolve([]),
-    loadBattlefeat
-      ? prisma.battleFeatSoloChallenge.findMany({
+    loadBattlefeat && battleFeatSoloChallengeDelegate
+      ? battleFeatSoloChallengeDelegate.findMany({
           where: {
             visibility: "public",
             ...(term

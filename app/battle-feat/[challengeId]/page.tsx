@@ -35,7 +35,7 @@ export async function generateMetadata({
     where: { id: challengeId },
     select: { title: true },
   });
-  return { title: challenge ? `${challenge.title} — BattleFeat` : "BattleFeat challenge" };
+  return { title: challenge ? `${challenge.title} — BattleFeat` : "BattleFeat solo" };
 }
 
 export default async function BattleFeatChallengePage({
@@ -90,7 +90,7 @@ export default async function BattleFeatChallengePage({
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ff4b7d]">
-              Challenge BattleFeat
+              BattleFeat solo
             </p>
             <h1 className="mt-1 text-3xl font-black tracking-[-0.03em] sm:text-4xl">
               {challenge.title}
@@ -142,7 +142,7 @@ export default async function BattleFeatChallengePage({
             href={`/battle-feat/solo?challengeId=${challenge.id}`}
             className="btn-primary flex-1 py-3 text-base sm:flex-none"
           >
-            <Swords size={18} /> Jouer ce challenge <ArrowRight size={16} />
+            <Swords size={18} /> Jouer ce BattleFeat solo <ArrowRight size={16} />
           </Link>
         </div>
       </div>
