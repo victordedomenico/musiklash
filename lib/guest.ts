@@ -349,16 +349,26 @@ export async function migrateGuestDataToUser(userId: string) {
       data: { playerId: userId },
     }),
     prisma.battleFeatRoom.updateMany({ where: { hostId: guestId }, data: { hostId: userId } }),
-    prisma.battleFeatRoom.updateMany({ where: { guestId: guestId }, data: { guestId: userId } }),
     prisma.battleFeatRoom.updateMany({
       where: { currentTurnId: guestId },
       data: { currentTurnId: userId },
     }),
     prisma.battleFeatRoom.updateMany({ where: { winnerId: guestId }, data: { winnerId: userId } }),
     prisma.blindtestRoom.updateMany({ where: { hostId: guestId }, data: { hostId: userId } }),
-    prisma.blindtestRoom.updateMany({ where: { guestId: guestId }, data: { guestId: userId } }),
     prisma.blindtestRoom.updateMany({ where: { winnerId: guestId }, data: { winnerId: userId } }),
   ]);
+
+  // Remap JSON participants (rooms with N players) from guestId → userId.
+  await prisma.$executeRaw`
+    UPDATE blindtest_rooms
+    SET participants = replace(participants::text, ${guestId}, ${userId})::jsonb
+    WHERE participants::text LIKE ${"%" + guestId + "%"}
+  `;
+  await prisma.$executeRaw`
+    UPDATE battle_feat_rooms
+    SET participants = replace(participants::text, ${guestId}, ${userId})::jsonb
+    WHERE participants::text LIKE ${"%" + guestId + "%"}
+  `;
 
   await prisma.profile.deleteMany({ where: { id: guestId } });
   await clearGuestCookies();

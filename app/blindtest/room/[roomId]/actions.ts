@@ -3,21 +3,26 @@
 import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import {
+  computeWinner,
+  findParticipant,
   getBlindtestRoomSnapshot,
   isCorrect,
   isSingleArtistBlindtest,
-  POINTS_TITLE,
+  normalizeParticipants,
   POINTS_ARTIST,
+  POINTS_TITLE,
   toBlindtestRoomSnapshot,
 } from "@/lib/blindtest-room";
-import type { BlindtestRoomEvent } from "@/lib/blindtest-room";
+import type {
+  BlindtestParticipant,
+  BlindtestRoomEvent,
+} from "@/lib/blindtest-room";
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
 import type { Prisma } from "@prisma/client";
 
 const PRESENCE_HEARTBEAT_MIN_SECONDS = 10;
-const PRESENCE_GRACE_SECONDS = 45;
 
-// ─── Auth helper ────────────────────────────────────────────────────────────
+// ─── Auth helper ──────────────────────────────────────────────────────────────
 
 async function requirePlayer() {
   try {
@@ -28,82 +33,35 @@ async function requirePlayer() {
   }
 }
 
-function isPresenceStale(lastSeenAt: Date | null, nowMs: number) {
+// ─── Presence heartbeat ──────────────────────────────────────────────────────
+
+function shouldHeartbeat(lastSeenAt: string | null, nowMs: number) {
   if (!lastSeenAt) return true;
-  return nowMs - lastSeenAt.getTime() > PRESENCE_GRACE_SECONDS * 1000;
+  const ts = Date.parse(lastSeenAt);
+  if (Number.isNaN(ts)) return true;
+  return nowMs - ts >= PRESENCE_HEARTBEAT_MIN_SECONDS * 1000;
 }
 
-function shouldHeartbeat(lastSeenAt: Date | null, nowMs: number) {
-  if (!lastSeenAt) return true;
-  return nowMs - lastSeenAt.getTime() >= PRESENCE_HEARTBEAT_MIN_SECONDS * 1000;
-}
-
-async function touchPresenceAndResolve(roomId: string, playerId: string): Promise<void> {
+async function touchPresence(roomId: string, playerId: string) {
   const room = await prisma.blindtestRoom.findUnique({
     where: { id: roomId },
-    select: {
-      id: true,
-      hostId: true,
-      guestId: true,
-      status: true,
-      winnerId: true,
-      hostLastSeenAt: true,
-      guestLastSeenAt: true,
-    },
+    select: { id: true, participants: true, status: true },
   });
   if (!room || room.status === "finished") return;
 
-  const now = new Date();
-  const nowMs = now.getTime();
-  const isHost = playerId === room.hostId;
-  const isGuest = playerId === room.guestId;
+  const participants = normalizeParticipants(room.participants);
+  const me = findParticipant(participants, playerId);
+  if (!me) return;
 
-  // Use raw SQL so the heartbeat does NOT bump `updated_at`. The polling loop
-  // watches `updatedAt` to detect real state changes and the client would
-  // otherwise resync the room (and flicker) on every heartbeat.
-  if (isHost && shouldHeartbeat(room.hostLastSeenAt, nowMs)) {
-    await prisma.$executeRaw`UPDATE blindtest_rooms SET host_last_seen_at = ${now} WHERE id = ${room.id}::uuid`;
-    room.hostLastSeenAt = now;
-  } else if (isGuest && shouldHeartbeat(room.guestLastSeenAt, nowMs)) {
-    await prisma.$executeRaw`UPDATE blindtest_rooms SET guest_last_seen_at = ${now} WHERE id = ${room.id}::uuid`;
-    room.guestLastSeenAt = now;
-  }
+  const nowMs = Date.now();
+  if (!shouldHeartbeat(me.lastSeenAt, nowMs)) return;
 
-  const hostStale = isPresenceStale(room.hostLastSeenAt, nowMs);
-  const guestStale = room.guestId ? isPresenceStale(room.guestLastSeenAt, nowMs) : false;
-
-  if (room.status === "waiting" && room.guestId && guestStale && !hostStale) {
-    await prisma.blindtestRoom.update({
-      where: { id: room.id },
-      data: { guestId: null, guestLastSeenAt: null },
-    });
-    return;
-  }
-
-  if (room.status === "waiting" && room.guestId && hostStale && !guestStale) {
-    // Host left the lobby before the game started — promote the guest to host
-    // so the session can continue (wait for a new opponent, rematch, etc.)
-    // instead of declaring a spurious winner.
-    await prisma.blindtestRoom.update({
-      where: { id: room.id },
-      data: {
-        hostId: room.guestId,
-        guestId: null,
-        hostLastSeenAt: room.guestLastSeenAt ?? new Date(),
-        guestLastSeenAt: null,
-        trackStartedAt: null,
-      },
-    });
-    return;
-  }
-
-  if (room.status === "playing" && room.guestId && hostStale !== guestStale) {
-    const winnerId = hostStale ? room.guestId : room.hostId;
-    await prisma.blindtestRoom.update({
-      where: { id: room.id },
-      data: { status: "finished", winnerId, trackStartedAt: null },
-    });
-  }
+  const updated = participants.map((p) =>
+    p.playerId === playerId ? { ...p, lastSeenAt: new Date().toISOString() } : p,
+  );
+  // Raw update so updated_at does not bump and polling loops don't flicker.
+  const json = JSON.stringify(updated);
+  await prisma.$executeRaw`UPDATE blindtest_rooms SET participants = ${json}::jsonb WHERE id = ${room.id}::uuid`;
 }
 
 // ─── Response builder ────────────────────────────────────────────────────────
@@ -119,7 +77,7 @@ export async function refreshRoomState(roomId: string) {
   const user = await requirePlayer();
   if (!user) return { ok: false as const, error: "Non authentifié" };
 
-  await touchPresenceAndResolve(roomId, user.id);
+  await touchPresence(roomId, user.id);
   const room = await prisma.blindtestRoom.findUnique({
     where: { id: roomId },
     include: {
@@ -131,7 +89,6 @@ export async function refreshRoomState(roomId: string) {
         },
       },
       host: { select: { id: true, username: true } },
-      guest: { select: { id: true, username: true } },
     },
   });
   if (!room) return { ok: false as const, error: "Room introuvable" };
@@ -146,23 +103,72 @@ export async function joinRoom(roomId: string) {
 
   const room = await prisma.blindtestRoom.findUnique({ where: { id: roomId } });
   if (!room) return { ok: false as const, error: "Room introuvable" };
-  if (room.hostId === user.id) return { ok: false as const, error: "Tu es déjà l'hôte" };
-  if (room.guestId && room.guestId !== user.id) return { ok: false as const, error: "Room pleine" };
   if (room.status !== "waiting") return { ok: false as const, error: "Partie déjà commencée" };
 
+  const participants = normalizeParticipants(room.participants);
+  if (findParticipant(participants, user.id)) {
+    // Already joined — idempotent.
+    const snap = await getBlindtestRoomSnapshot(roomId);
+    if (!snap) return { ok: false as const, error: "Room introuvable" };
+    return {
+      ok: true as const,
+      room: snap,
+      event: {
+        type: "player-joined" as const,
+        playerId: user.id,
+        username: findParticipant(snap.participants, user.id)?.username ?? "Joueur",
+      },
+    };
+  }
+
+  const profile = await prisma.profile.findUnique({
+    where: { id: user.id },
+    select: { username: true },
+  });
+  const username = profile?.username ?? "Joueur";
+
+  const nowIso = new Date().toISOString();
+  const newParticipant: BlindtestParticipant = {
+    playerId: user.id,
+    username,
+    score: 0,
+    answers: [],
+    lastSeenAt: nowIso,
+    joinedAt: nowIso,
+  };
+
+  const updated = [...participants, newParticipant];
   await prisma.blindtestRoom.update({
     where: { id: roomId },
-    data: { guestId: user.id, guestLastSeenAt: new Date() },
+    data: { participants: updated as unknown as Prisma.JsonArray },
   });
 
-  const snapshot = await getBlindtestRoomSnapshot(roomId);
-  if (!snapshot) return { ok: false as const, error: "Room introuvable" };
+  return buildResponse(roomId, {
+    type: "player-joined",
+    playerId: user.id,
+    username,
+  });
+}
 
-  return {
-    ok: true as const,
-    room: snapshot,
-    event: { type: "guest-joined" as const, guestName: snapshot.guestName ?? "Adversaire" },
-  };
+export async function leaveRoom(roomId: string) {
+  const user = await requirePlayer();
+  if (!user) return { ok: false as const, error: "Non authentifié" };
+
+  const room = await prisma.blindtestRoom.findUnique({ where: { id: roomId } });
+  if (!room) return { ok: false as const, error: "Room introuvable" };
+  if (room.status !== "waiting") return { ok: false as const, error: "Partie commencée" };
+  if (room.hostId === user.id) return { ok: false as const, error: "L'hôte ne peut pas quitter" };
+
+  const participants = normalizeParticipants(room.participants);
+  const updated = participants.filter((p) => p.playerId !== user.id);
+  if (updated.length === participants.length) {
+    return buildResponse(roomId, { type: "player-left", playerId: user.id });
+  }
+  await prisma.blindtestRoom.update({
+    where: { id: roomId },
+    data: { participants: updated as unknown as Prisma.JsonArray },
+  });
+  return buildResponse(roomId, { type: "player-left", playerId: user.id });
 }
 
 export async function startGame(roomId: string) {
@@ -172,23 +178,29 @@ export async function startGame(roomId: string) {
   const room = await prisma.blindtestRoom.findUnique({ where: { id: roomId } });
   if (!room) return { ok: false as const, error: "Room introuvable" };
   if (room.hostId !== user.id) return { ok: false as const, error: "Seul l'hôte peut lancer la partie" };
-  if (!room.guestId) return { ok: false as const, error: "En attente d'un adversaire" };
   if (room.status !== "waiting") return { ok: false as const, error: "Partie déjà en cours" };
 
-  const now = new Date();
+  const participants = normalizeParticipants(room.participants);
+  if (participants.length < 2) {
+    return { ok: false as const, error: "Au moins 2 joueurs requis" };
+  }
+
+  const nowIso = new Date().toISOString();
+  const reset = participants.map((p) => ({
+    ...p,
+    score: 0,
+    answers: [],
+    lastSeenAt: nowIso,
+  }));
+
   await prisma.blindtestRoom.update({
     where: { id: roomId },
     data: {
       status: "playing",
       currentTrack: 0,
-      hostAnswers: [],
-      guestAnswers: [],
-      hostScore: 0,
-      guestScore: 0,
       winnerId: null,
-      trackStartedAt: now,
-      hostLastSeenAt: now,
-      guestLastSeenAt: now,
+      trackStartedAt: new Date(),
+      participants: reset as unknown as Prisma.JsonArray,
     },
   });
 
@@ -212,25 +224,20 @@ export async function submitAnswer(
   });
   if (!room) return { ok: false as const, error: "Room introuvable" };
   if (room.status !== "playing") return { ok: false as const, error: "Partie non en cours" };
-
-  const isHost = user.id === room.hostId;
-  const isGuest = user.id === room.guestId;
-  if (!isHost && !isGuest) return { ok: false as const, error: "Tu n'es pas dans cette room" };
   if (room.currentTrack !== position) return { ok: false as const, error: "Position incorrecte" };
 
-  // Check if already submitted for this position
-  const existingAnswers = (isHost ? room.hostAnswers : room.guestAnswers) as BlindtestAnswer[];
-  if (existingAnswers.some((a) => a.position === position)) {
+  const participants = normalizeParticipants(room.participants);
+  const me = findParticipant(participants, user.id);
+  if (!me) return { ok: false as const, error: "Tu n'es pas dans cette room" };
+
+  if (me.answers.some((a) => a.position === position)) {
     return { ok: false as const, error: "Déjà répondu" };
   }
 
-  // Find the current track
   const track = room.blindtest.tracks.find((t) => t.position === position);
   if (!track) return { ok: false as const, error: "Morceau introuvable" };
 
-  // Compute correctness server-side
-  const tracks = room.blindtest.tracks;
-  const singleArtistMode = isSingleArtistBlindtest(tracks);
+  const singleArtistMode = isSingleArtistBlindtest(room.blindtest.tracks);
   const correctTitle = isCorrect(guessTitle, track.title);
   const correctArtist = singleArtistMode ? true : isCorrect(guessArtist, track.artist);
   const points = (correctTitle ? POINTS_TITLE : 0) + (correctArtist ? POINTS_ARTIST : 0);
@@ -247,37 +254,23 @@ export async function submitAnswer(
     coverUrl: track.coverUrl ?? null,
   };
 
-  const newAnswers = [...existingAnswers, answer] as unknown as Prisma.JsonArray;
+  const updated = participants.map((p) =>
+    p.playerId === user.id
+      ? {
+          ...p,
+          answers: [...p.answers, answer],
+          score: p.score + points,
+          lastSeenAt: new Date().toISOString(),
+        }
+      : p,
+  );
 
-  if (isHost) {
-    await prisma.blindtestRoom.update({
-      where: { id: roomId },
-      data: {
-        hostAnswers: newAnswers,
-        hostScore: { increment: points },
-        hostLastSeenAt: new Date(),
-      },
-    });
-  } else {
-    await prisma.blindtestRoom.update({
-      where: { id: roomId },
-      data: {
-        guestAnswers: newAnswers,
-        guestScore: { increment: points },
-        guestLastSeenAt: new Date(),
-      },
-    });
-  }
+  await prisma.blindtestRoom.update({
+    where: { id: roomId },
+    data: { participants: updated as unknown as Prisma.JsonArray },
+  });
 
-  const snapshot = await getBlindtestRoomSnapshot(roomId);
-  if (!snapshot) return { ok: false as const, error: "Room introuvable" };
-
-  return {
-    ok: true as const,
-    room: snapshot,
-    answer,
-    event: { type: "answer-submitted" as const, playerId: user.id },
-  };
+  return buildResponse(roomId, { type: "answer-submitted", playerId: user.id });
 }
 
 export async function nextTrack(roomId: string) {
@@ -298,54 +291,31 @@ export async function nextTrack(roomId: string) {
   const isLast = room.currentTrack + 1 >= trackCount;
 
   if (isLast) {
-    // End the game
-    const hostScore = room.hostScore;
-    const guestScore = room.guestScore;
-    const winnerId =
-      hostScore > guestScore
-        ? room.hostId
-        : guestScore > hostScore
-        ? room.guestId
-        : null; // draw
+    const participants = normalizeParticipants(room.participants);
+    const winnerId = computeWinner(participants);
 
     await prisma.blindtestRoom.update({
       where: { id: roomId },
-      data: { status: "finished", winnerId },
+      data: { status: "finished", winnerId, trackStartedAt: null },
     });
 
-    const snapshot = await getBlindtestRoomSnapshot(roomId);
-    if (!snapshot) return { ok: false as const, error: "Room introuvable" };
-
-    return {
-      ok: true as const,
-      room: snapshot,
-      event: {
-        type: "game-end" as const,
-        hostScore: snapshot.hostScore,
-        guestScore: snapshot.guestScore,
-        winnerId: snapshot.winnerId,
-      },
-    };
+    return buildResponse(roomId, { type: "game-end", winnerId });
   }
 
-  // Advance to next track — set trackStartedAt to now
-  const now = new Date();
   await prisma.blindtestRoom.update({
     where: { id: roomId },
     data: {
       currentTrack: { increment: 1 },
-      trackStartedAt: now,
-      hostLastSeenAt: now,
+      trackStartedAt: new Date(),
     },
   });
 
-  const snapshot = await getBlindtestRoomSnapshot(roomId);
-  if (!snapshot) return { ok: false as const, error: "Room introuvable" };
-
+  const snap = await getBlindtestRoomSnapshot(roomId);
+  if (!snap) return { ok: false as const, error: "Room introuvable" };
   return {
     ok: true as const,
-    room: snapshot,
-    event: { type: "next-track" as const, currentTrack: snapshot.currentTrack },
+    room: snap,
+    event: { type: "next-track" as const, currentTrack: snap.currentTrack },
   };
 }
 
@@ -355,29 +325,27 @@ export async function rematch(roomId: string) {
 
   const room = await prisma.blindtestRoom.findUnique({ where: { id: roomId } });
   if (!room) return { ok: false as const, error: "Room introuvable" };
-  if (room.hostId !== user.id && room.guestId !== user.id) {
+  const participants = normalizeParticipants(room.participants);
+  if (!findParticipant(participants, user.id)) {
     return { ok: false as const, error: "Tu n'es pas dans cette room" };
   }
 
-  // Reset both presence timestamps: the results screen does not poll, so the
-  // non-caller's `lastSeenAt` can be many seconds stale. Starting a fresh grace
-  // window here prevents a spurious "opponent disconnected" warning right after
-  // the room returns to "waiting". Real absence is detected normally by the
-  // heartbeat that follows.
-  const now = new Date();
+  const nowIso = new Date().toISOString();
+  const reset = participants.map((p) => ({
+    ...p,
+    score: 0,
+    answers: [],
+    lastSeenAt: nowIso,
+  }));
+
   await prisma.blindtestRoom.update({
     where: { id: roomId },
     data: {
       status: "waiting",
       currentTrack: 0,
-      hostAnswers: [],
-      guestAnswers: [],
-      hostScore: 0,
-      guestScore: 0,
       winnerId: null,
       trackStartedAt: null,
-      hostLastSeenAt: now,
-      guestLastSeenAt: now,
+      participants: reset as unknown as Prisma.JsonArray,
     },
   });
 

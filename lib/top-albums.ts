@@ -37,7 +37,7 @@ export async function getTopAlbumsByCountry(countryCode: string, limit = 20): Pr
   const safeCountry = countryCode.toUpperCase();
   const safeLimit = Math.max(5, Math.min(limit, 50));
 
-  const fetchTopFranceAlbums = async () => {
+  const fetchTopFranceTracks = async () => {
     const endpoint = `${DEEZER_API_BASE_URL}/playlist/${DEEZER_TOP_FRANCE_PLAYLIST_ID}/tracks?limit=100`;
     const response = await fetch(endpoint, {
       headers: { Accept: "application/json" },
@@ -46,6 +46,8 @@ export async function getTopAlbumsByCountry(countryCode: string, limit = 20): Pr
     if (!response.ok) return null;
     return (await response.json()) as {
       data?: Array<{
+        id?: number;
+        title?: string;
         album?: {
           id?: number;
           title?: string;
@@ -60,35 +62,29 @@ export async function getTopAlbumsByCountry(countryCode: string, limit = 20): Pr
   };
 
   if (safeCountry === "FR") {
-    const playlistTracks = await fetchTopFranceAlbums();
-    const uniqueAlbums = new Map<string, TopAlbum>();
+    const playlistTracks = await fetchTopFranceTracks();
+    const items = (playlistTracks?.data ?? [])
+      .filter((track) => {
+        const title = track.title;
+        const coverUrl = track.album?.cover_xl ?? track.album?.cover_big ?? track.album?.cover_medium;
+        return Boolean(track.id && title && track.link && coverUrl);
+      })
+      .slice(0, safeLimit)
+      .map((track) => ({
+        id: String(track.id),
+        title: track.title as string,
+        artist: track.artist?.name ?? "",
+        coverUrl: (track.album?.cover_xl ?? track.album?.cover_big ?? track.album?.cover_medium) as string,
+        url: track.link as string,
+      }));
 
-    for (const track of playlistTracks?.data ?? []) {
-      const albumId = track.album?.id;
-      const title = track.album?.title;
-      const artist = track.artist?.name;
-      const coverUrl = track.album?.cover_xl ?? track.album?.cover_big ?? track.album?.cover_medium;
-      const url = track.link;
-      if (!albumId || !title || !coverUrl || !url) continue;
-      const key = String(albumId);
-      if (uniqueAlbums.has(key)) continue;
-      uniqueAlbums.set(key, {
-        id: key,
-        title,
-        artist: artist ?? "",
-        coverUrl,
-        url,
-      });
-      if (uniqueAlbums.size >= safeLimit) break;
-    }
-
-    if (uniqueAlbums.size > 0) {
-      return [...uniqueAlbums.values()];
+    if (items.length > 0) {
+      return items;
     }
   }
 
   const fetchCharts = async (scope: string) => {
-    const endpoint = `${DEEZER_API_BASE_URL}/chart/${scope}/albums?limit=${safeLimit}`;
+    const endpoint = `${DEEZER_API_BASE_URL}/chart/${scope}/tracks?limit=${safeLimit}`;
     const response = await fetch(endpoint, {
       headers: { Accept: "application/json" },
       cache: "no-store",
@@ -99,9 +95,11 @@ export async function getTopAlbumsByCountry(countryCode: string, limit = 20): Pr
         id?: number;
         title?: string;
         link?: string;
-        cover_medium?: string | null;
-        cover_big?: string | null;
-        cover_xl?: string | null;
+        album?: {
+          cover_medium?: string | null;
+          cover_big?: string | null;
+          cover_xl?: string | null;
+        };
         artist?: { name?: string };
       }>;
     };
@@ -109,15 +107,21 @@ export async function getTopAlbumsByCountry(countryCode: string, limit = 20): Pr
 
   const countryCharts = await fetchCharts(safeCountry);
   const fallbackCharts = countryCharts?.data?.length ? null : await fetchCharts("0");
-  const albums = countryCharts?.data?.length ? countryCharts.data : (fallbackCharts?.data ?? []);
+  const tracks = countryCharts?.data?.length ? countryCharts.data : (fallbackCharts?.data ?? []);
 
-  return albums
-    .filter((album) => album.id && album.title && album.link && (album.cover_xl || album.cover_big || album.cover_medium))
-    .map((album) => ({
-      id: String(album.id),
-      title: album.title as string,
-      artist: album.artist?.name ?? "",
-      coverUrl: (album.cover_xl ?? album.cover_big ?? album.cover_medium) as string,
-      url: album.link as string,
+  return tracks
+    .filter(
+      (track) =>
+        track.id &&
+        track.title &&
+        track.link &&
+        (track.album?.cover_xl || track.album?.cover_big || track.album?.cover_medium),
+    )
+    .map((track) => ({
+      id: String(track.id),
+      title: track.title as string,
+      artist: track.artist?.name ?? "",
+      coverUrl: (track.album?.cover_xl ?? track.album?.cover_big ?? track.album?.cover_medium) as string,
+      url: track.link as string,
     }));
 }

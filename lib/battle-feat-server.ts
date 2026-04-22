@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import type { BattleFeatRoomSnapshot, FeatMove } from "@/lib/battle-feat";
+import type { BattleFeatParticipant, BattleFeatRoomSnapshot, FeatMove } from "@/lib/battle-feat";
 import { parseFeatArtists, slugifyName, popularityTier } from "@/lib/battle-feat";
 import { getArtistTopTracks, searchArtists, searchTracks } from "@/lib/deezer";
 
@@ -149,6 +149,47 @@ export function canClaimTurnTimeout(updatedAt: Date, turnSeconds: number, tolera
   return elapsedMs >= Math.max(0, turnSeconds - toleranceSeconds) * 1000;
 }
 
+export function normalizeBattleFeatParticipants(value: unknown): BattleFeatParticipant[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((p): p is Record<string, unknown> => typeof p === "object" && p !== null)
+    .map((p, i) => ({
+      playerId: typeof p.playerId === "string" ? p.playerId : "",
+      username: typeof p.username === "string" ? p.username : "Joueur",
+      score: typeof p.score === "number" ? p.score : 0,
+      jokers: typeof p.jokers === "number" ? p.jokers : 1,
+      eliminated: typeof p.eliminated === "boolean" ? p.eliminated : false,
+      position: typeof p.position === "number" ? p.position : i,
+      lastSeenAt: typeof p.lastSeenAt === "string" ? p.lastSeenAt : null,
+      joinedAt: typeof p.joinedAt === "string" ? p.joinedAt : new Date().toISOString(),
+    }))
+    .filter((p) => p.playerId.length > 0)
+    .sort((a, b) => a.position - b.position);
+}
+
+export function findBattleFeatParticipant(
+  participants: BattleFeatParticipant[],
+  playerId: string,
+): BattleFeatParticipant | null {
+  return participants.find((p) => p.playerId === playerId) ?? null;
+}
+
+/**
+ * Return the next active (non-eliminated) participant after the given player
+ * in round-robin order. Returns null if no other active players remain.
+ */
+export function nextActiveParticipant(
+  participants: BattleFeatParticipant[],
+  currentPlayerId: string,
+): BattleFeatParticipant | null {
+  const active = participants.filter((p) => !p.eliminated);
+  if (active.length === 0) return null;
+  if (active.length === 1) return active[0];
+  const idx = active.findIndex((p) => p.playerId === currentPlayerId);
+  if (idx === -1) return active[0];
+  return active[(idx + 1) % active.length];
+}
+
 export async function getBattleFeatRoomSnapshot(
   roomId: string,
 ): Promise<BattleFeatRoomSnapshot | null> {
@@ -156,7 +197,6 @@ export async function getBattleFeatRoomSnapshot(
     where: { id: roomId },
     include: {
       host: { select: { username: true } },
-      guest: { select: { username: true } },
     },
   });
 
@@ -165,7 +205,7 @@ export async function getBattleFeatRoomSnapshot(
   return {
     id: room.id,
     hostId: room.hostId,
-    guestId: room.guestId,
+    hostUsername: room.host.username,
     status: room.status,
     startingArtistId: room.startingArtistId,
     startingArtistName: room.startingArtistName,
@@ -176,15 +216,8 @@ export async function getBattleFeatRoomSnapshot(
     currentTurnId: room.currentTurnId,
     usedArtistIds: normalizeUsedArtistIds(room.usedArtistIds),
     moves: normalizeMoves(room.moves),
-    hostScore: room.hostScore,
-    guestScore: room.guestScore,
-    hostJokers: room.hostJokers,
-    guestJokers: room.guestJokers,
+    participants: normalizeBattleFeatParticipants(room.participants),
     winnerId: room.winnerId,
-    hostLastSeenAt: room.hostLastSeenAt?.toISOString() ?? null,
-    guestLastSeenAt: room.guestLastSeenAt?.toISOString() ?? null,
-    hostUsername: room.host.username,
-    guestUsername: room.guest?.username ?? null,
     updatedAt: room.updatedAt.toISOString(),
   };
 }

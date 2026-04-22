@@ -6,7 +6,8 @@ import {
   ChartNoAxesColumn,
   Bot,
   Users,
-  Link2,
+  User,
+  Sparkles,
 } from "lucide-react";
 
 export default function GuidePage() {
@@ -49,10 +50,21 @@ export default function GuidePage() {
       icon: <Users size={26} />,
       tone: "#fb7185",
       steps: [
-        "Format room en 1v1: un hôte crée la partie, un invité rejoint via lien.",
+        "Format room multijoueur: un hôte crée la partie, puis plusieurs joueurs peuvent rejoindre (2 à N) via lien ou Explorer selon la visibilité.",
         "Même barème que le solo (+2 titre, +1 artiste) et même timer (30 secondes par morceau).",
-        "Les deux joueurs répondent sur chaque morceau, puis l'hôte déclenche le passage au suivant.",
-        "À la fin, le score le plus élevé gagne; égalité possible en cas de score identique.",
+        "Chaque joueur répond sur chaque morceau; le passage au morceau suivant est synchronisé pour toute la room.",
+        "À la fin, le classement se fait au score (égalité possible si score identique).",
+      ],
+    },
+    {
+      title: "BattleFeat — Solo",
+      icon: <User size={26} />,
+      tone: "#22d3ee",
+      steps: [
+        "Mode libre en solo: tu enchaînes les artistes ayant un feat valide avec l'artiste courant.",
+        "Pas d'adversaire IA: le but est de prolonger la chaîne le plus loin possible.",
+        "Un artiste déjà utilisé, un feat invalide ou un abandon met fin à la session.",
+        "En fin de partie, tu peux enregistrer le résultat en PNG puis partager ou recommencer.",
       ],
     },
     {
@@ -67,52 +79,63 @@ export default function GuidePage() {
       ],
     },
     {
-      title: "BattleFeat — Room & Libre",
-      icon: <Link2 size={26} />,
-      tone: "#22d3ee",
+      title: "BattleFeat — Multijoueur",
+      icon: <Users size={26} />,
+      tone: "#60a5fa",
       steps: [
-        "Room multijoueur: duel en alternance (20s par tour), 1 joker par joueur, perte immédiate sur timeout, artiste invalide ou déjà utilisé.",
-        "Le score correspond au nombre de coups valides; victoire à l'élimination de l'adversaire.",
-        "Mode Libre: solo sans timer contre soi-même, la chaîne continue jusqu'à erreur, blocage ou abandon.",
-        "Le mode Libre garde la logique de validation des feats + 1 joker initial, puis enregistre la session.",
+        "Format room multijoueur: l'hôte crée la room, puis plusieurs joueurs rejoignent (2 à N) via lien ou Explorer si room publique.",
+        "Tour par tour en temps réel: 20 secondes pour jouer un artiste valide, sans réutiliser un artiste déjà passé.",
+        "Chaque coup valide rapporte des points; un timeout, un feat invalide ou un artiste déjà utilisé pénalise le joueur actif.",
+        "À la fin, la room affiche le résultat final avec classement, partage, rejouer et export PNG.",
       ],
     },
   ];
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] py-8 lg:py-10">
-      <h1 className="text-5xl font-black tracking-[-0.03em]">Guide de MusiKlash</h1>
-      <p className="mt-2 text-xl" style={{ color: "#8f93a0" }}>
-        Règles actuelles des modes de jeu (mise à jour selon le fonctionnement réel de l&apos;app).
-      </p>
+    <div className="mx-auto w-full max-w-[1120px] py-8 lg:py-10">
+      <div
+        className="rounded-3xl border px-6 py-6 md:px-8 md:py-7"
+        style={{ borderColor: "#222a38", background: "linear-gradient(180deg, rgba(13,16,24,0.9) 0%, rgba(13,16,24,0.72) 100%)" }}
+      >
+        <p className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ borderColor: "#2a3242", color: "#aab1c3" }}>
+          <Sparkles size={13} />
+          Guide rapide
+        </p>
+        <h1 className="mt-3 text-3xl font-black tracking-[-0.02em] sm:text-4xl lg:text-5xl">
+          Règles des modes MusiKlash
+        </h1>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed sm:text-base" style={{ color: "#9aa1b4" }}>
+          Version lisible et concise des règles: création, déroulé de partie, scoring et fin de session.
+        </p>
+      </div>
 
-      <div className="mt-10 space-y-6">
+      <div className="mt-8 space-y-4 sm:space-y-5">
         {blocks.map((block) => (
           <section
             key={block.title}
-            className="rounded-[34px] border px-6 py-7 md:px-9 md:py-8"
+            className="rounded-2xl border px-5 py-5 md:px-6 md:py-6"
             style={{ borderColor: "#222a38", background: "rgba(13,16,24,0.72)" }}
           >
-            <div className="mb-7 flex items-center gap-4">
+            <div className="mb-4 flex items-center gap-3">
               <span
-                className="flex h-16 w-16 items-center justify-center rounded-3xl border"
+                className="flex h-11 w-11 items-center justify-center rounded-xl border"
                 style={{ borderColor: "#2a3242", color: block.tone, background: "rgba(255,255,255,0.01)" }}
               >
                 {block.icon}
               </span>
-              <h2 className="text-5xl font-black tracking-[-0.03em]">{block.title}</h2>
+              <h2 className="text-xl font-black tracking-[-0.01em] sm:text-2xl">{block.title}</h2>
             </div>
 
-            <ol className="grid gap-4 md:grid-cols-2">
+            <ol className="space-y-2.5">
               {block.steps.map((step, index) => (
-                <li key={step} className="flex items-center gap-4">
+                <li key={step} className="flex items-start gap-3 rounded-xl border px-3 py-2.5" style={{ borderColor: "#2a3242", background: "#121723" }}>
                   <span
-                    className="flex h-7 w-7 items-center justify-center rounded-full border text-sm font-bold"
+                    className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold"
                     style={{ borderColor: "#353c48", color: "#9ca3af", background: "#1a1f2a" }}
                   >
                     {index + 1}
                   </span>
-                  <span className="text-[1.5rem] leading-snug" style={{ color: "#b2b6c3" }}>
+                  <span className="text-sm leading-relaxed sm:text-[15px]" style={{ color: "#b2b6c3" }}>
                     {step}
                   </span>
                 </li>
@@ -121,8 +144,8 @@ export default function GuidePage() {
           </section>
         ))}
 
-        <div className="pt-3">
-          <Link href="/create" className="inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-lg font-bold" style={{ background: "#ff2f6d", color: "#fff" }}>
+        <div className="pt-2">
+          <Link href="/create" className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold sm:text-base" style={{ background: "#ff2f6d", color: "#fff" }}>
             <Play size={18} />
             Choisir un mode
           </Link>

@@ -12,6 +12,7 @@ import {
 } from "@/lib/bracket";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import { usePreviewVolume } from "@/lib/audio-volume";
+import { deleteTransientBracket, saveBracketGame } from "@/app/bracket-game/[id]/actions";
 
 function roundLabel(round: number, total: number) {
   const remaining = total - round + 1;
@@ -32,12 +33,22 @@ export default function BracketGame({
   bracketId,
   size,
   tracks,
+  transient = false,
+  initialVotes = [],
+  initialSessionId = null,
+  readOnly = false,
 }: {
   bracketId: string;
   size: BracketSize;
   tracks: BracketTrack[];
+  transient?: boolean;
+  initialVotes?: Vote[];
+  initialSessionId?: string | null;
+  readOnly?: boolean;
 }) {
-  const [votes, setVotes] = useState<Vote[]>([]);
+  const [votes, setVotes] = useState<Vote[]>(initialVotes);
+  const [sessionId, setSessionId] = useState<string | null>(initialSessionId);
+  const savingRef = useRef(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [playingSeed, setPlayingSeed] = useState<number | null>(null);
   const [loadingSeed, setLoadingSeed] = useState<number | null>(null);
@@ -49,6 +60,9 @@ export default function BracketGame({
   );
   const exportRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const promotedRef = useRef(false);
+  const [promoted, setPromoted] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const { volume } = usePreviewVolume();
   const total = totalRounds(size);
 
@@ -129,6 +143,32 @@ export default function BracketGame({
   // background so a click immediately plays without an await (which would
   // break Safari's user-gesture requirement on audio.play()).
   const hasWinner = Boolean(state.winner);
+
+  // In transient mode, delete the bracket when the user leaves the results
+  // screen (component unmount) — unless they explicitly saved & shared.
+  useEffect(() => {
+    if (!transient || readOnly) return;
+    return () => {
+      if (promotedRef.current) return;
+      void deleteTransientBracket(bracketId);
+    };
+  }, [transient, bracketId, readOnly]);
+
+  // Auto-save the completed bracket as a replayable session, unless we are
+  // in transient mode (deleted at unmount) or rendering a read-only result.
+  useEffect(() => {
+    if (readOnly || transient) return;
+    if (!hasWinner || !state.winner) return;
+    if (sessionId || savingRef.current) return;
+    savingRef.current = true;
+    (async () => {
+      const res = await saveBracketGame(bracketId, votes, state.winner!);
+      if ("id" in res) setSessionId(res.id);
+    })().catch(() => {
+      // ignore; user can still try via Sauvegarder et partager
+    });
+  }, [bracketId, hasWinner, readOnly, sessionId, state.winner, transient, votes]);
+
   useEffect(() => {
     if (!hasWinner) return;
     let cancelled = false;
@@ -186,13 +226,36 @@ export default function BracketGame({
     ]);
   };
 
-  const share = async () => {
-    const url = `${window.location.origin}/bracket-game/${bracketId}`;
+  const saveAndShare = async () => {
+    setSharing(true);
     try {
-      await navigator.clipboard.writeText(url);
-      alert("Lien copié dans le presse-papiers !");
-    } catch {
-      window.prompt("Copie le lien :", url);
+      let effectiveSessionId = sessionId;
+      if (!effectiveSessionId && state.winner) {
+        const res = await saveBracketGame(bracketId, votes, state.winner);
+        if ("id" in res) {
+          effectiveSessionId = res.id;
+          setSessionId(res.id);
+        }
+      }
+      if (transient && !promotedRef.current) {
+        promotedRef.current = true;
+        setPromoted(true);
+      }
+      const url = effectiveSessionId
+        ? `${window.location.origin}/bracket-game/${bracketId}/results/${effectiveSessionId}`
+        : `${window.location.origin}/bracket-game/${bracketId}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        alert(
+          transient && !promoted
+            ? "Bracket sauvegardé en privé et lien copié !"
+            : "Lien copié dans le presse-papiers !",
+        );
+      } catch {
+        window.prompt("Copie le lien :", url);
+      }
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -643,6 +706,13 @@ export default function BracketGame({
     return (
       <div className="space-y-6">
         <div className="card space-y-4 bg-[color:var(--surface)] p-4 md:p-6">
+          {transient ? (
+            <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+              {promoted
+                ? "Résultat sauvegardé en Publié — Privé. Tu peux partager le lien."
+                : "Mode non publié : ce bracket sera supprimé à la fin. Clique sur « Sauvegarder et partager » pour le conserver en Publié — Privé."}
+            </p>
+          ) : null}
           <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-4 md:p-5">
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[color:var(--muted)]">
               Arbre des résultats
@@ -697,23 +767,38 @@ export default function BracketGame({
         ) : null}
 
         <div className="no-export flex flex-wrap justify-center gap-2">
-          <button onClick={share} className="btn-ghost">
-            <Share2 size={16} /> Partager
-          </button>
           <button
             onClick={handleDownload}
             disabled={isDownloading}
-            className="btn-primary disabled:opacity-50"
+            className="btn-ghost disabled:opacity-50"
           >
             <Download size={16} />
-            {isDownloading ? "Génération…" : "Télécharger en PNG"}
+            {isDownloading ? "Génération…" : "Enregistrer en PNG"}
           </button>
           <button
-            onClick={() => setVotes([])}
-            className="btn-primary"
+            onClick={saveAndShare}
+            disabled={sharing}
+            className="btn-primary disabled:opacity-50"
           >
-            Rejouer
+            <Share2 size={16} />
+            {sharing ? "…" : "Sauvegarder et partager"}
           </button>
+          {readOnly ? (
+            <Link href={`/bracket-game/${bracketId}`} className="btn-ghost">
+              Recommencer
+            </Link>
+          ) : (
+            <button
+              onClick={() => {
+                setVotes([]);
+                setSessionId(null);
+                savingRef.current = false;
+              }}
+              className="btn-ghost"
+            >
+              Recommencer
+            </button>
+          )}
           <Link href="/my-brackets" className="btn-ghost">
             Ma bibliothèque
           </Link>

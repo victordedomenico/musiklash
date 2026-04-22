@@ -15,7 +15,7 @@ export type TierlistTrackInput = {
 export async function createTierlist(input: {
   title: string;
   theme: string;
-  visibility: "private" | "public";
+  visibility: "private" | "public" | "none";
   tracks: TierlistTrackInput[];
 }) {
   if (!input.title.trim()) return { error: "Le titre est requis." };
@@ -36,13 +36,15 @@ export async function createTierlist(input: {
   }
 
   let tierlistId: string;
+  const transient = input.visibility === "none";
+  const storedVisibility = transient ? "private" : input.visibility;
   try {
     const tl = await prisma.tierlist.create({
       data: {
         ownerId: identity.playerId,
         title: input.title.trim(),
         theme: input.theme.trim() || null,
-        visibility: input.visibility,
+        visibility: storedVisibility,
         coverUrl: input.tracks[0]?.cover_url ?? null,
         tracks: {
           create: input.tracks.map((t, i) => ({
@@ -62,5 +64,5 @@ export async function createTierlist(input: {
     return { error: msg };
   }
 
-  redirect(`/tierlist/${tierlistId}`);
+  redirect(`/tierlist/${tierlistId}${transient ? "?transient=1" : ""}`);
 }

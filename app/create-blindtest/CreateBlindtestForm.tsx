@@ -7,7 +7,7 @@ import Input from "@/components/ui/Input";
 
 export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }) {
   const [title, setTitle] = useState("");
-  const [visibility, setVisibility] = useState<"private" | "public">("private");
+  const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
   const [tracks, setTracks] = useState<BlindtestTrackInput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -39,20 +39,30 @@ export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }
           />
         </div>
         <div>
-          <label className="text-sm font-medium">Visibilité</label>
-          <div className="mt-1 flex gap-2">
-            {(["private", "public"] as const).map((v) => (
+          <label className="text-sm font-medium">Publication</label>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {(["private", "public", "none"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
+                disabled={mode === "multi" && v === "none"}
                 onClick={() => setVisibility(v)}
                 className="btn-chip"
                 data-active={visibility === v}
               >
-                {v === "private" ? "Privé" : "Public"}
+                {v === "private" ? "Publié — Privé" : v === "public" ? "Publié — Public" : "Non publié"}
               </button>
             ))}
           </div>
+          <p className="mt-2 text-xs text-[color:var(--muted)]">
+            {mode === "multi"
+              ? "En multijoueur, le blindtest doit rester publié (la room en dépend)."
+              : visibility === "public"
+              ? "Résultats accessibles à tout le monde et par lien."
+              : visibility === "private"
+              ? "Résultats accessibles uniquement à toi ou par lien direct."
+              : "Résultats non sauvegardés : le blindtest sera supprimé définitivement à la fin de la partie."}
+          </p>
         </div>
       </div>
 

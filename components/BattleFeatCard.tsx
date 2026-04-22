@@ -14,8 +14,8 @@ export type BattleFeatSessionSummary = {
 export type BattleFeatRoomSummary = {
   id: string;
   status: string;
-  hostScore: number;
-  guestScore: number;
+  playerCount: number;
+  scores: number[];
   visibility: string;
   createdAt: string;
   canEditVisibility?: boolean;
@@ -132,7 +132,7 @@ export function BattleFeatRoomCard({
       <div className="p-4">
         <div className="flex items-center justify-between">
           <p className="font-semibold">
-            {r.hostScore} – {r.guestScore}
+            {r.scores.length > 0 ? r.scores.join(" – ") : `${r.playerCount} joueur${r.playerCount > 1 ? "s" : ""}`}
           </p>
           <span className="text-xs text-[color:var(--muted)] flex items-center gap-1">
             <Clock size={12} />

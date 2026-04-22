@@ -14,11 +14,14 @@ import {
   Play,
   Pause,
   Volume2,
+  Download,
+  Share2,
 } from "lucide-react";
 import ArtistSearchInput from "@/components/ArtistSearchInput";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
 import type { ArtistResult, FeatMove } from "@/lib/battle-feat";
 import { saveSoloSession } from "./actions";
+import { downloadNodeAsPng } from "@/lib/download-png";
 import { usePreviewVolume } from "@/lib/audio-volume";
 
 type Phase = "setup" | "player-turn" | "validating" | "ai-thinking" | "joker" | "game-over";
@@ -112,6 +115,7 @@ export default function BattleFeatSolo() {
   const [gameOverWinner, setGameOverWinner] = useState<"player" | "ai" | null>(null);
   const [saving, setSaving] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [publishMode, setPublishMode] = useState<"none" | "private" | "public">("private");
   const [easyOptions, setEasyOptions] = useState<ArtistResult[]>([]);
   const [roundMessage, setRoundMessage] = useState("");
 
@@ -120,6 +124,10 @@ export default function BattleFeatSolo() {
   const [nowPlaying, setNowPlaying] = useState<{ title: string; previewUrl: string } | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const { volume } = usePreviewVolume();
+
+  const exportRef = useRef<HTMLDivElement | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [promoted, setPromoted] = useState(false);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -214,6 +222,9 @@ export default function BattleFeatSolo() {
       setGameOverReason(reason);
       setGameOverWinner(winner);
       setPhase("game-over");
+      // In "non publié" mode we skip persistence; the user can still promote
+      // via "Sauvegarder et partager" on the results screen.
+      if (publishMode === "none") return;
       setSaving(true);
       try {
         const result = await saveSoloSession(
@@ -222,6 +233,7 @@ export default function BattleFeatSolo() {
           finalMoves,
           finalPlayerScore,
           finalJokersUsed,
+          publishMode,
         );
         if (result.id) setSessionId(result.id);
       } catch {
@@ -229,8 +241,66 @@ export default function BattleFeatSolo() {
       }
       setSaving(false);
     },
-    [difficulty, startingArtist, jokersUsed],
+    [difficulty, startingArtist, jokersUsed, publishMode],
   );
+
+  const handleDownload = async () => {
+    if (!exportRef.current) return;
+    setIsDownloading(true);
+    try {
+      await downloadNodeAsPng(exportRef.current, {
+        filename: "battle-feat-resultat.png",
+        backgroundColor: "var(--surface)",
+      });
+    } catch {
+      alert(
+        "Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.",
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleSaveAndShare = async () => {
+    if (!startingArtist) return;
+    const copyLink = async (id: string) => {
+      const url = `${window.location.origin}/battle-feat/results/${id}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        alert(
+          publishMode === "none" && !promoted
+            ? "Partie sauvegardée en privé et lien copié !"
+            : "Lien copié dans le presse-papiers !",
+        );
+      } catch {
+        window.prompt("Copie le lien :", url);
+      }
+    };
+
+    if (sessionId) {
+      await copyLink(sessionId);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const result = await saveSoloSession(
+        difficulty,
+        startingArtist.id,
+        moves,
+        playerScore,
+        jokersUsed,
+        "private",
+      );
+      if (result.id) {
+        if (publishMode === "none") setPromoted(true);
+        setSessionId(result.id);
+        await copyLink(result.id);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleTimeout = useEffectEvent(() => {
     void endGame("Temps écoulé !", "ai", moves, playerScore);
@@ -474,6 +544,29 @@ export default function BattleFeatSolo() {
               </button>
             ))}
           </div>
+          <div className="mt-4">
+            <p className="mb-2 text-sm font-bold uppercase tracking-wide text-[color:var(--muted)]">
+              Publication du résultat
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setPublishMode("private")} className="btn-chip" data-active={publishMode === "private"}>
+                Publié — Privé
+              </button>
+              <button type="button" onClick={() => setPublishMode("public")} className="btn-chip" data-active={publishMode === "public"}>
+                Publié — Public
+              </button>
+              <button type="button" onClick={() => setPublishMode("none")} className="btn-chip" data-active={publishMode === "none"}>
+                Non publié
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-[color:var(--muted)]">
+              {publishMode === "public"
+                ? "Résultat accessible à tout le monde et par lien."
+                : publishMode === "private"
+                ? "Résultat accessible uniquement à toi ou par lien direct."
+                : "Résultat non sauvegardé : la partie sera supprimée définitivement après l'écran de résultats."}
+            </p>
+          </div>
         </div>
 
         <div className="card p-6 md:p-8">
@@ -517,68 +610,92 @@ export default function BattleFeatSolo() {
     return (
       <div className="space-y-6">
         <ChallengeOutcomeFx outcome={outcome} />
-        <div className="card p-8 text-center">
-          <Trophy
-            size={48}
-            className={`mx-auto mb-4 ${
-              isDraw
-                ? "text-sky-400"
+        {publishMode === "none" ? (
+          <p className="no-export rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+            {promoted
+              ? "Résultat sauvegardé en Publié — Privé. Tu peux partager le lien."
+              : "Mode non publié : cette partie ne sera pas sauvegardée. Clique sur « Sauvegarder et partager » pour la conserver en Publié — Privé."}
+          </p>
+        ) : null}
+        <div ref={exportRef} className="space-y-6">
+          <div className="card p-8 text-center">
+            <Trophy
+              size={48}
+              className={`mx-auto mb-4 ${
+                isDraw
+                  ? "text-sky-400"
+                  : gameOverWinner === "player"
+                    ? "text-yellow-400"
+                    : "text-[color:var(--muted)]"
+              }`}
+            />
+            <h2 className="text-2xl font-black">
+              {isDraw
+                ? "Égalité !"
                 : gameOverWinner === "player"
-                  ? "text-yellow-400"
-                  : "text-[color:var(--muted)]"
-            }`}
-          />
-          <h2 className="text-2xl font-black">
-            {isDraw
-              ? "Égalité !"
-              : gameOverWinner === "player"
-                ? "Victoire !"
-                : "Partie terminée !"}
-          </h2>
-          <p className="mt-2 text-[color:var(--muted)]">{gameOverReason}</p>
-          <div className="mt-6 flex items-center justify-center gap-8">
-            <div className="text-center">
-              <p className="text-3xl font-black text-[color:var(--accent)]">{playerScore}</p>
-              <p className="text-xs text-[color:var(--muted)]">tes feats</p>
+                  ? "Victoire !"
+                  : "Partie terminée !"}
+            </h2>
+            <p className="mt-2 text-[color:var(--muted)]">{gameOverReason}</p>
+            <div className="mt-6 flex items-center justify-center gap-8">
+              <div className="text-center">
+                <p className="text-3xl font-black text-[color:var(--accent)]">{playerScore}</p>
+                <p className="text-xs text-[color:var(--muted)]">tes feats</p>
+              </div>
+              <span className="text-2xl text-[color:var(--muted)]">–</span>
+              <div className="text-center">
+                <p className="text-3xl font-black text-blue-400">{aiScore}</p>
+                <p className="text-xs text-[color:var(--muted)]">feats IA</p>
+              </div>
             </div>
-            <span className="text-2xl text-[color:var(--muted)]">–</span>
-            <div className="text-center">
-              <p className="text-3xl font-black text-blue-400">{aiScore}</p>
-              <p className="text-xs text-[color:var(--muted)]">feats IA</p>
-            </div>
-          </div>
-          {jokersUsed > 0 && (
-            <p className="mt-3 text-xs text-[color:var(--muted)]">
-              {jokersUsed} joker{jokersUsed > 1 ? "s" : ""} utilisé{jokersUsed > 1 ? "s" : ""}
-            </p>
-          )}
-        </div>
-
-        <div className="card p-6">
-          <h3 className="font-bold mb-3">La chaîne</h3>
-          <div className="space-y-2">
-            {startingArtist && (
-              <ArtistChip name={startingArtist.name} pictureUrl={startingArtist.pictureUrl} />
+            {jokersUsed > 0 && (
+              <p className="mt-3 text-xs text-[color:var(--muted)]">
+                {jokersUsed} joker{jokersUsed > 1 ? "s" : ""} utilisé{jokersUsed > 1 ? "s" : ""}
+              </p>
             )}
-            {moves.map((m, i) => (
-              <ArtistChip
-                key={m.artistId + i}
-                name={m.artistName}
-                pictureUrl={m.pictureUrl}
-                trackTitle={m.trackTitle}
-                previewUrl={m.previewUrl}
-                onPlayPreview={playPreview}
-                isAi={m.isAi}
-              />
-            ))}
+          </div>
+
+          <div className="card p-6">
+            <h3 className="font-bold mb-3">La chaîne</h3>
+            <div className="space-y-2">
+              {startingArtist && (
+                <ArtistChip name={startingArtist.name} pictureUrl={startingArtist.pictureUrl} />
+              )}
+              {moves.map((m, i) => (
+                <ArtistChip
+                  key={m.artistId + i}
+                  name={m.artistName}
+                  pictureUrl={m.pictureUrl}
+                  trackTitle={m.trackTitle}
+                  previewUrl={m.previewUrl}
+                  onPlayPreview={playPreview}
+                  isAi={m.isAi}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="no-export flex flex-wrap gap-2">
+          <button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="btn-ghost flex-1 disabled:opacity-50"
+          >
+            <Download size={14} />
+            {isDownloading ? "Génération…" : "Enregistrer en PNG"}
+          </button>
+          <button
+            onClick={handleSaveAndShare}
+            disabled={saving}
+            className="btn-primary flex-1 disabled:opacity-50"
+          >
+            <Share2 size={14} /> {saving ? "…" : "Sauvegarder et partager"}
+          </button>
           {sessionId && (
             <button
               onClick={() => router.push(`/battle-feat/results/${sessionId}`)}
-              className="btn-primary flex-1"
+              className="btn-ghost flex-1"
             >
               Voir les résultats <ArrowRight size={16} />
             </button>
@@ -589,10 +706,11 @@ export default function BattleFeatSolo() {
               setMoves([]);
               setPlayerScore(0);
               setAiScore(0);
+              setPromoted(false);
             }}
             className="btn-ghost flex-1"
           >
-            Rejouer
+            Recommencer
           </button>
           {saving && (
             <span className="btn-ghost !cursor-wait opacity-60">

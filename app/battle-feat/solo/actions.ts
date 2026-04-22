@@ -10,6 +10,7 @@ export async function saveSoloSession(
   moves: FeatMove[],
   score: number,
   jokersUsed: number,
+  visibility: "private" | "public" = "private",
 ) {
   let identity: { playerId: string };
   try {
@@ -32,6 +33,7 @@ export async function saveSoloSession(
         score,
         jokersUsed,
         status: "finished",
+        visibility,
       },
     });
     return { id: session.id };

@@ -81,7 +81,7 @@ export default async function BlindtestResultsPage({
 
         <div className="mt-6 flex justify-center gap-3">
           <Link href={`/blindtest/${id}`} className="btn-primary">
-            Rejouer
+            Recommencer
           </Link>
           <Link href="/explore?tab=blindtests" className="btn-ghost">
             Explorer

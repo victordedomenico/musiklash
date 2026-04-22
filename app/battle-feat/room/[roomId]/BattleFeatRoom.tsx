@@ -19,11 +19,14 @@ import {
   Play,
   Pause,
   Volume2,
+  Download,
+  Share2,
 } from "lucide-react";
 import ArtistSearchInput from "@/components/ArtistSearchInput";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
 import type {
   ArtistResult,
+  BattleFeatParticipant,
   BattleFeatRoomSnapshot,
   RoomBroadcastPayload,
 } from "@/lib/battle-feat";
@@ -37,12 +40,20 @@ import {
   useJoker as playJoker,
 } from "./actions";
 import { usePreviewVolume } from "@/lib/audio-volume";
+import { downloadNodeAsPng } from "@/lib/download-png";
 
 const TURN_SECONDS = 20;
 const PRESENCE_GRACE_SECONDS = 45;
 // Must stay comfortably above the server heartbeat interval (~10s) + poll
-// delay (~2.5s) to avoid false "opponent disconnected" warnings.
+// delay (~2.5s) to avoid false "déconnecté" warnings.
 const PRESENCE_WARNING_SECONDS = 20;
+
+function isOnline(lastSeenAt: string | null, now: number): boolean {
+  if (!lastSeenAt) return false;
+  const ts = Date.parse(lastSeenAt);
+  if (Number.isNaN(ts)) return false;
+  return now - ts <= PRESENCE_GRACE_SECONDS * 1000;
+}
 
 function ArtistBadge({
   name,
@@ -90,6 +101,42 @@ function ArtistBadge({
   );
 }
 
+function PlayerChip({
+  p,
+  online,
+  isCurrent,
+  isMe,
+}: {
+  p: BattleFeatParticipant;
+  online: boolean;
+  isCurrent?: boolean;
+  isMe?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${
+        p.eliminated
+          ? "opacity-50 line-through border-[color:var(--border)]"
+          : isCurrent
+            ? "border-[color:var(--accent)] bg-[color:var(--accent-dim)]"
+            : "border-[color:var(--border)]"
+      }`}
+    >
+      <span className={`font-medium ${isMe ? "text-[color:var(--accent)]" : ""}`}>
+        {p.username}
+      </span>
+      <span className="text-[color:var(--muted)]">· {p.score}</span>
+      {!p.eliminated ? (
+        <span
+          className={`h-1.5 w-1.5 rounded-full ${
+            online ? "bg-emerald-400" : "bg-rose-400"
+          }`}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export default function BattleFeatRoom({
   initialRoom,
   userId,
@@ -105,10 +152,13 @@ export default function BattleFeatRoom({
   const [error, setError] = useState("");
   const [nowPlaying, setNowPlaying] = useState<{ title: string } | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const timeoutClaimRef = useRef<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const exportRef = useRef<HTMLDivElement | null>(null);
   const { volume } = usePreviewVolume();
 
   useEffect(() => {
@@ -120,25 +170,31 @@ export default function BattleFeatRoom({
     audioRef.current.volume = volume;
   }, [volume]);
 
-  const playPreview = useCallback((title: string | null, previewUrl: string | null) => {
-    if (!previewUrl) return;
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = previewUrl;
-      audioRef.current.volume = volume;
-      setNowPlaying({ title: title ?? "Extrait" });
-      void audioRef.current.play().catch(() => null);
-    } else {
-      const audio = new Audio(previewUrl);
-      audio.volume = volume;
-      audio.onplay = () => setIsPlaying(true);
-      audio.onpause = () => setIsPlaying(false);
-      audio.onended = () => { setIsPlaying(false); setNowPlaying(null); };
-      audioRef.current = audio;
-      setNowPlaying({ title: title ?? "Extrait" });
-      void audio.play().catch(() => null);
-    }
-  }, [volume]);
+  const playPreview = useCallback(
+    (title: string | null, previewUrl: string | null) => {
+      if (!previewUrl) return;
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = previewUrl;
+        audioRef.current.volume = volume;
+        setNowPlaying({ title: title ?? "Extrait" });
+        void audioRef.current.play().catch(() => null);
+      } else {
+        const audio = new Audio(previewUrl);
+        audio.volume = volume;
+        audio.onplay = () => setIsPlaying(true);
+        audio.onpause = () => setIsPlaying(false);
+        audio.onended = () => {
+          setIsPlaying(false);
+          setNowPlaying(null);
+        };
+        audioRef.current = audio;
+        setNowPlaying({ title: title ?? "Extrait" });
+        void audio.play().catch(() => null);
+      }
+    },
+    [volume],
+  );
 
   const togglePlayPause = () => {
     if (!audioRef.current) return;
@@ -146,7 +202,6 @@ export default function BattleFeatRoom({
     else audioRef.current.pause();
   };
 
-  // Stop and dispose audio when leaving the page.
   useEffect(() => {
     return () => {
       if (!audioRef.current) return;
@@ -158,32 +213,33 @@ export default function BattleFeatRoom({
   }, []);
 
   const isHost = userId === room.hostId;
-  const isGuest = userId === room.guestId;
-  const isSpectator = !isHost && !isGuest;
-  const hostOnline = useMemo(() => {
-    if (!room.hostLastSeenAt) return false;
-    const ts = Date.parse(room.hostLastSeenAt);
-    if (Number.isNaN(ts)) return false;
-    return now - ts <= PRESENCE_GRACE_SECONDS * 1000;
-  }, [now, room.hostLastSeenAt]);
-  const guestOnline = useMemo(() => {
-    if (!room.guestId || !room.guestLastSeenAt) return false;
-    const ts = Date.parse(room.guestLastSeenAt);
-    if (Number.isNaN(ts)) return false;
-    return now - ts <= PRESENCE_GRACE_SECONDS * 1000;
-  }, [now, room.guestId, room.guestLastSeenAt]);
+  const me = useMemo(
+    () => room.participants.find((p) => p.playerId === userId) ?? null,
+    [room.participants, userId],
+  );
+  const isParticipant = me !== null;
+  const isSpectator = !isParticipant;
   const isMyTurn = room.currentTurnId === userId;
-  const myJokers = isHost ? room.hostJokers : room.guestJokers;
-  const opponentDisconnectInfo = useMemo(() => {
-    if (room.status === "finished" || isSpectator || !room.guestId) return null;
-    const opponentLastSeenAt = isHost ? room.guestLastSeenAt : room.hostLastSeenAt;
-    if (!opponentLastSeenAt) return { remaining: 0 };
-    const ts = Date.parse(opponentLastSeenAt);
-    if (Number.isNaN(ts)) return { remaining: 0 };
-    const elapsed = Math.max(0, Math.floor((now - ts) / 1000));
-    if (elapsed < PRESENCE_WARNING_SECONDS) return null;
-    return { remaining: Math.max(0, PRESENCE_GRACE_SECONDS - elapsed) };
-  }, [isHost, isSpectator, now, room.guestId, room.guestLastSeenAt, room.hostLastSeenAt, room.status]);
+  const myJokers = me?.jokers ?? 0;
+
+  const currentTurnParticipant = useMemo(
+    () => room.participants.find((p) => p.playerId === room.currentTurnId) ?? null,
+    [room.participants, room.currentTurnId],
+  );
+
+  const disconnectedParticipants = useMemo(() => {
+    if (room.status !== "playing" && room.status !== "waiting") return [];
+    return room.participants.filter((p) => {
+      if (p.eliminated) return false;
+      if (p.playerId === userId) return false;
+      if (!p.lastSeenAt) return true;
+      const ts = Date.parse(p.lastSeenAt);
+      if (Number.isNaN(ts)) return true;
+      const elapsed = Math.floor((now - ts) / 1000);
+      return elapsed >= PRESENCE_WARNING_SECONDS;
+    });
+  }, [now, room.participants, room.status, userId]);
+
   const turnKey = `${room.status}:${room.currentTurnId ?? "none"}:${room.updatedAt}`;
 
   const timeLeft = useMemo(() => {
@@ -221,7 +277,7 @@ export default function BattleFeatRoom({
     };
   }, [initialRoom.id]);
 
-  // Poll DB as a safety net — broadcast alone is not always delivered to every tab.
+  // Poll DB as a safety net.
   useEffect(() => {
     if (room.status !== "waiting" && room.status !== "playing") return;
 
@@ -230,15 +286,25 @@ export default function BattleFeatRoom({
         if (!r.ok) return;
         const cur = roomRef.current;
         const next = r.room;
+        const sameParticipants =
+          next.participants.length === cur.participants.length &&
+          next.participants.every((p, i) => {
+            const c = cur.participants[i];
+            return (
+              c &&
+              c.playerId === p.playerId &&
+              c.score === p.score &&
+              c.jokers === p.jokers &&
+              c.eliminated === p.eliminated &&
+              c.lastSeenAt === p.lastSeenAt
+            );
+          });
         if (
-          next.hostId !== cur.hostId ||
-          next.guestId !== cur.guestId ||
           next.status !== cur.status ||
           next.currentTurnId !== cur.currentTurnId ||
           next.moves.length !== cur.moves.length ||
           next.updatedAt !== cur.updatedAt ||
-          next.hostLastSeenAt !== cur.hostLastSeenAt ||
-          next.guestLastSeenAt !== cur.guestLastSeenAt
+          !sameParticipants
         ) {
           setRoom(next);
           setNow(Date.now());
@@ -291,6 +357,38 @@ export default function BattleFeatRoom({
     await navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = async () => {
+    if (!exportRef.current) return;
+    setIsDownloading(true);
+    try {
+      await downloadNodeAsPng(exportRef.current, {
+        filename: `battle-feat-room-${room.id}-resultat.png`,
+        backgroundColor: "var(--surface)",
+      });
+    } catch {
+      alert(
+        "Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.",
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleSaveAndShare = async () => {
+    setSharing(true);
+    try {
+      const url = window.location.href;
+      try {
+        await navigator.clipboard.writeText(url);
+        alert("Lien copié dans le presse-papiers !");
+      } catch {
+        window.prompt("Copie le lien :", url);
+      }
+    } finally {
+      setSharing(false);
+    }
   };
 
   const handleJoin = async () => {
@@ -367,53 +465,56 @@ export default function BattleFeatRoom({
 
   const timerProgress = ((TURN_SECONDS - timeLeft) / TURN_SECONDS) * 100;
 
+  const sortedByPosition = useMemo(
+    () => [...room.participants].sort((a, b) => a.position - b.position),
+    [room.participants],
+  );
+
+  // ── WAITING ────────────────────────────────────────────────────────────────
   if (room.status === "waiting") {
-    const canJoin = isSpectator && !room.guestId;
-    const waitingForGuest = isHost && !room.guestId;
-    const readyToStart = isHost && room.guestId;
+    const canJoin = !isParticipant;
+    const enoughPlayers = room.participants.length >= 2;
+    const readyToStart = isHost && enoughPlayers;
 
     return (
       <div className="space-y-6">
         <div className="card p-8 text-center">
           <Users size={48} className="mx-auto mb-4 text-blue-400" />
           <h2 className="text-xl font-bold">Room BattleFeat</h2>
+          <p className="mt-1 text-xs text-[color:var(--muted)]">
+            {room.participants.length} joueur{room.participants.length > 1 ? "s" : ""} connecté
+            {room.participants.length > 1 ? "s" : ""}
+          </p>
 
-          {waitingForGuest ? (
-            <>
-              <p className="mt-2 text-[color:var(--muted)]">En attente d&apos;un adversaire…</p>
-              <button onClick={copyLink} className="btn-ghost mx-auto mt-4">
-                {copied ? (
-                  <>
-                    <Check size={14} className="text-green-400" /> Copié !
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} /> Copier le lien
-                  </>
-                )}
-              </button>
-            </>
-          ) : null}
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            <button onClick={copyLink} className="btn-ghost">
+              {copied ? (
+                <>
+                  <Check size={14} className="text-green-400" /> Copié !
+                </>
+              ) : (
+                <>
+                  <Copy size={14} /> Copier le lien
+                </>
+              )}
+            </button>
 
-          {canJoin ? (
-            <>
-              <p className="mt-2 text-[color:var(--muted)]">
-                {room.hostUsername} t&apos;invite à jouer !
-              </p>
-              <button onClick={handleJoin} disabled={submitting} className="btn-primary mx-auto mt-4">
+            {canJoin ? (
+              <button
+                onClick={handleJoin}
+                disabled={submitting}
+                className="btn-primary"
+              >
                 {submitting ? <Loader2 size={14} className="animate-spin" /> : null}
                 Rejoindre la partie
               </button>
-            </>
-          ) : null}
+            ) : null}
+          </div>
 
           {readyToStart ? (
-            <div className="mt-4 space-y-4">
-              <p className="font-semibold text-green-400">
-                ✓ {room.guestUsername ?? "Adversaire"} a rejoint !
-              </p>
+            <div className="mt-6 space-y-3">
               <p className="text-sm text-[color:var(--muted)]">
-                Choisis l&apos;artiste de départ :
+                Choisis l&apos;artiste de départ pour lancer la partie :
               </p>
               <ArtistSearchInput
                 onSelect={handleStartGame}
@@ -424,42 +525,63 @@ export default function BattleFeatRoom({
             </div>
           ) : null}
 
-          {isGuest ? (
-            <p className="mt-4 text-[color:var(--muted)]">
-              En attente que l&apos;hôte lance la partie…
+          {isHost && !enoughPlayers ? (
+            <p className="mt-4 text-sm text-[color:var(--muted)]">
+              En attente d&apos;autres joueurs (au moins 2 requis)…
             </p>
           ) : null}
 
-          {opponentDisconnectInfo ? (
+          {!isHost && isParticipant ? (
+            <p className="mt-4 text-[color:var(--muted)]">
+              En attente que <strong>{room.hostUsername}</strong> lance la partie…
+            </p>
+          ) : null}
+
+          {disconnectedParticipants.length > 0 ? (
             <p className="mt-4 flex items-center justify-center gap-2 text-sm text-amber-300">
               <AlertTriangle size={14} />
-              Adversaire déconnecté. Victoire automatique dans {opponentDisconnectInfo.remaining}s s&apos;il ne
-              revient pas.
+              {disconnectedParticipants.length} joueur
+              {disconnectedParticipants.length > 1 ? "s" : ""} déconnecté
+              {disconnectedParticipants.length > 1 ? "s" : ""}.
             </p>
           ) : null}
+        </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
-            <span className="text-[color:var(--muted)]">{room.hostUsername}</span>
-            <span
-              className={`rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${
-                hostOnline ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
-              }`}
-            >
-              {hostOnline ? "Connecté" : "Déconnecté"}
-            </span>
-            {room.guestUsername ? (
-              <>
-                <span className="text-[color:var(--muted)]">·</span>
-                <span className="text-[color:var(--muted)]">{room.guestUsername}</span>
-                <span
-                  className={`rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${
-                    guestOnline ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
-                  }`}
-                >
-                  {guestOnline ? "Connecté" : "Déconnecté"}
-                </span>
-              </>
-            ) : null}
+        <div className="card p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
+            Joueurs ({room.participants.length})
+          </p>
+          <div className="space-y-2">
+            {sortedByPosition.map((p) => {
+              const online = isOnline(p.lastSeenAt, now);
+              const isThisHost = p.playerId === room.hostId;
+              return (
+                <div key={p.playerId} className="flex items-center gap-3">
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                    style={{
+                      background: isThisHost ? "var(--accent-dim)" : "var(--surface-2)",
+                      color: isThisHost ? "var(--accent)" : "var(--muted-strong)",
+                    }}
+                  >
+                    {p.username[0]?.toUpperCase() ?? "?"}
+                  </div>
+                  <span className="font-medium">{p.username}</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                      online
+                        ? "bg-emerald-500/15 text-emerald-300"
+                        : "bg-rose-500/15 text-rose-300"
+                    }`}
+                  >
+                    {online ? "Connecté" : "Déconnecté"}
+                  </span>
+                  {isThisHost ? (
+                    <span className="ml-auto text-xs text-[color:var(--muted)]">Hôte</span>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -468,85 +590,134 @@ export default function BattleFeatRoom({
     );
   }
 
+  // ── FINISHED ───────────────────────────────────────────────────────────────
   if (room.status === "finished") {
     const iWon = room.winnerId === userId;
     const isDraw = !room.winnerId;
     const outcome = isDraw ? "draw" : iWon ? "victory" : "defeat";
 
+    const ranked = [...room.participants].sort((a, b) => {
+      if (a.eliminated !== b.eliminated) return a.eliminated ? 1 : -1;
+      return b.score - a.score;
+    });
+    const winnerName = room.winnerId
+      ? room.participants.find((p) => p.playerId === room.winnerId)?.username ?? "—"
+      : null;
+
     return (
       <div className="space-y-6">
         <ChallengeOutcomeFx outcome={outcome} />
-        <div className="card p-8 text-center">
-          <Trophy
-            size={48}
-            className={`mx-auto mb-4 ${
-              isDraw
-                ? "text-sky-400"
+        <div ref={exportRef} className="space-y-6">
+          <div className="card p-8 text-center">
+            <Trophy
+              size={48}
+              className={`mx-auto mb-4 ${
+                isDraw
+                  ? "text-sky-400"
+                  : iWon
+                    ? "text-yellow-400"
+                    : "text-[color:var(--muted)]"
+              }`}
+            />
+            <h2 className="text-2xl font-black">
+              {isDraw
+                ? "Égalité !"
                 : iWon
-                  ? "text-yellow-400"
-                  : "text-[color:var(--muted)]"
-            }`}
-          />
-          <h2 className="text-2xl font-black">
-            {isDraw ? "Égalité !" : iWon ? "Victoire !" : "Défaite"}
-          </h2>
-          <div className="mt-4 flex items-center justify-center gap-8">
-            <div className="text-center">
-              <p className="text-2xl font-black">{room.hostScore}</p>
-              <p className="text-xs text-[color:var(--muted)]">{room.hostUsername}</p>
+                  ? "Victoire !"
+                  : `${winnerName} l'emporte`}
+            </h2>
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+              {ranked.map((p, idx) => (
+                <div
+                  key={p.playerId}
+                  className="rounded-xl p-4 text-center"
+                  style={{
+                    background:
+                      idx === 0 && !isDraw ? "var(--accent-dim)" : "var(--surface-2)",
+                    border:
+                      idx === 0 && !isDraw
+                        ? "1px solid var(--accent)"
+                        : "1px solid var(--border)",
+                    opacity: p.eliminated ? 0.7 : 1,
+                  }}
+                >
+                  <p className="text-3xl font-black">{p.score}</p>
+                  <p className="mt-1 text-xs text-[color:var(--muted)] truncate">
+                    {p.username}
+                  </p>
+                  <p className="mt-1 text-[10px] uppercase tracking-wide text-[color:var(--muted)]">
+                    {p.eliminated ? "Éliminé" : `#${idx + 1}`}
+                  </p>
+                </div>
+              ))}
             </div>
-            <span className="text-xl text-[color:var(--muted)]">–</span>
-            <div className="text-center">
-              <p className="text-2xl font-black">{room.guestScore}</p>
-              <p className="text-xs text-[color:var(--muted)]">{room.guestUsername ?? "?"}</p>
+          </div>
+
+          <div className="card p-6">
+            <h3 className="mb-3 font-bold">Historique</h3>
+            <div className="space-y-2">
+              {room.startingArtistName ? (
+                <ArtistBadge
+                  name={room.startingArtistName}
+                  pictureUrl={room.startingArtistPic}
+                  label="Départ"
+                />
+              ) : null}
+              {room.moves.map((move, index) => (
+                <ArtistBadge
+                  key={`${move.artistId}-${index}`}
+                  name={move.artistName}
+                  pictureUrl={move.pictureUrl}
+                  trackTitle={move.trackTitle}
+                  previewUrl={move.previewUrl}
+                  onPlayPreview={playPreview}
+                />
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="card p-6">
-          <h3 className="mb-3 font-bold">Historique</h3>
-          <div className="space-y-2">
-            {room.startingArtistName ? (
-              <ArtistBadge
-                name={room.startingArtistName}
-                pictureUrl={room.startingArtistPic}
-                label="Départ"
-              />
-            ) : null}
-            {room.moves.map((move, index) => (
-              <ArtistBadge
-                key={`${move.artistId}-${index}`}
-                name={move.artistName}
-                pictureUrl={move.pictureUrl}
-                trackTitle={move.trackTitle}
-                previewUrl={move.previewUrl}
-                onPlayPreview={playPreview}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="flex gap-3">
+        <div className="no-export flex flex-wrap gap-3">
           <button
-            onClick={async () => {
-              setSubmitting(true);
-              setError("");
-              const result = await rematch(room.id);
-              if (!result.ok) {
-                setError(result.error ?? "Erreur");
-              } else {
-                setRoom(result.room);
-                setNow(Date.now());
-                await broadcastSync({ room: result.room, event: result.event });
-              }
-              setSubmitting(false);
-            }}
-            disabled={submitting}
-            className="btn-primary flex-1 justify-center"
+            type="button"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="btn-ghost flex-1 justify-center disabled:opacity-50"
           >
-            {submitting ? <Loader2 size={16} className="animate-spin" /> : <Swords size={16} />}
-            Revanche
+            <Download size={16} />
+            {isDownloading ? "Génération…" : "Enregistrer en PNG"}
           </button>
+          <button
+            type="button"
+            onClick={handleSaveAndShare}
+            disabled={sharing}
+            className="btn-primary flex-1 justify-center disabled:opacity-50"
+          >
+            <Share2 size={16} />
+            {sharing ? "…" : "Sauvegarder et partager"}
+          </button>
+          {isParticipant ? (
+            <button
+              onClick={async () => {
+                setSubmitting(true);
+                setError("");
+                const result = await rematch(room.id);
+                if (!result.ok) {
+                  setError(result.error ?? "Erreur");
+                } else {
+                  setRoom(result.room);
+                  setNow(Date.now());
+                  await broadcastSync({ room: result.room, event: result.event });
+                }
+                setSubmitting(false);
+              }}
+              disabled={submitting}
+              className="btn-primary flex-1 justify-center"
+            >
+              {submitting ? <Loader2 size={16} className="animate-spin" /> : <Swords size={16} />}
+              Rejouer
+            </button>
+          ) : null}
           <Link href="/battle-feat" className="btn-ghost flex-1 justify-center">
             <ArrowRight size={16} /> Accueil
           </Link>
@@ -555,46 +726,40 @@ export default function BattleFeatRoom({
     );
   }
 
+  // ── PLAYING ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      <div className="card flex items-center justify-between px-4 py-2 text-sm">
-        <span className={`font-semibold ${isHost ? "text-[color:var(--accent)]" : ""}`}>
-          {room.hostUsername}: {room.hostScore}
-        </span>
-        <span className="text-[color:var(--muted)]">vs</span>
-        <span className={`font-semibold ${!isHost ? "text-[color:var(--accent)]" : ""}`}>
-          {room.guestUsername ?? "?"}: {room.guestScore}
-        </span>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
-        <span className="text-[color:var(--muted)]">{room.hostUsername}</span>
-        <span
-          className={`rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${
-            hostOnline ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
-          }`}
-        >
-          {hostOnline ? "Connecté" : "Déconnecté"}
-        </span>
-        {room.guestUsername ? (
-          <>
-            <span className="text-[color:var(--muted)]">·</span>
-            <span className="text-[color:var(--muted)]">{room.guestUsername}</span>
-            <span
-              className={`rounded-full px-2 py-0.5 font-semibold uppercase tracking-wide ${
-                guestOnline ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
-              }`}
-            >
-              {guestOnline ? "Connecté" : "Déconnecté"}
+      {/* Scoreboard */}
+      <div className="card px-4 py-2 text-sm">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
+            Scores
+          </span>
+          {currentTurnParticipant ? (
+            <span className="text-xs text-[color:var(--muted)]">
+              Tour de <strong>{currentTurnParticipant.username}</strong>
             </span>
-          </>
-        ) : null}
+          ) : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {sortedByPosition.map((p) => (
+            <PlayerChip
+              key={p.playerId}
+              p={p}
+              online={isOnline(p.lastSeenAt, now)}
+              isCurrent={p.playerId === room.currentTurnId}
+              isMe={p.playerId === userId}
+            />
+          ))}
+        </div>
       </div>
 
-      {opponentDisconnectInfo ? (
+      {disconnectedParticipants.length > 0 ? (
         <p className="flex items-center justify-center gap-2 rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
           <AlertTriangle size={14} />
-          Adversaire déconnecté. Victoire automatique dans {opponentDisconnectInfo.remaining}s.
+          {disconnectedParticipants.length} joueur
+          {disconnectedParticipants.length > 1 ? "s" : ""} déconnecté
+          {disconnectedParticipants.length > 1 ? "s" : ""}.
         </p>
       ) : null}
 
@@ -686,7 +851,11 @@ export default function BattleFeatRoom({
             />
 
             {myJokers > 0 ? (
-              <button onClick={handleJoker} disabled={submitting} className="btn-ghost w-full text-sm">
+              <button
+                onClick={handleJoker}
+                disabled={submitting}
+                className="btn-ghost w-full text-sm"
+              >
                 <Zap size={14} className="text-yellow-400" />
                 Joker ({myJokers})
               </button>
@@ -698,9 +867,12 @@ export default function BattleFeatRoom({
           <div className="flex flex-col items-center gap-3 py-6">
             <Clock size={32} className="animate-pulse text-[color:var(--muted)]" />
             <p className="text-sm text-[color:var(--muted)]">
+              {isSpectator
+                ? "Mode spectateur · "
+                : null}
               En attente de{" "}
               <strong className="text-white">
-                {room.currentTurnId === room.hostId ? room.hostUsername : room.guestUsername}
+                {currentTurnParticipant?.username ?? "…"}
               </strong>
               …
             </p>

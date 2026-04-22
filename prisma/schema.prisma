@@ -28,9 +28,7 @@ model Profile {
   blindtestSessions         BlindtestSession[]
   soloSessions              BattleFeatSoloSession[]
   hostedRooms               BattleFeatRoom[]        @relation("RoomHost")
-  joinedRooms               BattleFeatRoom[]        @relation("RoomGuest")
   hostedBlindtestRooms      BlindtestRoom[]         @relation("BlindtestRoomHost")
-  joinedBlindtestRooms      BlindtestRoom[]         @relation("BlindtestRoomGuest")
 
   @@map("profiles")
 }
@@ -75,6 +73,7 @@ model BracketGame {
   playerId     String?  @map("player_id") @db.Uuid
   currentRound Int      @default(1) @map("current_round") @db.SmallInt
   winnerSeed   Int?     @map("winner_seed") @db.SmallInt
+  visibility   String   @default("private")
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   bracket Bracket       @relation(fields: [bracketId], references: [id], onDelete: Cascade)
@@ -83,6 +82,7 @@ model BracketGame {
 
   @@index([bracketId])
   @@index([playerId])
+  @@index([visibility, createdAt(sort: Desc)])
   @@map("bracket_games")
 }
 
@@ -122,28 +122,21 @@ model BlindtestRoom {
   id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   blindtestId   String   @map("blindtest_id") @db.Uuid
   hostId        String   @map("host_id") @db.Uuid
-  guestId       String?  @map("guest_id") @db.Uuid
+  visibility    String   @default("private")
   status        String   @default("waiting") // waiting | playing | finished
   currentTrack  Int      @default(0) @map("current_track") @db.SmallInt
-  hostAnswers   Json     @default("[]") @map("host_answers") @db.JsonB
-  guestAnswers  Json     @default("[]") @map("guest_answers") @db.JsonB
-  hostScore     Int      @default(0) @map("host_score")
-  guestScore    Int      @default(0) @map("guest_score")
-  hostReady       Boolean   @default(false) @map("host_ready")
-  guestReady      Boolean   @default(false) @map("guest_ready")
-  hostLastSeenAt  DateTime? @default(now()) @map("host_last_seen_at") @db.Timestamptz
-  guestLastSeenAt DateTime? @map("guest_last_seen_at") @db.Timestamptz
-  winnerId        String?   @map("winner_id") @db.Uuid
+  participants  Json     @default("[]") @db.JsonB
+  winnerId      String?   @map("winner_id") @db.Uuid
   trackStartedAt  DateTime? @map("track_started_at") @db.Timestamptz
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   blindtest Blindtest @relation(fields: [blindtestId], references: [id], onDelete: Cascade)
-  host      Profile   @relation("BlindtestRoomHost",  fields: [hostId],  references: [id])
-  guest     Profile?  @relation("BlindtestRoomGuest", fields: [guestId], references: [id])
+  host      Profile   @relation("BlindtestRoomHost", fields: [hostId], references: [id])
 
   @@index([hostId])
   @@index([blindtestId])
+  @@index([visibility, status, updatedAt(sort: Desc)])
   @@map("blindtest_rooms")
 }
 
@@ -169,12 +162,14 @@ model BlindtestSession {
   score       Int      @default(0)
   maxScore    Int      @map("max_score") @default(0)
   answers     Json     @db.JsonB
+  visibility  String   @default("private")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   blindtest Blindtest @relation(fields: [blindtestId], references: [id], onDelete: Cascade)
   player    Profile?  @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
   @@index([blindtestId])
+  @@index([visibility, createdAt(sort: Desc)])
   @@map("blindtest_sessions")
 }
 
@@ -220,12 +215,14 @@ model TierlistSession {
   tierlistId String   @map("tierlist_id") @db.Uuid
   playerId   String?  @map("player_id") @db.Uuid
   placements Json     @db.JsonB
+  visibility String   @default("private")
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   tierlist Tierlist @relation(fields: [tierlistId], references: [id], onDelete: Cascade)
   player   Profile? @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
   @@index([tierlistId])
+  @@index([visibility, createdAt(sort: Desc)])
   @@map("tierlist_sessions")
 }
 
@@ -287,7 +284,6 @@ model BattleFeatSoloSession {
 model BattleFeatRoom {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   hostId             String   @map("host_id") @db.Uuid
-  guestId            String?  @map("guest_id") @db.Uuid
   status             String   @default("waiting")
   startingArtistId   String?  @map("starting_artist_id") // Deezer ID (text)
   startingArtistName String?  @map("starting_artist_name")
@@ -298,19 +294,13 @@ model BattleFeatRoom {
   currentTurnId      String?  @map("current_turn_id") @db.Uuid
   usedArtistIds      Json     @default("[]") @map("used_artist_ids") @db.JsonB
   moves              Json     @default("[]") @db.JsonB
-  hostScore          Int      @default(0) @map("host_score")
-  guestScore         Int      @default(0) @map("guest_score")
-  hostJokers         Int      @default(1) @map("host_jokers")
-  guestJokers        Int      @default(1) @map("guest_jokers")
-  hostLastSeenAt     DateTime? @default(now()) @map("host_last_seen_at") @db.Timestamptz
-  guestLastSeenAt    DateTime? @map("guest_last_seen_at") @db.Timestamptz
+  participants       Json     @default("[]") @db.JsonB
   winnerId           String?  @map("winner_id") @db.Uuid
   visibility         String   @default("private")
   createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  host  Profile  @relation("RoomHost",  fields: [hostId],  references: [id])
-  guest Profile? @relation("RoomGuest", fields: [guestId], references: [id])
+  host Profile @relation("RoomHost", fields: [hostId], references: [id])
 
   @@index([hostId])
   @@index([visibility, createdAt(sort: Desc)])

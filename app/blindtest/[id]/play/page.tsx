@@ -15,10 +15,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function BlindtestPlayPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ transient?: string }>;
 }) {
   const { id } = await params;
+  const { transient } = await searchParams;
 
   const blindtest = await prisma.blindtest.findUnique({
     where: { id },
@@ -56,7 +59,7 @@ export default async function BlindtestPlayPage({
           {tracks.length} morceau{tracks.length > 1 ? "x" : ""} · Mode solo
         </p>
       </div>
-      <BlindtestPlayer blindtestId={blindtest.id} tracks={tracks} />
+      <BlindtestPlayer blindtestId={blindtest.id} tracks={tracks} transient={transient === "1"} />
     </div>
   );
 }

@@ -1,9 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { createClient } from "@/lib/supabase/server";
+import type { BlindtestParticipant } from "@/lib/blindtest-room";
 
 export type BlindtestTrackInput = {
   deezer_track_id: number;
@@ -15,7 +17,7 @@ export type BlindtestTrackInput = {
 
 export async function createBlindtest(input: {
   title: string;
-  visibility: "private" | "public";
+  visibility: "private" | "public" | "none";
   tracks: BlindtestTrackInput[];
   mode: "solo" | "multi";
 }) {
@@ -34,13 +36,20 @@ export async function createBlindtest(input: {
     return { error: msg };
   }
 
+  if (input.mode === "multi" && input.visibility === "none") {
+    return { error: "Le mode multijoueur nécessite un blindtest conservé (non publié ou publié)." };
+  }
+
+  const transient = input.visibility === "none";
+  const storedVisibility = transient ? "private" : input.visibility;
+
   let blindtestId: string;
   try {
     const bt = await prisma.blindtest.create({
       data: {
         ownerId: identity.playerId,
         title: input.title.trim(),
-        visibility: input.visibility,
+        visibility: storedVisibility,
         tracks: {
           create: input.tracks.map((t, i) => ({
             position: i,
@@ -68,13 +77,26 @@ export async function createBlindtest(input: {
     if (user) {
       let roomId: string | null = null;
       try {
+        const profile = await prisma.profile.findUnique({
+          where: { id: user.id },
+          select: { username: true },
+        });
+        const nowIso = new Date().toISOString();
+        const hostParticipant: BlindtestParticipant = {
+          playerId: user.id,
+          username: profile?.username ?? "Joueur",
+          score: 0,
+          answers: [],
+          lastSeenAt: nowIso,
+          joinedAt: nowIso,
+        };
         const room = await prisma.blindtestRoom.create({
           data: {
             blindtestId,
             hostId: user.id,
+            visibility: storedVisibility,
             status: "waiting",
-            hostAnswers: [],
-            guestAnswers: [],
+            participants: [hostParticipant] as unknown as Prisma.JsonArray,
           },
         });
         roomId = room.id;
@@ -87,5 +109,5 @@ export async function createBlindtest(input: {
     redirect(`/blindtest/${blindtestId}`);
   }
 
-  redirect(`/blindtest/${blindtestId}/play`);
+  redirect(`/blindtest/${blindtestId}/play${transient ? "?transient=1" : ""}`);
 }

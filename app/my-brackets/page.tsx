@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import type { Prisma } from "@prisma/client";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { ensureBattleFeatVisibilityColumns } from "@/lib/ensure-battle-feat-visibility-columns";
@@ -13,12 +15,24 @@ import {
   type BattleFeatRoomSummary,
   type BattleFeatSessionSummary,
 } from "@/components/BattleFeatCard";
+import SessionCard, { type SessionSummary } from "@/components/SessionCard";
 import { Plus, Play } from "lucide-react";
 
 export const metadata: Metadata = { title: "Ma bibliothèque — MusiKlash" };
 
 type Visibility = "all" | "private" | "public";
 type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat";
+
+function modelHasField(modelName: string, fieldName: string): boolean {
+  const runtimeDataModel = (
+    prisma as unknown as {
+      _runtimeDataModel?: {
+        models?: Record<string, { fields?: Array<{ name: string }> }>;
+      };
+    }
+  )._runtimeDataModel;
+  return Boolean(runtimeDataModel?.models?.[modelName]?.fields?.some((field) => field.name === fieldName));
+}
 
 export default async function MyBracketsPage({
   searchParams,
@@ -34,8 +48,24 @@ export default async function MyBracketsPage({
 
   const visFilter =
     filter === "private" || filter === "public" ? { visibility: filter } : {};
+  const hasBracketGameVisibility = modelHasField("BracketGame", "visibility");
+  const hasTierlistSessionVisibility = modelHasField("TierlistSession", "visibility");
+  const hasBlindtestSessionVisibility = modelHasField("BlindtestSession", "visibility");
+  const hasBattleFeatRoomVisibility = modelHasField("BattleFeatRoom", "visibility");
+  const hasBattleFeatRoomParticipants = modelHasField("BattleFeatRoom", "participants");
+  const hasBattleFeatRoomHostScore = modelHasField("BattleFeatRoom", "hostScore");
+  const hasBattleFeatRoomGuestScore = modelHasField("BattleFeatRoom", "guestScore");
 
-  const [brackets, tierlists, blindtests, soloSessions, battleFeatRooms] = activePlayerId
+  const [
+    brackets,
+    tierlists,
+    blindtests,
+    soloSessions,
+    battleFeatRooms,
+    bracketGamesRaw,
+    tierlistSessionsRaw,
+    blindtestSessionsRaw,
+  ] = activePlayerId
     ? await (async () => {
         await ensureBattleFeatVisibilityColumns(prisma);
         return Promise.all([
@@ -73,23 +103,80 @@ export default async function MyBracketsPage({
         }),
         prisma.battleFeatRoom.findMany({
           where: {
-            OR: [{ hostId: activePlayerId }, { guestId: activePlayerId }],
-            ...visFilter,
+            hostId: activePlayerId,
+            ...(hasBattleFeatRoomVisibility ? visFilter : {}),
           },
           select: {
             id: true,
             hostId: true,
             status: true,
-            hostScore: true,
-            guestScore: true,
-            visibility: true,
+            ...(hasBattleFeatRoomParticipants ? { participants: true } : {}),
+            ...(hasBattleFeatRoomHostScore ? { hostScore: true } : {}),
+            ...(hasBattleFeatRoomGuestScore ? { guestScore: true } : {}),
+            ...(hasBattleFeatRoomVisibility ? { visibility: true } : {}),
             createdAt: true,
           },
           orderBy: { updatedAt: "desc" },
         }),
+        prisma.bracketGame.findMany({
+          where: {
+            playerId: activePlayerId,
+            winnerSeed: { not: null },
+            ...(hasBracketGameVisibility ? visFilter : {}),
+          },
+          select: {
+            id: true,
+            winnerSeed: true,
+            ...(hasBracketGameVisibility ? { visibility: true } : {}),
+            createdAt: true,
+            bracket: {
+              select: {
+                id: true,
+                title: true,
+                theme: true,
+                tracks: {
+                  select: { seed: true, title: true, artist: true, coverUrl: true },
+                },
+              },
+            },
+          } as Prisma.BracketGameSelect,
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.tierlistSession.findMany({
+          where: {
+            playerId: activePlayerId,
+            ...(hasTierlistSessionVisibility ? visFilter : {}),
+          },
+          select: {
+            id: true,
+            ...(hasTierlistSessionVisibility ? { visibility: true } : {}),
+            createdAt: true,
+            tierlist: {
+              select: { id: true, title: true, theme: true, coverUrl: true },
+            },
+          } as Prisma.TierlistSessionSelect,
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.blindtestSession.findMany({
+          where: {
+            playerId: activePlayerId,
+            ...(hasBlindtestSessionVisibility ? visFilter : {}),
+          },
+          select: {
+            id: true,
+            score: true,
+            maxScore: true,
+            ...(hasBlindtestSessionVisibility ? { visibility: true } : {}),
+            createdAt: true,
+            blindtest: {
+              select: { id: true, title: true },
+            },
+          } as Prisma.BlindtestSessionSelect,
+          orderBy: { createdAt: "desc" },
+        }),
       ]);
       })()
-    : [[], [], [], [], []];
+    : [[], [], [], [], [], [], [], []];
 
   const bracketList = brackets.map((b) => ({ ...b, cover_url: b.coverUrl })) as BracketSummary[];
   const tierlistList = tierlists.map((t) => ({ ...t, coverUrl: t.coverUrl })) as TierlistSummary[];
@@ -107,15 +194,93 @@ export default async function MyBracketsPage({
     visibility: s.visibility,
     createdAt: s.createdAt.toISOString(),
   })) as BattleFeatSessionSummary[];
-  const battleFeatRoomList = battleFeatRooms.map((room) => ({
-    id: room.id,
-    status: room.status,
-    hostScore: room.hostScore,
-    guestScore: room.guestScore,
-    visibility: room.visibility,
-    createdAt: room.createdAt.toISOString(),
-    canEditVisibility: room.hostId === activePlayerId,
-  })) as BattleFeatRoomSummary[];
+  const battleFeatRoomList = battleFeatRooms.map((room) => {
+    const parts = "participants" in room && Array.isArray(room.participants)
+      ? (room.participants as Array<{ score?: number }>)
+      : [];
+    const scoresFromParticipants = parts.map((p) => (typeof p?.score === "number" ? p.score : 0));
+    const hostScore = "hostScore" in room && typeof room.hostScore === "number" ? room.hostScore : 0;
+    const guestScore = "guestScore" in room && typeof room.guestScore === "number" ? room.guestScore : 0;
+    const scores = scoresFromParticipants.length > 0 ? scoresFromParticipants : [hostScore, guestScore];
+    return {
+      id: room.id,
+      status: room.status,
+      playerCount: parts.length > 0 ? parts.length : scores.length,
+      scores,
+      visibility:
+        "visibility" in room && typeof room.visibility === "string"
+          ? room.visibility
+          : "public",
+      createdAt: room.createdAt.toISOString(),
+      canEditVisibility: room.hostId === activePlayerId,
+    };
+  }) as BattleFeatRoomSummary[];
+
+  const bracketGames = bracketGamesRaw as unknown as Array<{
+    id: string;
+    winnerSeed: number | null;
+    createdAt: Date;
+    visibility?: string;
+    bracket: {
+      id: string;
+      title: string;
+      theme: string | null;
+      tracks: Array<{ seed: number; title: string; artist: string; coverUrl: string | null }>;
+    };
+  }>;
+  const tierlistSessionsData = tierlistSessionsRaw as unknown as Array<{
+    id: string;
+    createdAt: Date;
+    visibility?: string;
+    tierlist: { id: string; title: string; theme: string | null; coverUrl: string | null };
+  }>;
+  const blindtestSessionsData = blindtestSessionsRaw as unknown as Array<{
+    id: string;
+    score: number;
+    maxScore: number;
+    createdAt: Date;
+    visibility?: string;
+    blindtest: { id: string; title: string };
+  }>;
+
+  const bracketSessions: SessionSummary[] = bracketGames.map((g) => {
+    const winner = g.winnerSeed
+      ? g.bracket.tracks.find((t) => t.seed === g.winnerSeed)
+      : null;
+    return {
+      id: g.id,
+      kind: "bracket" as const,
+      parentId: g.bracket.id,
+      title: g.bracket.title,
+      subtitle: winner ? `${winner.title} — ${winner.artist}` : g.bracket.theme ?? null,
+      createdAt: g.createdAt.toISOString(),
+      coverUrl: winner?.coverUrl ?? null,
+      badge: "Champion",
+      visibility: ("visibility" in g && g.visibility === "public") ? "public" : "private",
+    };
+  });
+
+  const tierlistSessions: SessionSummary[] = tierlistSessionsData.map((s) => ({
+    id: s.id,
+    kind: "tierlist" as const,
+    parentId: s.tierlist.id,
+    title: s.tierlist.title,
+    subtitle: s.tierlist.theme ?? null,
+    createdAt: s.createdAt.toISOString(),
+    coverUrl: s.tierlist.coverUrl,
+    visibility: ("visibility" in s && s.visibility === "public") ? "public" : "private",
+  }));
+
+  const blindtestSessions: SessionSummary[] = blindtestSessionsData.map((s) => ({
+    id: s.id,
+    kind: "blindtest" as const,
+    parentId: s.blindtest.id,
+    title: s.blindtest.title,
+    subtitle: `${s.score} / ${s.maxScore} pts`,
+    createdAt: s.createdAt.toISOString(),
+    coverUrl: null,
+    visibility: ("visibility" in s && s.visibility === "public") ? "public" : "private",
+  }));
 
   const libraryEditor = Boolean(activePlayerId);
   const totalCount =
@@ -123,7 +288,10 @@ export default async function MyBracketsPage({
     tierlistList.length +
     blindtestList.length +
     battleFeatList.length +
-    battleFeatRoomList.length;
+    battleFeatRoomList.length +
+    bracketSessions.length +
+    tierlistSessions.length +
+    blindtestSessions.length;
 
   const createHref =
     tab === "tierlists"
@@ -191,50 +359,104 @@ export default async function MyBracketsPage({
         style={{ borderColor: "#283041", background: "#181b24" }}
       >
         <FilterLink current={filter} value="all" label="Tous" tab={tab} />
-        <FilterLink current={filter} value="private" label="Privé" tab={tab} />
-        <FilterLink current={filter} value="public" label="Public" tab={tab} />
+        <FilterLink current={filter} value="private" label="Publié — Privé" tab={tab} />
+        <FilterLink current={filter} value="public" label="Publié — Public" tab={tab} />
       </div>
       </div>
 
       {tab === "all" ? (
-        totalCount === 0 ? (
+        totalCount === 0 &&
+        bracketSessions.length === 0 &&
+        tierlistSessions.length === 0 &&
+        blindtestSessions.length === 0 ? (
           <EmptyState
             label="Aucun élément dans ta bibliothèque pour le moment"
             cta="Créer un bracket"
             href="/create-bracket"
           />
         ) : (
-          <div className="mt-8 space-y-9">
-            {bracketList.length > 0 ? (
-              <section className="space-y-4">
+          <div className="mt-8 space-y-10">
+            {bracketList.length > 0 || bracketSessions.length > 0 ? (
+              <section className="space-y-6">
                 <h2 className="text-2xl font-bold">Brackets</h2>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
-                  {bracketList.map((b) => (
-                    <BracketCard key={b.id} b={b} libraryEditor={libraryEditor} />
-                  ))}
-                </div>
+                <SubSection label="Mes créations">
+                  {bracketList.length === 0 ? (
+                    <EmptySub label="Aucun bracket créé." />
+                  ) : (
+                    <CardsGrid>
+                      {bracketList.map((b) => (
+                        <BracketCard key={b.id} b={b} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
+                <SubSection label="Mes résultats">
+                  {bracketSessions.length === 0 ? (
+                    <EmptySub label="Aucune partie terminée." />
+                  ) : (
+                    <CardsGrid>
+                      {bracketSessions.map((s) => (
+                        <SessionCard key={s.id} session={s} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
               </section>
             ) : null}
 
-            {tierlistList.length > 0 ? (
-              <section className="space-y-4">
+            {tierlistList.length > 0 || tierlistSessions.length > 0 ? (
+              <section className="space-y-6">
                 <h2 className="text-2xl font-bold">Tierlists</h2>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
-                  {tierlistList.map((t) => (
-                    <TierlistCard key={t.id} t={t} libraryEditor={libraryEditor} />
-                  ))}
-                </div>
+                <SubSection label="Mes créations">
+                  {tierlistList.length === 0 ? (
+                    <EmptySub label="Aucune tierlist créée." />
+                  ) : (
+                    <CardsGrid>
+                      {tierlistList.map((t) => (
+                        <TierlistCard key={t.id} t={t} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
+                <SubSection label="Mes résultats">
+                  {tierlistSessions.length === 0 ? (
+                    <EmptySub label="Aucune tierlist sauvegardée." />
+                  ) : (
+                    <CardsGrid>
+                      {tierlistSessions.map((s) => (
+                        <SessionCard key={s.id} session={s} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
               </section>
             ) : null}
 
-            {blindtestList.length > 0 ? (
-              <section className="space-y-4">
+            {blindtestList.length > 0 || blindtestSessions.length > 0 ? (
+              <section className="space-y-6">
                 <h2 className="text-2xl font-bold">Blindtests</h2>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
-                  {blindtestList.map((b) => (
-                    <BlindtestCard key={b.id} b={b} libraryEditor={libraryEditor} />
-                  ))}
-                </div>
+                <SubSection label="Mes créations">
+                  {blindtestList.length === 0 ? (
+                    <EmptySub label="Aucun blindtest créé." />
+                  ) : (
+                    <CardsGrid>
+                      {blindtestList.map((b) => (
+                        <BlindtestCard key={b.id} b={b} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
+                <SubSection label="Mes résultats">
+                  {blindtestSessions.length === 0 ? (
+                    <EmptySub label="Aucune partie terminée." />
+                  ) : (
+                    <CardsGrid>
+                      {blindtestSessions.map((s) => (
+                        <SessionCard key={s.id} session={s} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
               </section>
             ) : null}
 
@@ -244,21 +466,21 @@ export default async function MyBracketsPage({
                 {battleFeatList.length > 0 ? (
                   <div className="space-y-3">
                     <p className="text-sm text-[color:var(--muted)]">Sessions solo</p>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                    <CardsGrid>
                       {battleFeatList.map((s) => (
                         <BattleFeatSoloCard key={s.id} s={s} libraryEditor={libraryEditor} />
                       ))}
-                    </div>
+                    </CardsGrid>
                   </div>
                 ) : null}
                 {battleFeatRoomList.length > 0 ? (
                   <div className="space-y-3">
                     <p className="text-sm text-[color:var(--muted)]">Rooms</p>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                    <CardsGrid>
                       {battleFeatRoomList.map((room) => (
                         <BattleFeatRoomCard key={room.id} r={room} libraryEditor={libraryEditor} />
                       ))}
-                    </div>
+                    </CardsGrid>
                   </div>
                 ) : null}
               </section>
@@ -266,45 +488,102 @@ export default async function MyBracketsPage({
           </div>
         )
       ) : tab === "brackets" ? (
-        bracketList.length === 0 ? (
+        bracketList.length === 0 && bracketSessions.length === 0 ? (
           <EmptyState
             label="Aucun bracket pour le moment"
             cta="Créer un bracket"
             href="/create-bracket"
           />
         ) : (
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
-            {bracketList.map((b) => (
-              <BracketCard key={b.id} b={b} libraryEditor={libraryEditor} />
-            ))}
+          <div className="mt-8 space-y-8">
+            <SubSection label="Mes créations">
+              {bracketList.length === 0 ? (
+                <EmptySub label="Aucun bracket créé." />
+              ) : (
+                <CardsGrid>
+                  {bracketList.map((b) => (
+                    <BracketCard key={b.id} b={b} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
+            <SubSection label="Mes résultats">
+              {bracketSessions.length === 0 ? (
+                <EmptySub label="Aucune partie terminée." />
+              ) : (
+                <CardsGrid>
+                  {bracketSessions.map((s) => (
+                    <SessionCard key={s.id} session={s} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
           </div>
         )
       ) : tab === "tierlists" ? (
-        tierlistList.length === 0 ? (
+        tierlistList.length === 0 && tierlistSessions.length === 0 ? (
           <EmptyState
             label="Aucune tierlist pour le moment"
             cta="Créer une tierlist"
             href="/create-tierlist"
           />
         ) : (
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
-            {tierlistList.map((t) => (
-              <TierlistCard key={t.id} t={t} libraryEditor={libraryEditor} />
-            ))}
+          <div className="mt-8 space-y-8">
+            <SubSection label="Mes créations">
+              {tierlistList.length === 0 ? (
+                <EmptySub label="Aucune tierlist créée." />
+              ) : (
+                <CardsGrid>
+                  {tierlistList.map((t) => (
+                    <TierlistCard key={t.id} t={t} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
+            <SubSection label="Mes résultats">
+              {tierlistSessions.length === 0 ? (
+                <EmptySub label="Aucune tierlist sauvegardée." />
+              ) : (
+                <CardsGrid>
+                  {tierlistSessions.map((s) => (
+                    <SessionCard key={s.id} session={s} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
           </div>
         )
       ) : tab === "blindtests" ? (
-        blindtestList.length === 0 ? (
+        blindtestList.length === 0 && blindtestSessions.length === 0 ? (
           <EmptyState
             label="Aucun blindtest pour le moment"
             cta="Créer un blindtest"
             href="/create-blindtest"
           />
         ) : (
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">
-            {blindtestList.map((b) => (
-              <BlindtestCard key={b.id} b={b} libraryEditor={libraryEditor} />
-            ))}
+          <div className="mt-8 space-y-8">
+            <SubSection label="Mes créations">
+              {blindtestList.length === 0 ? (
+                <EmptySub label="Aucun blindtest créé." />
+              ) : (
+                <CardsGrid>
+                  {blindtestList.map((b) => (
+                    <BlindtestCard key={b.id} b={b} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
+            <SubSection label="Mes résultats">
+              {blindtestSessions.length === 0 ? (
+                <EmptySub label="Aucune partie terminée." />
+              ) : (
+                <CardsGrid>
+                  {blindtestSessions.map((s) => (
+                    <SessionCard key={s.id} session={s} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
           </div>
         )
       ) : tab === "battlefeat" ? (
@@ -324,11 +603,11 @@ export default async function MyBracketsPage({
                     Tes dernières parties contre l&apos;IA.
                   </p>
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                <CardsGrid>
                   {battleFeatList.map((s) => (
                     <BattleFeatSoloCard key={s.id} s={s} libraryEditor={libraryEditor} />
                   ))}
-                </div>
+                </CardsGrid>
               </section>
             ) : null}
 
@@ -340,17 +619,43 @@ export default async function MyBracketsPage({
                     Tes rooms BattleFeat partagées par lien.
                   </p>
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                <CardsGrid>
                   {battleFeatRoomList.map((room) => (
                     <BattleFeatRoomCard key={room.id} r={room} libraryEditor={libraryEditor} />
                   ))}
-                </div>
+                </CardsGrid>
               </section>
             ) : null}
           </div>
         )
       ) : null}
     </div>
+  );
+}
+
+function SubSection({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-semibold text-[color:var(--muted)]">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+function EmptySub({ label }: { label: string }) {
+  return (
+    <p
+      className="rounded-xl border px-3 py-3 text-xs text-[color:var(--muted)]"
+      style={{ borderColor: "#232b3a", background: "#10141d" }}
+    >
+      {label}
+    </p>
+  );
+}
+
+function CardsGrid({ children }: { children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">{children}</div>
   );
 }
 

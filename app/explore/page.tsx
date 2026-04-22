@@ -5,6 +5,7 @@ import { ensureBattleFeatVisibilityColumns } from "@/lib/ensure-battle-feat-visi
 import BracketCard, { type BracketSummary } from "@/components/BracketCard";
 import TierlistCard, { type TierlistSummary } from "@/components/TierlistCard";
 import BlindtestCard, { type BlindtestSummary } from "@/components/BlindtestCard";
+import BlindtestRoomCard, { type BlindtestRoomSummary } from "@/components/BlindtestRoomCard";
 import {
   BattleFeatRoomCard,
   BattleFeatSoloCard,
@@ -21,6 +22,19 @@ type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat";
 function parseTab(raw: string | undefined): Tab {
   const v = ["all", "brackets", "tierlists", "blindtests", "battlefeat"] as const;
   return raw && (v as readonly string[]).includes(raw) ? (raw as Tab) : "all";
+}
+
+function modelHasField(modelName: string, fieldName: string): boolean {
+  const runtime = (
+    prisma as unknown as {
+      _runtimeDataModel?: {
+        models?: Record<string, { fields?: Array<{ name: string }> }>;
+      };
+    }
+  )._runtimeDataModel;
+  const model = runtime?.models?.[modelName];
+  if (!model?.fields) return false;
+  return model.fields.some((f) => f.name === fieldName);
 }
 
 export default async function ExplorePage({
@@ -54,12 +68,18 @@ export default async function ExplorePage({
   const loadTierlists = tab === "all" || tab === "tierlists";
   const loadBlindtests = tab === "all" || tab === "blindtests";
   const loadBattlefeat = tab === "all" || tab === "battlefeat";
+  const hasBlindtestRoomVisibility = modelHasField("BlindtestRoom", "visibility");
+  const hasBattleFeatRoomVisibility = modelHasField("BattleFeatRoom", "visibility");
+  const hasBattleFeatRoomParticipants = modelHasField("BattleFeatRoom", "participants");
+  const hasBattleFeatRoomHostScore = modelHasField("BattleFeatRoom", "hostScore");
+  const hasBattleFeatRoomGuestScore = modelHasField("BattleFeatRoom", "guestScore");
 
   if (loadBattlefeat) {
     await ensureBattleFeatVisibilityColumns(prisma);
   }
 
-  const [brackets, tierlists, blindtests, soloSessions, battleFeatRooms] = await Promise.all([
+  const [brackets, tierlists, blindtests, blindtestRooms, soloSessions, battleFeatRooms] =
+    await Promise.all([
     loadBrackets
       ? prisma.bracket.findMany({
           where: { visibility: "public", ...textFilter },
@@ -89,6 +109,36 @@ export default async function ExplorePage({
           take: takeGrid,
         })
       : Promise.resolve([]),
+    loadBlindtests
+      ? prisma.blindtestRoom.findMany({
+          where: {
+            status: { in: ["waiting", "playing"] },
+            ...(hasBlindtestRoomVisibility ? { visibility: "public" } : {}),
+            ...(term
+              ? {
+                  OR: [
+                    { blindtest: { title: { contains: term, mode: "insensitive" as const } } },
+                    { host: { username: { contains: term, mode: "insensitive" as const } } },
+                  ],
+                }
+              : {}),
+          },
+          select: {
+            id: true,
+            status: true,
+            createdAt: true,
+            host: { select: { username: true } },
+            blindtest: {
+              select: {
+                title: true,
+                _count: { select: { tracks: true } },
+              },
+            },
+          },
+          orderBy: { updatedAt: "desc" },
+          take: takeGrid,
+        })
+      : Promise.resolve([]),
     loadBattlefeat
       ? prisma.battleFeatSoloSession.findMany({
           where: { visibility: "public", status: "finished" },
@@ -106,13 +156,17 @@ export default async function ExplorePage({
       : Promise.resolve([]),
     loadBattlefeat
       ? prisma.battleFeatRoom.findMany({
-          where: { visibility: "public" },
+          where: {
+            status: { in: ["waiting", "playing"] },
+            ...(hasBattleFeatRoomVisibility ? { visibility: "public" } : {}),
+          },
           select: {
             id: true,
             status: true,
-            hostScore: true,
-            guestScore: true,
-            visibility: true,
+            ...(hasBattleFeatRoomParticipants ? { participants: true } : {}),
+            ...(hasBattleFeatRoomHostScore ? { hostScore: true } : {}),
+            ...(hasBattleFeatRoomGuestScore ? { guestScore: true } : {}),
+            ...(hasBattleFeatRoomVisibility ? { visibility: true } : {}),
             createdAt: true,
           },
           orderBy: { updatedAt: "desc" },
@@ -130,6 +184,15 @@ export default async function ExplorePage({
     trackCount: b._count.tracks,
   })) as BlindtestSummary[];
 
+  const blindtestRoomList = blindtestRooms.map((room) => ({
+    id: room.id,
+    status: room.status,
+    title: room.blindtest.title,
+    trackCount: room.blindtest._count.tracks,
+    hostName: room.host.username,
+    createdAt: room.createdAt.toISOString(),
+  })) as BlindtestRoomSummary[];
+
   const battleFeatSoloList = soloSessions.map((s) => ({
     id: s.id,
     difficulty: s.difficulty,
@@ -139,14 +202,30 @@ export default async function ExplorePage({
     createdAt: s.createdAt.toISOString(),
   })) as BattleFeatSessionSummary[];
 
-  const battleFeatRoomList = battleFeatRooms.map((room) => ({
-    id: room.id,
-    status: room.status,
-    hostScore: room.hostScore,
-    guestScore: room.guestScore,
-    visibility: room.visibility,
-    createdAt: room.createdAt.toISOString(),
-  })) as BattleFeatRoomSummary[];
+  const battleFeatRoomList = battleFeatRooms.map((room) => {
+    const parts = "participants" in room && Array.isArray(room.participants)
+      ? (room.participants as Array<{ score?: number }>)
+      : [];
+    const scoresFromParticipants = parts.map((p) =>
+      typeof p?.score === "number" ? p.score : 0,
+    );
+    const hostScore =
+      "hostScore" in room && typeof room.hostScore === "number" ? room.hostScore : 0;
+    const guestScore =
+      "guestScore" in room && typeof room.guestScore === "number" ? room.guestScore : 0;
+    const scores = scoresFromParticipants.length > 0 ? scoresFromParticipants : [hostScore, guestScore];
+    return {
+      id: room.id,
+      status: room.status,
+      playerCount: parts.length > 0 ? parts.length : scores.length,
+      scores,
+      visibility:
+        "visibility" in room && typeof room.visibility === "string"
+          ? room.visibility
+          : "public",
+      createdAt: room.createdAt.toISOString(),
+    };
+  }) as BattleFeatRoomSummary[];
 
   const hasAnyBattlefeat = battleFeatSoloList.length > 0 || battleFeatRoomList.length > 0;
 
@@ -155,6 +234,7 @@ export default async function ExplorePage({
       ? bracketList.length === 0 &&
         tierlistList.length === 0 &&
         blindtestList.length === 0 &&
+        blindtestRoomList.length === 0 &&
         !hasAnyBattlefeat
       : tab === "battlefeat"
         ? !hasAnyBattlefeat
@@ -162,7 +242,7 @@ export default async function ExplorePage({
           ? bracketList.length === 0
           : tab === "tierlists"
             ? tierlistList.length === 0
-            : blindtestList.length === 0;
+            : blindtestList.length === 0 && blindtestRoomList.length === 0;
 
   const tabItems = [
     { key: "all" as const, label: e.tabAll },
@@ -311,14 +391,29 @@ export default async function ExplorePage({
             </section>
           ) : null}
 
-          {blindtestList.length > 0 ? (
+          {blindtestList.length > 0 || blindtestRoomList.length > 0 ? (
             <section className="space-y-4">
               <h2 className="text-2xl font-bold tracking-tight">{e.sectionBlindtests}</h2>
-              <div className={gridClass}>
-                {blindtestList.map((b) => (
-                  <BlindtestCard key={b.id} b={b} />
-                ))}
-              </div>
+              {blindtestList.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-[color:var(--muted)]">Créations</p>
+                  <div className={gridClass}>
+                    {blindtestList.map((b) => (
+                      <BlindtestCard key={b.id} b={b} />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {blindtestRoomList.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-[color:var(--muted)]">Rooms publiques (disponibles / en cours)</p>
+                  <div className={gridClass}>
+                    {blindtestRoomList.map((room) => (
+                      <BlindtestRoomCard key={room.id} room={room} />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               <div className="flex justify-end">
                 <Link
                   href={`/explore?tab=blindtests${term ? `&q=${encodeURIComponent(term)}` : ""}`}
@@ -376,10 +471,27 @@ export default async function ExplorePage({
           ))}
         </div>
       ) : tab === "blindtests" ? (
-        <div className={gridClass}>
-          {blindtestList.map((b) => (
-            <BlindtestCard key={b.id} b={b} />
-          ))}
+        <div className="mt-10 space-y-8">
+          {blindtestList.length > 0 ? (
+            <section className="space-y-3">
+              <p className="text-sm text-[color:var(--muted)]">Créations</p>
+              <div className={gridClass}>
+                {blindtestList.map((b) => (
+                  <BlindtestCard key={b.id} b={b} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+          {blindtestRoomList.length > 0 ? (
+            <section className="space-y-3">
+              <p className="text-sm text-[color:var(--muted)]">Rooms publiques (disponibles / en cours)</p>
+              <div className={gridClass}>
+                {blindtestRoomList.map((room) => (
+                  <BlindtestRoomCard key={room.id} room={room} />
+                ))}
+              </div>
+            </section>
+          ) : null}
         </div>
       ) : (
         <div className="mt-10 space-y-14">

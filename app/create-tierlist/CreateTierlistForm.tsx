@@ -10,7 +10,7 @@ export default function CreateTierlistForm() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState("");
-  const [visibility, setVisibility] = useState<"private" | "public">("private");
+  const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
   const [tracks, setTracks] = useState<TierlistTrackInput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -55,9 +55,9 @@ export default function CreateTierlistForm() {
           />
         </div>
         <div>
-          <label className="text-sm font-medium">Visibilité</label>
-          <div className="mt-1 flex gap-2">
-            {(["private", "public"] as const).map((v) => (
+          <label className="text-sm font-medium">Publication</label>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {(["private", "public", "none"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
@@ -65,10 +65,17 @@ export default function CreateTierlistForm() {
                 className="btn-chip"
                 data-active={visibility === v}
               >
-                {v === "private" ? "Privé" : "Public"}
+                {v === "private" ? "Publié — Privé" : v === "public" ? "Publié — Public" : "Non publié"}
               </button>
             ))}
           </div>
+          <p className="mt-2 text-xs text-[color:var(--muted)]">
+            {visibility === "public"
+              ? "Résultats accessibles à tout le monde et par lien."
+              : visibility === "private"
+              ? "Résultats accessibles uniquement à toi ou par lien direct."
+              : "Résultats non sauvegardés : la tierlist sera supprimée définitivement une fois terminée."}
+          </p>
         </div>
       </div>
 

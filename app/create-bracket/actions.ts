@@ -16,7 +16,7 @@ export async function createBracket(input: {
   title: string;
   theme: string;
   size: number;
-  visibility: "private" | "public";
+  visibility: "private" | "public" | "none";
   tracks: SelectedTrack[];
 }) {
   if (!isValidSize(input.size)) {
@@ -51,6 +51,8 @@ export async function createBracket(input: {
   }
 
   let bracketId: string;
+  const transient = input.visibility === "none";
+  const storedVisibility = transient ? "private" : input.visibility;
 
   try {
     const bracket = await prisma.bracket.create({
@@ -59,7 +61,7 @@ export async function createBracket(input: {
         title: input.title.trim(),
         theme: input.theme.trim() || null,
         size: storedSize,
-        visibility: input.visibility,
+        visibility: storedVisibility,
         coverUrl: input.tracks[0]?.cover_url ?? null,
         tracks: {
           create: input.tracks.map((t, i) => ({
@@ -81,5 +83,5 @@ export async function createBracket(input: {
     return { error: msg };
   }
 
-  redirect(`/bracket-game/${bracketId}`);
+  redirect(`/bracket-game/${bracketId}${transient ? "?transient=1" : ""}`);
 }

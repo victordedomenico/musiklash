@@ -69,10 +69,21 @@ export type ArtistResult = {
   pictureUrl: string | null;
 };
 
+export type BattleFeatParticipant = {
+  playerId: string;
+  username: string;
+  score: number;
+  jokers: number;
+  eliminated: boolean;
+  position: number; // turn order (stable, lower = earlier)
+  lastSeenAt: string | null;
+  joinedAt: string;
+};
+
 export type BattleFeatRoomSnapshot = {
   id: string;
   hostId: string;
-  guestId: string | null;
+  hostUsername: string;
   status: string;
   startingArtistId: string | null;
   startingArtistName: string | null;
@@ -83,27 +94,40 @@ export type BattleFeatRoomSnapshot = {
   currentTurnId: string | null;
   usedArtistIds: string[];
   moves: FeatMove[];
-  hostScore: number;
-  guestScore: number;
-  hostJokers: number;
-  guestJokers: number;
+  participants: BattleFeatParticipant[];
   winnerId: string | null;
-  hostLastSeenAt: string | null;
-  guestLastSeenAt: string | null;
-  hostUsername: string;
-  guestUsername: string | null;
   updatedAt: string;
 };
 
 // ─── Room event types (Supabase Realtime broadcast) ───────────────────────────
 
 export type RoomEvent =
-  | { type: "guest-joined"; guestName: string }
-  | { type: "game-start"; startingArtistId: string; startingArtistName: string; startingArtistPic: string | null; firstTurnId: string }
-  | { type: "move"; artistId: string; artistName: string; artistPic: string | null; trackTitle: string | null; nextTurnId: string; usedIds: string[] }
-  | { type: "joker-used"; playerId: string; artistId: string; artistName: string; artistPic: string | null }
-  | { type: "timeout"; loserId: string }
-  | { type: "invalid-move"; playerId: string }
+  | { type: "player-joined"; playerId: string; username: string }
+  | { type: "player-left"; playerId: string }
+  | {
+      type: "game-start";
+      startingArtistId: string;
+      startingArtistName: string;
+      startingArtistPic: string | null;
+      firstTurnId: string;
+    }
+  | {
+      type: "move";
+      artistId: string;
+      artistName: string;
+      artistPic: string | null;
+      trackTitle: string | null;
+      nextTurnId: string;
+      usedIds: string[];
+    }
+  | {
+      type: "joker-used";
+      playerId: string;
+      artistId: string;
+      artistName: string;
+      artistPic: string | null;
+    }
+  | { type: "eliminated"; loserId: string; winnerId: string | null }
   | { type: "rematch" };
 
 export type RoomBroadcastPayload = {

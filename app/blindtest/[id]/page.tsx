@@ -33,7 +33,8 @@ export default async function BlindtestPage({
 
   const trackCount = blindtest._count.tracks;
 
-  const createRoomWithId = createBlindtestRoom.bind(null, id);
+  const createPrivateRoom = createBlindtestRoom.bind(null, id, "private");
+  const createPublicRoom = createBlindtestRoom.bind(null, id, "public");
 
   return (
     <div className="page-shell max-w-4xl py-10">
@@ -82,34 +83,35 @@ export default async function BlindtestPage({
         </Link>
 
         {/* Multijoueur */}
-        <form action={createRoomWithId} className="contents">
-          <button
-            type="submit"
-            className="card group flex flex-col p-6 hover:-translate-y-1 transition text-left"
-          >
-            <div className="mb-4 flex items-center gap-3">
-              <div
-                className="flex h-12 w-12 items-center justify-center rounded-xl"
-                style={{ background: "var(--accent-dim)" }}
-              >
-                <Users size={22} style={{ color: "var(--accent)" }} />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold">Multijoueur</h2>
-                <p className="text-xs text-[color:var(--muted)]">En temps réel</p>
-              </div>
-            </div>
-            <p className="flex-1 text-sm text-[color:var(--muted)]">
-              Crée une room, envoie le lien à un ami et voyez qui connaît le mieux ces morceaux.
-            </p>
+        <div className="card group flex flex-col p-6 hover:-translate-y-1 transition text-left">
+          <div className="mb-4 flex items-center gap-3">
             <div
-              className="mt-5 flex items-center gap-2 text-sm font-semibold group-hover:gap-3 transition-all"
-              style={{ color: "var(--accent)" }}
+              className="flex h-12 w-12 items-center justify-center rounded-xl"
+              style={{ background: "var(--accent-dim)" }}
             >
-              Créer une room <ArrowRight size={16} />
+              <Users size={22} style={{ color: "var(--accent)" }} />
             </div>
-          </button>
-        </form>
+            <div>
+              <h2 className="text-lg font-bold">Multijoueur</h2>
+              <p className="text-xs text-[color:var(--muted)]">En temps réel</p>
+            </div>
+          </div>
+          <p className="flex-1 text-sm text-[color:var(--muted)]">
+            Crée une room privée (lien uniquement) ou publique (visible dans Explorer).
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <form action={createPrivateRoom}>
+              <button type="submit" className="btn-ghost text-sm">
+                Room privée
+              </button>
+            </form>
+            <form action={createPublicRoom}>
+              <button type="submit" className="btn-primary text-sm">
+                Room publique <ArrowRight size={14} />
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );

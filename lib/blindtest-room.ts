@@ -3,41 +3,47 @@ import type { BlindtestAnswer, BlindtrackData } from "@/components/BlindtestGame
 
 export type { BlindtestAnswer, BlindtrackData };
 
+// ─── Participant model ────────────────────────────────────────────────────────
+
+export type BlindtestParticipant = {
+  playerId: string;
+  username: string;
+  score: number;
+  answers: BlindtestAnswer[];
+  lastSeenAt: string | null; // ISO
+  joinedAt: string; // ISO
+};
+
 // ─── Room snapshot ────────────────────────────────────────────────────────────
 
 export type BlindtestRoomSnapshot = {
   id: string;
   blindtestId: string;
   hostId: string;
-  guestId: string | null;
+  hostName: string;
+  visibility: "private" | "public";
   status: "waiting" | "playing" | "finished";
   currentTrack: number;
-  hostAnswers: BlindtestAnswer[];
-  guestAnswers: BlindtestAnswer[];
-  hostScore: number;
-  guestScore: number;
+  participants: BlindtestParticipant[];
   winnerId: string | null;
-  hostLastSeenAt: string | null;
-  guestLastSeenAt: string | null;
-  updatedAt: string; // ISO string
-  trackStartedAt: string | null; // ISO string — authoritative track-start anchor for timer sync
+  updatedAt: string;
+  trackStartedAt: string | null;
   blindtest: {
     id: string;
     title: string;
     tracks: BlindtrackData[];
   };
-  hostName: string;
-  guestName: string | null;
 };
 
 // ─── Event types (broadcast payload) ─────────────────────────────────────────
 
 export type BlindtestRoomEvent =
-  | { type: "guest-joined"; guestName: string }
+  | { type: "player-joined"; playerId: string; username: string }
+  | { type: "player-left"; playerId: string }
   | { type: "game-start" }
   | { type: "answer-submitted"; playerId: string }
   | { type: "next-track"; currentTrack: number }
-  | { type: "game-end"; hostScore: number; guestScore: number; winnerId: string | null }
+  | { type: "game-end"; winnerId: string | null }
   | { type: "rematch" };
 
 export type BlindtestRoomBroadcastPayload = {
@@ -45,16 +51,55 @@ export type BlindtestRoomBroadcastPayload = {
   event: BlindtestRoomEvent;
 };
 
-// ─── Scoring helpers (mirrored from BlindtestGame, server-side canonical) ─────
+// ─── Scoring helpers ──────────────────────────────────────────────────────────
 
 export { normalize, isCorrect, isSingleArtistBlindtest } from "./blindtest-utils";
 
 export const POINTS_TITLE = 2;
 export const POINTS_ARTIST = 1;
 
+// ─── Participants helpers ────────────────────────────────────────────────────
+
+export function normalizeParticipants(value: unknown): BlindtestParticipant[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((p): p is Record<string, unknown> => typeof p === "object" && p !== null)
+    .map((p) => ({
+      playerId: typeof p.playerId === "string" ? p.playerId : "",
+      username: typeof p.username === "string" ? p.username : "Joueur",
+      score: typeof p.score === "number" ? p.score : 0,
+      answers: Array.isArray(p.answers) ? (p.answers as BlindtestAnswer[]) : [],
+      lastSeenAt: typeof p.lastSeenAt === "string" ? p.lastSeenAt : null,
+      joinedAt: typeof p.joinedAt === "string" ? p.joinedAt : new Date().toISOString(),
+    }))
+    .filter((p) => p.playerId.length > 0);
+}
+
+export function findParticipant(
+  participants: BlindtestParticipant[],
+  playerId: string,
+): BlindtestParticipant | null {
+  return participants.find((p) => p.playerId === playerId) ?? null;
+}
+
+export function computeWinner(participants: BlindtestParticipant[]): string | null {
+  if (participants.length === 0) return null;
+  let maxScore = -1;
+  let winners: BlindtestParticipant[] = [];
+  for (const p of participants) {
+    if (p.score > maxScore) {
+      maxScore = p.score;
+      winners = [p];
+    } else if (p.score === maxScore) {
+      winners.push(p);
+    }
+  }
+  return winners.length === 1 ? winners[0].playerId : null;
+}
+
 // ─── DB → snapshot ────────────────────────────────────────────────────────────
 
-type RoomWithRelations = Awaited<ReturnType<typeof fetchRoomRaw>>;
+type RoomRaw = Awaited<ReturnType<typeof fetchRoomRaw>>;
 
 async function fetchRoomRaw(roomId: string) {
   return prisma.blindtestRoom.findUnique({
@@ -68,30 +113,23 @@ async function fetchRoomRaw(roomId: string) {
         },
       },
       host: { select: { id: true, username: true } },
-      guest: { select: { id: true, username: true } },
     },
   });
 }
 
-export function toBlindtestRoomSnapshot(room: NonNullable<RoomWithRelations>): BlindtestRoomSnapshot {
+export function toBlindtestRoomSnapshot(room: NonNullable<RoomRaw>): BlindtestRoomSnapshot {
   return {
     id: room.id,
     blindtestId: room.blindtestId,
     hostId: room.hostId,
-    guestId: room.guestId,
+    hostName: room.host.username,
+    visibility: room.visibility === "public" ? "public" : "private",
     status: room.status as "waiting" | "playing" | "finished",
     currentTrack: room.currentTrack,
-    hostAnswers: (room.hostAnswers as BlindtestAnswer[]) ?? [],
-    guestAnswers: (room.guestAnswers as BlindtestAnswer[]) ?? [],
-    hostScore: room.hostScore,
-    guestScore: room.guestScore,
+    participants: normalizeParticipants(room.participants),
     winnerId: room.winnerId,
-    hostLastSeenAt: room.hostLastSeenAt?.toISOString() ?? null,
-    guestLastSeenAt: room.guestLastSeenAt?.toISOString() ?? null,
     updatedAt: room.updatedAt.toISOString(),
     trackStartedAt: room.trackStartedAt?.toISOString() ?? null,
-    hostName: room.host.username,
-    guestName: room.guest?.username ?? null,
     blindtest: {
       id: room.blindtest.id,
       title: room.blindtest.title,

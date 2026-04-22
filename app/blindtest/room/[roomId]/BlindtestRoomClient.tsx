@@ -17,12 +17,19 @@ import {
   Swords,
   ArrowRight,
   Music,
+  Download,
+  Share2,
 } from "lucide-react";
 import Link from "next/link";
-import type { BlindtestRoomSnapshot, BlindtestRoomBroadcastPayload } from "@/lib/blindtest-room";
+import type {
+  BlindtestRoomSnapshot,
+  BlindtestRoomBroadcastPayload,
+  BlindtestParticipant,
+} from "@/lib/blindtest-room";
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
 import { POINTS_TITLE, POINTS_ARTIST } from "@/components/BlindtestGame";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
+import { downloadNodeAsPng } from "@/lib/download-png";
 import {
   joinRoom,
   startGame,
@@ -37,8 +44,21 @@ import { isSingleArtistBlindtest } from "@/lib/blindtest-utils";
 const TIMER_SECONDS = 30;
 const PRESENCE_GRACE_SECONDS = 45;
 // Must stay comfortably above the server heartbeat interval (~10s) + poll
-// delay (~2.5s) to avoid false "opponent disconnected" warnings.
+// delay (~2.5s) to avoid false "déconnecté" warnings.
 const PRESENCE_WARNING_SECONDS = 20;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function isOnline(lastSeenAt: string | null, now: number): boolean {
+  if (!lastSeenAt) return false;
+  const ts = Date.parse(lastSeenAt);
+  if (Number.isNaN(ts)) return false;
+  return now - ts <= PRESENCE_GRACE_SECONDS * 1000;
+}
+
+function answeredOn(p: BlindtestParticipant, position: number): boolean {
+  return p.answers.some((a) => a.position === position);
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -78,12 +98,16 @@ function AnswerRow({
   );
 }
 
-function OpponentStatus({
-  name,
+function ParticipantStatus({
+  p,
   answered,
+  online,
+  isHost,
 }: {
-  name: string;
+  p: BlindtestParticipant;
   answered: boolean;
+  online: boolean;
+  isHost: boolean;
 }) {
   return (
     <div
@@ -95,8 +119,16 @@ function OpponentStatus({
       ) : (
         <Loader2 size={14} className="animate-spin text-[color:var(--muted)] shrink-0" />
       )}
-      <span className="text-[color:var(--muted)]">
-        {name} : {answered ? "a répondu ✓" : "en train de répondre…"}
+      <span className={`font-medium ${online ? "" : "opacity-60"}`}>
+        {p.username}
+        {isHost ? (
+          <span className="ml-1 text-[10px] uppercase tracking-wider text-[color:var(--muted)]">
+            (hôte)
+          </span>
+        ) : null}
+      </span>
+      <span className="text-[color:var(--muted)] text-xs ml-auto">
+        {answered ? "a répondu" : online ? "en cours…" : "déconnecté"}
       </span>
     </div>
   );
@@ -123,11 +155,14 @@ export default function BlindtestRoomClient({
   const [guessTitle, setGuessTitle] = useState("");
   const [guessArtist, setGuessArtist] = useState("");
   const [audioPlaying, setAudioPlaying] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const freshUrlRef = useRef("");
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const exportRef = useRef<HTMLDivElement | null>(null);
   const { volume } = usePreviewVolume();
 
   useEffect(() => {
@@ -163,39 +198,39 @@ export default function BlindtestRoomClient({
   }, []);
 
   const isHost = userId === room.hostId;
-  const isGuest = userId === room.guestId;
-  const isSpectator = !isHost && !isGuest;
-  const hostOnline = useMemo(() => {
-    if (!room.hostLastSeenAt) return false;
-    const ts = Date.parse(room.hostLastSeenAt);
-    if (Number.isNaN(ts)) return false;
-    return now - ts <= PRESENCE_GRACE_SECONDS * 1000;
-  }, [now, room.hostLastSeenAt]);
-  const guestOnline = useMemo(() => {
-    if (!room.guestId || !room.guestLastSeenAt) return false;
-    const ts = Date.parse(room.guestLastSeenAt);
-    if (Number.isNaN(ts)) return false;
-    return now - ts <= PRESENCE_GRACE_SECONDS * 1000;
-  }, [now, room.guestId, room.guestLastSeenAt]);
-  const myAnswers = (isHost ? room.hostAnswers : room.guestAnswers) as BlindtestAnswer[];
-  const opponentAnswers = (isHost ? room.guestAnswers : room.hostAnswers) as BlindtestAnswer[];
-  const opponentName = isHost ? (room.guestName ?? "Adversaire") : room.hostName;
-  const opponentDisconnectInfo = useMemo(() => {
-    if (room.status === "finished" || isSpectator || !room.guestId) return null;
-    const opponentLastSeenAt = isHost ? room.guestLastSeenAt : room.hostLastSeenAt;
-    if (!opponentLastSeenAt) return { remaining: 0 };
-    const ts = Date.parse(opponentLastSeenAt);
-    if (Number.isNaN(ts)) return { remaining: 0 };
-    const elapsed = Math.max(0, Math.floor((now - ts) / 1000));
-    if (elapsed < PRESENCE_WARNING_SECONDS) return null;
-    return { remaining: Math.max(0, PRESENCE_GRACE_SECONDS - elapsed) };
-  }, [isHost, isSpectator, now, room.guestId, room.guestLastSeenAt, room.hostLastSeenAt, room.status]);
+  const me = useMemo(
+    () => room.participants.find((p) => p.playerId === userId) ?? null,
+    [room.participants, userId],
+  );
+  const isParticipant = me !== null;
+  const isSpectator = !isParticipant;
+
+  const others = useMemo(
+    () => room.participants.filter((p) => p.playerId !== userId),
+    [room.participants, userId],
+  );
+
+  const myAnswers: BlindtestAnswer[] = me?.answers ?? [];
+  const myScore = me?.score ?? 0;
 
   const hasSubmittedThisTrack = myAnswers.some((a) => a.position === room.currentTrack);
-  const opponentSubmittedThisTrack = opponentAnswers.some(
-    (a) => a.position === room.currentTrack,
-  );
+  const allOthersAnswered =
+    others.length > 0 && others.every((o) => answeredOn(o, room.currentTrack));
+  const everyoneAnsweredThisTrack = hasSubmittedThisTrack && allOthersAnswered;
   const myLastAnswer = myAnswers.find((a) => a.position === room.currentTrack) ?? null;
+
+  // Count at-risk (disconnected) participants to show a single warning.
+  const disconnectedParticipants = useMemo(() => {
+    if (room.status !== "playing" && room.status !== "waiting") return [];
+    return room.participants.filter((p) => {
+      if (p.playerId === userId) return false;
+      if (!p.lastSeenAt) return true;
+      const ts = Date.parse(p.lastSeenAt);
+      if (Number.isNaN(ts)) return true;
+      const elapsed = Math.floor((now - ts) / 1000);
+      return elapsed >= PRESENCE_WARNING_SECONDS;
+    });
+  }, [now, room.participants, room.status, userId]);
 
   // ── Timer ──────────────────────────────────────────────────────────────────
   const timeLeft = useMemo(() => {
@@ -226,7 +261,6 @@ export default function BlindtestRoomClient({
         setRoom(sync.room);
         setNow(Date.now());
 
-        // Reset local track state when track changes
         const prevTrack = roomRef.current.currentTrack;
         const ev = sync.event;
         if (
@@ -258,16 +292,23 @@ export default function BlindtestRoomClient({
         if (!r.ok) return;
         const cur = roomRef.current;
         const next = r.room;
+        const sameParticipants =
+          next.participants.length === cur.participants.length &&
+          next.participants.every((p, i) => {
+            const c = cur.participants[i];
+            return (
+              c &&
+              c.playerId === p.playerId &&
+              c.score === p.score &&
+              c.answers.length === p.answers.length &&
+              c.lastSeenAt === p.lastSeenAt
+            );
+          });
         if (
-          next.hostId !== cur.hostId ||
-          next.guestId !== cur.guestId ||
           next.status !== cur.status ||
           next.updatedAt !== cur.updatedAt ||
           next.currentTrack !== cur.currentTrack ||
-          next.hostAnswers.length !== cur.hostAnswers.length ||
-          next.guestAnswers.length !== cur.guestAnswers.length ||
-          next.hostLastSeenAt !== cur.hostLastSeenAt ||
-          next.guestLastSeenAt !== cur.guestLastSeenAt
+          !sameParticipants
         ) {
           setRoom(next);
           setNow(Date.now());
@@ -339,10 +380,7 @@ export default function BlindtestRoomClient({
 
       const r = roomRef.current;
       const result = await submitAnswer(r.id, r.currentTrack, title, artist);
-      if (!result.ok) {
-        // Might already be submitted — silently ignore
-        return;
-      }
+      if (!result.ok) return;
       setRoom(result.room);
       await broadcastSync({ room: result.room, event: result.event });
     },
@@ -441,6 +479,38 @@ export default function BlindtestRoomClient({
     window.setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDownload = async () => {
+    if (!exportRef.current) return;
+    setIsDownloading(true);
+    try {
+      await downloadNodeAsPng(exportRef.current, {
+        filename: `blindtest-room-${room.id}-resultat.png`,
+        backgroundColor: "var(--surface)",
+      });
+    } catch {
+      alert(
+        "Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.",
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleSaveAndShare = async () => {
+    setSharing(true);
+    try {
+      const url = window.location.href;
+      try {
+        await navigator.clipboard.writeText(url);
+        alert("Lien copié dans le presse-papiers !");
+      } catch {
+        window.prompt("Copie le lien :", url);
+      }
+    } finally {
+      setSharing(false);
+    }
+  };
+
   const toggleAudio = () => {
     if (!audioRef.current) return;
     if (audioPlaying) {
@@ -454,19 +524,24 @@ export default function BlindtestRoomClient({
 
   const timerProgress = ((TIMER_SECONDS - timeLeft) / TIMER_SECONDS) * 100;
   const track = room.blindtest.tracks[room.currentTrack];
-  const myScore = isHost ? room.hostScore : room.guestScore;
-  const bothPlayersAnsweredThisTrack = hasSubmittedThisTrack && opponentSubmittedThisTrack;
 
   const singleArtistBlindtest = useMemo(
     () => isSingleArtistBlindtest(room.blindtest.tracks),
     [room.blindtest.tracks],
   );
 
+  const sortedForScoreboard = useMemo(
+    () =>
+      [...room.participants].sort((a, b) =>
+        a.playerId === room.hostId ? -1 : b.playerId === room.hostId ? 1 : 0,
+      ),
+    [room.participants, room.hostId],
+  );
+
   // ── WAITING ────────────────────────────────────────────────────────────────
   if (room.status === "waiting") {
-    const canJoin = !isHost && !room.guestId;
-    const waitingForGuest = isHost && !room.guestId;
-    const readyToStart = isHost && !!room.guestId;
+    const canJoin = !isParticipant;
+    const enoughPlayers = room.participants.length >= 2;
 
     return (
       <div className="space-y-6">
@@ -482,49 +557,51 @@ export default function BlindtestRoomClient({
               </>
             ) : null}
           </p>
+          <p className="mt-1 text-xs text-[color:var(--muted)]">
+            Visibilité:{" "}
+            {room.visibility === "public"
+              ? "publique (Explorer + lien)"
+              : "privée (lien uniquement)"}
+          </p>
+          <p className="mt-1 text-xs text-[color:var(--muted)]">
+            {room.participants.length} joueur{room.participants.length > 1 ? "s" : ""} connecté
+            {room.participants.length > 1 ? "s" : ""}
+          </p>
 
-          {waitingForGuest && (
-            <>
-              <p className="mt-4 text-[color:var(--muted)]">En attente d&apos;un adversaire…</p>
-              <button onClick={copyLink} className="btn-ghost mx-auto mt-4">
-                {copied ? (
-                  <>
-                    <Check size={14} className="text-green-400" /> Lien copié !
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} /> Copier le lien d&apos;invitation
-                  </>
-                )}
-              </button>
-            </>
-          )}
+          <div className="mt-4 flex flex-wrap justify-center gap-3">
+            <button onClick={copyLink} className="btn-ghost">
+              {copied ? (
+                <>
+                  <Check size={14} className="text-green-400" /> Lien copié !
+                </>
+              ) : (
+                <>
+                  <Copy size={14} /> Copier le lien d&apos;invitation
+                </>
+              )}
+            </button>
 
-          {canJoin && (
-            <>
-              <p className="mt-4 text-[color:var(--muted)]">
-                <strong>{room.hostName}</strong> t&apos;invite à un blindtest !
-              </p>
+            {canJoin && (
               <button
                 onClick={handleJoin}
                 disabled={submitting}
-                className="btn-primary mx-auto mt-4"
+                className="btn-primary"
               >
-                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Swords size={14} />}
+                {submitting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Swords size={14} />
+                )}
                 Rejoindre la partie
               </button>
-            </>
-          )}
+            )}
 
-          {readyToStart && (
-            <div className="mt-6 space-y-4">
-              <p className="font-semibold text-green-400">
-                ✓ {room.guestName} a rejoint !
-              </p>
+            {isHost && (
               <button
                 onClick={handleStart}
-                disabled={submitting}
-                className="btn-primary mx-auto"
+                disabled={submitting || !enoughPlayers}
+                className="btn-primary"
+                title={!enoughPlayers ? "Au moins 2 joueurs requis" : undefined}
               >
                 {submitting ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -533,75 +610,67 @@ export default function BlindtestRoomClient({
                 )}
                 Lancer la partie
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
-          {!isHost && room.guestId === userId && (
+          {!isHost && isParticipant && (
             <p className="mt-4 text-[color:var(--muted)]">
               En attente que <strong>{room.hostName}</strong> lance la partie…
             </p>
           )}
-
-          {opponentDisconnectInfo ? (
-            <p className="mt-4 flex items-center justify-center gap-2 text-sm text-amber-300">
-              <AlertTriangle size={14} />
-              Adversaire déconnecté. Victoire automatique dans {opponentDisconnectInfo.remaining}s s&apos;il ne
-              revient pas.
-            </p>
-          ) : null}
-
-          {isSpectator && !room.guestId && (
+          {!isHost && !isParticipant && (
             <p className="mt-4 text-sm text-[color:var(--muted)]">
-              La room est en attente d&apos;un deuxième joueur.
+              Tu peux rejoindre ou rester spectateur.
             </p>
           )}
+
+          {disconnectedParticipants.length > 0 ? (
+            <p className="mt-4 flex items-center justify-center gap-2 text-sm text-amber-300">
+              <AlertTriangle size={14} />
+              {disconnectedParticipants.length} joueur
+              {disconnectedParticipants.length > 1 ? "s" : ""} déconnecté
+              {disconnectedParticipants.length > 1 ? "s" : ""}.
+            </p>
+          ) : null}
         </div>
 
         {/* Players */}
         <div className="card p-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
-            Joueurs
+            Joueurs ({room.participants.length})
           </p>
           <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                style={{ background: "var(--accent-dim)", color: "var(--accent)" }}
-              >
-                {room.hostName[0].toUpperCase()}
-              </div>
-              <span className="font-medium">{room.hostName}</span>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                  hostOnline
-                    ? "bg-emerald-500/15 text-emerald-300"
-                    : "bg-rose-500/15 text-rose-300"
-                }`}
-              >
-                {hostOnline ? "Connecté" : "Déconnecté"}
-              </span>
-              <span className="ml-auto text-xs text-[color:var(--muted)]">Hôte</span>
-            </div>
-            {room.guestName ? (
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-                  style={{ background: "var(--surface-2)", color: "var(--muted-strong)" }}
-                >
-                  {room.guestName[0].toUpperCase()}
+            {sortedForScoreboard.map((p) => {
+              const online = isOnline(p.lastSeenAt, now);
+              const isThisHost = p.playerId === room.hostId;
+              return (
+                <div key={p.playerId} className="flex items-center gap-3">
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                    style={{
+                      background: isThisHost ? "var(--accent-dim)" : "var(--surface-2)",
+                      color: isThisHost ? "var(--accent)" : "var(--muted-strong)",
+                    }}
+                  >
+                    {p.username[0]?.toUpperCase() ?? "?"}
+                  </div>
+                  <span className="font-medium">{p.username}</span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                      online
+                        ? "bg-emerald-500/15 text-emerald-300"
+                        : "bg-rose-500/15 text-rose-300"
+                    }`}
+                  >
+                    {online ? "Connecté" : "Déconnecté"}
+                  </span>
+                  {isThisHost ? (
+                    <span className="ml-auto text-xs text-[color:var(--muted)]">Hôte</span>
+                  ) : null}
                 </div>
-                <span className="font-medium">{room.guestName}</span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                    guestOnline
-                      ? "bg-emerald-500/15 text-emerald-300"
-                      : "bg-rose-500/15 text-rose-300"
-                  }`}
-                >
-                  {guestOnline ? "Connecté" : "Déconnecté"}
-                </span>
-              </div>
-            ) : (
+              );
+            })}
+            {room.participants.length === 1 ? (
               <div className="flex items-center gap-3 opacity-50">
                 <div
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
@@ -609,9 +678,11 @@ export default function BlindtestRoomClient({
                 >
                   ?
                 </div>
-                <span className="text-[color:var(--muted)]">En attente…</span>
+                <span className="text-[color:var(--muted)]">
+                  En attente d&apos;autres joueurs…
+                </span>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -626,41 +697,57 @@ export default function BlindtestRoomClient({
     const isDraw = !room.winnerId;
     const outcome = isDraw ? "draw" : iWon ? "victory" : "defeat";
 
+    const ranked = [...room.participants].sort((a, b) => b.score - a.score);
+    const winnerName = room.winnerId
+      ? room.participants.find((p) => p.playerId === room.winnerId)?.username ?? "—"
+      : null;
+
     return (
       <div className="space-y-6">
         <ChallengeOutcomeFx outcome={outcome} />
-        <div className="card p-8 text-center">
-          <Trophy
-            size={48}
-            className={`mx-auto mb-4 ${iWon ? "text-yellow-400" : isDraw ? "text-blue-400" : "text-[color:var(--muted)]"}`}
-          />
-          <h2 className="text-2xl font-black">
-            {isDraw ? "Égalité !" : iWon ? "Victoire ! 🔥" : "Défaite"}
-          </h2>
-          <div className="mt-6 flex items-center justify-center gap-10">
-            <div className="text-center">
-              <p className="text-3xl font-black">{room.hostScore}</p>
-              <p className="mt-1 text-xs text-[color:var(--muted)]">{room.hostName}</p>
-            </div>
-            <span className="text-2xl text-[color:var(--muted)]">–</span>
-            <div className="text-center">
-              <p className="text-3xl font-black">{room.guestScore}</p>
-              <p className="mt-1 text-xs text-[color:var(--muted)]">{room.guestName ?? "?"}</p>
+        <div ref={exportRef} className="space-y-6">
+          <div className="card p-8 text-center">
+            <Trophy
+              size={48}
+              className={`mx-auto mb-4 ${iWon ? "text-yellow-400" : isDraw ? "text-blue-400" : "text-[color:var(--muted)]"}`}
+            />
+            <h2 className="text-2xl font-black">
+              {isDraw
+                ? "Égalité !"
+                : iWon
+                  ? "Victoire ! 🔥"
+                  : `${winnerName} l'emporte`}
+            </h2>
+            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+              {ranked.map((p, idx) => (
+                <div
+                  key={p.playerId}
+                  className="rounded-xl p-4 text-center"
+                  style={{
+                    background:
+                      idx === 0 && !isDraw ? "var(--accent-dim)" : "var(--surface-2)",
+                    border:
+                      idx === 0 && !isDraw
+                        ? "1px solid var(--accent)"
+                        : "1px solid var(--border)",
+                  }}
+                >
+                  <p className="text-3xl font-black">{p.score}</p>
+                  <p className="mt-1 text-xs text-[color:var(--muted)] truncate">
+                    {p.username}
+                  </p>
+                  <p className="mt-1 text-[10px] uppercase tracking-wide text-[color:var(--muted)]">
+                    #{idx + 1}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
 
-        {/* Track-by-track recap */}
-        <div className="card p-6 space-y-4">
-          <h3 className="font-bold">Morceau par morceau</h3>
-          {room.blindtest.tracks.map((t) => {
-            const ha = (room.hostAnswers as BlindtestAnswer[]).find(
-              (a) => a.position === t.position,
-            );
-            const ga = (room.guestAnswers as BlindtestAnswer[]).find(
-              (a) => a.position === t.position,
-            );
-            return (
+          {/* Track-by-track recap */}
+          <div className="card p-6 space-y-4">
+            <h3 className="font-bold">Morceau par morceau</h3>
+            {room.blindtest.tracks.map((t) => (
               <div
                 key={t.position}
                 className="rounded-xl p-3 space-y-2"
@@ -687,64 +774,66 @@ export default function BlindtestRoomClient({
                     <p className="text-xs text-[color:var(--muted)]">{t.artist}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <p className="font-semibold mb-1">{room.hostName}</p>
-                    {ha ? (
-                      <>
-                        <span
-                          className={`inline-flex items-center gap-1 ${ha.correctTitle ? "text-green-400" : "text-red-400"}`}
-                        >
-                          {ha.correctTitle ? <Check size={10} /> : <X size={10} />} Titre
-                        </span>
-                        <span className="mx-1 text-[color:var(--muted)]">·</span>
-                        <span
-                          className={`inline-flex items-center gap-1 ${ha.correctArtist ? "text-green-400" : "text-red-400"}`}
-                        >
-                          {ha.correctArtist ? <Check size={10} /> : <X size={10} />} Artiste
-                        </span>
-                        <span className="ml-1 font-bold">+{ha.points} pts</span>
-                      </>
-                    ) : (
-                      <span className="text-[color:var(--muted)]">—</span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-semibold mb-1">{room.guestName ?? "Adversaire"}</p>
-                    {ga ? (
-                      <>
-                        <span
-                          className={`inline-flex items-center gap-1 ${ga.correctTitle ? "text-green-400" : "text-red-400"}`}
-                        >
-                          {ga.correctTitle ? <Check size={10} /> : <X size={10} />} Titre
-                        </span>
-                        <span className="mx-1 text-[color:var(--muted)]">·</span>
-                        <span
-                          className={`inline-flex items-center gap-1 ${ga.correctArtist ? "text-green-400" : "text-red-400"}`}
-                        >
-                          {ga.correctArtist ? <Check size={10} /> : <X size={10} />} Artiste
-                        </span>
-                        <span className="ml-1 font-bold">+{ga.points} pts</span>
-                      </>
-                    ) : (
-                      <span className="text-[color:var(--muted)]">—</span>
-                    )}
-                  </div>
+                <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+                  {room.participants.map((p) => {
+                    const a = p.answers.find((x) => x.position === t.position);
+                    return (
+                      <div key={p.playerId}>
+                        <p className="font-semibold mb-1 truncate">{p.username}</p>
+                        {a ? (
+                          <>
+                            <span
+                              className={`inline-flex items-center gap-1 ${a.correctTitle ? "text-green-400" : "text-red-400"}`}
+                            >
+                              {a.correctTitle ? <Check size={10} /> : <X size={10} />} Titre
+                            </span>
+                            <span className="mx-1 text-[color:var(--muted)]">·</span>
+                            <span
+                              className={`inline-flex items-center gap-1 ${a.correctArtist ? "text-green-400" : "text-red-400"}`}
+                            >
+                              {a.correctArtist ? <Check size={10} /> : <X size={10} />} Artiste
+                            </span>
+                            <span className="ml-1 font-bold">+{a.points} pts</span>
+                          </>
+                        ) : (
+                          <span className="text-[color:var(--muted)]">—</span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
 
-        <div className="flex gap-3">
-          {(isHost || isGuest) && (
+        <div className="no-export flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="btn-ghost flex-1 justify-center disabled:opacity-50"
+          >
+            <Download size={16} />
+            {isDownloading ? "Génération…" : "Enregistrer en PNG"}
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveAndShare}
+            disabled={sharing}
+            className="btn-primary flex-1 justify-center disabled:opacity-50"
+          >
+            <Share2 size={16} />
+            {sharing ? "…" : "Sauvegarder et partager"}
+          </button>
+          {isParticipant && (
             <button
               onClick={handleRematch}
               disabled={submitting}
               className="btn-primary flex-1 justify-center"
             >
               {submitting ? <Loader2 size={16} className="animate-spin" /> : <Swords size={16} />}
-              Revanche
+              Rejouer
             </button>
           )}
           <Link
@@ -769,16 +858,28 @@ export default function BlindtestRoomClient({
   return (
     <div className="space-y-4">
       {/* Scoreboard */}
-      <div className="card flex items-center justify-between px-4 py-2 text-sm">
-        <span className={`font-semibold ${isHost ? "text-[color:var(--accent)]" : ""}`}>
-          {room.hostName}: {room.hostScore}
-        </span>
-        <span className="text-xs text-[color:var(--muted)]">
-          Morceau {room.currentTrack + 1}/{trackCount}
-        </span>
-        <span className={`font-semibold ${!isHost ? "text-[color:var(--accent)]" : ""}`}>
-          {room.guestName ?? "?"}: {room.guestScore}
-        </span>
+      <div className="card px-4 py-2 text-sm">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
+            Scores
+          </span>
+          <span className="text-xs text-[color:var(--muted)]">
+            Morceau {room.currentTrack + 1}/{trackCount}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1">
+          {sortedForScoreboard.map((p) => {
+            const isMe = p.playerId === userId;
+            return (
+              <span
+                key={p.playerId}
+                className={`font-semibold ${isMe ? "text-[color:var(--accent)]" : ""}`}
+              >
+                {p.username}: {p.score}
+              </span>
+            );
+          })}
+        </div>
       </div>
 
       {/* Timer bar */}
@@ -804,7 +905,7 @@ export default function BlindtestRoomClient({
           </div>
         )}
 
-        {phase === "playing" && !hasSubmittedThisTrack && (
+        {phase === "playing" && !hasSubmittedThisTrack && !isSpectator && (
           <div className="flex flex-col md:flex-row gap-8 items-center">
             {/* Hidden cover */}
             <div className="relative h-44 w-44 shrink-0 rounded-xl overflow-hidden bg-[color:var(--surface-2)]">
@@ -855,7 +956,6 @@ export default function BlindtestRoomClient({
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                   autoComplete="off"
                   autoFocus
-                  disabled={isSpectator}
                 />
               </div>
               {!singleArtistBlindtest ? (
@@ -870,39 +970,36 @@ export default function BlindtestRoomClient({
                     onChange={(e) => setGuessArtist(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                     autoComplete="off"
-                    disabled={isSpectator}
                   />
                 </div>
               ) : null}
 
-              {!isSpectator && (
-                <div className="flex gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={toggleAudio}
-                    className="btn-ghost"
-                    aria-label={audioPlaying ? "Pause" : "Lire"}
-                  >
-                    {audioPlaying ? <Pause size={16} /> : <Play size={16} />}
-                  </button>
-                  <button type="button" onClick={handleSubmit} className="btn-primary flex-1">
-                    Valider
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    className="btn-ghost"
-                    title="Passer"
-                  >
-                    <SkipForward size={16} />
-                  </button>
-                </div>
-              )}
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={toggleAudio}
+                  className="btn-ghost"
+                  aria-label={audioPlaying ? "Pause" : "Lire"}
+                >
+                  {audioPlaying ? <Pause size={16} /> : <Play size={16} />}
+                </button>
+                <button type="button" onClick={handleSubmit} className="btn-primary flex-1">
+                  Valider
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="btn-ghost"
+                  title="Passer"
+                >
+                  <SkipForward size={16} />
+                </button>
+              </div>
             </div>
           </div>
         )}
 
-        {/* After submitting but waiting for opponent / host to advance */}
+        {/* After submitting but waiting for opponents / host to advance */}
         {(phase === "revealed" || hasSubmittedThisTrack) && myLastAnswer && (
           <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* Revealed cover */}
@@ -950,10 +1047,10 @@ export default function BlindtestRoomClient({
                   <button
                     type="button"
                     onClick={handleNextTrack}
-                    disabled={submitting || (!bothPlayersAnsweredThisTrack && timeLeft > 0)}
+                    disabled={submitting || (!everyoneAnsweredThisTrack && timeLeft > 0)}
                     className="btn-primary"
                     title={
-                      !bothPlayersAnsweredThisTrack && timeLeft > 0
+                      !everyoneAnsweredThisTrack && timeLeft > 0
                         ? `Encore ${timeLeft}s…`
                         : ""
                     }
@@ -967,7 +1064,7 @@ export default function BlindtestRoomClient({
                     )}
                   </button>
                 )}
-                {!isHost && !isSpectator && (
+                {!isHost && isParticipant && (
                   <p className="text-sm text-[color:var(--muted)]">
                     En attente de <strong>{room.hostName}</strong>…
                   </p>
@@ -987,23 +1084,32 @@ export default function BlindtestRoomClient({
         )}
       </div>
 
-      {/* Opponent status */}
-      {room.guestId && (
-        <OpponentStatus
-          name={opponentName}
-          answered={opponentSubmittedThisTrack}
-        />
+      {/* Participants status */}
+      {others.length > 0 && (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {others.map((p) => (
+            <ParticipantStatus
+              key={p.playerId}
+              p={p}
+              answered={answeredOn(p, room.currentTrack)}
+              online={isOnline(p.lastSeenAt, now)}
+              isHost={p.playerId === room.hostId}
+            />
+          ))}
+        </div>
       )}
 
-      {opponentDisconnectInfo ? (
+      {disconnectedParticipants.length > 0 ? (
         <p className="flex items-center justify-center gap-2 rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
           <AlertTriangle size={14} />
-          Adversaire déconnecté. Victoire automatique dans {opponentDisconnectInfo.remaining}s.
+          {disconnectedParticipants.length} joueur
+          {disconnectedParticipants.length > 1 ? "s" : ""} déconnecté
+          {disconnectedParticipants.length > 1 ? "s" : ""}.
         </p>
       ) : null}
 
       {/* Host: timer + next track hint */}
-      {isHost && phase === "revealed" && !bothPlayersAnsweredThisTrack && timeLeft > 0 && (
+      {isHost && phase === "revealed" && !everyoneAnsweredThisTrack && timeLeft > 0 && (
         <p className="text-center text-sm text-[color:var(--muted)]">
           Le bouton &quot;Suivant&quot; sera disponible dans {timeLeft}s…
         </p>

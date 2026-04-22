@@ -162,7 +162,7 @@ export default async function BattleFeatResultsPage({
 
       <div className="mt-6 flex gap-3">
         <Link href="/battle-feat/solo" className="btn-primary flex-1 justify-center">
-          <Swords size={16} /> Rejouer
+          <Swords size={16} /> Recommencer
         </Link>
         <Link
           href="/battle-feat/leaderboard"

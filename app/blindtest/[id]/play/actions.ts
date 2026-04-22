@@ -9,6 +9,7 @@ export async function saveBlindtestSession(
   answers: BlindtestAnswer[],
   score: number,
   maxScore: number,
+  visibility: "private" | "public" = "private",
 ) {
   let identity: { playerId: string };
   try {
@@ -29,6 +30,7 @@ export async function saveBlindtestSession(
         score,
         maxScore,
         answers: answers as unknown as import("@prisma/client").Prisma.JsonArray,
+        visibility,
       },
     });
     return { id: session.id };
@@ -36,4 +38,21 @@ export async function saveBlindtestSession(
     const msg = err instanceof Error ? err.message : "Erreur sauvegarde.";
     return { error: msg };
   }
+}
+
+export async function deleteTransientBlindtest(blindtestId: string) {
+  let identity: { playerId: string };
+  try {
+    identity = await resolvePlayerIdentity();
+  } catch {
+    return { error: "Connexion requise." };
+  }
+
+  const res = await prisma.blindtest.deleteMany({
+    where: { id: blindtestId, ownerId: identity.playerId },
+  });
+  if (res.count === 0) {
+    return { error: "Blindtest introuvable ou accès refusé." };
+  }
+  return { ok: true as const };
 }

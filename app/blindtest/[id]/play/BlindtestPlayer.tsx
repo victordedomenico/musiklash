@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import BlindtestGame, {
   type BlindtrackData,
@@ -8,16 +8,19 @@ import BlindtestGame, {
   POINTS_PER_TRACK,
 } from "@/components/BlindtestGame";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
-import { saveBlindtestSession } from "./actions";
+import { deleteTransientBlindtest, saveBlindtestSession } from "./actions";
 import { isSingleArtistBlindtest } from "@/lib/blindtest-utils";
-import { Trophy, RotateCcw, Share2, Check, X } from "lucide-react";
+import { downloadNodeAsPng } from "@/lib/download-png";
+import { Trophy, RotateCcw, Share2, Check, X, Download } from "lucide-react";
 
 export default function BlindtestPlayer({
   blindtestId,
   tracks,
+  transient = false,
 }: {
   blindtestId: string;
   tracks: BlindtrackData[];
+  transient?: boolean;
 }) {
   const router = useRouter();
   const [finalAnswers, setFinalAnswers] = useState<BlindtestAnswer[] | null>(null);
@@ -25,10 +28,28 @@ export default function BlindtestPlayer({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [saving, startTransition] = useTransition();
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const exportRef = useRef<HTMLDivElement | null>(null);
+  const promotedRef = useRef(false);
+  const [promoted, setPromoted] = useState(false);
+
+  // Cleanup on unmount: delete the transient blindtest unless the user saved & shared.
+  useEffect(() => {
+    if (!transient) return;
+    return () => {
+      if (promotedRef.current) return;
+      void deleteTransientBlindtest(blindtestId);
+    };
+  }, [transient, blindtestId]);
 
   const handleComplete = (answers: BlindtestAnswer[], score: number) => {
     setFinalAnswers(answers);
     setFinalScore(score);
+    if (transient) {
+      // Keep the blindtest + results locally; the user will decide whether to
+      // persist them via "Sauvegarder et partager".
+      return;
+    }
     const maxScore = tracks.length * POINTS_PER_TRACK;
 
     startTransition(async () => {
@@ -49,20 +70,83 @@ export default function BlindtestPlayer({
     setSaveError(null);
   };
 
+  const handleDownload = async () => {
+    if (!exportRef.current) return;
+    setIsDownloading(true);
+    try {
+      await downloadNodeAsPng(exportRef.current, {
+        filename: `blindtest-resultat-${blindtestId}.png`,
+        backgroundColor: "var(--surface)",
+      });
+    } catch {
+      alert(
+        "Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.",
+      );
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleSaveAndShare = () => {
+    if (!finalAnswers) return;
+    const copyLink = async (id: string) => {
+      const url = `${window.location.origin}/blindtest/${blindtestId}/results/${id}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        alert(
+          promotedRef.current && transient
+            ? "Blindtest sauvegardé en privé et lien copié !"
+            : "Lien copié dans le presse-papiers !",
+        );
+      } catch {
+        window.prompt("Copie le lien :", url);
+      }
+    };
+
+    if (sessionId) {
+      void copyLink(sessionId);
+      return;
+    }
+
+    const maxScore = tracks.length * POINTS_PER_TRACK;
+    startTransition(async () => {
+      const res = await saveBlindtestSession(
+        blindtestId,
+        finalAnswers,
+        finalScore,
+        maxScore,
+      );
+      if ("error" in res) {
+        setSaveError(res.error ?? "Erreur inconnue.");
+        return;
+      }
+      if (transient) {
+        promotedRef.current = true;
+        setPromoted(true);
+      }
+      setSessionId(res.id);
+      await copyLink(res.id);
+      router.refresh();
+    });
+  };
+
   // ── Results screen ────────────────────────────────────────────────────────
   if (finalAnswers) {
     const maxScore = tracks.length * POINTS_PER_TRACK;
     const pct = Math.round((finalScore / maxScore) * 100);
     const outcome = pct === 50 ? "draw" : pct > 50 ? "victory" : "defeat";
-    const shareUrl =
-      sessionId && typeof window !== "undefined"
-        ? `${window.location.origin}/blindtest/${blindtestId}/results/${sessionId}`
-        : null;
 
     return (
       <div className="space-y-6">
         <ChallengeOutcomeFx outcome={outcome} />
-        <div className="card p-8 text-center">
+        {transient ? (
+          <p className="no-export rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+            {promoted
+              ? "Résultat sauvegardé en Publié — Privé. Tu peux partager le lien."
+              : "Mode non publié : ce blindtest sera supprimé en quittant. Clique sur « Sauvegarder et partager » pour le conserver en Publié — Privé."}
+          </p>
+        ) : null}
+        <div ref={exportRef} className="card p-8 text-center">
           <Trophy className="mx-auto text-yellow-400" size={48} />
           <p className="mt-4 text-4xl font-black">
             {finalScore}
@@ -77,24 +161,31 @@ export default function BlindtestPlayer({
               ? "Pas mal du tout 👌"
               : "Continue de t'entraîner 💪"}
           </p>
-
-          <div className="mt-6 flex justify-center gap-2 flex-wrap">
-            <button onClick={handleRestart} className="btn-ghost">
-              <RotateCcw size={14} /> Rejouer
-            </button>
-            {shareUrl ? (
-              <button
-                onClick={() => navigator.clipboard.writeText(shareUrl).catch(() => {})}
-                className="btn-primary"
-              >
-                <Share2 size={14} /> Copier le lien
-              </button>
-            ) : saving ? (
-              <span className="text-sm text-[color:var(--muted)] self-center">Sauvegarde…</span>
-            ) : null}
-          </div>
-          {saveError && <p className="mt-2 text-xs text-red-400">{saveError}</p>}
         </div>
+
+        <div className="no-export flex flex-wrap justify-center gap-2">
+          <button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="btn-ghost disabled:opacity-50"
+          >
+            <Download size={14} />
+            {isDownloading ? "Génération…" : "Enregistrer en PNG"}
+          </button>
+          <button
+            onClick={handleSaveAndShare}
+            disabled={saving}
+            className="btn-primary disabled:opacity-50"
+          >
+            <Share2 size={14} /> {saving ? "…" : "Sauvegarder et partager"}
+          </button>
+          <button onClick={handleRestart} className="btn-ghost">
+            <RotateCcw size={14} /> Recommencer
+          </button>
+        </div>
+        {saveError && (
+          <p className="no-export text-center text-xs text-red-400">{saveError}</p>
+        )}
 
         {/* Track-by-track recap */}
         <div className="space-y-3">

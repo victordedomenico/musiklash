@@ -10,10 +10,13 @@ export const metadata = {
 
 export default async function BracketGamePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ transient?: string }>;
 }) {
   const { id } = await params;
+  const { transient } = await searchParams;
 
   const bracket = await prisma.bracket.findUnique({
     where: { id },
@@ -68,6 +71,7 @@ export default async function BracketGamePage({
         bracketId={bracket.id}
         size={bracket.size}
         tracks={tracks}
+        transient={transient === "1"}
       />
     </div>
   );

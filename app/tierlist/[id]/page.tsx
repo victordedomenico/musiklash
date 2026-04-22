@@ -13,10 +13,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function TierlistPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ transient?: string }>;
 }) {
   const { id } = await params;
+  const { transient } = await searchParams;
   const { t } = await getI18n();
 
   const tl = await prisma.tierlist.findUnique({
@@ -65,6 +68,7 @@ export default async function TierlistPage({
         tracks={tracks}
         boardTexts={t.tierlistBoard}
         playerTexts={t.tierlistPlayer}
+        transient={transient === "1"}
       />
     </div>
   );

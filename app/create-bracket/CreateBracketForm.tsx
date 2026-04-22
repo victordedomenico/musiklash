@@ -17,7 +17,7 @@ export default function CreateBracketForm() {
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState("");
   const [size, setSize] = useState<(typeof SIZES)[number]>(8);
-  const [visibility, setVisibility] = useState<"private" | "public">("private");
+  const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
   const [selected, setSelected] = useState<SelectedTrack[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -130,16 +130,16 @@ export default function CreateBracketForm() {
               className="text-sm font-medium uppercase tracking-wide"
               style={{ color: "var(--muted-strong)" }}
             >
-              Visibilité
+              Publication
             </p>
-            <div className="mt-1 flex gap-2">
+            <div className="mt-1 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setVisibility("private")}
                 className="btn-chip"
                 data-active={visibility === "private"}
               >
-                Privé
+                Publié — Privé
               </button>
               <button
                 type="button"
@@ -147,9 +147,24 @@ export default function CreateBracketForm() {
                 className="btn-chip"
                 data-active={visibility === "public"}
               >
-                Public
+                Publié — Public
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisibility("none")}
+                className="btn-chip"
+                data-active={visibility === "none"}
+              >
+                Non publié
               </button>
             </div>
+            <p className="mt-2 text-xs text-[color:var(--muted)]">
+              {visibility === "public"
+                ? "Résultats accessibles à tout le monde et par lien."
+                : visibility === "private"
+                ? "Résultats accessibles uniquement à toi ou par lien direct."
+                : "Résultats non sauvegardés : le bracket sera supprimé définitivement à la fin de la partie."}
+            </p>
           </div>
         </div>
       </div>
