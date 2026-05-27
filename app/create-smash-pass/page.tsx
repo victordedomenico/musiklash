@@ -1,9 +1,9 @@
-import CreateStreamClashForm from "./CreateStreamClashForm";
+import CreateSmashPassForm from "./CreateSmashPassForm";
 import SectionHeader from "@/components/ui/SectionHeader";
 
-export const metadata = { title: "Créer un Stream Clash — MusiKlash" };
+export const metadata = { title: "Créer Smash or Pass — MusiKlash" };
 
-export default async function CreateStreamClashPage({
+export default async function CreateSmashPassPage({
   searchParams,
 }: {
   searchParams: Promise<{ mode?: string }>;
@@ -14,11 +14,11 @@ export default async function CreateStreamClashPage({
   return (
     <div className="page-shell py-12">
       <SectionHeader
-        title="Créer un Stream Clash"
+        title="Créer un Smash or Pass"
         subtitle={
           resolvedMode === "multi"
-            ? "Sélectionne les morceaux — les joueurs devront deviner lequel est le plus populaire en temps réel."
-            : "Sélectionne les morceaux — devine lequel est le plus populaire sur Deezer."
+            ? "Construis un deck et invite tes amis à voter Smash ou Pass en temps réel."
+            : "Swipe musical : Smash ou Pass sur chaque morceau, album ou artiste."
         }
         right={
           <span
@@ -33,7 +33,7 @@ export default async function CreateStreamClashPage({
         }
       />
       <div className="mt-8">
-        <CreateStreamClashForm mode={resolvedMode} />
+        <CreateSmashPassForm mode={resolvedMode} />
       </div>
     </div>
   );

@@ -31,7 +31,7 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
   ];
 
   const bottomLinks = [
-    { href: "/my-brackets", label: t.nav.myLibrary, icon: "library" as const },
+    { href: "/my-library", label: t.nav.myLibrary, icon: "library" as const },
   ];
 
   const helperLinks = [

@@ -43,7 +43,7 @@ export async function updateProfileSettings(formData: FormData) {
   });
 
   revalidatePath("/", "layout");
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/settings");
   redirect("/settings?success=1");
 }

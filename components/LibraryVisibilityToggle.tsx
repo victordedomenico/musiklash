@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import type { Visibility } from "@/app/my-brackets/actions";
+import type { Visibility } from "@/app/my-library/actions";
 import {
   deleteBattleFeatChallenge,
   deleteBattleFeatRoom,
@@ -12,6 +12,8 @@ import {
   deleteBlindtestSession,
   deleteBracket,
   deleteBracketGame,
+  deleteSmashPass,
+  deleteSmashPassRoom,
   deleteStreamClash,
   deleteStreamClashRoom,
   deleteStreamClashSession,
@@ -25,12 +27,14 @@ import {
   updateBlindtestVisibility,
   updateBracketGameVisibility,
   updateBracketVisibility,
+  updateSmashPassRoomVisibility,
+  updateSmashPassVisibility,
   updateStreamClashRoomVisibility,
   updateStreamClashSessionVisibility,
   updateStreamClashVisibility,
   updateTierlistSessionVisibility,
   updateTierlistVisibility,
-} from "@/app/my-brackets/actions";
+} from "@/app/my-library/actions";
 
 type Entity =
   | "bracket"
@@ -45,7 +49,9 @@ type Entity =
   | "blindtest_room"
   | "stream_clash"
   | "stream_clash_session"
-  | "stream_clash_room";
+  | "stream_clash_room"
+  | "smash_pass"
+  | "smash_pass_room";
 
 export default function LibraryVisibilityToggle({
   entity,
@@ -112,6 +118,12 @@ export default function LibraryVisibilityToggle({
         case "stream_clash_room":
           res = await updateStreamClashRoomVisibility(id, next);
           break;
+        case "smash_pass":
+          res = await updateSmashPassVisibility(id, next);
+          break;
+        case "smash_pass_room":
+          res = await updateSmashPassRoomVisibility(id, next);
+          break;
       }
       if (res && "error" in res) {
         setError(res.error);
@@ -170,6 +182,12 @@ export default function LibraryVisibilityToggle({
           break;
         case "stream_clash_room":
           res = await deleteStreamClashRoom(id);
+          break;
+        case "smash_pass":
+          res = await deleteSmashPass(id);
+          break;
+        case "smash_pass_room":
+          res = await deleteSmashPassRoom(id);
           break;
       }
       if (res && "error" in res) {

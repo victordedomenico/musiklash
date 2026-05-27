@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Zap } from "lucide-react";
 import TrackPicker from "@/components/TrackPicker";
 import Input from "@/components/ui/Input";
 import { createStreamClash, type StreamClashTrackInput } from "./actions";
@@ -9,11 +8,11 @@ import type { SelectedTrack } from "@/app/create-bracket/actions";
 
 type Difficulty = "easy" | "normal" | "hard";
 
-const DIFFICULTY_LABELS: Record<Difficulty, { label: string; desc: string }> = {
-  easy: { label: "Facile", desc: "N'importe quel écart de popularité" },
-  normal: { label: "Normal", desc: "Écart modéré — proche mais distinguable" },
-  hard: { label: "Difficile", desc: "Écart très faible — très difficile à deviner" },
-};
+const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; desc: string }[] = [
+  { value: "easy", label: "Facile", desc: "N'importe quel écart de popularité" },
+  { value: "normal", label: "Normal", desc: "Écart modéré — proche mais distinguable" },
+  { value: "hard", label: "Difficile", desc: "Écart très faible — très difficile à deviner" },
+];
 
 const ROUNDS_OPTIONS = [5, 10, 15, 20];
 
@@ -33,7 +32,6 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
       setError("Il faut au moins 4 morceaux.");
       return;
     }
-
     const tracksWithRank: StreamClashTrackInput[] = tracks.map((t) => ({
       deezer_track_id: t.deezer_track_id,
       title: t.title,
@@ -42,85 +40,58 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
       cover_url: t.cover_url,
       rank: (t as unknown as { rank?: number }).rank ?? 0,
     }));
-
     startTransition(async () => {
-      const res = await createStreamClash({
-        title,
-        visibility,
-        tracks: tracksWithRank,
-        mode,
-        difficulty,
-        totalRounds,
-      });
+      const res = await createStreamClash({ title, visibility, tracks: tracksWithRank, mode, difficulty, totalRounds });
       if (res?.error) setError(res.error);
     });
   };
 
+  const visHint =
+    mode === "multi"
+      ? "En multijoueur, le contenu doit rester publié (la room en dépend)."
+      : visibility === "public"
+      ? "Visible dans Explorer. Accessible à tous par lien."
+      : visibility === "private"
+      ? "Non visible dans Explorer. Accessible par lien direct ou depuis ta bibliothèque."
+      : "Éphémère : le Stream Clash sera supprimé définitivement après la partie.";
+
   return (
-    <form onSubmit={onSubmit} className="space-y-8">
-      {/* Title + visibility */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div>
-          <label className="text-sm font-medium">Titre du Stream Clash</label>
-          <Input
-            required
-            className="mt-1"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex. Top hits 2024"
-          />
-        </div>
-        <div>
-          <label className="text-sm font-medium">Publication</label>
-          <div className="mt-1 flex flex-wrap gap-2">
-            {(["private", "public", "none"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                disabled={mode === "multi" && v === "none"}
-                onClick={() => setVisibility(v)}
-                className="btn-chip"
-                data-active={visibility === v}
-              >
-                {v === "private" ? "Publié — Privé" : v === "public" ? "Publié — Public" : "Non publié"}
-              </button>
-            ))}
-          </div>
-          <p className="mt-2 text-xs text-[color:var(--muted)]">
-            {mode === "multi"
-              ? "En multijoueur, le contenu doit être conservé."
-              : visibility === "public"
-              ? "Résultats accessibles à tout le monde."
-              : visibility === "private"
-              ? "Résultats accessibles uniquement à toi ou par lien direct."
-              : "Le contenu sera supprimé définitivement à la fin de la partie."}
-          </p>
-        </div>
+    <form onSubmit={onSubmit} className="space-y-6">
+      {/* Ligne 1 — Titre */}
+      <div>
+        <label className="text-sm font-medium">Titre</label>
+        <Input
+          required
+          className="mt-1 max-w-md"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Ex. Top hits 2024"
+        />
       </div>
 
-      {/* Difficulty */}
+      {/* Ligne 2 — Difficulté */}
       <div>
         <label className="text-sm font-medium">Difficulté</label>
         <p className="mt-0.5 text-xs text-[color:var(--muted)]">
-          Détermine l&apos;écart de popularité minimal entre les deux morceaux d&apos;une paire.
+          Écart de popularité minimal entre les deux morceaux d&apos;une paire.
         </p>
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          {(["easy", "normal", "hard"] as const).map((d) => (
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {DIFFICULTY_OPTIONS.map((d) => (
             <button
-              key={d}
+              key={d.value}
               type="button"
-              onClick={() => setDifficulty(d)}
-              data-active={difficulty === d}
+              onClick={() => setDifficulty(d.value)}
+              data-active={difficulty === d.value}
               className="btn-chip flex-col items-start gap-0.5 py-3 text-left"
             >
-              <span className="font-semibold">{DIFFICULTY_LABELS[d].label}</span>
-              <span className="text-xs text-[color:var(--muted)]">{DIFFICULTY_LABELS[d].desc}</span>
+              <span className="font-semibold">{d.label}</span>
+              <span className="text-xs text-[color:var(--muted)]">{d.desc}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Rounds (multi only, or solo if they want control) */}
+      {/* Ligne 3 — Nombre de manches */}
       <div>
         <label className="text-sm font-medium">Nombre de manches</label>
         <div className="mt-1 flex flex-wrap gap-2">
@@ -138,11 +109,36 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
         </div>
       </div>
 
-      {/* Track picker */}
+      {/* Ligne 4 — Publication */}
+      <div>
+        <label className="text-sm font-medium">Publication</label>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {(["private", "public", "none"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              disabled={mode === "multi" && v === "none"}
+              onClick={() => setVisibility(v)}
+              className="btn-chip disabled:opacity-40 disabled:cursor-not-allowed"
+              data-active={visibility === v}
+            >
+              {v === "private" ? "Publié — Privé" : v === "public" ? "Publié — Public" : "Non publié"}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-[color:var(--muted)]">{visHint}</p>
+      </div>
+
+      {/* Picker */}
       <TrackPicker size={50} selected={tracks} onChange={setTracks} freeMode />
 
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      {error ? (
+        <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      ) : null}
 
+      {/* Footer */}
       <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
         <p className="text-sm text-[color:var(--muted)]">
           {tracks.length} morceau{tracks.length > 1 ? "x" : ""} sélectionné
@@ -153,8 +149,7 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
           disabled={pending || tracks.length < 4}
           className="btn-primary disabled:opacity-50"
         >
-          <Zap size={14} />
-          {pending ? "Création…" : "Créer le Stream Clash"}
+          {pending ? "Création…" : mode === "multi" ? "Créer et lancer la room" : "Créer le Stream Clash"}
         </button>
       </div>
     </form>

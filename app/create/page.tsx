@@ -60,6 +60,8 @@ export default async function CreatePage() {
             blindtestDesc: n.createBlindtestDesc,
             streamClash: n.createStreamClash,
             streamClashDesc: n.createStreamClashDesc,
+            smashPass: n.createSmashPass,
+            smashPassDesc: n.createSmashPassDesc,
             battleFeat: n.battleFeat,
             battleFeatDesc: n.createBattleFeatDesc,
             modeSolo: n.modeSolo,

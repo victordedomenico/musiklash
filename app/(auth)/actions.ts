@@ -21,7 +21,7 @@ export async function signIn(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/my-brackets");
+  redirect("/my-library");
 }
 
 export async function signUp(formData: FormData) {
@@ -40,7 +40,7 @@ export async function signUp(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/my-brackets?welcome=1");
+  redirect("/my-library?welcome=1");
 }
 
 export async function signOut() {

@@ -19,6 +19,12 @@ import {
   type StreamClashRoomSummary,
   type StreamClashSummary,
 } from "@/components/StreamClashCard";
+import {
+  SmashPassCard,
+  SmashPassRoomCard,
+  type SmashPassRoomSummary,
+  type SmashPassSummary,
+} from "@/components/SmashPassExploreCard";
 import { Search } from "lucide-react";
 import { getI18n } from "@/lib/i18n";
 import { buildPageMetadata } from "@/lib/seo";
@@ -30,7 +36,14 @@ export const metadata = buildPageMetadata({
   path: "/explore",
 });
 
-type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat" | "streamclash";
+type Tab =
+  | "all"
+  | "brackets"
+  | "tierlists"
+  | "blindtests"
+  | "battlefeat"
+  | "streamclash"
+  | "smashpass";
 
 type BattleFeatSoloChallengeDelegate = {
   findMany: (args: {
@@ -54,7 +67,15 @@ type BattleFeatSoloChallengeDelegate = {
 };
 
 function parseTab(raw: string | undefined): Tab {
-  const v = ["all", "brackets", "tierlists", "blindtests", "battlefeat", "streamclash"] as const;
+  const v = [
+    "all",
+    "brackets",
+    "tierlists",
+    "blindtests",
+    "battlefeat",
+    "streamclash",
+    "smashpass",
+  ] as const;
   return raw && (v as readonly string[]).includes(raw) ? (raw as Tab) : "all";
 }
 
@@ -98,6 +119,10 @@ export default async function ExplorePage({
     ? { title: { contains: term, mode: "insensitive" as const } }
     : {};
 
+  const smashPassTextFilter = term
+    ? { title: { contains: term, mode: "insensitive" as const } }
+    : {};
+
   const takeGrid = tab === "all" ? 12 : 48;
   const takeBfChallenge = tab === "all" ? 8 : 36;
   const takeBfRoom = tab === "all" ? 8 : 36;
@@ -107,6 +132,7 @@ export default async function ExplorePage({
   const loadBlindtests = tab === "all" || tab === "blindtests";
   const loadBattlefeat = tab === "all" || tab === "battlefeat";
   const loadStreamClash = tab === "all" || tab === "streamclash";
+  const loadSmashPass = tab === "all" || tab === "smashpass";
   const hasBlindtestRoomVisibility = modelHasField("BlindtestRoom", "visibility");
   const hasBlindtestRoomParticipants = modelHasField("BlindtestRoom", "participants");
   const hasBattleFeatRoomVisibility = modelHasField("BattleFeatRoom", "visibility");
@@ -123,8 +149,18 @@ export default async function ExplorePage({
     await ensureBattleFeatVisibilityColumns(prisma);
   }
 
-  const [brackets, tierlists, blindtests, blindtestRooms, soloChallenges, battleFeatRooms, streamClashes, streamClashRooms] =
-    await Promise.all([
+  const [
+    brackets,
+    tierlists,
+    blindtests,
+    blindtestRooms,
+    soloChallenges,
+    battleFeatRooms,
+    streamClashes,
+    streamClashRooms,
+    smashPasses,
+    smashPassRooms,
+  ] = await Promise.all([
     loadBrackets
       ? prisma.bracket.findMany({
           where: { visibility: "public", ...textFilter },
@@ -283,6 +319,56 @@ export default async function ExplorePage({
           take: takeGrid,
         })
       : Promise.resolve([]),
+    loadSmashPass
+      ? prisma.smashPass.findMany({
+          where: { visibility: "public", ...smashPassTextFilter },
+          select: {
+            id: true,
+            title: true,
+            visibility: true,
+            itemType: true,
+            items: {
+              take: 1,
+              orderBy: { position: "asc" },
+              select: { coverUrl: true },
+            },
+            _count: { select: { items: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          take: takeGrid,
+        })
+      : Promise.resolve([]),
+    loadSmashPass
+      ? prisma.smashPassRoom.findMany({
+          where: {
+            status: { in: ["waiting", "playing"] },
+            visibility: "public",
+            ...(term
+              ? {
+                  OR: [
+                    { smashPass: { title: { contains: term, mode: "insensitive" as const } } },
+                    { host: { username: { contains: term, mode: "insensitive" as const } } },
+                  ],
+                }
+              : {}),
+          },
+          select: {
+            id: true,
+            status: true,
+            visibility: true,
+            host: { select: { username: true } },
+            smashPass: {
+              select: {
+                title: true,
+                itemType: true,
+                _count: { select: { items: true } },
+              },
+            },
+          },
+          orderBy: { updatedAt: "desc" },
+          take: takeGrid,
+        })
+      : Promise.resolve([]),
   ]);
 
   const bracketList = brackets.map((b) => ({ ...b, cover_url: b.coverUrl })) as BracketSummary[];
@@ -377,6 +463,27 @@ export default async function ExplorePage({
   const hasAnyBattlefeat = battleFeatChallengeList.length > 0 || battleFeatRoomList.length > 0;
   const hasAnyStreamClash = streamClashList.length > 0 || streamClashRoomList.length > 0;
 
+  const smashPassList = smashPasses.map((sp) => ({
+    id: sp.id,
+    title: sp.title,
+    visibility: sp.visibility,
+    itemType: sp.itemType,
+    itemCount: sp._count.items,
+    coverUrl: sp.items[0]?.coverUrl ?? null,
+  })) as SmashPassSummary[];
+
+  const smashPassRoomList = smashPassRooms.map((room) => ({
+    id: room.id,
+    status: room.status,
+    title: room.smashPass.title,
+    itemCount: room.smashPass._count.items,
+    hostName: room.host.username,
+    visibility: room.visibility,
+    itemType: room.smashPass.itemType,
+  })) as SmashPassRoomSummary[];
+
+  const hasAnySmashPass = smashPassList.length > 0 || smashPassRoomList.length > 0;
+
   const isEmpty =
     tab === "all"
       ? bracketList.length === 0 &&
@@ -384,11 +491,14 @@ export default async function ExplorePage({
         blindtestList.length === 0 &&
         blindtestRoomList.length === 0 &&
         !hasAnyBattlefeat &&
-        !hasAnyStreamClash
+        !hasAnyStreamClash &&
+        !hasAnySmashPass
       : tab === "battlefeat"
         ? !hasAnyBattlefeat
         : tab === "streamclash"
           ? !hasAnyStreamClash
+        : tab === "smashpass"
+          ? !hasAnySmashPass
         : tab === "brackets"
           ? bracketList.length === 0
           : tab === "tierlists"
@@ -402,6 +512,7 @@ export default async function ExplorePage({
     { key: "blindtests" as const, label: e.tabBlindtests },
     { key: "battlefeat" as const, label: e.tabBattlefeat },
     { key: "streamclash" as const, label: e.tabStreamClash },
+    { key: "smashpass" as const, label: e.tabSmashPass },
   ];
 
   const gridClass =
@@ -481,7 +592,14 @@ export default async function ExplorePage({
                 <Link href="/create-stream-clash" className="btn-primary inline-flex">
                   {e.createStreamClash}
                 </Link>
+                <Link href="/create-smash-pass" className="btn-primary inline-flex">
+                  {e.createSmashPass}
+                </Link>
               </>
+            ) : tab === "smashpass" ? (
+              <Link href="/create-smash-pass" className="btn-primary inline-flex">
+                {e.createSmashPass}
+              </Link>
             ) : tab === "streamclash" ? (
               <Link href="/create-stream-clash" className="btn-primary inline-flex">
                 {e.createStreamClash}
@@ -620,6 +738,40 @@ export default async function ExplorePage({
             </section>
           ) : null}
 
+          {hasAnySmashPass ? (
+            <section className="space-y-4">
+              <h2 className="text-2xl font-bold tracking-tight">{e.sectionSmashPass}</h2>
+              {smashPassList.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-[color:var(--muted)]">{e.sectionSmashPassCreations}</p>
+                  <div className={gridClass}>
+                    {smashPassList.map((sp) => (
+                      <SmashPassCard key={sp.id} sp={sp} />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {smashPassRoomList.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-[color:var(--muted)]">{e.sectionSmashPassRooms}</p>
+                  <div className={gridClass}>
+                    {smashPassRoomList.map((room) => (
+                      <SmashPassRoomCard key={room.id} room={room} />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <div className="flex justify-end">
+                <Link
+                  href={`/explore?tab=smashpass${term ? `&q=${encodeURIComponent(term)}` : ""}`}
+                  className="text-sm font-semibold text-[color:var(--accent)] no-underline hover:underline"
+                >
+                  {e.seeAll} →
+                </Link>
+              </div>
+            </section>
+          ) : null}
+
           {hasAnyStreamClash ? (
             <section className="space-y-4">
               <h2 className="text-2xl font-bold tracking-tight">{e.sectionStreamClash}</h2>
@@ -684,6 +836,29 @@ export default async function ExplorePage({
               <div className={gridClass}>
                 {blindtestRoomList.map((room) => (
                   <BlindtestRoomCard key={room.id} room={room} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
+      ) : tab === "smashpass" ? (
+        <div className="mt-10 space-y-8">
+          {smashPassList.length > 0 ? (
+            <section className="space-y-3">
+              <p className="text-sm text-[color:var(--muted)]">{e.sectionSmashPassCreations}</p>
+              <div className={gridClass}>
+                {smashPassList.map((sp) => (
+                  <SmashPassCard key={sp.id} sp={sp} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+          {smashPassRoomList.length > 0 ? (
+            <section className="space-y-3">
+              <p className="text-sm text-[color:var(--muted)]">{e.sectionSmashPassRooms}</p>
+              <div className={gridClass}>
+                {smashPassRoomList.map((room) => (
+                  <SmashPassRoomCard key={room.id} room={room} />
                 ))}
               </div>
             </section>

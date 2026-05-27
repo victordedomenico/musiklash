@@ -11,7 +11,7 @@ export default function robots(): MetadataRoute.Robots {
           "/login",
           "/signup",
           "/settings",
-          "/my-brackets",
+          "/my-library",
           "/blindtest/*/play",
           "/blindtest/room/",
           "/battle-feat/room/",

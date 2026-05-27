@@ -163,6 +163,7 @@ export const STATIC_SITEMAP_ROUTES: Array<{
   { path: "/create-blindtest", changeFrequency: "monthly", priority: 0.8 },
   { path: "/create-battlefeat", changeFrequency: "monthly", priority: 0.8 },
   { path: "/create-stream-clash", changeFrequency: "monthly", priority: 0.8 },
+  { path: "/create-smash-pass", changeFrequency: "monthly", priority: 0.8 },
   { path: "/battle-feat", changeFrequency: "weekly", priority: 0.85 },
   { path: "/battle-feat/solo", changeFrequency: "weekly", priority: 0.75 },
   { path: "/battle-feat/free", changeFrequency: "weekly", priority: 0.75 },

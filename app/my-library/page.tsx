@@ -28,18 +28,31 @@ import {
   type StreamClashSessionSummary,
   type StreamClashSummary,
 } from "@/components/StreamClashCard";
+import {
+  SmashPassCard,
+  SmashPassRoomCard,
+  type SmashPassRoomSummary,
+  type SmashPassSummary,
+} from "@/components/SmashPassExploreCard";
 import { Plus, Play } from "lucide-react";
 import { buildPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Ma bibliothèque",
   description: "Retrouvez vos brackets, tierlists et blindtests sur MusiKlash.",
-  path: "/my-brackets",
+  path: "/my-library",
   noIndex: true,
 });
 
 type Visibility = "all" | "private" | "public";
-type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat" | "streamclash";
+type Tab =
+  | "all"
+  | "brackets"
+  | "tierlists"
+  | "blindtests"
+  | "battlefeat"
+  | "streamclash"
+  | "smashpass";
 
 type BattleFeatSoloChallengeDelegate = {
   findMany: (args: {
@@ -110,6 +123,8 @@ export default async function MyBracketsPage({
     streamClashesRaw,
     streamClashRoomsRaw,
     streamClashSessionsRaw,
+    smashPassesRaw,
+    smashPassRoomsRaw,
     bracketGamesRaw,
     tierlistSessionsRaw,
     blindtestSessionsRaw,
@@ -258,6 +273,40 @@ export default async function MyBracketsPage({
           },
           orderBy: { createdAt: "desc" },
         }),
+        prisma.smashPass.findMany({
+          where: { ownerId: activePlayerId, ...visFilter },
+          select: {
+            id: true,
+            title: true,
+            visibility: true,
+            itemType: true,
+            _count: { select: { items: true } },
+            items: {
+              take: 1,
+              orderBy: { position: "asc" },
+              select: { coverUrl: true },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.smashPassRoom.findMany({
+          where: { hostId: activePlayerId, ...visFilter },
+          select: {
+            id: true,
+            status: true,
+            visibility: true,
+            createdAt: true,
+            host: { select: { username: true } },
+            smashPass: {
+              select: {
+                title: true,
+                itemType: true,
+                _count: { select: { items: true } },
+              },
+            },
+          },
+          orderBy: { updatedAt: "desc" },
+        }),
         prisma.bracketGame.findMany({
           where: {
             playerId: activePlayerId,
@@ -316,7 +365,7 @@ export default async function MyBracketsPage({
         }),
       ]);
       })()
-    : [[], [], [], [], [], [], [], [], [], [], [], [], []];
+    : [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []];
 
   const bracketList = brackets.map((b) => ({ ...b, cover_url: b.coverUrl })) as BracketSummary[];
   const tierlistList = tierlists.map((t) => ({ ...t, coverUrl: t.coverUrl })) as TierlistSummary[];
@@ -400,6 +449,26 @@ export default async function MyBracketsPage({
     createdAt: room.createdAt.toISOString(),
     canEditVisibility: true,
   })) as StreamClashRoomSummary[];
+
+  const smashPassList = smashPassesRaw.map((sp) => ({
+    id: sp.id,
+    title: sp.title,
+    visibility: sp.visibility,
+    itemType: sp.itemType,
+    itemCount: sp._count.items,
+    coverUrl: sp.items[0]?.coverUrl ?? null,
+  })) as SmashPassSummary[];
+
+  const smashPassRoomList = smashPassRoomsRaw.map((room) => ({
+    id: room.id,
+    status: room.status,
+    title: room.smashPass.title,
+    itemCount: room.smashPass._count.items,
+    hostName: room.host.username,
+    visibility: room.visibility,
+    itemType: room.smashPass.itemType,
+    canEditVisibility: true,
+  })) as SmashPassRoomSummary[];
 
   const streamClashSessionList = streamClashSessionsRaw.map((s) => ({
     id: s.id,
@@ -491,6 +560,8 @@ export default async function MyBracketsPage({
     streamClashList.length +
     streamClashRoomList.length +
     streamClashSessionList.length +
+    smashPassList.length +
+    smashPassRoomList.length +
     bracketSessions.length +
     tierlistSessions.length +
     blindtestSessions.length;
@@ -504,6 +575,8 @@ export default async function MyBracketsPage({
       ? "/create-battlefeat"
       : tab === "streamclash"
       ? "/create-stream-clash"
+      : tab === "smashpass"
+      ? "/create-smash-pass"
       : "/create-bracket";
   const createLabel =
     tab === "tierlists"
@@ -514,6 +587,8 @@ export default async function MyBracketsPage({
       ? "Nouveau BattleFeat solo"
       : tab === "streamclash"
       ? "Nouveau Stream Clash"
+      : tab === "smashpass"
+      ? "Nouveau Smash or Pass"
       : "Nouveau bracket";
 
   return (
@@ -558,6 +633,7 @@ export default async function MyBracketsPage({
         <TabItem current={tab} value="blindtests" label={`Blindtests (${blindtests.length + blindtestRoomList.length})`} />
         <TabItem current={tab} value="battlefeat" label={`BattleFeat (${battleFeatList.length + battleFeatChallengeList.length + battleFeatRoomList.length})`} />
         <TabItem current={tab} value="streamclash" label={`Stream Clash (${streamClashList.length + streamClashRoomList.length + streamClashSessionList.length})`} />
+        <TabItem current={tab} value="smashpass" label={`Smash or Pass (${smashPassList.length + smashPassRoomList.length})`} />
         </div>
 
       {/* Visibility filter */}
@@ -754,6 +830,34 @@ export default async function MyBracketsPage({
                 </SubSection>
               </section>
             ) : null}
+
+            {smashPassList.length > 0 || smashPassRoomList.length > 0 ? (
+              <section className="space-y-4">
+                <h2 className="text-2xl font-bold">Smash or Pass</h2>
+                <SubSection label="Mes créations">
+                  {smashPassList.length === 0 ? (
+                    <EmptySub label="Aucun deck créé." />
+                  ) : (
+                    <CardsGrid>
+                      {smashPassList.map((sp) => (
+                        <SmashPassCard key={sp.id} sp={sp} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
+                <SubSection label="Mes rooms multijoueur">
+                  {smashPassRoomList.length === 0 ? (
+                    <EmptySub label="Aucune room multijoueur." />
+                  ) : (
+                    <CardsGrid>
+                      {smashPassRoomList.map((room) => (
+                        <SmashPassRoomCard key={room.id} room={room} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
+              </section>
+            ) : null}
           </div>
         )
       ) : tab === "brackets" ? (
@@ -860,6 +964,39 @@ export default async function MyBracketsPage({
                 <CardsGrid>
                   {blindtestSessions.map((s) => (
                     <SessionCard key={s.id} session={s} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
+          </div>
+        )
+      ) : tab === "smashpass" ? (
+        smashPassList.length === 0 && smashPassRoomList.length === 0 ? (
+          <EmptyState
+            label="Aucun Smash or Pass pour le moment"
+            cta="Créer un Smash or Pass"
+            href="/create-smash-pass"
+          />
+        ) : (
+          <div className="mt-8 space-y-8">
+            <SubSection label="Mes créations">
+              {smashPassList.length === 0 ? (
+                <EmptySub label="Aucun deck créé." />
+              ) : (
+                <CardsGrid>
+                  {smashPassList.map((sp) => (
+                    <SmashPassCard key={sp.id} sp={sp} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
+            <SubSection label="Mes rooms multijoueur">
+              {smashPassRoomList.length === 0 ? (
+                <EmptySub label="Aucune room multijoueur." />
+              ) : (
+                <CardsGrid>
+                  {smashPassRoomList.map((room) => (
+                    <SmashPassRoomCard key={room.id} room={room} libraryEditor={libraryEditor} />
                   ))}
                 </CardsGrid>
               )}
@@ -1005,7 +1142,7 @@ function TabItem({ current, value, label }: { current: Tab; value: Tab; label: s
   const active = current === value;
   return (
     <Link
-      href={`/my-brackets?tab=${value}`}
+      href={`/my-library?tab=${value}`}
       className="whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold tracking-wide no-underline sm:px-5 sm:text-sm"
       style={{
         background: active ? "#f3f4f6" : "transparent",
@@ -1030,8 +1167,8 @@ function FilterLink({
 }) {
   const href =
     value === "all"
-      ? `/my-brackets?tab=${tab}`
-      : `/my-brackets?tab=${tab}&filter=${value}`;
+      ? `/my-library?tab=${tab}`
+      : `/my-library?tab=${tab}&filter=${value}`;
   return (
     <Link
       href={href}

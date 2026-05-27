@@ -33,6 +33,9 @@ model Profile {
   streamClashes             StreamClash[]
   streamClashSessions       StreamClashSession[]
   hostedStreamClashRooms    StreamClashRoom[]       @relation("StreamClashRoomHost")
+  smashPasses               SmashPass[]
+  smashPassSessions         SmashPassSession[]
+  hostedSmashPassRooms      SmashPassRoom[]         @relation("SmashPassRoomHost")
 
   @@map("profiles")
 }
@@ -411,4 +414,93 @@ model StreamClashRoom {
   @@index([streamClashId])
   @@index([visibility, status, updatedAt(sort: Desc)])
   @@map("stream_clash_rooms")
+}
+
+// ─── Smash or Pass ────────────────────────────────────────────────────────────
+
+model SmashPass {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId    String   @map("owner_id") @db.Uuid
+  title      String
+  itemType   String   @map("item_type") // track | album | artist
+  visibility String   @default("private")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  owner    Profile            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items    SmashPassItem[]
+  sessions SmashPassSession[]
+  rooms    SmashPassRoom[]
+
+  @@index([ownerId])
+  @@index([visibility, createdAt(sort: Desc)])
+  @@map("smash_passes")
+}
+
+model SmashPassItem {
+  smashPassId String  @map("smash_pass_id") @db.Uuid
+  position    Int     @db.SmallInt
+  deezerId    BigInt  @map("deezer_id")
+  title       String
+  subtitle    String?
+  coverUrl    String? @map("cover_url")
+  previewUrl  String? @map("preview_url")
+  tags        Json    @default("[]") @db.JsonB
+  description String?
+
+  smashPass SmashPass @relation(fields: [smashPassId], references: [id], onDelete: Cascade)
+
+  @@id([smashPassId, position])
+  @@map("smash_pass_items")
+}
+
+model SmashPassItemStats {
+  itemType    String @map("item_type")
+  deezerId    BigInt @map("deezer_id")
+  smashCount  BigInt @default(0) @map("smash_count")
+  passCount   BigInt @default(0) @map("pass_count")
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@id([itemType, deezerId])
+  @@map("smash_pass_item_stats")
+}
+
+model SmashPassSession {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  smashPassId String   @map("smash_pass_id") @db.Uuid
+  playerId    String?  @map("player_id") @db.Uuid
+  smashCount  Int      @default(0) @map("smash_count")
+  passCount   Int      @default(0) @map("pass_count")
+  choices     Json     @default("[]") @db.JsonB
+  visibility  String   @default("private")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  smashPass SmashPass @relation(fields: [smashPassId], references: [id], onDelete: Cascade)
+  player    Profile?  @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@index([smashPassId])
+  @@index([playerId])
+  @@index([visibility, createdAt(sort: Desc)])
+  @@map("smash_pass_sessions")
+}
+
+model SmashPassRoom {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  smashPassId      String    @map("smash_pass_id") @db.Uuid
+  hostId           String    @map("host_id") @db.Uuid
+  status           String    @default("waiting") // waiting | playing | finished
+  visibility       String    @default("private")
+  currentPosition  Int       @default(0) @map("current_position") @db.SmallInt
+  participants     Json      @default("[]") @db.JsonB
+  winnerId         String?   @map("winner_id") @db.Uuid
+  positionStartedAt DateTime? @map("position_started_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  smashPass SmashPass @relation(fields: [smashPassId], references: [id], onDelete: Cascade)
+  host      Profile   @relation("SmashPassRoomHost", fields: [hostId], references: [id])
+
+  @@index([hostId])
+  @@index([smashPassId])
+  @@index([visibility, status, updatedAt(sort: Desc)])
+  @@map("smash_pass_rooms")
 }

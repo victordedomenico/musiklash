@@ -799,7 +799,7 @@ export default function BracketGame({
               Recommencer
             </button>
           )}
-          <Link href="/my-brackets" className="btn-ghost">
+          <Link href="/my-library" className="btn-ghost">
             Ma bibliothèque
           </Link>
         </div>

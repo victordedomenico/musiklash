@@ -10,6 +10,7 @@ import {
   User,
   Sparkles,
   Zap,
+  Heart,
 } from "lucide-react";
 import { buildPageMetadata } from "@/lib/seo";
 
@@ -108,6 +109,28 @@ export default function GuidePage() {
         "Chaque manche oppose deux morceaux: devine lequel a le meilleur score de popularité Deezer (indice rank).",
         "Tu peux écouter les extraits avant de choisir. Difficultés: Facile (tout écart), Normal (≤ 500K), Difficile (≤ 100K).",
         "10 secondes par manche, +100 pts par bonne réponse. De 5 à 20 manches selon ta configuration.",
+      ],
+    },
+    {
+      title: "Smash or Pass — Solo",
+      icon: <Heart size={26} />,
+      tone: "#ec4899",
+      steps: [
+        "Création: choisis morceaux, albums ou artistes (5 à 100 éléments par deck).",
+        "Pour chaque élément: vote Smash ou Pass — les stats communautaires globales s'affichent sur l'élément précédent.",
+        "Compteurs de session en direct sur les boutons PASS et SMASH.",
+        "Partage ton deck en public ou joue en mode éphémère (non publié).",
+      ],
+    },
+    {
+      title: "Smash or Pass — Multijoueur",
+      icon: <Users size={26} />,
+      tone: "#f472b6",
+      steps: [
+        "L'hôte crée une room à partir d'un deck; les joueurs rejoignent via lien ou Explorer.",
+        "Tout le monde vote Smash ou Pass sur le même élément; l'hôte avance quand tous ont voté.",
+        "Barres room + stats communautaires MusiKlash à chaque révélation.",
+        "Classement final par nombre de Smash et Pass en fin de partie.",
       ],
     },
     {

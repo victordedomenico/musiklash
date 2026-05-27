@@ -1,19 +1,20 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import TrackPicker from "@/components/TrackPicker";
-import {
-  createBracket,
-  type SelectedTrack,
-} from "@/app/create-bracket/actions";
+import { createBracket, type SelectedTrack } from "@/app/create-bracket/actions";
 import Input from "@/components/ui/Input";
 import { effectiveBracketSize, VALID_BRACKET_SIZES } from "@/lib/bracket";
 
 const SIZES = VALID_BRACKET_SIZES;
 
+const VIS_HINTS = {
+  public: "Visible dans Explorer. Accessible à tous par lien.",
+  private: "Non visible dans Explorer. Accessible par lien direct ou depuis ta bibliothèque.",
+  none: "Éphémère : le bracket sera supprimé définitivement après la partie.",
+} as const;
+
 export default function CreateBracketForm() {
-  const router = useRouter();
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState("");
   const [size, setSize] = useState<(typeof SIZES)[number]>(8);
@@ -24,7 +25,6 @@ export default function CreateBracketForm() {
 
   const effectiveSize = selected.length >= 3 ? effectiveBracketSize(selected.length) : null;
   const byeCount = effectiveSize ? effectiveSize - selected.length : 0;
-  const canSubmit = !pending && selected.length >= 3;
 
   const onSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
@@ -34,184 +34,103 @@ export default function CreateBracketForm() {
       return;
     }
     startTransition(async () => {
-      const res = await createBracket({
-        title,
-        theme,
-        size,
-        visibility,
-        tracks: selected,
-      });
-      if (res?.error) {
-        setError(res.error);
-      } else {
-        router.refresh();
-      }
+      const res = await createBracket({ title, theme, size, visibility, tracks: selected });
+      if (res?.error) setError(res.error);
     });
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-8">
-      <div
-        className="rounded-[30px] border p-6 md:p-7"
-        style={{ borderColor: "var(--border-strong)", background: "var(--surface)" }}
-      >
-        <p className="mb-5 flex items-center gap-3 text-3xl font-bold">
-          <span
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-black"
-            style={{ background: "#ff2f6d", color: "#fff" }}
-          >
-            1
-          </span>
-          Configuration
-        </p>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <label
-              htmlFor="bracket-title"
-              className="text-sm font-medium uppercase tracking-wide"
-              style={{ color: "var(--muted-strong)" }}
-            >
-              Titre du défi
-            </label>
-            <Input
-              id="bracket-title"
-              required
-              className="mt-1"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex. Tournoi rap FR 2020s"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="bracket-theme"
-              className="text-sm font-medium uppercase tracking-wide"
-              style={{ color: "var(--muted-strong)" }}
-            >
-              Thème (optionnel)
-            </label>
-            <Input
-              id="bracket-theme"
-              className="mt-1"
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-              placeholder="Ex. Rap français"
-            />
-          </div>
-
-          <div>
-            <p
-              className="text-sm font-medium uppercase tracking-wide"
-              style={{ color: "var(--muted-strong)" }}
-            >
-              Taille max
-            </p>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {SIZES.map((s) => (
-                <button
-                  type="button"
-                  key={s}
-                  onClick={() => {
-                    if (selected.length > s) setSelected(selected.slice(0, s));
-                    setSize(s);
-                  }}
-                  className="btn-chip"
-                  data-active={s === size}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <p
-              className="text-sm font-medium uppercase tracking-wide"
-              style={{ color: "var(--muted-strong)" }}
-            >
-              Publication
-            </p>
-            <div className="mt-1 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setVisibility("private")}
-                className="btn-chip"
-                data-active={visibility === "private"}
-              >
-                Publié — Privé
-              </button>
-              <button
-                type="button"
-                onClick={() => setVisibility("public")}
-                className="btn-chip"
-                data-active={visibility === "public"}
-              >
-                Publié — Public
-              </button>
-              <button
-                type="button"
-                onClick={() => setVisibility("none")}
-                className="btn-chip"
-                data-active={visibility === "none"}
-              >
-                Non publié
-              </button>
-            </div>
-            <p className="mt-2 text-xs text-[color:var(--muted)]">
-              {visibility === "public"
-                ? "Résultats accessibles à tout le monde et par lien."
-                : visibility === "private"
-                ? "Résultats accessibles uniquement à toi ou par lien direct."
-                : "Résultats non sauvegardés : le bracket sera supprimé définitivement à la fin de la partie."}
-            </p>
-          </div>
+    <form onSubmit={onSubmit} className="space-y-6">
+      {/* Ligne 1 — Titre + Option principale */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <label className="text-sm font-medium">Titre</label>
+          <Input
+            required
+            className="mt-1"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex. Tournoi rap FR 2020s"
+          />
+        </div>
+        <div>
+          <label className="text-sm font-medium">Thème (optionnel)</label>
+          <Input
+            className="mt-1"
+            value={theme}
+            onChange={(e) => setTheme(e.target.value)}
+            placeholder="Ex. Rap français"
+          />
         </div>
       </div>
 
-      <div
-        className="rounded-[30px] border p-6 md:p-7"
-        style={{ borderColor: "var(--border-strong)", background: "var(--surface)" }}
-      >
-        <p className="mb-5 flex items-center gap-3 text-3xl font-bold">
-          <span
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-black"
-            style={{ background: "#ff2f6d", color: "#fff" }}
-          >
-            2
-          </span>
-          Chercher des morceaux via Deezer
-        </p>
-        <TrackPicker size={size} selected={selected} onChange={setSelected} />
+      {/* Ligne 2 — Options supplémentaires */}
+      <div>
+        <label className="text-sm font-medium">Taille du tournoi</label>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {SIZES.map((s) => (
+            <button
+              type="button"
+              key={s}
+              onClick={() => {
+                if (selected.length > s) setSelected(selected.slice(0, s));
+                setSize(s);
+              }}
+              className="btn-chip"
+              data-active={s === size}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      {/* Ligne 3 — Publication */}
+      <div>
+        <label className="text-sm font-medium">Publication</label>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {(["private", "public", "none"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setVisibility(v)}
+              className="btn-chip"
+              data-active={visibility === v}
+            >
+              {v === "private" ? "Publié — Privé" : v === "public" ? "Publié — Public" : "Non publié"}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-[color:var(--muted)]">{VIS_HINTS[visibility]}</p>
+      </div>
 
-      <div
-        className="flex items-center justify-between rounded-2xl border px-5 py-4"
-        style={{ borderColor: "var(--border-strong)", background: "var(--surface)" }}
-      >
-        <div className="text-sm" style={{ color: "var(--muted)" }}>
-          <span>
-            {selected.length} morceau{selected.length !== 1 ? "x" : ""} sélectionné
-            {selected.length !== 1 ? "s" : ""}
-          </span>
-          {effectiveSize && (
-            <span style={{ color: "var(--muted-strong)" }}>
-              {" "}→ bracket de {effectiveSize}
+      {/* Picker */}
+      <TrackPicker size={size} selected={selected} onChange={setSelected} />
+
+      {error ? (
+        <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      ) : null}
+
+      {/* Footer */}
+      <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
+        <p className="text-sm text-[color:var(--muted)]">
+          {selected.length} morceau{selected.length !== 1 ? "x" : ""} · min. 3
+          {effectiveSize ? (
+            <span className="ml-2 text-[color:var(--muted-strong)]">
+              → bracket de {effectiveSize}
               {byeCount > 0 && (
-                <span style={{ color: "var(--accent)" }}>
-                  {" "}
-                  ({byeCount} passe{byeCount > 1 ? "s" : ""} directe
-                  {byeCount > 1 ? "s" : ""})
+                <span className="text-[color:var(--accent)]">
+                  {" "}({byeCount} passe{byeCount > 1 ? "s" : ""} directe{byeCount > 1 ? "s" : ""})
                 </span>
               )}
             </span>
-          )}
-        </div>
+          ) : null}
+        </p>
         <button
           type="submit"
-          disabled={!canSubmit}
+          disabled={pending || selected.length < 3}
           className="btn-primary disabled:opacity-50"
         >
           {pending ? "Création…" : "Créer et jouer"}

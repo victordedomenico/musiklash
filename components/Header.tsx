@@ -50,7 +50,7 @@ export default async function Header() {
             </Link>
           ))}
           {user && (
-            <Link href="/my-brackets" className="nav-link rounded-lg px-3 py-2 text-sm font-medium transition-colors">
+            <Link href="/my-library" className="nav-link rounded-lg px-3 py-2 text-sm font-medium transition-colors">
               {t.nav.myLibrary}
             </Link>
           )}
@@ -102,7 +102,7 @@ export default async function Header() {
               </div>
 
               <Link
-                href="/my-brackets"
+                href="/my-library"
                 className="btn-ghost md:hidden"
                 style={{ padding: "0.5rem 0.75rem" }}
               >

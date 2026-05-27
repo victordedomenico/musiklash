@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Clock, Eye, EyeOff } from "lucide-react";
 import LibraryVisibilityToggle from "@/components/LibraryVisibilityToggle";
-import type { Visibility } from "@/app/my-brackets/actions";
+import type { Visibility } from "@/app/my-library/actions";
 
 type Kind = "bracket" | "tierlist" | "blindtest";
 

@@ -14,8 +14,8 @@ export default async function Footer() {
         { label: f.createBracket, href: "/create-bracket" },
         { label: f.createTierlist, href: "/create-tierlist" },
         { label: f.play, href: "/explore" },
-        { label: f.myBrackets, href: "/my-brackets" },
-        { label: f.myTierlists, href: "/my-brackets?tab=tierlists" },
+        { label: f.myBrackets, href: "/my-library" },
+        { label: f.myTierlists, href: "/my-library?tab=tierlists" },
       ],
     },
     {

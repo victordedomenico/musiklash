@@ -1,38 +1,46 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import TrackPicker from "@/components/TrackPicker";
-import { createBlindtest, type BlindtestTrackInput } from "./actions";
+import SmashPassItemPicker from "@/components/smash-pass/SmashPassItemPicker";
 import Input from "@/components/ui/Input";
+import type { SmashPassItemType } from "@/lib/smash-pass";
+import { createSmashPass, type SmashPassItemInput } from "./actions";
 
-export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }) {
+const ITEM_TYPES: { value: SmashPassItemType; label: string }[] = [
+  { value: "track", label: "Morceaux" },
+  { value: "album", label: "Albums" },
+  { value: "artist", label: "Artistes" },
+];
+
+export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }) {
   const [title, setTitle] = useState("");
+  const [itemType, setItemType] = useState<SmashPassItemType>("track");
   const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
-  const [tracks, setTracks] = useState<BlindtestTrackInput[]>([]);
+  const [items, setItems] = useState<SmashPassItemInput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (tracks.length < 3) {
-      setError("Il faut au moins 3 morceaux.");
+    if (items.length < 5) {
+      setError("Il faut au moins 5 éléments.");
       return;
     }
     startTransition(async () => {
-      const res = await createBlindtest({ title, visibility, tracks, mode });
+      const res = await createSmashPass({ title, itemType, visibility, items, mode });
       if (res?.error) setError(res.error);
     });
   };
 
   const visHint =
     mode === "multi"
-      ? "En multijoueur, le blindtest doit rester publié (la room en dépend)."
+      ? "En multijoueur, le deck doit rester publié (la room en dépend)."
       : visibility === "public"
       ? "Visible dans Explorer. Accessible à tous par lien."
       : visibility === "private"
       ? "Non visible dans Explorer. Accessible par lien direct ou depuis ta bibliothèque."
-      : "Éphémère : le blindtest sera supprimé définitivement après la partie.";
+      : "Éphémère : le deck sera supprimé définitivement après la partie.";
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -44,11 +52,35 @@ export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }
           className="mt-1 max-w-md"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ex. Rap FR années 2010"
+          placeholder="Ex. Rap FR — Smash or Pass"
         />
       </div>
 
-      {/* Ligne 2 — Publication */}
+      {/* Ligne 2 — Type de contenu */}
+      <div>
+        <label className="text-sm font-medium">Type de contenu</label>
+        <p className="mt-0.5 text-xs text-[color:var(--muted)]">
+          Choisir un type vide la sélection en cours.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {ITEM_TYPES.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => {
+                setItemType(t.value);
+                setItems([]);
+              }}
+              className="btn-chip"
+              data-active={itemType === t.value}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Ligne 3 — Publication */}
       <div>
         <label className="text-sm font-medium">Publication</label>
         <div className="mt-1 flex flex-wrap gap-2">
@@ -69,7 +101,7 @@ export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }
       </div>
 
       {/* Picker */}
-      <TrackPicker size={50} selected={tracks} onChange={setTracks} freeMode />
+      <SmashPassItemPicker itemType={itemType} selected={items} onChange={setItems} />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">
@@ -80,15 +112,14 @@ export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
         <p className="text-sm text-[color:var(--muted)]">
-          {tracks.length} morceau{tracks.length > 1 ? "x" : ""} sélectionné
-          {tracks.length > 1 ? "s" : ""} · min. 3
+          {items.length} élément{items.length > 1 ? "s" : ""} · min. 5
         </p>
         <button
           type="submit"
-          disabled={pending || tracks.length < 3}
+          disabled={pending || items.length < 5}
           className="btn-primary disabled:opacity-50"
         >
-          {pending ? "Création…" : mode === "multi" ? "Créer et lancer la room" : "Créer le blindtest"}
+          {pending ? "Création…" : mode === "multi" ? "Créer et lancer la room" : "Lancer Smash or Pass"}
         </button>
       </div>
     </form>

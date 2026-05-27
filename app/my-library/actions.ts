@@ -24,7 +24,7 @@ export async function updateBracketVisibility(id: string, visibility: Visibility
     data: { visibility },
   });
   if (res.count === 0) return { error: "Bracket introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -38,7 +38,7 @@ export async function updateTierlistVisibility(id: string, visibility: Visibilit
     data: { visibility },
   });
   if (res.count === 0) return { error: "Tierlist introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -52,7 +52,7 @@ export async function updateBlindtestVisibility(id: string, visibility: Visibili
     data: { visibility },
   });
   if (res.count === 0) return { error: "Blindtest introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -68,7 +68,7 @@ export async function updateBattleFeatSoloVisibility(id: string, visibility: Vis
     data: { visibility },
   });
   if (res.count === 0) return { error: "Session introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -84,7 +84,7 @@ export async function updateBattleFeatRoomVisibility(id: string, visibility: Vis
     data: { visibility },
   });
   if (res.count === 0) return { error: "Room introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   return { ok: true as const };
 }
 
@@ -96,7 +96,7 @@ export async function deleteBracket(id: string) {
     where: { id, ownerId: identity.playerId },
   });
   if (res.count === 0) return { error: "Bracket introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -109,7 +109,7 @@ export async function deleteTierlist(id: string) {
     where: { id, ownerId: identity.playerId },
   });
   if (res.count === 0) return { error: "Tierlist introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -122,7 +122,7 @@ export async function deleteBlindtest(id: string) {
     where: { id, ownerId: identity.playerId },
   });
   if (res.count === 0) return { error: "Blindtest introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -135,7 +135,7 @@ export async function deleteBattleFeatSoloSession(id: string) {
     where: { id, playerId: identity.playerId },
   });
   if (res.count === 0) return { error: "Session introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -149,7 +149,7 @@ export async function updateBracketGameVisibility(id: string, visibility: Visibi
     data: { visibility },
   });
   if (res.count === 0) return { error: "Partie introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   return { ok: true as const };
 }
 
@@ -162,7 +162,7 @@ export async function updateTierlistSessionVisibility(id: string, visibility: Vi
     data: { visibility },
   });
   if (res.count === 0) return { error: "Session introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   return { ok: true as const };
 }
 
@@ -175,7 +175,7 @@ export async function updateBlindtestSessionVisibility(id: string, visibility: V
     data: { visibility },
   });
   if (res.count === 0) return { error: "Session introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   return { ok: true as const };
 }
 
@@ -188,7 +188,7 @@ export async function updateBlindtestRoomVisibility(id: string, visibility: Visi
     data: { visibility },
   });
   if (res.count === 0) return { error: "Room introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -201,7 +201,7 @@ export async function deleteBracketGame(id: string) {
     where: { id, playerId: identity.playerId },
   });
   if (res.count === 0) return { error: "Partie introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   return { ok: true as const };
 }
 
@@ -213,7 +213,7 @@ export async function deleteTierlistSession(id: string) {
     where: { id, playerId: identity.playerId },
   });
   if (res.count === 0) return { error: "Session introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   return { ok: true as const };
 }
 
@@ -225,7 +225,7 @@ export async function deleteBlindtestSession(id: string) {
     where: { id, playerId: identity.playerId },
   });
   if (res.count === 0) return { error: "Session introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   return { ok: true as const };
 }
 
@@ -237,7 +237,7 @@ export async function deleteBlindtestRoom(id: string) {
     where: { id, hostId: identity.playerId },
   });
   if (res.count === 0) return { error: "Room introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -250,7 +250,7 @@ export async function deleteBattleFeatRoom(id: string) {
     where: { id, hostId: identity.playerId },
   });
   if (res.count === 0) return { error: "Room introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -264,7 +264,7 @@ export async function updateBattleFeatChallengeVisibility(id: string, visibility
     data: { visibility },
   });
   if (res.count === 0) return { error: "Challenge introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -277,7 +277,7 @@ export async function deleteBattleFeatChallenge(id: string) {
     where: { id, ownerId: identity.playerId },
   });
   if (res.count === 0) return { error: "Challenge introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -291,7 +291,7 @@ export async function updateStreamClashVisibility(id: string, visibility: Visibi
     data: { visibility },
   });
   if (res.count === 0) return { error: "Stream Clash introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -304,7 +304,7 @@ export async function deleteStreamClash(id: string) {
     where: { id, ownerId: identity.playerId },
   });
   if (res.count === 0) return { error: "Stream Clash introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -318,7 +318,7 @@ export async function updateStreamClashSessionVisibility(id: string, visibility:
     data: { visibility },
   });
   if (res.count === 0) return { error: "Session introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   return { ok: true as const };
 }
 
@@ -330,7 +330,7 @@ export async function deleteStreamClashSession(id: string) {
     where: { id, playerId: identity.playerId },
   });
   if (res.count === 0) return { error: "Session introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   return { ok: true as const };
 }
 
@@ -343,7 +343,7 @@ export async function updateStreamClashRoomVisibility(id: string, visibility: Vi
     data: { visibility },
   });
   if (res.count === 0) return { error: "Room introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }
@@ -356,7 +356,61 @@ export async function deleteStreamClashRoom(id: string) {
     where: { id, hostId: identity.playerId },
   });
   if (res.count === 0) return { error: "Room introuvable ou accès refusé." };
-  revalidatePath("/my-brackets");
+  revalidatePath("/my-library");
+  revalidatePath("/explore");
+  return { ok: true as const };
+}
+
+export async function updateSmashPassVisibility(id: string, visibility: Visibility) {
+  const identity = await requireIdentity();
+  if (!identity) return { error: "Connexion requise." };
+
+  const res = await prisma.smashPass.updateMany({
+    where: { id, ownerId: identity.playerId },
+    data: { visibility },
+  });
+  if (res.count === 0) return { error: "Deck introuvable ou accès refusé." };
+  revalidatePath("/my-library");
+  revalidatePath("/explore");
+  return { ok: true as const };
+}
+
+export async function deleteSmashPass(id: string) {
+  const identity = await requireIdentity();
+  if (!identity) return { error: "Connexion requise." };
+
+  const res = await prisma.smashPass.deleteMany({
+    where: { id, ownerId: identity.playerId },
+  });
+  if (res.count === 0) return { error: "Deck introuvable ou accès refusé." };
+  revalidatePath("/my-library");
+  revalidatePath("/explore");
+  return { ok: true as const };
+}
+
+export async function updateSmashPassRoomVisibility(id: string, visibility: Visibility) {
+  const identity = await requireIdentity();
+  if (!identity) return { error: "Connexion requise." };
+
+  const res = await prisma.smashPassRoom.updateMany({
+    where: { id, hostId: identity.playerId },
+    data: { visibility },
+  });
+  if (res.count === 0) return { error: "Room introuvable ou accès refusé." };
+  revalidatePath("/my-library");
+  revalidatePath("/explore");
+  return { ok: true as const };
+}
+
+export async function deleteSmashPassRoom(id: string) {
+  const identity = await requireIdentity();
+  if (!identity) return { error: "Connexion requise." };
+
+  const res = await prisma.smashPassRoom.deleteMany({
+    where: { id, hostId: identity.playerId },
+  });
+  if (res.count === 0) return { error: "Room introuvable ou accès refusé." };
+  revalidatePath("/my-library");
   revalidatePath("/explore");
   return { ok: true as const };
 }

@@ -10,10 +10,12 @@ export interface Dictionary {
     createTierlist: string;
     createBlindtest: string;
     createStreamClash: string;
+    createSmashPass: string;
     createBracketDesc: string;
     createTierlistDesc: string;
     createBlindtestDesc: string;
     createStreamClashDesc: string;
+    createSmashPassDesc: string;
     createBattleFeatDesc: string;
     chooseMode: string;
     back: string;
@@ -99,7 +101,9 @@ export interface Dictionary {
     tabBlindtests: string;
     tabBattlefeat: string;
     tabStreamClash: string;
+    tabSmashPass: string;
     createStreamClash: string;
+    createSmashPass: string;
     sectionBrackets: string;
     sectionTierlists: string;
     sectionBlindtests: string;
@@ -111,6 +115,9 @@ export interface Dictionary {
     sectionStreamClash: string;
     sectionStreamClashCreations: string;
     sectionStreamClashRooms: string;
+    sectionSmashPass: string;
+    sectionSmashPassCreations: string;
+    sectionSmashPassRooms: string;
     seeAll: string;
   };
   room: {
@@ -213,10 +220,12 @@ export const fr: Dictionary = {
     createTierlist: "Tierlist",
     createBlindtest: "Blindtest",
     createStreamClash: "Stream Clash",
+    createSmashPass: "Smash or Pass",
     createBracketDesc: "Tournoi éliminatoire morceau par morceau",
     createTierlistDesc: "Classe tes sons du meilleur au pire",
     createBlindtestDesc: "Devine les titres à l'aveugle",
     createStreamClashDesc: "Devine le morceau le plus streamé",
+    createSmashPassDesc: "Smash ou Pass sur morceaux, albums ou artistes",
     createBattleFeatDesc: "Enchaîne les featurings",
     chooseMode: "Choix du mode",
     back: "Retour",
@@ -309,7 +318,9 @@ export const fr: Dictionary = {
     tabBlindtests: "Blindtests",
     tabBattlefeat: "BattleFeat",
     tabStreamClash: "Stream Clash",
+    tabSmashPass: "Smash or Pass",
     createStreamClash: "Créer un Stream Clash",
+    createSmashPass: "Créer un Smash or Pass",
     sectionBrackets: "Brackets",
     sectionTierlists: "Tierlists",
     sectionBlindtests: "Blindtests publics",
@@ -321,6 +332,9 @@ export const fr: Dictionary = {
     sectionStreamClash: "Stream Clash publics",
     sectionStreamClashCreations: "Stream Clash — Créations publiques",
     sectionStreamClashRooms: "Stream Clash — Rooms rejoignables",
+    sectionSmashPass: "Smash or Pass publics",
+    sectionSmashPassCreations: "Smash or Pass — Créations publiques",
+    sectionSmashPassRooms: "Smash or Pass — Rooms rejoignables",
     seeAll: "Voir tout",
   },
   room: {

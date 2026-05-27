@@ -7,7 +7,7 @@ import Input from "@/components/ui/Input";
 import type { ArtistResult } from "@/lib/battle-feat";
 import { createBattleFeatChallenge } from "./actions";
 
-const difficultyConfig = [
+const DIFFICULTY_OPTIONS = [
   { value: 1, label: "Facile", desc: "20 sec — IA mainstream, 4 propositions" },
   { value: 2, label: "Normal", desc: "20 sec — IA élargie" },
   { value: 3, label: "Difficile", desc: "10 sec — IA niche" },
@@ -47,112 +47,120 @@ export default function CreateBattleFeatForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
-      <div className="card p-6 space-y-4">
-        <div>
-          <label className="text-sm font-medium">Titre du BattleFeat solo</label>
-          <Input
-            required
-            className="mt-1"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex. Chaîne de feats rap FR"
-            maxLength={120}
-          />
-        </div>
-
-        <div>
-          <label className="text-sm font-medium">Publication</label>
-          <div className="mt-1 flex flex-wrap gap-2">
-            {(["private", "public"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setVisibility(v)}
-                className="btn-chip"
-                data-active={visibility === v}
-              >
-                {v === "private" ? "Publié — Privé" : "Publié — Public"}
-              </button>
-            ))}
-          </div>
-          <p className="mt-2 text-xs text-[color:var(--muted)]">
-            {visibility === "public"
-              ? "Visible dans Explorer et accessible par lien."
-              : "Accessible uniquement par lien direct ou depuis ta bibliothèque."}
-          </p>
-        </div>
+      {/* Ligne 1 — Titre */}
+      <div>
+        <label className="text-sm font-medium">Titre</label>
+        <Input
+          required
+          className="mt-1 max-w-md"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Ex. Chaîne de feats rap FR"
+          maxLength={120}
+        />
       </div>
 
-      <div className="card p-6 space-y-3">
-        <div>
-          <label className="text-sm font-medium">Difficulté</label>
-          <p className="mt-0.5 text-xs text-[color:var(--muted)]">
-            Détermine le temps par tour et la force de l&apos;IA.
-          </p>
-          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {difficultyConfig.map((d) => (
-              <button
-                key={d.value}
-                type="button"
-                onClick={() => setDifficulty(d.value)}
-                data-active={difficulty === d.value}
-                className="btn-chip flex-col items-start gap-0.5 py-3 text-left"
-              >
-                <span className="font-semibold">{d.label}</span>
-                <span className="text-xs text-[color:var(--muted)]">{d.desc}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="card p-6 space-y-3">
-        <h2 className="text-lg font-bold">Artiste de départ</h2>
-        {startingArtist ? (
-          <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5">
-            {startingArtist.pictureUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={startingArtist.pictureUrl}
-                alt=""
-                className="h-10 w-10 rounded-full object-cover shrink-0"
-              />
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-[color:var(--surface-2)] flex items-center justify-center shrink-0">
-                <User size={16} className="text-[color:var(--muted)]" />
-              </div>
-            )}
-            <p className="flex-1 font-semibold truncate">{startingArtist.name}</p>
+      {/* Ligne 2 — Difficulté */}
+      <div>
+        <label className="text-sm font-medium">Difficulté</label>
+        <p className="mt-0.5 text-xs text-[color:var(--muted)]">
+          Détermine le temps par tour et la force de l&apos;IA.
+        </p>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {DIFFICULTY_OPTIONS.map((d) => (
             <button
+              key={d.value}
               type="button"
-              onClick={() => setStartingArtist(null)}
-              className="btn-ghost !px-3 !py-1.5 text-sm"
+              onClick={() => setDifficulty(d.value)}
+              data-active={difficulty === d.value}
+              className="btn-chip flex-col items-start gap-0.5 py-3 text-left"
             >
-              Changer
+              <span className="font-semibold">{d.label}</span>
+              <span className="text-xs text-[color:var(--muted)]">{d.desc}</span>
             </button>
-          </div>
-        ) : (
-          <ArtistSearchInput
-            onSelect={setStartingArtist}
-            placeholder="Choisis l'artiste de départ…"
-          />
-        )}
+          ))}
+        </div>
+      </div>
+
+      {/* Ligne 3 — Artiste de départ */}
+      <div>
+        <label className="text-sm font-medium">Artiste de départ</label>
+        <div className="mt-1">
+          {startingArtist ? (
+            <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5">
+              {startingArtist.pictureUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={startingArtist.pictureUrl}
+                  alt=""
+                  className="h-10 w-10 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--surface-2)]">
+                  <User size={16} className="text-[color:var(--muted)]" />
+                </div>
+              )}
+              <p className="flex-1 truncate font-semibold">{startingArtist.name}</p>
+              <button
+                type="button"
+                onClick={() => setStartingArtist(null)}
+                className="btn-ghost !px-3 !py-1.5 text-sm"
+              >
+                Changer
+              </button>
+            </div>
+          ) : (
+            <ArtistSearchInput
+              onSelect={setStartingArtist}
+              placeholder="Recherche un artiste de départ…"
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Ligne 4 — Publication */}
+      <div>
+        <label className="text-sm font-medium">Publication</label>
+        <div className="mt-1 flex flex-wrap gap-2">
+          {(["private", "public"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setVisibility(v)}
+              className="btn-chip"
+              data-active={visibility === v}
+            >
+              {v === "private" ? "Publié — Privé" : "Publié — Public"}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-[color:var(--muted)]">
+          {visibility === "public"
+            ? "Visible dans Explorer. Accessible à tous par lien."
+            : "Non visible dans Explorer. Accessible par lien direct ou depuis ta bibliothèque."}
+        </p>
       </div>
 
       {error ? (
-        <p className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+        <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">
           {error}
-        </p>
+        </div>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={pending || !startingArtist || !title.trim()}
-        className="btn-primary w-full py-3 text-lg disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        {pending ? <Loader2 size={18} className="animate-spin" /> : <Swords size={20} />}
-        Créer le BattleFeat solo
-      </button>
+      {/* Footer */}
+      <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
+        <p className="text-sm text-[color:var(--muted)]">
+          {startingArtist ? `Artiste : ${startingArtist.name}` : "Aucun artiste sélectionné"}
+        </p>
+        <button
+          type="submit"
+          disabled={pending || !startingArtist || !title.trim()}
+          className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {pending ? <Loader2 size={16} className="animate-spin" /> : <Swords size={16} />}
+          {pending ? "Création…" : "Créer le BattleFeat"}
+        </button>
+      </div>
     </form>
   );
 }

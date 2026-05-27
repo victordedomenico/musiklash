@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Bot,
+  Heart,
   Library,
   Music,
   Swords,
@@ -24,6 +25,8 @@ export type CreateHubLabels = {
   blindtestDesc: string;
   streamClash: string;
   streamClashDesc: string;
+  smashPass: string;
+  smashPassDesc: string;
   battleFeat: string;
   battleFeatDesc: string;
   modeSolo: string;
@@ -34,7 +37,7 @@ export type CreateHubLabels = {
   modeMultiDesc: string;
 };
 
-type Step = "main" | "blindtest" | "battlefeat" | "streamclash";
+type Step = "main" | "blindtest" | "battlefeat" | "streamclash" | "smashpass";
 
 const MAIN_OPTIONS = [
   {
@@ -70,6 +73,15 @@ const MAIN_OPTIONS = [
     bg: "rgba(139,92,246,0.12)",
     hasSubMenu: true,
     step: "streamclash" as Step,
+  },
+  {
+    key: "smashpass" as const,
+    href: null,
+    icon: Heart,
+    accent: "#ec4899",
+    bg: "rgba(236,72,153,0.12)",
+    hasSubMenu: true,
+    step: "smashpass" as Step,
   },
   {
     key: "battlefeat" as const,
@@ -117,6 +129,25 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
       label: labels.modeMulti,
       desc: labels.modeMultiDesc,
       href: "/create-blindtest?mode=multi",
+      accent: "#3b82f6",
+      bg: "rgba(59,130,246,0.12)",
+    },
+  ];
+
+  const smashpassModes: BlindtestMode[] = [
+    {
+      icon: User,
+      label: labels.modeSolo,
+      desc: labels.modeSoloDesc,
+      href: "/create-smash-pass?mode=solo",
+      accent: "#ec4899",
+      bg: "rgba(236,72,153,0.12)",
+    },
+    {
+      icon: Users,
+      label: labels.modeMulti,
+      desc: labels.modeMultiDesc,
+      href: "/create-smash-pass?mode=multi",
       accent: "#3b82f6",
       bg: "rgba(59,130,246,0.12)",
     },
@@ -173,6 +204,7 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
     tierlist: labels.tierlist,
     blindtest: labels.blindtest,
     streamclash: labels.streamClash,
+    smashpass: labels.smashPass,
     battlefeat: labels.battleFeat,
   };
   const mainDesc: Record<(typeof MAIN_OPTIONS)[number]["key"], string> = {
@@ -180,6 +212,7 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
     tierlist: labels.tierlistDesc,
     blindtest: labels.blindtestDesc,
     streamclash: labels.streamClashDesc,
+    smashpass: labels.smashPassDesc,
     battlefeat: labels.battleFeatDesc,
   };
 
@@ -227,6 +260,8 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
       ? labels.blindtest
       : step === "streamclash"
       ? labels.streamClash
+      : step === "smashpass"
+      ? labels.smashPass
       : labels.battleFeat;
 
   return (
@@ -343,6 +378,14 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
       {step === "streamclash" && (
         <div className="mx-auto flex max-w-xl flex-col gap-3">
           {streamclashModes.map((m) => (
+            <ModeCard key={`${m.href}-${m.label}`} item={m} />
+          ))}
+        </div>
+      )}
+
+      {step === "smashpass" && (
+        <div className="mx-auto flex max-w-xl flex-col gap-3">
+          {smashpassModes.map((m) => (
             <ModeCard key={`${m.href}-${m.label}`} item={m} />
           ))}
         </div>
