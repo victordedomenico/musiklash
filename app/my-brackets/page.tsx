@@ -20,12 +20,20 @@ import BattleFeatChallengeCard, {
   type BattleFeatChallengeSummary,
 } from "@/components/BattleFeatChallengeCard";
 import SessionCard, { type SessionSummary } from "@/components/SessionCard";
+import {
+  StreamClashCard,
+  StreamClashRoomCard,
+  StreamClashSessionCard,
+  type StreamClashRoomSummary,
+  type StreamClashSessionSummary,
+  type StreamClashSummary,
+} from "@/components/StreamClashCard";
 import { Plus, Play } from "lucide-react";
 
 export const metadata: Metadata = { title: "Ma bibliothèque — MusiKlash" };
 
 type Visibility = "all" | "private" | "public";
-type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat";
+type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat" | "streamclash";
 
 type BattleFeatSoloChallengeDelegate = {
   findMany: (args: {
@@ -93,6 +101,9 @@ export default async function MyBracketsPage({
     soloSessions,
     soloChallenges,
     battleFeatRooms,
+    streamClashesRaw,
+    streamClashRoomsRaw,
+    streamClashSessionsRaw,
     bracketGamesRaw,
     tierlistSessionsRaw,
     blindtestSessionsRaw,
@@ -185,6 +196,62 @@ export default async function MyBracketsPage({
           },
           orderBy: { updatedAt: "desc" },
         }),
+        prisma.streamClash.findMany({
+          where: { ownerId: activePlayerId, ...visFilter },
+          select: {
+            id: true,
+            title: true,
+            visibility: true,
+            _count: { select: { tracks: true } },
+            tracks: {
+              take: 1,
+              orderBy: { position: "asc" },
+              select: { coverUrl: true },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.streamClashRoom.findMany({
+          where: { hostId: activePlayerId, ...visFilter },
+          select: {
+            id: true,
+            status: true,
+            visibility: true,
+            difficulty: true,
+            createdAt: true,
+            host: { select: { username: true } },
+            streamClash: {
+              select: {
+                title: true,
+                _count: { select: { tracks: true } },
+              },
+            },
+          },
+          orderBy: { updatedAt: "desc" },
+        }),
+        prisma.streamClashSession.findMany({
+          where: { playerId: activePlayerId, ...visFilter },
+          select: {
+            id: true,
+            streamClashId: true,
+            difficulty: true,
+            score: true,
+            totalRounds: true,
+            visibility: true,
+            createdAt: true,
+            streamClash: {
+              select: {
+                title: true,
+                tracks: {
+                  take: 1,
+                  orderBy: { position: "asc" },
+                  select: { coverUrl: true },
+                },
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
         prisma.bracketGame.findMany({
           where: {
             playerId: activePlayerId,
@@ -243,7 +310,7 @@ export default async function MyBracketsPage({
         }),
       ]);
       })()
-    : [[], [], [], [], [], [], [], [], [], []];
+    : [[], [], [], [], [], [], [], [], [], [], [], [], []];
 
   const bracketList = brackets.map((b) => ({ ...b, cover_url: b.coverUrl })) as BracketSummary[];
   const tierlistList = tierlists.map((t) => ({ ...t, coverUrl: t.coverUrl })) as TierlistSummary[];
@@ -307,6 +374,38 @@ export default async function MyBracketsPage({
       canEditVisibility: room.hostId === activePlayerId,
     };
   }) as BattleFeatRoomSummary[];
+
+  const streamClashList = streamClashesRaw.map((sc) => ({
+    id: sc.id,
+    title: sc.title,
+    visibility: sc.visibility,
+    trackCount: sc._count.tracks,
+    coverUrl: sc.tracks[0]?.coverUrl ?? null,
+  })) as StreamClashSummary[];
+
+  const streamClashRoomList = streamClashRoomsRaw.map((room) => ({
+    id: room.id,
+    status: room.status,
+    title: room.streamClash.title,
+    trackCount: room.streamClash._count.tracks,
+    hostName: room.host.username,
+    difficulty: room.difficulty,
+    visibility: room.visibility,
+    createdAt: room.createdAt.toISOString(),
+    canEditVisibility: true,
+  })) as StreamClashRoomSummary[];
+
+  const streamClashSessionList = streamClashSessionsRaw.map((s) => ({
+    id: s.id,
+    streamClashId: s.streamClashId,
+    title: s.streamClash.title,
+    difficulty: s.difficulty,
+    score: s.score,
+    totalRounds: s.totalRounds,
+    visibility: s.visibility,
+    createdAt: s.createdAt.toISOString(),
+    coverUrl: s.streamClash.tracks[0]?.coverUrl ?? null,
+  })) as StreamClashSessionSummary[];
 
   const bracketGames = bracketGamesRaw as unknown as Array<{
     id: string;
@@ -383,6 +482,9 @@ export default async function MyBracketsPage({
     battleFeatList.length +
     battleFeatChallengeList.length +
     battleFeatRoomList.length +
+    streamClashList.length +
+    streamClashRoomList.length +
+    streamClashSessionList.length +
     bracketSessions.length +
     tierlistSessions.length +
     blindtestSessions.length;
@@ -394,6 +496,8 @@ export default async function MyBracketsPage({
       ? "/create-blindtest"
       : tab === "battlefeat"
       ? "/create-battlefeat"
+      : tab === "streamclash"
+      ? "/create-stream-clash"
       : "/create-bracket";
   const createLabel =
     tab === "tierlists"
@@ -402,6 +506,8 @@ export default async function MyBracketsPage({
       ? "Nouveau blindtest"
       : tab === "battlefeat"
       ? "Nouveau BattleFeat solo"
+      : tab === "streamclash"
+      ? "Nouveau Stream Clash"
       : "Nouveau bracket";
 
   return (
@@ -445,6 +551,7 @@ export default async function MyBracketsPage({
         <TabItem current={tab} value="tierlists" label={`Tierlists (${tierlists.length})`} />
         <TabItem current={tab} value="blindtests" label={`Blindtests (${blindtests.length + blindtestRoomList.length})`} />
         <TabItem current={tab} value="battlefeat" label={`BattleFeat (${battleFeatList.length + battleFeatChallengeList.length + battleFeatRoomList.length})`} />
+        <TabItem current={tab} value="streamclash" label={`Stream Clash (${streamClashList.length + streamClashRoomList.length + streamClashSessionList.length})`} />
         </div>
 
       {/* Visibility filter */}
@@ -600,6 +707,47 @@ export default async function MyBracketsPage({
                 ) : null}
               </section>
             ) : null}
+
+            {streamClashList.length > 0 ||
+            streamClashRoomList.length > 0 ||
+            streamClashSessionList.length > 0 ? (
+              <section className="space-y-6">
+                <h2 className="text-2xl font-bold">Stream Clash</h2>
+                <SubSection label="Mes créations">
+                  {streamClashList.length === 0 ? (
+                    <EmptySub label="Aucun Stream Clash créé." />
+                  ) : (
+                    <CardsGrid>
+                      {streamClashList.map((sc) => (
+                        <StreamClashCard key={sc.id} sc={sc} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
+                <SubSection label="Mes résultats multijoueur">
+                  {streamClashRoomList.length === 0 ? (
+                    <EmptySub label="Aucune room multijoueur." />
+                  ) : (
+                    <CardsGrid>
+                      {streamClashRoomList.map((room) => (
+                        <StreamClashRoomCard key={room.id} room={room} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
+                <SubSection label="Mes résultats solo">
+                  {streamClashSessionList.length === 0 ? (
+                    <EmptySub label="Aucun résultat solo." />
+                  ) : (
+                    <CardsGrid>
+                      {streamClashSessionList.map((s) => (
+                        <StreamClashSessionCard key={s.id} session={s} libraryEditor={libraryEditor} />
+                      ))}
+                    </CardsGrid>
+                  )}
+                </SubSection>
+              </section>
+            ) : null}
           </div>
         )
       ) : tab === "brackets" ? (
@@ -706,6 +854,52 @@ export default async function MyBracketsPage({
                 <CardsGrid>
                   {blindtestSessions.map((s) => (
                     <SessionCard key={s.id} session={s} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
+          </div>
+        )
+      ) : tab === "streamclash" ? (
+        streamClashList.length === 0 &&
+        streamClashRoomList.length === 0 &&
+        streamClashSessionList.length === 0 ? (
+          <EmptyState
+            label="Aucun Stream Clash pour le moment"
+            cta="Créer un Stream Clash"
+            href="/create-stream-clash"
+          />
+        ) : (
+          <div className="mt-8 space-y-8">
+            <SubSection label="Mes créations">
+              {streamClashList.length === 0 ? (
+                <EmptySub label="Aucun Stream Clash créé." />
+              ) : (
+                <CardsGrid>
+                  {streamClashList.map((sc) => (
+                    <StreamClashCard key={sc.id} sc={sc} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
+            <SubSection label="Mes résultats multijoueur">
+              {streamClashRoomList.length === 0 ? (
+                <EmptySub label="Aucune room multijoueur." />
+              ) : (
+                <CardsGrid>
+                  {streamClashRoomList.map((room) => (
+                    <StreamClashRoomCard key={room.id} room={room} libraryEditor={libraryEditor} />
+                  ))}
+                </CardsGrid>
+              )}
+            </SubSection>
+            <SubSection label="Mes résultats solo">
+              {streamClashSessionList.length === 0 ? (
+                <EmptySub label="Aucun résultat solo." />
+              ) : (
+                <CardsGrid>
+                  {streamClashSessionList.map((s) => (
+                    <StreamClashSessionCard key={s.id} session={s} libraryEditor={libraryEditor} />
                   ))}
                 </CardsGrid>
               )}

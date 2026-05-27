@@ -22,6 +22,8 @@ export type CreateHubLabels = {
   tierlistDesc: string;
   blindtest: string;
   blindtestDesc: string;
+  streamClash: string;
+  streamClashDesc: string;
   battleFeat: string;
   battleFeatDesc: string;
   modeSolo: string;
@@ -32,7 +34,7 @@ export type CreateHubLabels = {
   modeMultiDesc: string;
 };
 
-type Step = "main" | "blindtest" | "battlefeat";
+type Step = "main" | "blindtest" | "battlefeat" | "streamclash";
 
 const MAIN_OPTIONS = [
   {
@@ -59,6 +61,15 @@ const MAIN_OPTIONS = [
     bg: "rgba(239,68,68,0.12)",
     hasSubMenu: true,
     step: "blindtest" as Step,
+  },
+  {
+    key: "streamclash" as const,
+    href: null,
+    icon: Zap,
+    accent: "#8b5cf6",
+    bg: "rgba(139,92,246,0.12)",
+    hasSubMenu: true,
+    step: "streamclash" as Step,
   },
   {
     key: "battlefeat" as const,
@@ -111,6 +122,25 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
     },
   ];
 
+  const streamclashModes: BlindtestMode[] = [
+    {
+      icon: User,
+      label: labels.modeSolo,
+      desc: labels.modeSoloDesc,
+      href: "/create-stream-clash?mode=solo",
+      accent: "#8b5cf6",
+      bg: "rgba(139,92,246,0.12)",
+    },
+    {
+      icon: Users,
+      label: labels.modeMulti,
+      desc: labels.modeMultiDesc,
+      href: "/create-stream-clash?mode=multi",
+      accent: "#3b82f6",
+      bg: "rgba(59,130,246,0.12)",
+    },
+  ];
+
   const battlefeatModes: BattlefeatMode[] = [
     {
       icon: User,
@@ -142,12 +172,14 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
     bracket: labels.bracket,
     tierlist: labels.tierlist,
     blindtest: labels.blindtest,
+    streamclash: labels.streamClash,
     battlefeat: labels.battleFeat,
   };
   const mainDesc: Record<(typeof MAIN_OPTIONS)[number]["key"], string> = {
     bracket: labels.bracketDesc,
     tierlist: labels.tierlistDesc,
     blindtest: labels.blindtestDesc,
+    streamclash: labels.streamClashDesc,
     battlefeat: labels.battleFeatDesc,
   };
 
@@ -190,7 +222,12 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
     );
   };
 
-  const subTitle = step === "blindtest" ? labels.blindtest : labels.battleFeat;
+  const subTitle =
+    step === "blindtest"
+      ? labels.blindtest
+      : step === "streamclash"
+      ? labels.streamClash
+      : labels.battleFeat;
 
   return (
     <div
@@ -298,6 +335,14 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
       {step === "blindtest" && (
         <div className="mx-auto flex max-w-xl flex-col gap-3">
           {blindtestModes.map((m) => (
+            <ModeCard key={`${m.href}-${m.label}`} item={m} />
+          ))}
+        </div>
+      )}
+
+      {step === "streamclash" && (
+        <div className="mx-auto flex max-w-xl flex-col gap-3">
+          {streamclashModes.map((m) => (
             <ModeCard key={`${m.href}-${m.label}`} item={m} />
           ))}
         </div>

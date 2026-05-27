@@ -8,6 +8,7 @@ import {
   Users,
   User,
   Sparkles,
+  Zap,
 } from "lucide-react";
 
 export default function GuidePage() {
@@ -87,6 +88,28 @@ export default function GuidePage() {
         "Tour par tour en temps réel: 20 secondes pour jouer un artiste valide, sans réutiliser un artiste déjà passé.",
         "Chaque coup valide rapporte des points; un timeout, un feat invalide ou un artiste déjà utilisé pénalise le joueur actif.",
         "À la fin, la room affiche le résultat final avec classement, partage, rejouer et export PNG.",
+      ],
+    },
+    {
+      title: "Stream Clash — Solo",
+      icon: <Zap size={26} />,
+      tone: "#a855f7",
+      steps: [
+        "Création: de 4 à 50 morceaux avec extrait audio, choisis via TrackPicker.",
+        "Chaque manche oppose deux morceaux: devine lequel a le meilleur score de popularité Deezer (indice rank).",
+        "Tu peux écouter les extraits avant de choisir. Difficultés: Facile (tout écart), Normal (≤ 500K), Difficile (≤ 100K).",
+        "10 secondes par manche, +100 pts par bonne réponse. De 5 à 20 manches selon ta configuration.",
+      ],
+    },
+    {
+      title: "Stream Clash — Multijoueur",
+      icon: <Users size={26} />,
+      tone: "#c084fc",
+      steps: [
+        "Format room multijoueur: l'hôte crée la room à partir d'un Stream Clash, puis les joueurs rejoignent (2 à N) via lien ou Explorer.",
+        "Même principe que le solo: deux morceaux s'affrontent, chacun choisit le plus populaire en 15 secondes.",
+        "Chaque bonne réponse rapporte +100 pts. L'hôte fait avancer les manches une fois que tout le monde a répondu (ou le timer est écoulé).",
+        "À la fin, classement par score (égalité possible). Revanche et mode spectateur disponibles.",
       ],
     },
   ];

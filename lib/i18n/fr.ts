@@ -9,9 +9,11 @@ export interface Dictionary {
     createBracket: string;
     createTierlist: string;
     createBlindtest: string;
+    createStreamClash: string;
     createBracketDesc: string;
     createTierlistDesc: string;
     createBlindtestDesc: string;
+    createStreamClashDesc: string;
     createBattleFeatDesc: string;
     chooseMode: string;
     back: string;
@@ -96,6 +98,8 @@ export interface Dictionary {
     tabTierlists: string;
     tabBlindtests: string;
     tabBattlefeat: string;
+    tabStreamClash: string;
+    createStreamClash: string;
     sectionBrackets: string;
     sectionTierlists: string;
     sectionBlindtests: string;
@@ -104,6 +108,9 @@ export interface Dictionary {
     sectionBattleFeatSolo: string;
     sectionBattleFeatChallenges: string;
     sectionBattleFeatRooms: string;
+    sectionStreamClash: string;
+    sectionStreamClashCreations: string;
+    sectionStreamClashRooms: string;
     seeAll: string;
   };
   room: {
@@ -205,9 +212,11 @@ export const fr: Dictionary = {
     createBracket: "Bracket",
     createTierlist: "Tierlist",
     createBlindtest: "Blindtest",
+    createStreamClash: "Stream Clash",
     createBracketDesc: "Tournoi éliminatoire morceau par morceau",
     createTierlistDesc: "Classe tes sons du meilleur au pire",
     createBlindtestDesc: "Devine les titres à l'aveugle",
+    createStreamClashDesc: "Devine le morceau le plus streamé",
     createBattleFeatDesc: "Enchaîne les featurings",
     chooseMode: "Choix du mode",
     back: "Retour",
@@ -299,6 +308,8 @@ export const fr: Dictionary = {
     tabTierlists: "Tierlists",
     tabBlindtests: "Blindtests",
     tabBattlefeat: "BattleFeat",
+    tabStreamClash: "Stream Clash",
+    createStreamClash: "Créer un Stream Clash",
     sectionBrackets: "Brackets",
     sectionTierlists: "Tierlists",
     sectionBlindtests: "Blindtests publics",
@@ -307,6 +318,9 @@ export const fr: Dictionary = {
     sectionBattleFeatSolo: "BattleFeat publics — Modes solo",
     sectionBattleFeatChallenges: "BattleFeat — Solos publics",
     sectionBattleFeatRooms: "BattleFeat — Rooms rejoignables",
+    sectionStreamClash: "Stream Clash publics",
+    sectionStreamClashCreations: "Stream Clash — Créations publiques",
+    sectionStreamClashRooms: "Stream Clash — Rooms rejoignables",
     seeAll: "Voir tout",
   },
   room: {

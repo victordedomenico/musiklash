@@ -10,6 +10,7 @@ export type SelectedTrack = {
   artist: string;
   preview_url: string;
   cover_url: string | null;
+  rank?: number;
 };
 
 export async function createBracket(input: {

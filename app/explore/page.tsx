@@ -13,12 +13,18 @@ import {
 import BattleFeatChallengeCard, {
   type BattleFeatChallengeSummary,
 } from "@/components/BattleFeatChallengeCard";
+import {
+  StreamClashCard,
+  StreamClashRoomCard,
+  type StreamClashRoomSummary,
+  type StreamClashSummary,
+} from "@/components/StreamClashCard";
 import { Search } from "lucide-react";
 import { getI18n } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Explorer — MusiKlash" };
 
-type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat";
+type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat" | "streamclash";
 
 type BattleFeatSoloChallengeDelegate = {
   findMany: (args: {
@@ -42,7 +48,7 @@ type BattleFeatSoloChallengeDelegate = {
 };
 
 function parseTab(raw: string | undefined): Tab {
-  const v = ["all", "brackets", "tierlists", "blindtests", "battlefeat"] as const;
+  const v = ["all", "brackets", "tierlists", "blindtests", "battlefeat", "streamclash"] as const;
   return raw && (v as readonly string[]).includes(raw) ? (raw as Tab) : "all";
 }
 
@@ -82,6 +88,10 @@ export default async function ExplorePage({
     ? { title: { contains: term, mode: "insensitive" as const } }
     : {};
 
+  const streamClashTextFilter = term
+    ? { title: { contains: term, mode: "insensitive" as const } }
+    : {};
+
   const takeGrid = tab === "all" ? 12 : 48;
   const takeBfChallenge = tab === "all" ? 8 : 36;
   const takeBfRoom = tab === "all" ? 8 : 36;
@@ -90,6 +100,7 @@ export default async function ExplorePage({
   const loadTierlists = tab === "all" || tab === "tierlists";
   const loadBlindtests = tab === "all" || tab === "blindtests";
   const loadBattlefeat = tab === "all" || tab === "battlefeat";
+  const loadStreamClash = tab === "all" || tab === "streamclash";
   const hasBlindtestRoomVisibility = modelHasField("BlindtestRoom", "visibility");
   const hasBlindtestRoomParticipants = modelHasField("BlindtestRoom", "participants");
   const hasBattleFeatRoomVisibility = modelHasField("BattleFeatRoom", "visibility");
@@ -106,7 +117,7 @@ export default async function ExplorePage({
     await ensureBattleFeatVisibilityColumns(prisma);
   }
 
-  const [brackets, tierlists, blindtests, blindtestRooms, soloChallenges, battleFeatRooms] =
+  const [brackets, tierlists, blindtests, blindtestRooms, soloChallenges, battleFeatRooms, streamClashes, streamClashRooms] =
     await Promise.all([
     loadBrackets
       ? prisma.bracket.findMany({
@@ -216,6 +227,56 @@ export default async function ExplorePage({
           take: takeBfRoom,
         })
       : Promise.resolve([]),
+    loadStreamClash
+      ? prisma.streamClash.findMany({
+          where: { visibility: "public", ...streamClashTextFilter },
+          select: {
+            id: true,
+            title: true,
+            visibility: true,
+            _count: { select: { tracks: true } },
+            tracks: {
+              take: 1,
+              orderBy: { position: "asc" },
+              select: { coverUrl: true },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          take: takeGrid,
+        })
+      : Promise.resolve([]),
+    loadStreamClash
+      ? prisma.streamClashRoom.findMany({
+          where: {
+            status: { in: ["waiting", "playing"] },
+            visibility: "public",
+            ...(term
+              ? {
+                  OR: [
+                    { streamClash: { title: { contains: term, mode: "insensitive" as const } } },
+                    { host: { username: { contains: term, mode: "insensitive" as const } } },
+                  ],
+                }
+              : {}),
+          },
+          select: {
+            id: true,
+            status: true,
+            visibility: true,
+            difficulty: true,
+            createdAt: true,
+            host: { select: { username: true } },
+            streamClash: {
+              select: {
+                title: true,
+                _count: { select: { tracks: true } },
+              },
+            },
+          },
+          orderBy: { updatedAt: "desc" },
+          take: takeGrid,
+        })
+      : Promise.resolve([]),
   ]);
 
   const bracketList = brackets.map((b) => ({ ...b, cover_url: b.coverUrl })) as BracketSummary[];
@@ -288,7 +349,27 @@ export default async function ExplorePage({
     };
   }) as BattleFeatRoomSummary[];
 
+  const streamClashList = streamClashes.map((sc) => ({
+    id: sc.id,
+    title: sc.title,
+    visibility: sc.visibility,
+    trackCount: sc._count.tracks,
+    coverUrl: sc.tracks[0]?.coverUrl ?? null,
+  })) as StreamClashSummary[];
+
+  const streamClashRoomList = streamClashRooms.map((room) => ({
+    id: room.id,
+    status: room.status,
+    title: room.streamClash.title,
+    trackCount: room.streamClash._count.tracks,
+    hostName: room.host.username,
+    difficulty: room.difficulty,
+    visibility: room.visibility,
+    createdAt: room.createdAt.toISOString(),
+  })) as StreamClashRoomSummary[];
+
   const hasAnyBattlefeat = battleFeatChallengeList.length > 0 || battleFeatRoomList.length > 0;
+  const hasAnyStreamClash = streamClashList.length > 0 || streamClashRoomList.length > 0;
 
   const isEmpty =
     tab === "all"
@@ -296,9 +377,12 @@ export default async function ExplorePage({
         tierlistList.length === 0 &&
         blindtestList.length === 0 &&
         blindtestRoomList.length === 0 &&
-        !hasAnyBattlefeat
+        !hasAnyBattlefeat &&
+        !hasAnyStreamClash
       : tab === "battlefeat"
         ? !hasAnyBattlefeat
+        : tab === "streamclash"
+          ? !hasAnyStreamClash
         : tab === "brackets"
           ? bracketList.length === 0
           : tab === "tierlists"
@@ -311,6 +395,7 @@ export default async function ExplorePage({
     { key: "tierlists" as const, label: e.tabTierlists },
     { key: "blindtests" as const, label: e.tabBlindtests },
     { key: "battlefeat" as const, label: e.tabBattlefeat },
+    { key: "streamclash" as const, label: e.tabStreamClash },
   ];
 
   const gridClass =
@@ -387,7 +472,14 @@ export default async function ExplorePage({
                 <Link href="/battle-feat" className="btn-primary inline-flex">
                   {e.battleFeatTitle}
                 </Link>
+                <Link href="/create-stream-clash" className="btn-primary inline-flex">
+                  {e.createStreamClash}
+                </Link>
               </>
+            ) : tab === "streamclash" ? (
+              <Link href="/create-stream-clash" className="btn-primary inline-flex">
+                {e.createStreamClash}
+              </Link>
             ) : tab === "blindtests" ? (
               <Link href="/create-blindtest" className="btn-primary inline-flex">
                 {e.createBlindtest}
@@ -521,6 +613,40 @@ export default async function ExplorePage({
               </div>
             </section>
           ) : null}
+
+          {hasAnyStreamClash ? (
+            <section className="space-y-4">
+              <h2 className="text-2xl font-bold tracking-tight">{e.sectionStreamClash}</h2>
+              {streamClashList.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-[color:var(--muted)]">{e.sectionStreamClashCreations}</p>
+                  <div className={gridClass}>
+                    {streamClashList.map((sc) => (
+                      <StreamClashCard key={sc.id} sc={sc} />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {streamClashRoomList.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-[color:var(--muted)]">{e.sectionStreamClashRooms}</p>
+                  <div className={gridClass}>
+                    {streamClashRoomList.map((room) => (
+                      <StreamClashRoomCard key={room.id} room={room} />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <div className="flex justify-end">
+                <Link
+                  href={`/explore?tab=streamclash${term ? `&q=${encodeURIComponent(term)}` : ""}`}
+                  className="text-sm font-semibold text-[color:var(--accent)] no-underline hover:underline"
+                >
+                  {e.seeAll} →
+                </Link>
+              </div>
+            </section>
+          ) : null}
         </div>
       ) : tab === "brackets" ? (
         <div className={gridClass}>
@@ -557,7 +683,30 @@ export default async function ExplorePage({
             </section>
           ) : null}
         </div>
-      ) : (
+      ) : tab === "streamclash" ? (
+        <div className="mt-10 space-y-8">
+          {streamClashList.length > 0 ? (
+            <section className="space-y-3">
+              <p className="text-sm text-[color:var(--muted)]">{e.sectionStreamClashCreations}</p>
+              <div className={gridClass}>
+                {streamClashList.map((sc) => (
+                  <StreamClashCard key={sc.id} sc={sc} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+          {streamClashRoomList.length > 0 ? (
+            <section className="space-y-3">
+              <p className="text-sm text-[color:var(--muted)]">{e.sectionStreamClashRooms}</p>
+              <div className={gridClass}>
+                {streamClashRoomList.map((room) => (
+                  <StreamClashRoomCard key={room.id} room={room} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
+      ) : tab === "battlefeat" ? (
         <div className="mt-10 space-y-14">
           {battleFeatChallengeList.length > 0 ? (
             <section className="space-y-4">
@@ -580,7 +729,7 @@ export default async function ExplorePage({
             </section>
           ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

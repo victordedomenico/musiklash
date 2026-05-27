@@ -29,9 +29,9 @@ type Phase = "setup" | "player-turn" | "validating" | "ai-thinking" | "joker" | 
 const TIMER_BY_DIFFICULTY: Record<number, number> = { 1: 20, 2: 20, 3: 10 };
 
 const difficultyConfig = [
-  { label: "Facile", value: 1, color: "text-green-400", border: "border-green-400/40", bg: "bg-green-400/10", desc: "20 sec — IA mainstream (165) + 4 options" },
-  { label: "Normal", value: 2, color: "text-yellow-400", border: "border-yellow-400/40", bg: "bg-yellow-400/10", desc: "20 sec — IA élargie (673)" },
-  { label: "Difficile", value: 3, color: "text-red-400", border: "border-red-400/40", bg: "bg-red-400/10", desc: "10 sec — IA niche (994)" },
+  { label: "Facile", value: 1, desc: "20 sec — IA mainstream (165) + 4 options" },
+  { label: "Normal", value: 2, desc: "20 sec — IA élargie (673)" },
+  { label: "Difficile", value: 3, desc: "10 sec — IA niche (994)" },
 ] as const;
 
 function getTimestamp() {
@@ -564,27 +564,28 @@ export default function BattleFeatSolo({
           </div>
         )}
         <div className="card p-6 md:p-8">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Swords size={20} className="text-[color:var(--accent)]" />
-            Difficulté
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {difficultyConfig.map((d) => (
-              <button
-                key={d.value}
-                type="button"
-                onClick={() => !challengeLocked && setDifficulty(d.value)}
-                disabled={challengeLocked && difficulty !== d.value}
-                className={`rounded-xl border p-4 text-left transition ${
-                  difficulty === d.value
-                    ? `${d.border} ${d.bg} ring-1 ring-current ${d.color}`
-                    : "border-[color:var(--border)] hover:border-[color:var(--muted)]"
-                } ${challengeLocked && difficulty !== d.value ? "opacity-40 cursor-not-allowed" : ""}`}
-              >
-                <p className={`font-bold ${d.color}`}>{d.label}</p>
-                <p className="text-xs text-[color:var(--muted)] mt-1">{d.desc}</p>
-              </button>
-            ))}
+          <div>
+            <label className="text-sm font-medium">Difficulté</label>
+            <p className="mt-0.5 text-xs text-[color:var(--muted)]">
+              Détermine le temps par tour et la force de l&apos;IA.
+            </p>
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {difficultyConfig.map((d) => (
+                <button
+                  key={d.value}
+                  type="button"
+                  onClick={() => !challengeLocked && setDifficulty(d.value)}
+                  disabled={challengeLocked && difficulty !== d.value}
+                  data-active={difficulty === d.value}
+                  className={`btn-chip flex-col items-start gap-0.5 py-3 text-left ${
+                    challengeLocked && difficulty !== d.value ? "opacity-40 cursor-not-allowed" : ""
+                  }`}
+                >
+                  <span className="font-semibold">{d.label}</span>
+                  <span className="text-xs text-[color:var(--muted)]">{d.desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
           <div className="mt-4">
             <p className="mb-2 text-sm font-bold uppercase tracking-wide text-[color:var(--muted)]">

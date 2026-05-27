@@ -3,6 +3,7 @@ export type DeezerTrack = {
   title: string;
   duration: number;
   preview: string;
+  rank?: number;
   contributors?: Array<{
     id: number;
     name: string;

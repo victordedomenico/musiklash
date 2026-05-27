@@ -12,6 +12,9 @@ import {
   deleteBlindtestSession,
   deleteBracket,
   deleteBracketGame,
+  deleteStreamClash,
+  deleteStreamClashRoom,
+  deleteStreamClashSession,
   deleteTierlist,
   deleteTierlistSession,
   updateBattleFeatChallengeVisibility,
@@ -22,6 +25,9 @@ import {
   updateBlindtestVisibility,
   updateBracketGameVisibility,
   updateBracketVisibility,
+  updateStreamClashRoomVisibility,
+  updateStreamClashSessionVisibility,
+  updateStreamClashVisibility,
   updateTierlistSessionVisibility,
   updateTierlistVisibility,
 } from "@/app/my-brackets/actions";
@@ -36,7 +42,10 @@ type Entity =
   | "bracket_game"
   | "tierlist_session"
   | "blindtest_session"
-  | "blindtest_room";
+  | "blindtest_room"
+  | "stream_clash"
+  | "stream_clash_session"
+  | "stream_clash_room";
 
 export default function LibraryVisibilityToggle({
   entity,
@@ -94,6 +103,15 @@ export default function LibraryVisibilityToggle({
         case "blindtest_room":
           res = await updateBlindtestRoomVisibility(id, next);
           break;
+        case "stream_clash":
+          res = await updateStreamClashVisibility(id, next);
+          break;
+        case "stream_clash_session":
+          res = await updateStreamClashSessionVisibility(id, next);
+          break;
+        case "stream_clash_room":
+          res = await updateStreamClashRoomVisibility(id, next);
+          break;
       }
       if (res && "error" in res) {
         setError(res.error);
@@ -143,6 +161,15 @@ export default function LibraryVisibilityToggle({
           break;
         case "blindtest_room":
           res = await deleteBlindtestRoom(id);
+          break;
+        case "stream_clash":
+          res = await deleteStreamClash(id);
+          break;
+        case "stream_clash_session":
+          res = await deleteStreamClashSession(id);
+          break;
+        case "stream_clash_room":
+          res = await deleteStreamClashRoom(id);
           break;
       }
       if (res && "error" in res) {

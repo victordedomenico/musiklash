@@ -291,6 +291,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
       artist: t.artist.name,
       preview_url: t.preview,
       cover_url: t.album.cover_medium ?? t.album.cover_small ?? null,
+      rank: t.rank ?? 0,
     }]);
   };
 
@@ -302,6 +303,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
       artist: openedAlbum.artist?.name ?? t.artist.name,
       preview_url: t.preview,
       cover_url: openedAlbum.cover_medium ?? openedAlbum.cover_small ?? null,
+      rank: 0,
     }]);
   };
 
@@ -318,6 +320,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
         artist: albumArtist || t.artist.name,
         preview_url: t.preview,
         cover_url: openedAlbum.cover_medium ?? openedAlbum.cover_small ?? null,
+        rank: 0,
       }));
     if (batch.length > 0) onChange([...selected, ...batch]);
   };

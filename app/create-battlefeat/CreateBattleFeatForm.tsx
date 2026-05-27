@@ -8,30 +8,9 @@ import type { ArtistResult } from "@/lib/battle-feat";
 import { createBattleFeatChallenge } from "./actions";
 
 const difficultyConfig = [
-  {
-    value: 1,
-    label: "Facile",
-    color: "text-green-400",
-    border: "border-green-400/40",
-    bg: "bg-green-400/10",
-    desc: "20 sec — IA mainstream, 4 propositions",
-  },
-  {
-    value: 2,
-    label: "Normal",
-    color: "text-yellow-400",
-    border: "border-yellow-400/40",
-    bg: "bg-yellow-400/10",
-    desc: "20 sec — IA élargie",
-  },
-  {
-    value: 3,
-    label: "Difficile",
-    color: "text-red-400",
-    border: "border-red-400/40",
-    bg: "bg-red-400/10",
-    desc: "10 sec — IA niche",
-  },
+  { value: 1, label: "Facile", desc: "20 sec — IA mainstream, 4 propositions" },
+  { value: 2, label: "Normal", desc: "20 sec — IA élargie" },
+  { value: 3, label: "Difficile", desc: "10 sec — IA niche" },
 ] as const;
 
 export default function CreateBattleFeatForm() {
@@ -105,26 +84,25 @@ export default function CreateBattleFeatForm() {
       </div>
 
       <div className="card p-6 space-y-3">
-        <h2 className="text-lg font-bold flex items-center gap-2">
-          <Swords size={18} className="text-[color:var(--accent)]" />
-          Difficulté
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {difficultyConfig.map((d) => (
-            <button
-              key={d.value}
-              type="button"
-              onClick={() => setDifficulty(d.value)}
-              className={`rounded-xl border p-4 text-left transition ${
-                difficulty === d.value
-                  ? `${d.border} ${d.bg} ring-1 ring-current ${d.color}`
-                  : "border-[color:var(--border)] hover:border-[color:var(--muted)]"
-              }`}
-            >
-              <p className={`font-bold ${d.color}`}>{d.label}</p>
-              <p className="text-xs text-[color:var(--muted)] mt-1">{d.desc}</p>
-            </button>
-          ))}
+        <div>
+          <label className="text-sm font-medium">Difficulté</label>
+          <p className="mt-0.5 text-xs text-[color:var(--muted)]">
+            Détermine le temps par tour et la force de l&apos;IA.
+          </p>
+          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {difficultyConfig.map((d) => (
+              <button
+                key={d.value}
+                type="button"
+                onClick={() => setDifficulty(d.value)}
+                data-active={difficulty === d.value}
+                className="btn-chip flex-col items-start gap-0.5 py-3 text-left"
+              >
+                <span className="font-semibold">{d.label}</span>
+                <span className="text-xs text-[color:var(--muted)]">{d.desc}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
