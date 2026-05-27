@@ -28,6 +28,14 @@ export function getSiteUrl(): string {
   return "https://musiklash.vercel.app";
 }
 
+/** URL canonique pour sitemap / robots — jamais l’URL de preview Vercel. */
+export function getSitemapBaseUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") ??
+    "https://musiklash.vercel.app"
+  );
+}
+
 export function absoluteUrl(path = ""): string {
   const base = getSiteUrl();
   if (!path || path === "/") return base;
