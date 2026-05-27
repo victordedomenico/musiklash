@@ -21,8 +21,14 @@ import {
 } from "@/components/StreamClashCard";
 import { Search } from "lucide-react";
 import { getI18n } from "@/lib/i18n";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Explorer — MusiKlash" };
+export const metadata = buildPageMetadata({
+  title: "Explorer les jeux musicaux",
+  description:
+    "Découvrez des brackets, tierlists, blindtests, défis BattleFeat et Stream Clash créés par la communauté MusiKlash.",
+  path: "/explore",
+});
 
 type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat" | "streamclash";
 

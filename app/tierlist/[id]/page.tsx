@@ -1,14 +1,35 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import prisma from "@/lib/prisma";
 import TierlistPlayer from "./TierlistPlayer";
 import type { TierItem } from "@/components/TierlistBoard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import { getI18n } from "@/lib/i18n";
+import { buildPageMetadata } from "@/lib/seo";
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
   const { id } = await params;
-  const tl = await prisma.tierlist.findUnique({ where: { id }, select: { title: true } });
-  return { title: tl ? `${tl.title} — MusiKlash` : "Tierlist — MusiKlash" };
+  const tl = await prisma.tierlist.findUnique({
+    where: { id },
+    select: { title: true, theme: true, visibility: true, coverUrl: true },
+  });
+  if (!tl) return { title: "Tierlist introuvable" };
+
+  const description = tl.theme
+    ? `Classez les morceaux de « ${tl.title} » (${tl.theme}) sur MusiKlash.`
+    : `Classez les morceaux de « ${tl.title} » sur MusiKlash.`;
+
+  return buildPageMetadata({
+    title: tl.title,
+    description,
+    path: `/tierlist/${id}`,
+    noIndex: tl.visibility !== "public",
+    image: tl.coverUrl,
+  });
 }
 
 export default async function TierlistPage({

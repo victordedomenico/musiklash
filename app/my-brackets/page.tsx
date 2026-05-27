@@ -29,8 +29,14 @@ import {
   type StreamClashSummary,
 } from "@/components/StreamClashCard";
 import { Plus, Play } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Ma bibliothèque — MusiKlash" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "Ma bibliothèque",
+  description: "Retrouvez vos brackets, tierlists et blindtests sur MusiKlash.",
+  path: "/my-brackets",
+  noIndex: true,
+});
 
 type Visibility = "all" | "private" | "public";
 type Tab = "all" | "brackets" | "tierlists" | "blindtests" | "battlefeat" | "streamclash";

@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import JsonLd from "@/components/JsonLd";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "FAQ — MusiKlash" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "FAQ",
+  description:
+    "Questions fréquentes sur MusiKlash : gratuité, compte, extraits Deezer, brackets, tierlists, blindtests et BattleFeat.",
+  path: "/faq",
+});
 
 const FAQS = [
 	{
@@ -39,7 +46,22 @@ const FAQS = [
 
 export default function FaqPage() {
 	return (
-		<div className="refit-doc-page">
+		<>
+			<JsonLd
+				data={{
+					"@context": "https://schema.org",
+					"@type": "FAQPage",
+					mainEntity: FAQS.map((item) => ({
+						"@type": "Question",
+						name: item.q,
+						acceptedAnswer: {
+							"@type": "Answer",
+							text: item.a,
+						},
+					})),
+				}}
+			/>
+			<div className="refit-doc-page">
 			<div className="mx-auto max-w-3xl px-4 py-12">
 				<h1 className="text-4xl font-black mb-2">FAQ</h1>
 				<p style={{ color: "var(--muted)" }}>Les questions les plus fréquentes.</p>
@@ -88,6 +110,7 @@ export default function FaqPage() {
 					.
 				</p>
 			</div>
-		</div>
+			</div>
+		</>
 	);
 }

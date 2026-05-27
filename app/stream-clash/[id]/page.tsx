@@ -1,15 +1,31 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Music, Play, Users, ArrowLeft } from "lucide-react";
 import prisma from "@/lib/prisma";
 import SectionHeader from "@/components/ui/SectionHeader";
+import { buildPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
   const { id } = await params;
-  const sc = await prisma.streamClash.findUnique({ where: { id } });
-  return { title: sc ? `${sc.title} — Stream Clash` : "Stream Clash" };
+  const sc = await prisma.streamClash.findUnique({
+    where: { id },
+    select: { title: true, visibility: true },
+  });
+  if (!sc) return { title: "Stream Clash introuvable" };
+
+  return buildPageMetadata({
+    title: sc.title,
+    description: `Jouez au Stream Clash « ${sc.title} » : devinez quel morceau cumule le plus d'écoutes.`,
+    path: `/stream-clash/${id}`,
+    noIndex: sc.visibility !== "public",
+  });
 }
 
 export default async function StreamClashPage({

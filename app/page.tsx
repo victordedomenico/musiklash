@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { CirclePlus } from "lucide-react";
+import JsonLd from "@/components/JsonLd";
 import { getI18n } from "@/lib/i18n";
 import { getTopAlbumsByCountry } from "@/lib/top-albums";
+import { absoluteUrl, buildPageMetadata, SITE_NAME } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Tournois musicaux en ligne gratuits",
+  description:
+    "Crée des brackets, tierlists et blindtests musicaux. Écoute chaque extrait Deezer, vote et partage tes résultats. BattleFeat et Stream Clash inclus — 100 % gratuit.",
+  path: "/",
+});
 
 const homeTopAlbumsCountryFromEnv = process.env.HOME_TOP_ALBUMS_COUNTRY?.trim().toUpperCase();
 const HOME_TOP_ALBUMS_COUNTRY =
@@ -24,7 +34,26 @@ export default async function Home() {
   const marqueeAlbums = topAlbums.length > 0 ? [...topAlbums, ...topAlbums] : [];
 
   return (
-    <div className="space-y-4">
+    <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: SITE_NAME,
+          url: absoluteUrl(),
+          description:
+            "Plateforme gratuite de jeux musicaux : brackets, tierlists, blindtests, BattleFeat et Stream Clash.",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: {
+              "@type": "EntryPoint",
+              urlTemplate: `${absoluteUrl("/explore")}?q={search_term_string}`,
+            },
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
+      <div className="space-y-4">
       <section
         className="relative rounded-[36px] border px-7 py-12 text-center sm:px-10 md:px-12 md:py-16 lg:px-20 lg:py-20"
         style={{
@@ -139,6 +168,7 @@ export default async function Home() {
         </div>
       </section>
 
-    </div>
+      </div>
+    </>
   );
 }

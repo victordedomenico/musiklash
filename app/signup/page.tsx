@@ -1,8 +1,17 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { signUp } from "@/app/(auth)/actions";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import { getI18n } from "@/lib/i18n";
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Inscription",
+  description: "Créez un compte MusiKlash pour sauvegarder vos brackets et tierlists.",
+  path: "/signup",
+  noIndex: true,
+});
 
 export default async function SignupPage({
   searchParams,

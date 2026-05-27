@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   Music2,
   Play,
@@ -10,6 +11,14 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Guide des modes de jeu",
+  description:
+    "Apprenez à jouer aux brackets, tierlists, blindtests, BattleFeat et Stream Clash sur MusiKlash. Règles, création et partage expliqués pas à pas.",
+  path: "/guide",
+});
 
 export default function GuidePage() {
   const blocks = [

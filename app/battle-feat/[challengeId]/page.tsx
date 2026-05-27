@@ -25,6 +25,8 @@ const DIFFICULTY_COLOR: Record<number, string> = {
   3: "text-red-400",
 };
 
+import { buildPageMetadata } from "@/lib/seo";
+
 export async function generateMetadata({
   params,
 }: {
@@ -33,9 +35,16 @@ export async function generateMetadata({
   const { challengeId } = await params;
   const challenge = await prisma.battleFeatSoloChallenge.findUnique({
     where: { id: challengeId },
-    select: { title: true },
+    select: { title: true, visibility: true, startingArtistName: true },
   });
-  return { title: challenge ? `${challenge.title} — BattleFeat` : "BattleFeat solo" };
+  if (!challenge) return { title: "Défi BattleFeat introuvable" };
+
+  return buildPageMetadata({
+    title: challenge.title,
+    description: `Défi BattleFeat « ${challenge.title} » — enchaînez les featurings à partir de ${challenge.startingArtistName}.`,
+    path: `/battle-feat/${challengeId}`,
+    noIndex: challenge.visibility !== "public",
+  });
 }
 
 export default async function BattleFeatChallengePage({

@@ -1,12 +1,35 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import prisma from "@/lib/prisma";
 import BracketGame from "@/components/BracketGame";
 import { isValidSize } from "@/lib/bracket";
 import SectionHeader from "@/components/ui/SectionHeader";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Jouer un bracket — MusiKlash",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const bracket = await prisma.bracket.findUnique({
+    where: { id },
+    select: { title: true, theme: true, visibility: true, coverUrl: true },
+  });
+  if (!bracket) return { title: "Bracket introuvable" };
+
+  const description = bracket.theme
+    ? `Jouez au bracket « ${bracket.title} » (${bracket.theme}) sur MusiKlash. Écoutez les extraits et votez pour élire le champion.`
+    : `Jouez au bracket « ${bracket.title} » sur MusiKlash. Écoutez les extraits et votez pour élire le champion.`;
+
+  return buildPageMetadata({
+    title: bracket.title,
+    description,
+    path: `/bracket-game/${id}`,
+    noIndex: bracket.visibility !== "public",
+    image: bracket.coverUrl,
+  });
+}
 
 export default async function BracketGamePage({
   params,

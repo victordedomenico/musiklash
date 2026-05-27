@@ -1,11 +1,16 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import prisma from "@/lib/prisma";
 import { updateProfileSettings } from "./actions";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Paramètres — MusiKlash",
-};
+export const metadata: Metadata = buildPageMetadata({
+  title: "Paramètres",
+  description: "Gérez votre profil MusiKlash.",
+  path: "/settings",
+  noIndex: true,
+});
 
 export default async function SettingsPage({
   searchParams,

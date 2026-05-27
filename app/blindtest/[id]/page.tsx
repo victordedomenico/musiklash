@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import prisma from "@/lib/prisma";
 import { createBlindtestRoom } from "../room/new/actions";
 import { User, Users, ArrowRight, Music } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +21,24 @@ function modelHasField(modelName: string, fieldName: string): boolean {
   return model.fields.some((f) => f.name === fieldName);
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
   const { id } = await params;
-  const bt = await prisma.blindtest.findUnique({ where: { id }, select: { title: true } });
-  return { title: bt ? `${bt.title} — Blindtest` : "Blindtest" };
+  const bt = await prisma.blindtest.findUnique({
+    where: { id },
+    select: { title: true, visibility: true },
+  });
+  if (!bt) return { title: "Blindtest introuvable" };
+
+  return buildPageMetadata({
+    title: bt.title,
+    description: `Testez vos oreilles avec le blindtest « ${bt.title} » sur MusiKlash. Devinez les morceaux à l'aveugle.`,
+    path: `/blindtest/${id}`,
+    noIndex: bt.visibility !== "public",
+  });
 }
 
 export default async function BlindtestPage({

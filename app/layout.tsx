@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import "./globals.css";
 import SiteSidebar from "@/components/SiteSidebar";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import Footer from "@/components/Footer";
+import JsonLd from "@/components/JsonLd";
 import {
   getCookieConsent,
   hasAnalyticsConsent,
@@ -11,12 +11,9 @@ import {
 } from "@/lib/cookie-consent";
 import { Analytics } from "@vercel/analytics/next";
 import { getLocale } from "@/lib/i18n";
+import { absoluteUrl, rootMetadata, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "MusiKlash — Fais s'affronter tes sons",
-  description:
-    "Crée des tournois musicaux, vote en écoutant chaque extrait et partage tes classements. Brackets, tierlists, blindtests et BattleFeat — gratuit, sans pub.",
-};
+export const metadata = rootMetadata;
 
 export default async function RootLayout({
   children,
@@ -38,6 +35,18 @@ export default async function RootLayout({
       className="h-full antialiased"
     >
       <body className="min-h-full">
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: SITE_NAME,
+            url: absoluteUrl(),
+            logo: absoluteUrl("/icon"),
+            description: SITE_DESCRIPTION,
+            email: "contact@musiklash.com",
+            sameAs: [],
+          }}
+        />
         <div className="site-layout">
           <SiteSidebar theme={theme} locale={locale} />
           <main className="site-main">

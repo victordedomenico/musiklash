@@ -1,8 +1,17 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { signIn } from "@/app/(auth)/actions";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import { getI18n } from "@/lib/i18n";
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Connexion",
+  description: "Connectez-vous à votre compte MusiKlash.",
+  path: "/login",
+  noIndex: true,
+});
 
 export default async function LoginPage({
   searchParams,

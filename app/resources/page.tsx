@@ -2,7 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BookOpen, ExternalLink, Swords, Zap } from "lucide-react";
 
-export const metadata: Metadata = { title: "Ressources — MusiKlash" };
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Ressources",
+  description:
+    "Guides, documentation et liens utiles pour créer et partager vos jeux musicaux sur MusiKlash.",
+  path: "/resources",
+});
 
 export default function ResourcesPage() {
   return (

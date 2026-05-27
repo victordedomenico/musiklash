@@ -10,7 +10,14 @@ import {
   Zap,
 } from "lucide-react";
 
-export const metadata: Metadata = { title: "BattleFeat — MusiKlash" };
+import { buildPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "BattleFeat — Chaîne de featurings",
+  description:
+    "Enchaînez les collaborations entre artistes dans BattleFeat. Jouez solo contre l'IA ou défiez vos amis en multijoueur.",
+  path: "/battle-feat",
+});
 
 export default async function BattleFeatLandingPage() {
   // Quick leaderboard preview

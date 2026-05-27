@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Swords, Users, Zap } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "À propos — MusiKlash" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "À propos",
+  description:
+    "MusiKlash permet de trancher les débats musicaux avec des tournois, tierlists et blindtests. Découvrez notre mission et nos modes de jeu.",
+  path: "/about",
+});
 
 export default function AboutPage() {
   return (
