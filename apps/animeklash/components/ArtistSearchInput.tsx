@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Loader2, User } from "lucide-react";
-import type { ArtistResult } from "@/lib/battle-feat";
+import type { CharacterResult } from "@/lib/battle-feat";
 
 type Props = {
-  onSelect: (artist: ArtistResult) => void;
+  onSelect: (character: CharacterResult) => void;
   disabled?: boolean;
   excludeIds?: string[];
   placeholder?: string;
@@ -16,11 +16,11 @@ export default function ArtistSearchInput({
   onSelect,
   disabled = false,
   excludeIds = [],
-  placeholder = "Cherche un artiste…",
+  placeholder = "Cherche un personnage…",
   autoFocus = false,
 }: Props) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<ArtistResult[]>([]);
+  const [results, setResults] = useState<(CharacterResult & { animeTitle?: string | null })[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(-1);
@@ -28,38 +28,40 @@ export default function ArtistSearchInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const search = useCallback(async (q: string) => {
-    abortRef.current?.abort();
-    if (q.length < 2) {
-      setResults([]);
-      setOpen(false);
-      return;
-    }
-    const controller = new AbortController();
-    abortRef.current = controller;
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/battle-feat/artists?q=${encodeURIComponent(q)}`, {
-        signal: controller.signal,
-      });
-      const json = (await res.json()) as { data: ArtistResult[] };
-      const filtered = json.data.filter((a) => !excludeIds.includes(a.id));
-      setResults(filtered);
-      setOpen(filtered.length > 0);
-      setHighlightIdx(-1);
-    } catch {
-      // Aborted or error
-    } finally {
-      setLoading(false);
-    }
-  }, [excludeIds]);
+  const search = useCallback(
+    async (q: string) => {
+      abortRef.current?.abort();
+      if (q.length < 2) {
+        setResults([]);
+        setOpen(false);
+        return;
+      }
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/battle-feat/artists?q=${encodeURIComponent(q)}`, {
+          signal: controller.signal,
+        });
+        const json = (await res.json()) as { data: (CharacterResult & { animeTitle?: string | null })[] };
+        const filtered = json.data.filter((c) => !excludeIds.includes(c.id));
+        setResults(filtered);
+        setOpen(filtered.length > 0);
+        setHighlightIdx(-1);
+      } catch {
+        // aborted or error
+      } finally {
+        setLoading(false);
+      }
+    },
+    [excludeIds],
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => search(query), 300);
     return () => clearTimeout(timer);
   }, [query, search]);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -70,11 +72,11 @@ export default function ArtistSearchInput({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const handleSelect = (artist: ArtistResult) => {
+  const handleSelect = (character: CharacterResult) => {
     setQuery("");
     setResults([]);
     setOpen(false);
-    onSelect(artist);
+    onSelect(character);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -87,7 +89,8 @@ export default function ArtistSearchInput({
       setHighlightIdx((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter" && highlightIdx >= 0) {
       e.preventDefault();
-      handleSelect(results[highlightIdx]);
+      const r = results[highlightIdx];
+      if (r) handleSelect(r);
     } else if (e.key === "Escape") {
       setOpen(false);
     }
@@ -122,8 +125,8 @@ export default function ArtistSearchInput({
 
       {open && results.length > 0 && (
         <ul className="absolute z-50 top-full mt-1 w-full max-h-64 overflow-y-auto rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl">
-          {results.map((artist, i) => (
-            <li key={artist.id}>
+          {results.map((character, i) => (
+            <li key={character.id}>
               <button
                 type="button"
                 className={`flex items-center gap-3 w-full px-4 py-2.5 text-left text-sm transition ${
@@ -131,13 +134,13 @@ export default function ArtistSearchInput({
                     ? "bg-[color:var(--accent)]/15 text-white"
                     : "hover:bg-[color:var(--surface-2)] text-[color:var(--foreground)]"
                 }`}
-                onClick={() => handleSelect(artist)}
+                onClick={() => handleSelect(character)}
                 onMouseEnter={() => setHighlightIdx(i)}
               >
-                {artist.pictureUrl ? (
+                {character.pictureUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={artist.pictureUrl}
+                    src={character.pictureUrl}
                     alt=""
                     className="h-8 w-8 rounded-full object-cover shrink-0"
                   />
@@ -147,11 +150,13 @@ export default function ArtistSearchInput({
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="font-medium truncate">{artist.name}</p>
-                  <p className="text-xs text-[color:var(--muted)]">
-                    {artist.fanCount > 0
-                      ? `${(artist.fanCount / 1000).toFixed(0)}k fans`
-                      : "Artiste"}
+                  <p className="font-medium truncate">{character.name}</p>
+                  <p className="text-xs text-[color:var(--muted)] truncate">
+                    {character.animeTitle
+                      ? character.animeTitle
+                      : character.favourites > 0
+                        ? `${(character.favourites / 1000).toFixed(0)}k fans`
+                        : "Personnage"}
                   </p>
                 </div>
               </button>
