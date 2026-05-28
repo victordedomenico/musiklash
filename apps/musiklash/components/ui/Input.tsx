@@ -1,8 +1,2 @@
-import type { InputHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
-
-type Props = InputHTMLAttributes<HTMLInputElement>;
-
-export default function Input({ className, ...props }: Props) {
-  return <input className={cn("input", className)} {...props} />;
-}
+export { default } from "@klash/klash-app/components/ui/Input";
+export * from "@klash/klash-app/components/ui/Input";

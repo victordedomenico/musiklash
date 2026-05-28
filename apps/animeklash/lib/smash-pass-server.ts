@@ -5,6 +5,7 @@ import {
   type SmashPassItemStatsSnapshot,
   type SmashPassItemType,
 } from "@/lib/smash-pass";
+import { inferSourceFromExternalId } from "@/lib/content-item";
 
 export async function recordGlobalVote(
   itemType: SmashPassItemType,
@@ -21,6 +22,7 @@ export async function recordGlobalVote(
     create: {
       itemType,
       externalId,
+      source: inferSourceFromExternalId(externalId),
       smashCount: smashDelta,
       passCount: passDelta,
     },

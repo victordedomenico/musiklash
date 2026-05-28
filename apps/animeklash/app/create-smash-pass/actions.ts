@@ -7,6 +7,7 @@ import { resolvePlayerIdentity } from "@/lib/guest";
 import { createClient } from "@/lib/supabase/server";
 import type { SmashPassItemType } from "@/lib/smash-pass";
 import type { SmashPassParticipant } from "@/lib/smash-pass";
+import { getItemSource } from "@klash/klash-app/lib/item-source";
 import { selectedItemToSmashPassFields } from "@/lib/content-item";
 import type { SelectedContentItem } from "@/lib/content-item";
 
@@ -57,7 +58,7 @@ export async function createSmashPass(input: {
         items: {
           create: input.items.map((item, i) => ({
             position: i,
-            ...selectedItemToSmashPassFields(item),
+            ...selectedItemToSmashPassFields(item, getItemSource()),
             tags: (item.tags ?? []) as Prisma.InputJsonValue,
             description: item.description ?? null,
           })),

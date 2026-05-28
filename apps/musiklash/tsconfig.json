@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@klash/klash-app/*": ["../../packages/klash-app/src/*"]
     }
   },
   "include": [

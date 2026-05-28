@@ -1,16 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchContentItemPreview } from "@klash/klash-app/lib/content-preview";
 import { usePreviewVolume } from "@/lib/audio-volume";
 
 function safePreviewUrl(url: string) {
   return url.replace(/^http:\/\//i, "https://");
-}
-
-async function fetchFreshPreview(externalId: number): Promise<string> {
-  const res = await fetch(`/api/deezer/track/${externalId}`);
-  const data = (await res.json()) as { preview?: string };
-  return data.preview ?? "";
 }
 
 export function useTrackPreview() {
@@ -48,7 +43,7 @@ export function useTrackPreview() {
         if (audioRef.current.paused) {
           void audioRef.current.play().catch(async () => {
             if (!externalId) return;
-            const fresh = await fetchFreshPreview(externalId);
+            const fresh = await fetchContentItemPreview(externalId);
             if (fresh) playUrl(key, title, fresh);
           });
         } else {
@@ -79,7 +74,7 @@ export function useTrackPreview() {
           setNowPlaying(null);
           return;
         }
-        const fresh = await fetchFreshPreview(externalId);
+        const fresh = await fetchContentItemPreview(externalId);
         if (!fresh) {
           setIsPlaying(false);
           setNowPlaying(null);
@@ -105,7 +100,7 @@ export function useTrackPreview() {
       if (audioRef.current && nowPlaying?.key === key) {
         if (audioRef.current.paused) {
           void audioRef.current.play().catch(async () => {
-            const fresh = await fetchFreshPreview(externalId);
+            const fresh = await fetchContentItemPreview(externalId);
             if (fresh) playUrl(key, title, fresh, externalId);
           });
         } else {
@@ -115,7 +110,7 @@ export function useTrackPreview() {
       }
 
       let url = previewUrl?.trim() ? safePreviewUrl(previewUrl.trim()) : "";
-      if (!url) url = safePreviewUrl(await fetchFreshPreview(externalId));
+      if (!url) url = safePreviewUrl(await fetchContentItemPreview(externalId));
       if (!url) return;
 
       playUrl(key, title, url, externalId);

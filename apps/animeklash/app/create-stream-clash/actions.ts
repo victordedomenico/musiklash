@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { createClient } from "@/lib/supabase/server";
 import type { StreamClashParticipant } from "@/lib/stream-clash-room";
+import { getItemSource } from "@klash/klash-app/lib/item-source";
 import { selectedItemToStreamClashTrack } from "@/lib/content-item";
 import type { SelectedContentItem } from "@/lib/content-item";
 
@@ -78,7 +79,7 @@ export async function createStreamClash(input: {
         visibility: storedVisibility,
         tracks: {
           create: input.tracks.map((t, i) =>
-            selectedItemToStreamClashTrack(t, i, t.rank),
+            selectedItemToStreamClashTrack(t, i, t.rank, getItemSource()),
           ),
         },
       },

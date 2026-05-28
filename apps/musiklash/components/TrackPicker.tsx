@@ -5,7 +5,7 @@ import {
   Search, Plus, X, Play, Pause, ChevronLeft, Check,
   Music, Disc3, User, ListMusic,
 } from "lucide-react";
-import type { DeezerTrack, DeezerAlbum, DeezerArtist, DeezerAlbumTrack } from "@/lib/deezer";
+import type { ContentItem, ContentCollection, ContentEntity } from "@klash/content-adapter";
 import type { SelectedTrack } from "@/app/create-bracket/actions";
 import { usePreviewVolume } from "@/lib/audio-volume";
 
@@ -17,6 +17,13 @@ type Props = {
 };
 
 type Tab = "track" | "album" | "artist";
+
+function num(v: unknown): number | undefined {
+  return typeof v === "number" ? v : undefined;
+}
+function str(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
+}
 
 function useDebouncedSearch<T>(
   endpoint: string,
@@ -34,11 +41,11 @@ function useDebouncedSearch<T>(
       setLoading(true);
       try {
         const res = await fetch(
-          `${endpoint}?q=${encodeURIComponent(trimmed)}`,
+          `${endpoint}&q=${encodeURIComponent(trimmed)}`,
           { signal: ctrl.signal },
         );
         const json = await res.json();
-        setData(json.data ?? []);
+        setData(json.results ?? []);
       } catch (e) {
         if ((e as { name?: string }).name !== "AbortError") console.error(e);
       } finally {
@@ -88,24 +95,27 @@ function AlbumCard({
   onClick,
   action,
 }: {
-  album: DeezerAlbum;
+  album: ContentCollection;
   onClick: () => void;
   action?: React.ReactNode;
 }) {
+  const artistName = str(album.metadata?.artistName);
+  const nbTracks = num(album.metadata?.nbTracks);
+  const releaseDate = str(album.metadata?.releaseDate);
   return (
     <li className="card flex items-center gap-3 p-2 cursor-pointer hover:bg-[color:var(--surface-2)] transition-colors" onClick={onClick}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={album.cover_small ?? album.cover_medium ?? ""}
+        src={album.coverUrl ?? ""}
         alt=""
         className="h-12 w-12 rounded-md object-cover bg-[color:var(--surface-2)] shrink-0"
       />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{album.title}</p>
         <p className="truncate text-xs text-[color:var(--muted)]">
-          {album.artist?.name}
-          {album.nb_tracks ? ` · ${album.nb_tracks} titres` : ""}
-          {album.release_date ? ` · ${album.release_date.slice(0, 4)}` : ""}
+          {artistName}
+          {nbTracks ? ` · ${nbTracks} titres` : ""}
+          {releaseDate ? ` · ${releaseDate.slice(0, 4)}` : ""}
         </p>
       </div>
       {action}
@@ -126,16 +136,16 @@ function AlbumTracksView({
   playingId,
   onTogglePlay,
 }: {
-  album: DeezerAlbum;
-  tracks: DeezerAlbumTrack[];
+  album: ContentCollection;
+  tracks: ContentItem[];
   loading: boolean;
   onBack: () => void;
-  isSelected: (id: number) => boolean;
+  isSelected: (id: string) => boolean;
   canAdd: boolean;
-  onAddTrack: (t: DeezerAlbumTrack) => void;
+  onAddTrack: (t: ContentItem) => void;
   onAddAll: () => void;
-  playingId: number | null;
-  onTogglePlay: (id: number, url: string) => void;
+  playingId: string | null;
+  onTogglePlay: (id: string, url: string) => void;
 }) {
   const addableCount = tracks.filter((t) => !isSelected(t.id)).length;
 
@@ -147,13 +157,13 @@ function AlbumTracksView({
         </button>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={album.cover_small ?? ""}
+          src={album.coverUrl ?? ""}
           alt=""
           className="h-8 w-8 rounded object-cover"
         />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">{album.title}</p>
-          <p className="truncate text-xs text-[color:var(--muted)]">{album.artist?.name}</p>
+          <p className="truncate text-xs text-[color:var(--muted)]">{str(album.metadata?.artistName)}</p>
         </div>
         {addableCount > 0 && canAdd && (
           <button
@@ -174,26 +184,27 @@ function AlbumTracksView({
           {tracks.map((t) => {
             const picked = isSelected(t.id);
             const playing = playingId === t.id;
+            const duration = num(t.metadata?.duration) ?? 0;
             return (
               <li key={t.id} className="card flex items-center gap-2 p-2">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{t.title}</p>
                   <p className="truncate text-xs text-[color:var(--muted)]">
-                    {Math.floor(t.duration / 60)}:{String(t.duration % 60).padStart(2, "0")}
+                    {Math.floor(duration / 60)}:{String(duration % 60).padStart(2, "0")}
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => onTogglePlay(t.id, t.preview)}
+                  onClick={() => onTogglePlay(t.id, t.previewUrl ?? "")}
                   className="btn-ghost btn-xs px-2"
-                  disabled={!t.preview}
+                  disabled={!t.previewUrl}
                 >
                   {playing ? <Pause size={13} /> : <Play size={13} />}
                 </button>
                 <button
                   type="button"
                   onClick={() => onAddTrack(t)}
-                  disabled={picked || !canAdd || !t.preview}
+                  disabled={picked || !canAdd || !t.previewUrl}
                   className="btn-primary btn-xs px-2 disabled:opacity-40"
                 >
                   {picked ? <Check size={13} /> : <Plus size={13} />}
@@ -211,7 +222,7 @@ function AlbumTracksView({
 
 export default function TrackPicker({ size, selected, onChange, freeMode = false }: Props) {
   const [tab, setTab] = useState<Tab>("track");
-  const [playingId, setPlayingId] = useState<number | null>(null);
+  const [playingId, setPlayingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { volume } = usePreviewVolume();
 
@@ -232,39 +243,39 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
 
   // Track tab
   const [trackQuery, setTrackQuery] = useState("");
-  const { data: trackResults, loading: trackLoading } = useDebouncedSearch<DeezerTrack>(
-    "/api/deezer/search", trackQuery, tab === "track",
+  const { data: trackResults, loading: trackLoading } = useDebouncedSearch<ContentItem>(
+    "/api/content/search?kind=items", trackQuery, tab === "track",
   );
 
   // Album tab
   const [albumQuery, setAlbumQuery] = useState("");
-  const { data: albumResults, loading: albumLoading } = useDebouncedSearch<DeezerAlbum>(
-    "/api/deezer/search/album", albumQuery, tab === "album",
+  const { data: albumResults, loading: albumLoading } = useDebouncedSearch<ContentCollection>(
+    "/api/content/search?kind=collections", albumQuery, tab === "album",
   );
 
   // Artist tab
   const [artistQuery, setArtistQuery] = useState("");
-  const { data: artistResults, loading: artistLoading } = useDebouncedSearch<DeezerArtist>(
-    "/api/deezer/search/artist", artistQuery, tab === "artist",
+  const { data: artistResults, loading: artistLoading } = useDebouncedSearch<ContentEntity>(
+    "/api/content/search?kind=entities", artistQuery, tab === "artist",
   );
 
   // Shared album-tracks view (used by both album & artist tabs)
-  const [openedAlbum, setOpenedAlbum] = useState<DeezerAlbum | null>(null);
-  const [albumTracks, setAlbumTracks] = useState<DeezerAlbumTrack[]>([]);
+  const [openedAlbum, setOpenedAlbum] = useState<ContentCollection | null>(null);
+  const [albumTracks, setAlbumTracks] = useState<ContentItem[]>([]);
   const [albumTracksLoading, setAlbumTracksLoading] = useState(false);
 
   // Artist tab – discography view
-  const [openedArtist, setOpenedArtist] = useState<DeezerArtist | null>(null);
-  const [artistAlbums, setArtistAlbums] = useState<DeezerAlbum[]>([]);
+  const [openedArtist, setOpenedArtist] = useState<ContentEntity | null>(null);
+  const [artistAlbums, setArtistAlbums] = useState<ContentCollection[]>([]);
   const [artistAlbumsLoading, setArtistAlbumsLoading] = useState(false);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   const maxTracks = freeMode ? 50 : size;
   const canAdd = selected.length < maxTracks;
-  const isSelected = (id: number) => selected.some((s) => s.deezer_track_id === id);
+  const isSelected = (id: string) => selected.some((s) => s.deezer_track_id === Number(id));
 
-  const togglePlay = (id: number, url: string) => {
+  const togglePlay = (id: string, url: string) => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.onended = () => setPlayingId(null);
@@ -283,26 +294,25 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
     });
   };
 
-  const addTrack = (t: DeezerTrack) => {
+  const itemToSelected = (t: ContentItem, coverFallback?: string | null): SelectedTrack => ({
+    deezer_track_id: Number(t.id),
+    title: t.title,
+    artist: t.subtitle ?? str(t.metadata?.artistName) ?? "",
+    preview_url: t.previewUrl ?? "",
+    cover_url: t.coverUrl ?? coverFallback ?? null,
+    rank: num(t.metadata?.rank) ?? 0,
+  });
+
+  const addTrack = (t: ContentItem) => {
     if (isSelected(t.id) || !canAdd) return;
-    onChange([...selected, {
-      deezer_track_id: t.id,
-      title: t.title,
-      artist: t.artist.name,
-      preview_url: t.preview,
-      cover_url: t.album.cover_medium ?? t.album.cover_small ?? null,
-      rank: t.rank ?? 0,
-    }]);
+    onChange([...selected, itemToSelected(t)]);
   };
 
-  const addAlbumTrack = (t: DeezerAlbumTrack) => {
-    if (!openedAlbum || isSelected(t.id) || !canAdd || !t.preview) return;
+  const addAlbumTrack = (t: ContentItem) => {
+    if (!openedAlbum || isSelected(t.id) || !canAdd || !t.previewUrl) return;
     onChange([...selected, {
-      deezer_track_id: t.id,
-      title: t.title,
-      artist: openedAlbum.artist?.name ?? t.artist.name,
-      preview_url: t.preview,
-      cover_url: openedAlbum.cover_medium ?? openedAlbum.cover_small ?? null,
+      ...itemToSelected(t, openedAlbum.coverUrl ?? null),
+      artist: str(openedAlbum.metadata?.artistName) ?? t.subtitle ?? "",
       rank: 0,
     }]);
   };
@@ -310,16 +320,13 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
   const addAllAlbumTracks = () => {
     if (!openedAlbum) return;
     const remaining = maxTracks - selected.length;
-    const albumArtist = openedAlbum.artist?.name ?? "";
+    const albumArtist = str(openedAlbum.metadata?.artistName) ?? "";
     const batch = albumTracks
-      .filter((t) => t.preview && !isSelected(t.id))
+      .filter((t) => t.previewUrl && !isSelected(t.id))
       .slice(0, remaining)
       .map((t) => ({
-        deezer_track_id: t.id,
-        title: t.title,
-        artist: albumArtist || t.artist.name,
-        preview_url: t.preview,
-        cover_url: openedAlbum.cover_medium ?? openedAlbum.cover_small ?? null,
+        ...itemToSelected(t, openedAlbum.coverUrl ?? null),
+        artist: albumArtist || (t.subtitle ?? ""),
         rank: 0,
       }));
     if (batch.length > 0) onChange([...selected, ...batch]);
@@ -327,14 +334,14 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
 
   const remove = (id: number) => onChange(selected.filter((s) => s.deezer_track_id !== id));
 
-  const openAlbum = async (album: DeezerAlbum) => {
+  const openAlbum = async (album: ContentCollection) => {
     setOpenedAlbum(album);
     setAlbumTracks([]);
     setAlbumTracksLoading(true);
     try {
-      const res = await fetch(`/api/deezer/album/${album.id}/tracks`);
+      const res = await fetch(`/api/content/collection/${album.id}/items`);
       const json = await res.json();
-      setAlbumTracks(json.data ?? []);
+      setAlbumTracks(json.items ?? []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -342,14 +349,14 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
     }
   };
 
-  const openArtist = async (artist: DeezerArtist) => {
+  const openArtist = async (artist: ContentEntity) => {
     setOpenedArtist(artist);
     setArtistAlbums([]);
     setArtistAlbumsLoading(true);
     try {
-      const res = await fetch(`/api/deezer/artist/${artist.id}/albums`);
+      const res = await fetch(`/api/content/entity/${artist.id}/collections`);
       const json = await res.json();
-      setArtistAlbums(json.data ?? []);
+      setArtistAlbums(json.collections ?? []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -413,15 +420,15 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
                 <li key={t.id} className="card flex items-center gap-3 p-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={t.album.cover_small ?? ""}
+                    src={t.coverUrl ?? ""}
                     alt=""
                     className="h-12 w-12 rounded-md object-cover bg-[color:var(--surface-2)]"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{t.title}</p>
-                    <p className="truncate text-xs text-[color:var(--muted)]">{t.artist.name}</p>
+                    <p className="truncate text-xs text-[color:var(--muted)]">{t.subtitle}</p>
                   </div>
-                  <button type="button" onClick={() => togglePlay(t.id, t.preview)} className="btn-ghost btn-xs px-2">
+                  <button type="button" onClick={() => togglePlay(t.id, t.previewUrl ?? "")} className="btn-ghost btn-xs px-2">
                     {playing ? <Pause size={14} /> : <Play size={14} />}
                   </button>
                   <button
@@ -469,7 +476,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
               </button>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={openedArtist.picture_small ?? ""}
+                src={openedArtist.pictureUrl ?? ""}
                 alt=""
                 className="h-8 w-8 rounded-full object-cover"
               />
@@ -502,28 +509,31 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
           />
           <StatusLine loading={artistLoading} count={artistResults.length} />
           <ul className="mt-2 max-h-[440px] overflow-y-auto space-y-2 pr-1">
-            {artistResults.map((artist) => (
-              <li
-                key={artist.id}
-                onClick={() => openArtist(artist)}
-                className="card flex items-center gap-3 p-2 cursor-pointer hover:bg-[color:var(--surface-2)] transition-colors"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={artist.picture_small ?? artist.picture_medium ?? ""}
-                  alt=""
-                  className="h-12 w-12 rounded-full object-cover bg-[color:var(--surface-2)] shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{artist.name}</p>
-                  <p className="truncate text-xs text-[color:var(--muted)]">
-                    {artist.nb_album ? `${artist.nb_album} albums` : ""}
-                    {artist.nb_fan ? ` · ${artist.nb_fan.toLocaleString()} fans` : ""}
-                  </p>
-                </div>
-                <ChevronLeft size={16} className="rotate-180 text-[color:var(--muted)] shrink-0" />
-              </li>
-            ))}
+            {artistResults.map((artist) => {
+              const albumCount = num(artist.metadata?.albumCount);
+              return (
+                <li
+                  key={artist.id}
+                  onClick={() => openArtist(artist)}
+                  className="card flex items-center gap-3 p-2 cursor-pointer hover:bg-[color:var(--surface-2)] transition-colors"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={artist.pictureUrl ?? ""}
+                    alt=""
+                    className="h-12 w-12 rounded-full object-cover bg-[color:var(--surface-2)] shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{artist.name}</p>
+                    <p className="truncate text-xs text-[color:var(--muted)]">
+                      {albumCount ? `${albumCount} albums` : ""}
+                      {artist.fanCount ? ` · ${artist.fanCount.toLocaleString()} fans` : ""}
+                    </p>
+                  </div>
+                  <ChevronLeft size={16} className="rotate-180 text-[color:var(--muted)] shrink-0" />
+                </li>
+              );
+            })}
           </ul>
         </div>
       );

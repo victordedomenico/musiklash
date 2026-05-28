@@ -1,0 +1,154 @@
+
+> animeklash@0.1.0 lint /Users/victordedomenico/Projets/bracketfight/apps/animeklash
+> eslint
+
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/app/explore/page.tsx
+  1:15  warning  'Metadata' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/app/smash-pass/[id]/play/SmashPassPlayer.tsx
+  55:19  warning  'startTransition' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/app/smash-pass/room/[roomId]/SmashPassRoomClient.tsx
+  180:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/app/smash-pass/room/[roomId]/SmashPassRoomClient.tsx:180:5
+  178 |         ? room.smashPass.items.find((i) => i.position === room.currentPosition - 1)
+  179 |         : currentItem;
+> 180 |     setRevealItem(prev ?? currentItem);
+      |     ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  181 |   }, [everyoneVoted, currentItem, room.currentPosition, room.smashPass.items]);
+  182 |
+  183 |   const handleVote = async (choice: SmashPassChoice) => {  react-hooks/set-state-in-effect
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/app/stream-clash/[id]/play/StreamClashPlayer.tsx
+  109:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/app/stream-clash/[id]/play/StreamClashPlayer.tsx:109:5
+  107 |   useEffect(() => {
+  108 |     if (phase !== "picking") return;
+> 109 |     setTimeLeft(ANSWER_TIMEOUT_MS / 1000);
+      |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  110 |     autoSubmittedRef.current = false;
+  111 |
+  112 |     timerRef.current = setInterval(() => {  react-hooks/set-state-in-effect
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/app/stream-clash/room/[roomId]/StreamClashRoomClient.tsx
+   17:3   warning  'Zap' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+   26:10  warning  'checkAnswer' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   34:3   warning  'leaveRoom' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  220:10  error    Error: Cannot access variable before it is declared
+
+`handlePick` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/app/stream-clash/room/[roomId]/StreamClashRoomClient.tsx:220:10
+  218 |       return;
+  219 |     autoSubmittedRef.current = room.currentRound;
+> 220 |     void handlePick(-1);
+      |          ^^^^^^^^^^ `handlePick` accessed before it is declared
+  221 |     // eslint-disable-next-line react-hooks/exhaustive-deps
+  222 |   }, [timeLeft, phase, hasAnsweredThisRound, room.currentRound]);
+  223 |
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/app/stream-clash/room/[roomId]/StreamClashRoomClient.tsx:226:3
+  224 |   // ── Actions ────────────────────────────────────────────────────────────────
+  225 |
+> 226 |   const handlePick = useCallback(
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 227 |     async (position: number) => {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 228 |       if (phaseRef.current === "revealed" || isSpectator) return;
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 238 |     [isSpectator, broadcastSync],
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 239 |   );
+      | ^^^^^ `handlePick` is declared here
+  240 |
+  241 |   const handleNextRound = async () => {
+  242 |     if (!isHost || submitting) return;  react-hooks/immutability
+  227:5   error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. This value was memoized in source but not in compilation output.
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/app/stream-clash/room/[roomId]/StreamClashRoomClient.tsx:227:5
+  225 |
+  226 |   const handlePick = useCallback(
+> 227 |     async (position: number) => {
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 228 |       if (phaseRef.current === "revealed" || isSpectator) return;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 229 |       setChosenPosition(position);
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 236 |       await broadcastSync({ room: result.room, event: result.event });
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 237 |     },
+      | ^^^^^^ Could not preserve existing memoization
+  238 |     [isSpectator, broadcastSync],
+  239 |   );
+  240 |                                                                                                                                                                                                                                                                                                                                                   react-hooks/preserve-manual-memoization
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/app/stream-clash/room/[roomId]/actions.ts
+  382:9  warning  'firstPair' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/components/AnimePicker.tsx
+  74:33  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/components/AnimePicker.tsx:74:33
+  72 |   useEffect(() => {
+  73 |     const trimmed = query.trim();
+> 74 |     if (!trimmed || !enabled) { setData([]); return; }
+     |                                 ^^^^^^^ Avoid calling setState() directly within an effect
+  75 |     const ctrl = new AbortController();
+  76 |     const timer = setTimeout(async () => {
+  77 |       setLoading(true);  react-hooks/set-state-in-effect
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/components/smash-pass/SmashPassGameCard.tsx
+  14:3  warning  'itemType' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/components/smash-pass/SmashPassItemPicker.tsx
+  22:33  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/components/smash-pass/SmashPassItemPicker.tsx:22:33
+  20 |   useEffect(() => {
+  21 |     const trimmed = query.trim();
+> 22 |     if (!trimmed || !enabled) { setData([]); return; }
+     |                                 ^^^^^^^ Avoid calling setState() directly within an effect
+  23 |     const ctrl = new AbortController();
+  24 |     const timer = setTimeout(async () => {
+  25 |       setLoading(true);  react-hooks/set-state-in-effect
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/lib/ensure-battle-feat-visibility-columns.ts
+  4:57  warning  '_prisma' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/victordedomenico/Projets/bracketfight/apps/animeklash/lib/use-track-preview.ts
+  76:7  warning  '_externalId' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 15 problems (6 errors, 9 warnings)
+
+ ELIFECYCLE  Command failed with exit code 1.

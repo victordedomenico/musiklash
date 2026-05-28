@@ -21,6 +21,7 @@ import {
   Share2,
 } from "lucide-react";
 import Link from "next/link";
+import { fetchContentItemPreview } from "@klash/klash-app/lib/content-preview";
 import type {
   BlindtestRoomSnapshot,
   BlindtestRoomBroadcastPayload,
@@ -334,10 +335,9 @@ export default function BlindtestRoomClient({
     freshUrlRef.current = "";
     audioRef.current?.pause();
 
-    fetch(`/api/anilist/anime/${track.externalId}`)
-      .then((r) => r.json())
-      .then((d: { preview?: string }) => {
-        freshUrlRef.current = d.preview ?? "";
+    fetchContentItemPreview(track.externalId)
+      .then((preview) => {
+        freshUrlRef.current = preview;
         setPhase("playing");
       })
       .catch(() => setPhase("playing"));

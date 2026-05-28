@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
+import { getItemSource } from "@klash/klash-app/lib/item-source";
 import { createClient } from "@/lib/supabase/server";
 import type { StreamClashParticipant } from "@/lib/stream-clash-room";
 
@@ -85,6 +86,7 @@ export async function createStreamClash(input: {
           create: input.tracks.map((t, i) => ({
             position: i,
             externalId: String(t.deezer_track_id),
+            source: getItemSource(),
             title: t.title,
             artist: t.artist,
             previewUrl: t.preview_url,

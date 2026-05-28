@@ -150,12 +150,12 @@ export default function LuckyWheelClient() {
   const winnerRef = useRef<WheelItem | null>(null);
 
   const animeSearch = useSearch<AnimeResult>(
-    "/api/anilist/search?type=anime",
+    "/api/content/search?kind=items&subtype=anime&legacy=anime",
     searchQuery,
     searchTab === "anime",
   );
   const charSearch = useSearch<CharResult>(
-    "/api/anilist/search?type=character",
+    "/api/content/search?kind=items&subtype=character&legacy=character",
     searchQuery,
     searchTab === "character",
   );

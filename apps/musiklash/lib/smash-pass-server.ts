@@ -5,6 +5,7 @@ import {
   type SmashPassItemStatsSnapshot,
   type SmashPassItemType,
 } from "@/lib/smash-pass";
+import { getItemSource } from "@klash/klash-app/lib/item-source";
 
 export async function recordGlobalVote(
   itemType: SmashPassItemType,
@@ -22,6 +23,7 @@ export async function recordGlobalVote(
     create: {
       itemType,
       externalId: id,
+      source: getItemSource(),
       smashCount: smashDelta,
       passCount: passDelta,
     },

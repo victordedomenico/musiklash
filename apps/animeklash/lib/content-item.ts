@@ -18,8 +18,12 @@ export function inferSourceFromExternalId(externalId: string): string {
   return "anilist";
 }
 
-export function selectedItemToTrackFields(item: SelectedContentItem) {
-  const source = item.source ?? inferSourceFromExternalId(item.external_id);
+export function selectedItemToTrackFields(
+  item: SelectedContentItem,
+  defaultSource?: string,
+) {
+  const source =
+    item.source ?? inferSourceFromExternalId(item.external_id) ?? defaultSource ?? "anilist";
   return {
     externalId: item.external_id,
     source,
@@ -67,8 +71,11 @@ export function contentItemToBlindtestTrack(item: ContentItem, position: number)
   };
 }
 
-export function selectedItemToSmashPassFields(item: SelectedContentItem) {
-  const base = selectedItemToTrackFields(item);
+export function selectedItemToSmashPassFields(
+  item: SelectedContentItem,
+  defaultSource?: string,
+) {
+  const base = selectedItemToTrackFields(item, defaultSource);
   return {
     externalId: base.externalId,
     source: base.source,
@@ -84,8 +91,9 @@ export function selectedItemToStreamClashTrack(
   item: SelectedContentItem,
   position: number,
   rank?: number,
+  defaultSource?: string,
 ) {
-  const base = selectedItemToTrackFields(item);
+  const base = selectedItemToTrackFields(item, defaultSource);
   const popularity =
     typeof item.metadata?.popularity === "number" ? item.metadata.popularity : rank ?? 0;
   return {

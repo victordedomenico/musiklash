@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Play, Pause, Check, X, SkipForward } from "lucide-react";
+import { fetchContentItemPreview } from "@klash/klash-app/lib/content-preview";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { isCorrect, isSingleArtistBlindtest } from "@/lib/blindtest-utils";
 
@@ -137,10 +138,9 @@ export default function BlindtestGame({
     freshUrlRef.current = "";
     audioRef.current?.pause();
 
-    fetch(`/api/anilist/anime/${track.externalId}`)
-      .then((r) => r.json())
-      .then((d: { preview?: string }) => {
-        freshUrlRef.current = d.preview ?? "";
+    fetchContentItemPreview(track.externalId)
+      .then((preview) => {
+        freshUrlRef.current = preview;
         setTimeLeft(TIMER_SECONDS);
         setPhase("playing");
       })

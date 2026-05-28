@@ -1,0 +1,109 @@
+
+> animeklash@0.1.0 build /Users/victordedomenico/Projets/bracketfight/apps/animeklash
+> prisma generate && next build
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from ../../packages/db/prisma/schema.prisma.
+
+✔ Generated Prisma Client (v7.8.0) to ./../../node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.15_react-dom@19.2.4_react@19.2.4__r_9b44924ca1c8bf7c944112217bb1417b/node_modules/@prisma/client in 171ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+▲ Next.js 16.2.4 (Turbopack)
+
+  Creating an optimized production build ...
+(node:64486) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✓ Compiled successfully in 4.9s
+  Running TypeScript ...
+  Finished TypeScript in 4.7s ...
+  Collecting page data using 1 worker ...
+⚠ Using edge runtime on a page currently disables static generation for that page
+  Generating static pages using 1 worker (0/35) ...
+  Generating static pages using 1 worker (8/35) 
+  Generating static pages using 1 worker (17/35) 
+  Generating static pages using 1 worker (26/35) 
+✓ Generating static pages using 1 worker (35/35) in 180ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /about
+├ ƒ /api/anilist/anime/[id]
+├ ƒ /api/anilist/anime/[id]/arcs
+├ ƒ /api/anilist/anime/[id]/themes
+├ ƒ /api/anilist/character/[id]
+├ ƒ /api/anilist/search
+├ ƒ /api/battle-feat/ai-move
+├ ƒ /api/battle-feat/artists
+├ ƒ /api/battle-feat/joker
+├ ƒ /api/battle-feat/options
+├ ƒ /api/battle-feat/validate
+├ ƒ /api/content/collection/[id]/items
+├ ƒ /api/content/entity/[id]
+├ ƒ /api/content/entity/[id]/collections
+├ ƒ /api/content/entity/[id]/items
+├ ƒ /api/content/item/[id]/preview
+├ ƒ /api/content/search
+├ ƒ /api/guest/ensure
+├ ƒ /apple-icon
+├ ƒ /battle-feat
+├ ƒ /battle-feat/[challengeId]
+├ ƒ /battle-feat/leaderboard
+├ ƒ /battle-feat/results/[sessionId]
+├ ƒ /battle-feat/room/[roomId]
+├ ƒ /battle-feat/room/new
+├ ƒ /battle-feat/solo
+├ ƒ /blindtest/[id]
+├ ƒ /blindtest/[id]/play
+├ ƒ /blindtest/[id]/results/[sessionId]
+├ ƒ /blindtest/room/[roomId]
+├ ƒ /bracket-game/[id]
+├ ƒ /bracket-game/[id]/results/[gameId]
+├ ƒ /cookies
+├ ƒ /copyright
+├ ƒ /create
+├ ƒ /create-battlefeat
+├ ƒ /create-blindtest
+├ ƒ /create-bracket
+├ ƒ /create-smash-pass
+├ ƒ /create-stream-clash
+├ ƒ /create-tierlist
+├ ƒ /explore
+├ ƒ /faq
+├ ƒ /guide
+├ ƒ /icon
+├ ƒ /legal
+├ ƒ /login
+├ ƒ /lucky-wheel
+├ ○ /manifest.webmanifest
+├ ƒ /my-library
+├ ƒ /opengraph-image
+├ ƒ /privacy
+├ ƒ /privacy-rights
+├ ƒ /resources
+├ ○ /robots.txt
+├ ƒ /settings
+├ ƒ /signup
+├ ○ /sitemap.xml
+├ ƒ /smash-pass/[id]
+├ ƒ /smash-pass/[id]/play
+├ ƒ /smash-pass/[id]/results/[sessionId]
+├ ƒ /smash-pass/room/[roomId]
+├ ƒ /smash-pass/room/new
+├ ƒ /stream-clash/[id]
+├ ƒ /stream-clash/[id]/play
+├ ƒ /stream-clash/room/[roomId]
+├ ƒ /stream-clash/room/new
+├ ƒ /terms
+├ ƒ /tierlist/[id]
+├ ƒ /tierlist/[id]/results/[sessionId]
+└ ƒ /twitter-image
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

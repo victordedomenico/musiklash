@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { isValidSize, effectiveBracketSize } from "@/lib/bracket";
 import { resolvePlayerIdentity } from "@/lib/guest";
+import { getItemSource } from "@klash/klash-app/lib/item-source";
 
 export type SelectedTrack = {
   deezer_track_id: number;
@@ -68,6 +69,7 @@ export async function createBracket(input: {
           create: input.tracks.map((t, i) => ({
             seed: i + 1,
             externalId: String(t.deezer_track_id),
+            source: getItemSource(),
             title: t.title,
             artist: t.artist,
             previewUrl: t.preview_url,

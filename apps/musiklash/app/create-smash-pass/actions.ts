@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
+import { getItemSource } from "@klash/klash-app/lib/item-source";
 import { createClient } from "@/lib/supabase/server";
 import type { SmashPassItemType } from "@/lib/smash-pass";
 import type { SmashPassParticipant } from "@/lib/smash-pass";
@@ -61,6 +62,7 @@ export async function createSmashPass(input: {
           create: input.items.map((item, i) => ({
             position: i,
             externalId: String(item.deezer_id),
+            source: getItemSource(),
             title: item.title,
             subtitle: item.subtitle,
             coverUrl: item.cover_url,

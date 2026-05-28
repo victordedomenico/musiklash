@@ -50,12 +50,12 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
   const canAdd = selected.length < MAX_ITEMS;
 
   const animeSearch = useDebouncedSearch<AnimeResult>(
-    "/api/anilist/search?type=anime",
+    "/api/content/search?kind=items&subtype=anime&legacy=anime",
     query,
     itemType === "anime",
   );
   const charSearch = useDebouncedSearch<CharResult>(
-    "/api/anilist/search?type=character",
+    "/api/content/search?kind=items&subtype=character&legacy=character",
     query,
     itemType === "character",
   );

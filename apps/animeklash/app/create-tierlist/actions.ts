@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
+import { getItemSource } from "@klash/klash-app/lib/item-source";
 import { selectedItemToTrackFields } from "@/lib/content-item";
 
 import type { SelectedContentItem } from "@/lib/content-item";
@@ -44,7 +45,7 @@ export async function createTierlist(input: {
         tracks: {
           create: input.tracks.map((t, i) => ({
             position: i,
-            ...selectedItemToTrackFields(t),
+            ...selectedItemToTrackFields(t, getItemSource()),
           })),
         },
       },

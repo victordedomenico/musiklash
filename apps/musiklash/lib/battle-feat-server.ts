@@ -1,3 +1,7 @@
+import {
+  getRelatedEntitiesForBattleFeat,
+  validateBattleFeatLink,
+} from "@klash/klash-app/lib/battle-feat/graph-helpers";
 import prisma from "@/lib/prisma";
 import type { BattleFeatParticipant, BattleFeatRoomSnapshot, FeatMove } from "@/lib/battle-feat";
 import { parseFeatArtists, slugifyName, popularityTier } from "@/lib/battle-feat";
@@ -45,76 +49,11 @@ export async function validateFeatLink(prevArtistId: string, nextArtistId: strin
   if (!prevArtistId || !nextArtistId || prevArtistId === nextArtistId) {
     return null;
   }
-
-  return prisma.entityLink.findFirst({
-    where: {
-      OR: [
-        { entityAId: prevArtistId, entityBId: nextArtistId },
-        { entityAId: nextArtistId, entityBId: prevArtistId },
-      ],
-    },
-    select: { trackTitle: true },
-  });
+  return validateBattleFeatLink(prisma, prevArtistId, nextArtistId);
 }
 
 export async function getConnectedArtists(currentArtistId: string): Promise<ConnectedArtist[]> {
-  const feats = await prisma.entityLink.findMany({
-    where: {
-      OR: [{ entityAId: currentArtistId }, { entityBId: currentArtistId }],
-    },
-    select: {
-      entityA: {
-        select: {
-          id: true,
-          name: true,
-          pictureUrl: true,
-          fanCount: true,
-          popularityTier: true,
-        },
-      },
-      entityB: {
-        select: {
-          id: true,
-          name: true,
-          pictureUrl: true,
-          fanCount: true,
-          popularityTier: true,
-        },
-      },
-      trackTitle: true,
-    },
-  });
-
-  const byArtist = new Map<string, ConnectedArtist>();
-
-  for (const feat of feats) {
-    const candidate = feat.entityA.id === currentArtistId ? feat.entityB : feat.entityA;
-    if (candidate.id === currentArtistId) continue;
-
-    const existing = byArtist.get(candidate.id);
-    if (!existing) {
-      byArtist.set(candidate.id, {
-        id: candidate.id,
-        name: candidate.name,
-        pictureUrl: candidate.pictureUrl,
-        fanCount: candidate.fanCount,
-        popularityTier: candidate.popularityTier,
-        trackTitle: feat.trackTitle ?? null,
-      });
-      continue;
-    }
-
-    if (!existing.trackTitle && feat.trackTitle) {
-      existing.trackTitle = feat.trackTitle;
-    }
-    if (candidate.fanCount > existing.fanCount) {
-      existing.fanCount = candidate.fanCount;
-      existing.popularityTier = candidate.popularityTier;
-      existing.pictureUrl = candidate.pictureUrl;
-    }
-  }
-
-  return [...byArtist.values()];
+  return getRelatedEntitiesForBattleFeat(prisma, currentArtistId);
 }
 
 export async function pickAiMove(
@@ -144,82 +83,16 @@ export async function pickJokerMove(currentArtistId: string, usedIds: string[]) 
   );
 }
 
-export function canClaimTurnTimeout(updatedAt: Date, turnSeconds: number, toleranceSeconds = 2) {
-  const elapsedMs = Date.now() - updatedAt.getTime();
-  return elapsedMs >= Math.max(0, turnSeconds - toleranceSeconds) * 1000;
-}
+export {
+  normalizeBattleFeatParticipants,
+  findBattleFeatParticipant,
+  nextActiveParticipant,
+  canClaimTurnTimeout,
+} from "@klash/klash-app/lib/battle-feat/shared";
+import { getBattleFeatRoomSnapshot as getRoomSnapshot } from "@klash/klash-app/lib/battle-feat/room-snapshot";
 
-export function normalizeBattleFeatParticipants(value: unknown): BattleFeatParticipant[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter((p): p is Record<string, unknown> => typeof p === "object" && p !== null)
-    .map((p, i) => ({
-      playerId: typeof p.playerId === "string" ? p.playerId : "",
-      username: typeof p.username === "string" ? p.username : "Joueur",
-      score: typeof p.score === "number" ? p.score : 0,
-      jokers: typeof p.jokers === "number" ? p.jokers : 1,
-      eliminated: typeof p.eliminated === "boolean" ? p.eliminated : false,
-      position: typeof p.position === "number" ? p.position : i,
-      lastSeenAt: typeof p.lastSeenAt === "string" ? p.lastSeenAt : null,
-      joinedAt: typeof p.joinedAt === "string" ? p.joinedAt : new Date().toISOString(),
-    }))
-    .filter((p) => p.playerId.length > 0)
-    .sort((a, b) => a.position - b.position);
-}
-
-export function findBattleFeatParticipant(
-  participants: BattleFeatParticipant[],
-  playerId: string,
-): BattleFeatParticipant | null {
-  return participants.find((p) => p.playerId === playerId) ?? null;
-}
-
-/**
- * Return the next active (non-eliminated) participant after the given player
- * in round-robin order. Returns null if no other active players remain.
- */
-export function nextActiveParticipant(
-  participants: BattleFeatParticipant[],
-  currentPlayerId: string,
-): BattleFeatParticipant | null {
-  const active = participants.filter((p) => !p.eliminated);
-  if (active.length === 0) return null;
-  if (active.length === 1) return active[0];
-  const idx = active.findIndex((p) => p.playerId === currentPlayerId);
-  if (idx === -1) return active[0];
-  return active[(idx + 1) % active.length];
-}
-
-export async function getBattleFeatRoomSnapshot(
-  roomId: string,
-): Promise<BattleFeatRoomSnapshot | null> {
-  const room = await prisma.battleFeatRoom.findUnique({
-    where: { id: roomId },
-    include: {
-      host: { select: { username: true } },
-    },
-  });
-
-  if (!room) return null;
-
-  return {
-    id: room.id,
-    hostId: room.hostId,
-    hostUsername: room.host.username,
-    status: room.status,
-    startingArtistId: room.startingArtistId,
-    startingArtistName: room.startingArtistName,
-    startingArtistPic: room.startingArtistPic,
-    currentArtistId: room.currentArtistId,
-    currentArtistName: room.currentArtistName,
-    currentArtistPic: room.currentArtistPic,
-    currentTurnId: room.currentTurnId,
-    usedArtistIds: normalizeUsedArtistIds(room.usedArtistIds),
-    moves: normalizeMoves(room.moves),
-    participants: normalizeBattleFeatParticipants(room.participants),
-    winnerId: room.winnerId,
-    updatedAt: room.updatedAt.toISOString(),
-  };
+export async function getBattleFeatRoomSnapshot(roomId: string) {
+  return getRoomSnapshot(prisma, roomId);
 }
 
 // ─── Deezer-based game logic (no DB required) ─────────────────────────────────

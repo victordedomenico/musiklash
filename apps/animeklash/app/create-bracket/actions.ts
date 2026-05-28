@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { isValidSize, effectiveBracketSize } from "@/lib/bracket";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import type { SelectedItem } from "@/components/AnimePicker";
+import { getItemSource } from "@klash/klash-app/lib/item-source";
 import { selectedItemToTrackFields } from "@/lib/content-item";
 
 export type { SelectedItem };
@@ -60,7 +61,7 @@ export async function createBracket(input: {
         tracks: {
           create: input.items.map((item, i) => ({
             seed: i + 1,
-            ...selectedItemToTrackFields(item),
+            ...selectedItemToTrackFields(item, getItemSource()),
           })),
         },
       },
