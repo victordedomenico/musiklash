@@ -1,0 +1,16 @@
+{
+  "name": "@klash/relation-graph",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@klash/content-adapter": "workspace:*",
+    "@klash/klash-config": "workspace:*"
+  },
+  "peerDependencies": {
+    "@prisma/client": "*"
+  }
+}
