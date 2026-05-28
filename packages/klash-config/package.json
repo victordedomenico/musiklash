@@ -1,0 +1,20 @@
+{
+  "name": "@klash/klash-config",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./next": "./src/next.ts",
+    "./configs/musiklash": "./src/configs/musiklash.ts",
+    "./configs/animeklash": "./src/configs/animeklash.ts",
+    "./configs/demoklash": "./src/configs/demoklash.ts"
+  },
+  "peerDependencies": {
+    "next": "*"
+  },
+  "dependencies": {
+    "@klash/content-adapter": "workspace:*",
+    "@klash/i18n": "workspace:*"
+  }
+}

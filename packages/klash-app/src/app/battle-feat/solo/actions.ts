@@ -1,0 +1,47 @@
+"use server";
+
+import prisma from "@klash/klash-app/lib/prisma";
+import type { FeatMove } from "@klash/klash-app/lib/battle-feat/types";
+import { resolvePlayerIdentity } from "@klash/klash-app/lib/guest";
+
+export async function saveSoloSession(
+  difficulty: number,
+  startingArtistId: string,
+  moves: FeatMove[],
+  score: number,
+  jokersUsed: number,
+  visibility: "private" | "public" = "private",
+  challengeId: string | null = null,
+) {
+  let identity: { playerId: string };
+  try {
+    identity = await resolvePlayerIdentity();
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error
+        ? err.message
+        : "Impossible de créer une session invitée pour le moment.";
+    return { error: msg };
+  }
+
+  try {
+    const session = await prisma.battleFeatSoloSession.create({
+      data: {
+        playerId: identity.playerId,
+        challengeId: challengeId ?? null,
+        difficulty,
+        startingArtistId: String(startingArtistId),
+        moves: moves as unknown as import("@prisma/client").Prisma.JsonArray,
+        score,
+        jokersUsed,
+        status: "finished",
+        visibility,
+      },
+    });
+    return { id: session.id };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Erreur sauvegarde.";
+    console.error("[saveSoloSession]", msg);
+    return { error: msg };
+  }
+}
