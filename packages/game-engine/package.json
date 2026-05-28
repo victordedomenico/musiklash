@@ -1,0 +1,14 @@
+{
+  "name": "@klash/game-engine",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./bracket": "./src/bracket.ts",
+    "./tierlist-tiers": "./src/tierlist-tiers.ts",
+    "./smash-pass": "./src/smash-pass.ts",
+    "./stream-clash": "./src/stream-clash.ts",
+    "./blindtest-utils": "./src/blindtest-utils.ts"
+  }
+}
