@@ -1,23 +1,27 @@
 import type { Metadata } from "next";
 
 export const SITE_NAME = "AnimeKlash";
-export const SITE_TAGLINE = "Fais s'affronter tes sons";
+export const SITE_TAGLINE = "Fais s'affronter tes animés";
 export const SITE_DESCRIPTION =
-  "Crée des tournois musicaux, vote en écoutant chaque extrait et partage tes classements. Brackets, tierlists, blindtests, BattleFeat et Stream Clash — gratuit, sans pub.";
+  "Crée des tournois d'anime, vote et partage tes classements. Brackets, tierlists, blindtests openings, BattleClash, Smash or Pass et Stream Clash — gratuit, sans pub.";
 export const SITE_KEYWORDS = [
-  "tournoi musical",
-  "bracket musique",
-  "tierlist musique",
-  "blindtest musique",
-  "quiz musical",
-  "classement morceaux",
-  "duel musical",
-  "battle feat",
-  "stream clash",
-  "jeu musical en ligne",
+  "tournoi anime",
+  "bracket anime",
+  "tierlist anime",
+  "blindtest anime",
+  "blindtest opening",
+  "quiz anime",
+  "classement animés",
+  "duel anime",
+  "battleclash anime",
+  "co-apparition personnages anime",
+  "smash or pass anime",
+  "stream clash anime",
+  "jeu anime en ligne",
   "AnimeKlash",
-  "music bracket",
-  "music tournament",
+  "anime bracket",
+  "anime tournament",
+  "AniList",
 ];
 
 export function getSiteUrl(): string {
@@ -106,7 +110,7 @@ export const rootMetadata: Metadata = {
   authors: [{ name: SITE_NAME, url: getSiteUrl() }],
   creator: SITE_NAME,
   publisher: SITE_NAME,
-  category: "music",
+  category: "anime",
   openGraph: {
     type: "website",
     locale: "fr_FR",
@@ -166,8 +170,8 @@ export const STATIC_SITEMAP_ROUTES: Array<{
   { path: "/create-smash-pass", changeFrequency: "monthly", priority: 0.8 },
   { path: "/battle-feat", changeFrequency: "weekly", priority: 0.85 },
   { path: "/battle-feat/solo", changeFrequency: "weekly", priority: 0.75 },
-  { path: "/battle-feat/free", changeFrequency: "weekly", priority: 0.75 },
   { path: "/battle-feat/leaderboard", changeFrequency: "daily", priority: 0.7 },
+  { path: "/battle-feat/room/new", changeFrequency: "monthly", priority: 0.5 },
   { path: "/guide", changeFrequency: "monthly", priority: 0.75 },
   { path: "/faq", changeFrequency: "monthly", priority: 0.7 },
   { path: "/about", changeFrequency: "monthly", priority: 0.65 },

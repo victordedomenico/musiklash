@@ -22,7 +22,7 @@ export async function generateMetadata({
 
   return buildPageMetadata({
     title: sc.title,
-    description: `Jouez au Stream Clash « ${sc.title} » : devinez quel morceau cumule le plus d'écoutes.`,
+    description: `Jouez au Stream Clash « ${sc.title} » : devinez quel titre d'animé ou perso est le plus populaire sur AniList.`,
     path: `/stream-clash/${id}`,
     noIndex: sc.visibility !== "public",
   });
@@ -51,7 +51,7 @@ export default async function StreamClashPage({
         <ArrowLeft size={14} /> Créer un autre
       </Link>
 
-      <SectionHeader title={sc.title} subtitle={`${sc.tracks.length} morceaux · Stream Clash`} />
+      <SectionHeader title={sc.title} subtitle={`${sc.tracks.length} entrées · Stream Clash`} />
 
       {/* Actions */}
       <div className="mt-6 flex flex-wrap gap-3">

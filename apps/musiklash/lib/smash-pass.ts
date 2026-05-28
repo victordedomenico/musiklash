@@ -146,7 +146,7 @@ export function computeRoomVoteTotals(
 export function mapPrismaItem(
   item: {
     position: number;
-    externalId: bigint;
+    externalId: string;
     title: string;
     subtitle: string | null;
     coverUrl: string | null;
@@ -160,7 +160,7 @@ export function mapPrismaItem(
     : [];
   return {
     position: item.position,
-    externalId: Number(item.externalId),
+    externalId: Number.parseInt(item.externalId, 10) || 0,
     title: item.title,
     subtitle: item.subtitle,
     coverUrl: item.coverUrl,

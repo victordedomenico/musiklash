@@ -7,7 +7,7 @@ import { buildPageMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "Ressources",
   description:
-    "Guides, documentation et liens utiles pour créer et partager vos jeux musicaux sur AnimeKlash.",
+    "Guides AnimeKlash, documentation AniList et AnimeThemes.moe pour créer brackets, blindtests et BattleClash.",
   path: "/resources",
 });
 
@@ -32,14 +32,14 @@ export default function ResourcesPage() {
               {
                 icon: <Swords size={16} />,
                 title: "Créer votre premier bracket",
-                desc: "Tutoriel pas à pas : thème, sélection des morceaux, visibilité, partage.",
+                desc: "Tutoriel pas à pas : thème, sélection des animés, visibilité, partage.",
                 href: "/create-bracket",
                 external: false,
               },
               {
                 icon: <Zap size={16} />,
-                title: "Découvrir BattleFeat",
-                desc: "Le jeu de chaîne de featurings — règles, modes solo et multijoueur.",
+                title: "Découvrir BattleClash",
+                desc: "Le jeu de chaîne de co-apparitions — règles, modes solo et multijoueur.",
                 href: "/battle-feat",
                 external: false,
               },
@@ -75,9 +75,14 @@ export default function ResourcesPage() {
           <div className="space-y-2">
             {[
               {
-                title: "Deezer API",
-                desc: "Documentation officielle de l'API Deezer — catalogue musical utilisé par AnimeKlash.",
-                href: "https://developers.deezer.com/api",
+                title: "AniList API",
+                desc: "GraphQL AniList — métadonnées animés, personnages et popularité utilisées par AnimeKlash.",
+                href: "https://anilist.gitbook.io/anilist-apiv2-docs",
+              },
+              {
+                title: "AnimeThemes.moe",
+                desc: "Catalogue des openings et endings — extraits audio pour les blindtests.",
+                href: "https://animethemes.moe/",
               },
             ].map((r) => (
               <a

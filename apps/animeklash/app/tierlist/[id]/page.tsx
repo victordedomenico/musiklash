@@ -20,8 +20,8 @@ export async function generateMetadata({
   if (!tl) return { title: "Tierlist introuvable" };
 
   const description = tl.theme
-    ? `Classez les morceaux de « ${tl.title} » (${tl.theme}) sur AnimeKlash.`
-    : `Classez les morceaux de « ${tl.title} » sur AnimeKlash.`;
+    ? `Classez les entrées de « ${tl.title} » (${tl.theme}) sur AnimeKlash.`
+    : `Classez les entrées de « ${tl.title} » sur AnimeKlash.`;
 
   return buildPageMetadata({
     title: tl.title,

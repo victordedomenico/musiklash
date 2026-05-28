@@ -6,14 +6,10 @@ import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { createClient } from "@/lib/supabase/server";
 import type { BlindtestParticipant } from "@/lib/blindtest-room";
+import { selectedItemToTrackFields } from "@/lib/content-item";
+import type { SelectedContentItem } from "@/lib/content-item";
 
-export type BlindtestTrackInput = {
-  external_id: string;
-  title: string;
-  artist: string;
-  preview_url: string;
-  cover_url: string | null;
-};
+export type BlindtestTrackInput = SelectedContentItem;
 
 export async function createBlindtest(input: {
   title: string;
@@ -53,11 +49,7 @@ export async function createBlindtest(input: {
         tracks: {
           create: input.tracks.map((t, i) => ({
             position: i,
-            externalId: t.external_id,
-            title: t.title,
-            artist: t.artist,
-            previewUrl: t.preview_url,
-            coverUrl: t.cover_url,
+            ...selectedItemToTrackFields(t),
           })),
         },
       },

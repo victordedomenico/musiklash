@@ -239,8 +239,40 @@ model TierlistSession {
   @@map("tierlist_sessions")
 }
 
-// ─── AnimeChar (Battle-Feat equiv for animeklash — Phase 4) ──────────────────
-// AnimeCharacter + CharacterAppearance models will be added in Phase 4.
+// ─── BattleClash character graph (AniList co-appearances cache) ───────────────
+
+model AnimeCharacter {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  externalId     String   @unique @map("external_id")
+  name           String
+  nameSlug       String   @map("name_slug")
+  popularityTier Int      @default(3) @map("popularity_tier") @db.SmallInt
+  favourites     Int      @default(0)
+  pictureUrl     String?  @map("picture_url")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  coappearancesAsA CharacterCoappearance[] @relation("CoappA")
+  coappearancesAsB CharacterCoappearance[] @relation("CoappB")
+
+  @@index([nameSlug])
+  @@map("anime_characters")
+}
+
+model CharacterCoappearance {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  characterAId    String  @map("character_a_id") @db.Uuid
+  characterBId    String  @map("character_b_id") @db.Uuid
+  animeExternalId String? @map("anime_external_id")
+  animeTitle      String? @map("anime_title")
+
+  characterA AnimeCharacter @relation("CoappA", fields: [characterAId], references: [id], onDelete: Cascade)
+  characterB AnimeCharacter @relation("CoappB", fields: [characterBId], references: [id], onDelete: Cascade)
+
+  @@unique([characterAId, characterBId, animeExternalId])
+  @@index([characterAId])
+  @@index([characterBId])
+  @@map("character_coappearances")
+}
 
 // ─── BattleFeat ───────────────────────────────────────────────────────────────
 

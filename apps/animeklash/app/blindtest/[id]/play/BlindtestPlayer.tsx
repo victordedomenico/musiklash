@@ -189,10 +189,10 @@ export default function BlindtestPlayer({
 
         {/* Track-by-track recap */}
         <div className="space-y-3">
-          <h2 className="font-bold text-lg">Récap morceau par morceau</h2>
+          <h2 className="font-bold text-lg">Récap extrait par extrait</h2>
           {isSingleArtistBlindtest(tracks) ? (
             <p className="text-sm text-[color:var(--muted)]">
-              Un seul artiste : les points « artiste » ont été attribués automatiquement à chaque morceau.
+              Un seul animé : les points « titre d&apos;animé » ont été attribués automatiquement à chaque extrait.
             </p>
           ) : null}
           {finalAnswers.map((a) => (
@@ -215,7 +215,7 @@ export default function BlindtestPlayer({
                 <div className="mt-1 flex gap-3 text-xs">
                   <span className={`flex items-center gap-1 ${a.correctTitle ? "text-green-400" : "text-red-400"}`}>
                     {a.correctTitle ? <Check size={11} /> : <X size={11} />}
-                    Titre
+                    OP/ED
                     {!a.correctTitle && a.guessTitle && (
                       <span className="text-[color:var(--muted)] line-through ml-1">
                         {a.guessTitle}
@@ -224,7 +224,7 @@ export default function BlindtestPlayer({
                   </span>
                   <span className={`flex items-center gap-1 ${a.correctArtist ? "text-green-400" : "text-red-400"}`}>
                     {a.correctArtist ? <Check size={11} /> : <X size={11} />}
-                    Artiste
+                    Titre d&apos;animé
                     {!a.correctArtist && a.guessArtist && (
                       <span className="text-[color:var(--muted)] line-through ml-1">
                         {a.guessArtist}

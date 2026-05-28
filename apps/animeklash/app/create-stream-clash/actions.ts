@@ -6,15 +6,10 @@ import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { createClient } from "@/lib/supabase/server";
 import type { StreamClashParticipant } from "@/lib/stream-clash-room";
+import { selectedItemToStreamClashTrack } from "@/lib/content-item";
+import type { SelectedContentItem } from "@/lib/content-item";
 
-export type StreamClashTrackInput = {
-  external_id: string;
-  title: string;
-  artist: string;
-  preview_url: string;
-  cover_url: string | null;
-  rank: number;
-};
+export type StreamClashTrackInput = SelectedContentItem & { rank?: number };
 
 export async function createStreamClash(input: {
   title: string;
@@ -51,8 +46,8 @@ export async function createStreamClash(input: {
   }
 
   if (!input.title.trim()) return { error: "Le titre est requis." };
-  if (input.tracks.length < 4) return { error: "Il faut au moins 4 morceaux." };
-  if (input.tracks.length > 50) return { error: "50 morceaux maximum." };
+  if (input.tracks.length < 4) return { error: "Il faut au moins 4 entrées." };
+  if (input.tracks.length > 50) return { error: "50 entrées maximum." };
 
   if (input.mode === "multi" && input.visibility === "none") {
     return {
@@ -82,15 +77,9 @@ export async function createStreamClash(input: {
         title: input.title.trim(),
         visibility: storedVisibility,
         tracks: {
-          create: input.tracks.map((t, i) => ({
-            position: i,
-            externalId: t.external_id,
-            title: t.title,
-            artist: t.artist,
-            previewUrl: t.preview_url,
-            coverUrl: t.cover_url,
-            rank: t.rank,
-          })),
+          create: input.tracks.map((t, i) =>
+            selectedItemToStreamClashTrack(t, i, t.rank),
+          ),
         },
       },
     });

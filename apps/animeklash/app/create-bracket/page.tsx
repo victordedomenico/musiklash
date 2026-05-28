@@ -11,7 +11,7 @@ export default async function CreateBracketPage() {
     <div className="page-shell py-12">
       <SectionHeader
         title="Créer un bracket"
-        subtitle="Transforme ta sélection musicale en tournoi éliminatoire morceau par morceau."
+        subtitle="Compose un tournoi à élimination directe : titres d'animé, persos, arcs ou openings/endings."
       />
       <div className="mt-8">
         <CreateBracketForm />

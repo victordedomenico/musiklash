@@ -100,7 +100,8 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 space-y-1">
               <li>Supabase (authentification et base de donnees).</li>
               <li>Vercel (hebergement et mesure d&apos;audience, si consentement).</li>
-              <li>Deezer (fourniture de contenus musicaux et previsualisations).</li>
+              <li>AniList (métadonnées animés et personnages).</li>
+              <li>AnimeThemes.moe (extraits d&apos;openings et endings pour les blindtests).</li>
             </ul>
             <p>
               Nous ne vendons pas vos donnees personnelles et nous ne les partageons pas a des fins
@@ -182,17 +183,28 @@ export default function PrivacyPage() {
               Services tiers
             </h2>
             <p>
-              Les extraits musicaux proviennent de <strong>l&apos;API Deezer</strong>. Lors de la lecture
-              d&apos;un extrait, votre navigateur peut etablir une connexion directe avec les serveurs Deezer.
-              Consultez leur{" "}
+              Les fiches animé et personnages proviennent d&apos;<strong>AniList</strong>. Les extraits
+              d&apos;openings/endings sont fournis par <strong>AnimeThemes.moe</strong>. Lors de la lecture
+              d&apos;un extrait, votre navigateur peut établir une connexion directe avec leurs serveurs.
+              Consultez les conditions et politiques de confidentialité d&apos;
               <a
-                href="https://www.deezer.com/legal/personal-datas"
+                href="https://anilist.co/terms"
                 target="_blank"
                 rel="noreferrer"
                 style={{ color: "var(--accent)" }}
                 className="hover:underline"
               >
-                politique de confidentialite
+                AniList
+              </a>
+              {" "}et d&apos;
+              <a
+                href="https://animethemes.moe/"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "var(--accent)" }}
+                className="hover:underline"
+              >
+                AnimeThemes.moe
               </a>
               .
             </p>

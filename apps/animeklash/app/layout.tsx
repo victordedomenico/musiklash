@@ -48,6 +48,18 @@ export default async function RootLayout({
             sameAs: [],
           }}
         />
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            name: SITE_NAME,
+            url: absoluteUrl(),
+            applicationCategory: "GameApplication",
+            operatingSystem: "Web",
+            offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
+            description: SITE_DESCRIPTION,
+          }}
+        />
         <div className="site-layout">
           <SiteSidebar theme={theme} locale={locale} />
           <main className="site-main">

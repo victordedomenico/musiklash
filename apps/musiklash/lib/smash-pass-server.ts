@@ -11,7 +11,7 @@ export async function recordGlobalVote(
   externalId: number,
   choice: SmashPassChoice,
 ): Promise<SmashPassItemStatsSnapshot> {
-  const id = BigInt(externalId);
+  const id = String(externalId);
   const smashDelta = choice === "smash" ? BigInt(1) : BigInt(0);
   const passDelta = choice === "pass" ? BigInt(1) : BigInt(0);
 
@@ -45,7 +45,7 @@ export async function getGlobalStats(
 ): Promise<SmashPassItemStatsSnapshot> {
   const row = await prisma.smashPassItemStats.findUnique({
     where: {
-      itemType_externalId: { itemType, externalId: BigInt(externalId) },
+      itemType_externalId: { itemType, externalId: String(externalId) },
     },
   });
 
@@ -70,7 +70,7 @@ export async function getGlobalStatsBatch(
   const rows = await prisma.smashPassItemStats.findMany({
     where: {
       itemType,
-      externalId: { in: deezerIds.map((id) => BigInt(id)) },
+      externalId: { in: deezerIds.map((id) => String(id)) },
     },
   });
 
@@ -79,7 +79,8 @@ export async function getGlobalStatsBatch(
     map.set(id, toStatsSnapshot(itemType, id, 0, 0));
   }
   for (const row of rows) {
-    const id = Number(row.externalId);
+    const id = Number.parseInt(row.externalId, 10);
+    if (Number.isNaN(id)) continue;
     map.set(
       id,
       toStatsSnapshot(itemType, id, Number(row.smashCount), Number(row.passCount)),

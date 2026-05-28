@@ -29,7 +29,7 @@ export default function BracketCard({
             className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition"
           />
         ) : null}
-        <span className="media-pill absolute right-2 top-2">{b.size} pistes</span>
+        <span className="media-pill absolute right-2 top-2">{b.size} entrées</span>
         <span className="media-pill absolute left-2 top-2">
           {b.visibility === "public" ? (
             <>

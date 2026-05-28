@@ -19,15 +19,8 @@ export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }
       setError("Il faut au moins 3 openings/endings.");
       return;
     }
-    const tracks = items.map((item) => ({
-      external_id: item.external_id,
-      title: item.title,
-      artist: item.subtitle ?? "",
-      preview_url: item.preview_url ?? "",
-      cover_url: item.cover_url,
-    }));
     startTransition(async () => {
-      const res = await createBlindtest({ title, visibility, tracks, mode });
+      const res = await createBlindtest({ title, visibility, tracks: items, mode });
       if (res?.error) setError(res.error);
     });
   };

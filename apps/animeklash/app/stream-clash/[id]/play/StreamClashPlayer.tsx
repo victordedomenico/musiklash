@@ -143,7 +143,7 @@ export default function StreamClashPlayer({
       <div className="card p-8 text-center">
         <p className="font-semibold">Impossible de générer des manches pour cette sélection.</p>
         <p className="mt-2 text-sm text-[color:var(--muted)]">
-          Réessaie avec une autre sélection de morceaux.
+          Réessaie avec une autre sélection d&apos;entrées.
         </p>
         <Link href={`/stream-clash/${streamClashId}`} className="btn-ghost mt-4 inline-flex">
           <ArrowRight size={14} /> Retour

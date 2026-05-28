@@ -1,177 +1,131 @@
 import prisma from "@/lib/prisma";
 import type { BattleFeatParticipant, BattleFeatRoomSnapshot, CharacterResult, FeatMove } from "@/lib/battle-feat";
 import { popularityTier } from "@/lib/battle-feat";
+import {
+  fetchCharacterCoAppearances,
+  getCharacterById as getAniListCharacterById,
+  validateCharacterCoAppearance,
+  type ConnectedCharacter,
+} from "@klash/content-adapter";
+import {
+  cacheCoAppearances,
+  findCachedCoappearance,
+  getCachedCoAppearances,
+  resolveCoAppearances,
+} from "@/lib/battle-feat-graph";
 
-// ─── AniList helpers ─────────────────────────────────────────────────────────
+export type { ConnectedCharacter };
 
-const ANILIST_URL = "https://graphql.anilist.co";
+function toConnectedWithTier(c: ConnectedCharacter): ConnectedCharacter & { popularityTier: number } {
+  return {
+    ...c,
+    popularityTier: popularityTier(c.favourites),
+  };
+}
 
-async function anilistQuery<T>(query: string, variables: Record<string, unknown>): Promise<T> {
-  const res = await fetch(ANILIST_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ query, variables }),
-    cache: "no-store",
+async function getSourceCharacterMeta(characterId: string) {
+  const cached = await prisma.animeCharacter.findUnique({
+    where: { externalId: characterId },
+    select: { name: true, favourites: true, pictureUrl: true },
   });
-  if (!res.ok) throw new Error(`AniList query failed: ${res.status}`);
-  const json = await res.json() as { data: T; errors?: unknown[] };
-  if (json.errors?.length) throw new Error(`AniList error: ${JSON.stringify(json.errors[0])}`);
-  return json.data;
+  if (cached) {
+    return {
+      name: cached.name,
+      favourites: cached.favourites,
+      pictureUrl: cached.pictureUrl,
+    };
+  }
+  const live = await getAniListCharacterById(parseInt(characterId, 10));
+  if (!live) return null;
+  return {
+    name: live.name.full,
+    favourites: live.favourites,
+    pictureUrl: live.image.medium ?? live.image.large ?? null,
+  };
 }
 
-// Get the top anime a character appears in, plus that anime's top characters
-const GET_CHARACTER_CONNECTIONS_QUERY = `
-query GetCharConnections($id: Int!) {
-  Character(id: $id) {
-    id
-    name { full }
-    media(type: ANIME, perPage: 5, sort: POPULARITY_DESC) {
-      nodes {
-        id
-        title { romaji english }
-        popularity
-      }
-    }
+export async function getCharacterCoAppearances(characterId: string): Promise<(ConnectedCharacter & { popularityTier: number })[]> {
+  const meta = await getSourceCharacterMeta(characterId);
+  if (!meta) {
+    const live = await fetchCharacterCoAppearances(characterId);
+    return live.map(toConnectedWithTier);
   }
-}`;
 
-// Get top characters for an anime
-const GET_MEDIA_CHARACTERS_QUERY = `
-query GetMediaChars($id: Int!) {
-  Media(id: $id, type: ANIME) {
-    id
-    title { romaji english }
-    characters(perPage: 25, sort: [ROLE, FAVOURITES_DESC]) {
-      nodes {
-        id
-        name { full }
-        image { medium }
-        favourites
-      }
-    }
-  }
-}`;
-
-// Validate co-appearance in one batched query
-const VALIDATE_CO_APPEARANCE_QUERY = `
-query ValidateCoAppearance($charAId: Int!, $charBId: Int!) {
-  charA: Character(id: $charAId) {
-    media(type: ANIME, perPage: 20, sort: POPULARITY_DESC) {
-      nodes { id title { romaji english } }
-    }
-  }
-  charB: Character(id: $charBId) {
-    media(type: ANIME, perPage: 20, sort: POPULARITY_DESC) {
-      nodes { id }
-    }
-  }
-}`;
-
-// Get character by ID (for results page)
-const GET_CHARACTER_BY_ID_QUERY = `
-query GetChar($id: Int!) {
-  Character(id: $id) {
-    id
-    name { full }
-    image { medium large }
-    favourites
-  }
-}`;
-
-type AniListCharNode = { id: number; name: { full: string }; image: { medium: string | null }; favourites: number };
-
-export type ConnectedCharacter = {
-  id: string;
-  name: string;
-  pictureUrl: string | null;
-  favourites: number;
-  popularityTier: number;
-  animeTitle: string | null;
-};
-
-function animeTitle(n: { title: { romaji: string; english: string | null } }): string {
-  return n.title.english ?? n.title.romaji;
-}
-
-export async function getCharacterCoAppearances(characterId: string): Promise<ConnectedCharacter[]> {
-  const charIdInt = parseInt(characterId, 10);
-  if (!charIdInt) return [];
-
-  const data = await anilistQuery<{
-    Character: { media: { nodes: Array<{ id: number; title: { romaji: string; english: string | null }; popularity: number }> } };
-  }>(GET_CHARACTER_CONNECTIONS_QUERY, { id: charIdInt });
-
-  const topAnime = data.Character.media.nodes.slice(0, 3);
-  if (topAnime.length === 0) return [];
-
-  const results = await Promise.all(
-    topAnime.map(async (anime) => {
-      const mediaData = await anilistQuery<{
-        Media: { id: number; title: { romaji: string; english: string | null }; characters: { nodes: AniListCharNode[] } };
-      }>(GET_MEDIA_CHARACTERS_QUERY, { id: anime.id });
-      return { anime, chars: mediaData.Media.characters.nodes };
-    }),
+  const resolved = await resolveCoAppearances(
+    characterId,
+    meta.name,
+    meta.favourites,
+    meta.pictureUrl,
+    () => fetchCharacterCoAppearances(characterId),
   );
-
-  const byId = new Map<string, ConnectedCharacter>();
-  for (const { anime, chars } of results) {
-    for (const c of chars) {
-      const id = String(c.id);
-      if (id === characterId) continue;
-      if (!byId.has(id)) {
-        byId.set(id, {
-          id,
-          name: c.name.full,
-          pictureUrl: c.image.medium ?? null,
-          favourites: c.favourites,
-          popularityTier: popularityTier(c.favourites),
-          animeTitle: animeTitle(anime),
-        });
-      }
-    }
-  }
-
-  return [...byId.values()];
+  return resolved.map(toConnectedWithTier);
 }
 
 export async function validateCoAppearance(
   charAId: string,
   charBId: string,
 ): Promise<{ animeTitle: string } | null> {
-  const aId = parseInt(charAId, 10);
-  const bId = parseInt(charBId, 10);
-  if (!aId || !bId || aId === bId) return null;
+  const cached = await findCachedCoappearance(charAId, charBId);
+  if (cached) return cached;
 
-  const data = await anilistQuery<{
-    charA: { media: { nodes: Array<{ id: number; title: { romaji: string; english: string | null } }> } };
-    charB: { media: { nodes: Array<{ id: number }> } };
-  }>(VALIDATE_CO_APPEARANCE_QUERY, { charAId: aId, charBId: bId });
+  const result = await validateCharacterCoAppearance(charAId, charBId);
+  if (!result) return null;
 
-  const bIds = new Set(data.charB.media.nodes.map((n) => n.id));
-  const shared = data.charA.media.nodes.find((n) => bIds.has(n.id));
-  if (!shared) return null;
-  return { animeTitle: animeTitle(shared) };
+  const [aMeta, bMeta] = await Promise.all([
+    getSourceCharacterMeta(charAId),
+    getSourceCharacterMeta(charBId),
+  ]);
+  if (aMeta && bMeta) {
+    await cacheCoAppearances(charAId, aMeta.name, aMeta.favourites, aMeta.pictureUrl, [
+      {
+        id: charBId,
+        name: bMeta.name,
+        pictureUrl: bMeta.pictureUrl,
+        favourites: bMeta.favourites,
+        animeTitle: result.animeTitle,
+      },
+    ]);
+    await cacheCoAppearances(charBId, bMeta.name, bMeta.favourites, bMeta.pictureUrl, [
+      {
+        id: charAId,
+        name: aMeta.name,
+        pictureUrl: aMeta.pictureUrl,
+        favourites: aMeta.favourites,
+        animeTitle: result.animeTitle,
+      },
+    ]);
+  }
+
+  return result;
 }
 
 export async function getCharacterById(characterId: string): Promise<CharacterResult | null> {
+  const cached = await prisma.animeCharacter.findUnique({
+    where: { externalId: characterId },
+  });
+  if (cached) {
+    return {
+      id: cached.externalId,
+      name: cached.name,
+      nameSlug: cached.nameSlug,
+      favourites: cached.favourites,
+      popularityTier: cached.popularityTier,
+      pictureUrl: cached.pictureUrl,
+    };
+  }
+
   const id = parseInt(characterId, 10);
   if (!id) return null;
-  try {
-    const data = await anilistQuery<{
-      Character: AniListCharNode;
-    }>(GET_CHARACTER_BY_ID_QUERY, { id });
-    const c = data.Character;
-    return {
-      id: String(c.id),
-      name: c.name.full,
-      nameSlug: c.name.full.toLowerCase().replace(/[^a-z0-9]/g, ""),
-      favourites: c.favourites,
-      popularityTier: popularityTier(c.favourites),
-      pictureUrl: c.image.medium ?? null,
-    };
-  } catch {
-    return null;
-  }
+  const c = await getAniListCharacterById(id);
+  if (!c) return null;
+  return {
+    id: String(c.id),
+    name: c.name.full,
+    nameSlug: c.name.full.toLowerCase().replace(/[^a-z0-9]/g, ""),
+    favourites: c.favourites,
+    popularityTier: popularityTier(c.favourites),
+    pictureUrl: c.image.medium ?? c.image.large ?? null,
+  };
 }
 
 // ─── AI / Joker pick ──────────────────────────────────────────────────────────
@@ -180,7 +134,7 @@ export async function pickAiMove(
   currentCharId: string,
   difficulty: number,
   usedIds: string[],
-): Promise<ConnectedCharacter | null> {
+): Promise<(ConnectedCharacter & { popularityTier: number }) | null> {
   const candidates = await getCharacterCoAppearances(currentCharId);
   const available = candidates.filter(
     (c) =>
@@ -194,7 +148,7 @@ export async function pickAiMove(
 export async function pickJokerMove(
   currentCharId: string,
   usedIds: string[],
-): Promise<ConnectedCharacter | null> {
+): Promise<(ConnectedCharacter & { popularityTier: number }) | null> {
   const candidates = await getCharacterCoAppearances(currentCharId);
   const available = candidates.filter((c) => !usedIds.includes(c.id));
   if (available.length === 0) return null;
@@ -205,13 +159,23 @@ export async function getSoloEasyOptions(
   currentCharId: string,
   usedIds: string[],
   count = 4,
-): Promise<ConnectedCharacter[]> {
+): Promise<(ConnectedCharacter & { popularityTier: number })[]> {
   const candidates = await getCharacterCoAppearances(currentCharId);
   const available = candidates.filter((c) => !usedIds.includes(c.id));
   const popular = available.filter((c) => c.popularityTier <= 1);
   const source = popular.length >= 2 ? popular : available;
   const shuffled = [...source].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
+}
+
+/** Précharge le graphe pour un personnage (seed / warmup). */
+export async function warmCharacterGraph(characterId: string) {
+  const meta = await getSourceCharacterMeta(characterId);
+  if (!meta) return 0;
+  const live = await fetchCharacterCoAppearances(characterId);
+  if (live.length === 0) return 0;
+  await cacheCoAppearances(characterId, meta.name, meta.favourites, meta.pictureUrl, live);
+  return live.length;
 }
 
 // ─── Normalizers shared with room actions ────────────────────────────────────

@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Droits d'auteur — AnimeKlash" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "Droits d'auteur",
+  description:
+    "Propriété intellectuelle sur AnimeKlash : contenus AniList, extraits AnimeThemes.moe et contenus créés par la communauté.",
+  path: "/copyright",
+});
 
 export default function CopyrightPage() {
   return (
@@ -11,12 +17,13 @@ export default function CopyrightPage() {
 
         <div className="mt-10 space-y-8" style={{ color: "var(--muted-strong)", lineHeight: 1.8 }}>
           <section className="space-y-3">
-            <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Contenu musical</h2>
+            <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Contenus tiers</h2>
             <p>
-              AnimeKlash n&apos;héberge aucun fichier audio. Les extraits musicaux (30 secondes)
-              sont fournis directement par l&apos;<strong>API Deezer</strong> via des URL de streaming
-              temporaires. Les œuvres musicales restent la propriété exclusive de leurs ayants droit
-              respectifs (artistes, labels, éditeurs).
+              AnimeKlash n&apos;héberge pas les œuvres animées ni les fichiers audio. Les visuels et
+              métadonnées (titres, personnages, popularité) proviennent d&apos;<strong>AniList</strong>.
+              Les extraits d&apos;openings/endings sont fournis par <strong>AnimeThemes.moe</strong>.
+              Tous les droits restent la propriété de leurs ayants droit respectifs (studios, auteurs,
+              compositeurs, éditeurs).
             </p>
           </section>
 

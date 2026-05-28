@@ -26,15 +26,8 @@ export default function CreateTierlistForm() {
       setError("Il faut au moins 2 éléments.");
       return;
     }
-    const tracks = items.map((item) => ({
-      external_id: item.external_id,
-      title: item.title,
-      artist: item.subtitle ?? "",
-      preview_url: item.preview_url ?? "",
-      cover_url: item.cover_url,
-    }));
     startTransition(async () => {
-      const res = await createTierlist({ title, theme, visibility, tracks });
+      const res = await createTierlist({ title, theme, visibility, tracks: items });
       if (res?.error) setError(res.error);
     });
   };
@@ -81,7 +74,7 @@ export default function CreateTierlistForm() {
         <p className="mt-2 text-xs text-[color:var(--muted)]">{VIS_HINTS[visibility]}</p>
       </div>
 
-      <AnimePicker size={50} selected={items} onChange={setItems} freeMode tabs={["anime", "character"]} />
+      <AnimePicker size={50} selected={items} onChange={setItems} freeMode tabs={["anime", "character", "arc"]} />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">

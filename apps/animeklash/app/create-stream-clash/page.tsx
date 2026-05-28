@@ -17,8 +17,8 @@ export default async function CreateStreamClashPage({
         title="Créer un Stream Clash"
         subtitle={
           resolvedMode === "multi"
-            ? "Sélectionne les morceaux — les joueurs devront deviner lequel est le plus populaire en temps réel."
-            : "Sélectionne les morceaux — devine lequel est le plus populaire sur Deezer."
+            ? "Sélectionne des titres d'animé ou des persos — le plus populaire sur AniList gagne, en temps réel."
+            : "Sélectionne des titres d'animé ou des persos — devine lequel est le plus populaire sur AniList."
         }
         right={
           <span

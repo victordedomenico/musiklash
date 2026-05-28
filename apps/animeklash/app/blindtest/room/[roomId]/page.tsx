@@ -65,7 +65,7 @@ export default async function BlindtestRoomPage({
       <div className="mb-6">
         <SectionHeader title={room.blindtest.title} />
         <p className="mt-1 text-sm text-[color:var(--muted)]">
-          {room.blindtest.tracks.length} morceau{room.blindtest.tracks.length > 1 ? "x" : ""} ·
+          {room.blindtest.tracks.length} extrait{room.blindtest.tracks.length > 1 ? "s" : ""} ·
           Blindtest multijoueur
         </p>
       </div>

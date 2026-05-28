@@ -46,11 +46,11 @@ export async function validateFeatLink(prevArtistId: string, nextArtistId: strin
     return null;
   }
 
-  return prisma.rapFeat.findFirst({
+  return prisma.entityLink.findFirst({
     where: {
       OR: [
-        { artistAId: prevArtistId, artistBId: nextArtistId },
-        { artistAId: nextArtistId, artistBId: prevArtistId },
+        { entityAId: prevArtistId, entityBId: nextArtistId },
+        { entityAId: nextArtistId, entityBId: prevArtistId },
       ],
     },
     select: { trackTitle: true },
@@ -58,12 +58,12 @@ export async function validateFeatLink(prevArtistId: string, nextArtistId: strin
 }
 
 export async function getConnectedArtists(currentArtistId: string): Promise<ConnectedArtist[]> {
-  const feats = await prisma.rapFeat.findMany({
+  const feats = await prisma.entityLink.findMany({
     where: {
-      OR: [{ artistAId: currentArtistId }, { artistBId: currentArtistId }],
+      OR: [{ entityAId: currentArtistId }, { entityBId: currentArtistId }],
     },
     select: {
-      artistA: {
+      entityA: {
         select: {
           id: true,
           name: true,
@@ -72,7 +72,7 @@ export async function getConnectedArtists(currentArtistId: string): Promise<Conn
           popularityTier: true,
         },
       },
-      artistB: {
+      entityB: {
         select: {
           id: true,
           name: true,
@@ -88,7 +88,7 @@ export async function getConnectedArtists(currentArtistId: string): Promise<Conn
   const byArtist = new Map<string, ConnectedArtist>();
 
   for (const feat of feats) {
-    const candidate = feat.artistA.id === currentArtistId ? feat.artistB : feat.artistA;
+    const candidate = feat.entityA.id === currentArtistId ? feat.entityB : feat.entityA;
     if (candidate.id === currentArtistId) continue;
 
     const existing = byArtist.get(candidate.id);
@@ -268,14 +268,15 @@ async function getSoloAiPoolIdsForDifficulty(difficulty: number): Promise<Set<st
     return soloAiPoolCache.idsByDifficulty[difficulty] ?? null;
   }
 
-  const artists = await prisma.rapArtist.findMany({
-    select: { deezerArtistId: true, fanCount: true },
+  const artists = await prisma.entity.findMany({
+    where: { kind: "artist" },
+    select: { externalId: true, fanCount: true },
     orderBy: [{ fanCount: "desc" }, { name: "asc" }],
     take: SOLO_AI_POOL_MAX,
   });
   if (artists.length === 0) return null;
 
-  const orderedIds = artists.map((artist) => String(artist.deezerArtistId));
+  const orderedIds = artists.map((artist) => artist.externalId);
   soloAiPoolCache = {
     updatedAt: now,
     idsByDifficulty: {

@@ -31,16 +31,15 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
       setError("Il faut au moins 4 éléments.");
       return;
     }
-    const tracksWithRank: StreamClashTrackInput[] = items.map((item) => ({
-      external_id: item.external_id,
-      title: item.title,
-      artist: item.subtitle ?? "",
-      preview_url: item.preview_url ?? "",
-      cover_url: item.cover_url,
-      rank: 0,
+    const tracks: StreamClashTrackInput[] = items.map((item) => ({
+      ...item,
+      rank:
+        typeof item.metadata?.popularity === "number"
+          ? item.metadata.popularity
+          : 0,
     }));
     startTransition(async () => {
-      const res = await createStreamClash({ title, visibility, tracks: tracksWithRank, mode, difficulty, totalRounds });
+      const res = await createStreamClash({ title, visibility, tracks, mode, difficulty, totalRounds });
       if (res?.error) setError(res.error);
     });
   };
@@ -124,7 +123,7 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
         <p className="mt-2 text-xs text-[color:var(--muted)]">{visHint}</p>
       </div>
 
-      <AnimePicker size={50} selected={items} onChange={setItems} freeMode tabs={["anime", "character"]} />
+      <AnimePicker size={50} selected={items} onChange={setItems} freeMode tabs={["anime", "character", "arc"]} />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">

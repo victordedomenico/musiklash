@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: process.env.NODE_ENV === "production",
-  transpilePackages: ["@klash/game-engine", "@klash/content-adapter"],
+  transpilePackages: ["@klash/game-engine", "@klash/content-adapter", "@klash/auth", "@klash/i18n"],
   images: {
     remotePatterns: [
       // AniList CDN

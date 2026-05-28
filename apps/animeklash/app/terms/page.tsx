@@ -39,7 +39,7 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Propriété intellectuelle</h2>
             <p>
-              Le contenu musical est fourni par l&apos;API Deezer et reste la propriété des ayants droit.
+              Les métadonnées animé proviennent d&apos;AniList et les extraits audio d&apos;AnimeThemes.moe ; ils restent la propriété de leurs ayants droit.
               L&apos;interface, le code et les éléments de AnimeKlash sont protégés par le droit d&apos;auteur
               © 2026 AnimeKlash.
             </p>
@@ -50,7 +50,7 @@ export default function TermsPage() {
             <p>
               AnimeKlash est fourni &quot;en l&apos;état&quot;, sans garantie d&apos;aucune sorte. Nous ne pouvons être
               tenus responsables d&apos;une interruption de service, de la disponibilité des extraits
-              musicaux Deezer, ni d&apos;un quelconque préjudice résultant de l&apos;utilisation de la
+              tiers (AniList, AnimeThemes.moe), ni d&apos;un quelconque préjudice résultant de l&apos;utilisation de la
               plateforme.
             </p>
           </section>

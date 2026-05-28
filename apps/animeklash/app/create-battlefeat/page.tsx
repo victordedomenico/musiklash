@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import SectionHeader from "@/components/ui/SectionHeader";
 import CreateBattleFeatForm from "./CreateBattleFeatForm";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "Créer un BattleClash solo — AnimeKlash" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "Créer un défi BattleClash",
+  description:
+    "Publie un défi BattleClash solo : choisis un personnage de départ et une difficulté pour que la communauté enchaîne les co-apparitions.",
+  path: "/create-battlefeat",
+});
 
 export default function CreateBattleFeatPage() {
   return (

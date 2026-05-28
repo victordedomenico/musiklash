@@ -5,7 +5,7 @@ import { buildPageMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "FAQ",
   description:
-    "Questions fréquentes sur AnimeKlash : gratuité, compte, extraits Deezer, brackets, tierlists, blindtests et BattleFeat.",
+    "Questions fréquentes sur AnimeKlash : gratuité, compte, AniList, brackets, tierlists, blindtests openings et BattleClash.",
   path: "/faq",
 });
 
@@ -16,27 +16,27 @@ const FAQS = [
 	},
 	{
 		q: "Dois-je créer un compte pour jouer ?",
-		a: "Non. Vous pouvez jouer à n'importe quel bracket public sans inscription. Un compte est nécessaire uniquement pour créer et sauvegarder vos propres brackets.",
+		a: "Non. Vous pouvez jouer à n'importe quel contenu public sans inscription. Un compte est nécessaire pour créer, sauvegarder et gérer votre bibliothèque.",
 	},
 	{
-		q: "D'où viennent les extraits musicaux ?",
-		a: "Les extraits de 30 secondes proviennent de l'API Deezer. AnimeKlash n'héberge aucun fichier audio.",
+		q: "D'où viennent les animés, personnages et openings ?",
+		a: "Les fiches animé et personnages proviennent d'AniList. Les extraits d'openings/endings sont fournis par AnimeThemes.moe. AnimeKlash n'héberge pas les fichiers audio ni les images des œuvres tierces.",
 	},
 	{
-		q: "Combien de morceaux peut-on mettre dans un bracket ?",
-		a: "De 4 à 32 morceaux. Les formats disponibles sont 4, 8, 16 et 32 pistes. Chaque format suit une structure à élimination directe.",
+		q: "Combien d'entrées peut-on mettre dans un bracket ?",
+		a: "De 4 à 32 animés ou personnages. Les formats disponibles sont 4, 8, 16 et 32. Chaque format suit une structure à élimination directe.",
 	},
 	{
-		q: "Puis-je rendre mon bracket privé ?",
-		a: "Oui. Lors de la création, vous choisissez la visibilité : public (apparaît dans Explorer) ou privé (accessible uniquement via le lien direct).",
+		q: "Puis-je rendre mon contenu privé ?",
+		a: "Oui. Lors de la création, vous choisissez la visibilité : public (visible dans Explorer) ou privé (accessible uniquement via le lien direct).",
 	},
 	{
-		q: "Qu'est-ce que BattleFeat ?",
-		a: "BattleFeat est un mini-jeu de chaîne de featurings. Le principe : partir d'un artiste et enchaîner des collaborations connues. Jouez seul contre l'IA ou en duel multijoueur.",
+		q: "Qu'est-ce que BattleClash ?",
+		a: "BattleClash est un jeu de chaîne de co-apparitions : à partir d'un personnage, vous enchaînez d'autres personnages qui sont apparus dans les mêmes animés. Jouez en solo libre, contre l'IA ou en multijoueur.",
 	},
 	{
-		q: "Un artiste ou un morceau n'est pas disponible. Pourquoi ?",
-		a: "Le catalogue dépend de ce que Deezer indexe. Certains artistes ou titres peuvent ne pas être disponibles à la recherche. Essayez différentes orthographes ou recherchez via l'album.",
+		q: "Un animé ou un personnage n'est pas disponible. Pourquoi ?",
+		a: "Le catalogue dépend d'AniList. Certains titres peuvent manquer ou avoir un nom différent. Essayez le titre romaji, le titre anglais ou le nom du personnage tel qu'il apparaît sur AniList.",
 	},
 	{
 		q: "Comment signaler un problème ou contacter l'équipe ?",

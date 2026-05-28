@@ -53,7 +53,7 @@ export default function BlindtestRoomCard({
       <div className="space-y-1 p-4">
         <p className="line-clamp-1 font-semibold">{room.title}</p>
         <p className="text-xs text-[color:var(--muted)]">
-          {room.trackCount} morceau{room.trackCount > 1 ? "x" : ""} · Hôte: {room.hostName}
+          {room.trackCount} extrait{room.trackCount > 1 ? "s" : ""} · Hôte: {room.hostName}
         </p>
         <p className="text-[11px] text-[color:var(--muted)] flex items-center gap-1">
           <Music size={11} />

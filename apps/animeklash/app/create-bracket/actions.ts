@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { isValidSize, effectiveBracketSize } from "@/lib/bracket";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import type { SelectedItem } from "@/components/AnimePicker";
+import { selectedItemToTrackFields } from "@/lib/content-item";
 
 export type { SelectedItem };
 
@@ -59,11 +60,7 @@ export async function createBracket(input: {
         tracks: {
           create: input.items.map((item, i) => ({
             seed: i + 1,
-            externalId: item.external_id,
-            title: item.title,
-            artist: item.subtitle ?? "",
-            previewUrl: item.preview_url ?? "",
-            coverUrl: item.cover_url,
+            ...selectedItemToTrackFields(item),
           })),
         },
       },

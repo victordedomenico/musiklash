@@ -4,7 +4,7 @@ import LuckyWheelClient from "./LuckyWheelClient";
 export const metadata: Metadata = {
   title: "Roue de la chance · AnimeKlash",
   description:
-    "Tu sais pas quoi écouter ? Ajoute des morceaux, albums ou artistes, tourne la roue et laisse le hasard décider.",
+    "Tu ne sais pas quoi regarder ? Ajoute des titres d'animé ou des persos, tourne la roue et laisse le hasard décider.",
 };
 
 export default function LuckyWheelPage() {

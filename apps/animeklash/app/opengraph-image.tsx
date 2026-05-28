@@ -92,7 +92,7 @@ export default function OpenGraphImage() {
             flexWrap: "wrap",
           }}
         >
-          {["Brackets", "Tierlists", "Blindtests", "BattleFeat", "Stream Clash"].map((label) => (
+          {["Brackets", "Tierlists", "Blindtests", "BattleClash", "Smash or Pass"].map((label) => (
             <span
               key={label}
               style={{

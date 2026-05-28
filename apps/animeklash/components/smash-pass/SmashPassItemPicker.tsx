@@ -5,6 +5,7 @@ import { Search, Plus, X, Tv, User } from "lucide-react";
 import Image from "next/image";
 import type { SmashPassItemType } from "@/lib/smash-pass";
 import type { SmashPassItemInput } from "@/app/create-smash-pass/actions";
+import { withSearchQuery } from "@/lib/api-url";
 
 const MIN_ITEMS = 5;
 const MAX_ITEMS = 100;
@@ -23,7 +24,7 @@ function useDebouncedSearch<T>(endpoint: string, query: string, enabled: boolean
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${endpoint}?q=${encodeURIComponent(trimmed)}`, { signal: ctrl.signal });
+        const res = await fetch(withSearchQuery(endpoint, trimmed), { signal: ctrl.signal });
         const json = await res.json();
         setData(json.data ?? []);
       } catch (e) {
@@ -69,9 +70,11 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
     onChange([...selected, {
       external_id: id,
       title: a.title,
-      subtitle: a.format ?? null,
+      subtitle: a.format ?? undefined,
       cover_url: a.coverUrl,
       preview_url: null,
+      source: "anilist",
+      metadata: { itemKind: "anime", anilistId: a.id },
       tags: [],
       description: null,
     }]);
@@ -83,9 +86,11 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
     onChange([...selected, {
       external_id: id,
       title: c.name,
-      subtitle: c.animes[0] ?? null,
+      subtitle: c.animes[0] ?? undefined,
       cover_url: c.imageUrl,
       preview_url: null,
+      source: "anilist",
+      metadata: { itemKind: "character", anilistCharacterId: c.id },
       tags: [],
       description: null,
     }]);

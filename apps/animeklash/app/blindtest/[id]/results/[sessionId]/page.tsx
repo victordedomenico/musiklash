@@ -91,10 +91,10 @@ export default async function BlindtestResultsPage({
 
       {/* Track recap */}
       <div className="space-y-3">
-        <h2 className="font-bold text-lg">Récap morceau par morceau</h2>
+        <h2 className="font-bold text-lg">Récap extrait par extrait</h2>
         {singleArtistSession ? (
           <p className="text-sm text-[color:var(--muted)]">
-            Partie « un seul artiste » : les points artiste ont été donnés automatiquement.
+            Partie « un seul animé » : les points titre d&apos;animé ont été donnés automatiquement.
           </p>
         ) : null}
         {answers.map((a) => (
@@ -121,7 +121,7 @@ export default async function BlindtestResultsPage({
                   }`}
                 >
                   {a.correctTitle ? <Check size={11} /> : <X size={11} />}
-                  Titre
+                  OP/ED
                   {!a.correctTitle && a.guessTitle && (
                     <span className="text-[color:var(--muted)] line-through ml-1">
                       {a.guessTitle}
@@ -134,7 +134,7 @@ export default async function BlindtestResultsPage({
                   }`}
                 >
                   {a.correctArtist ? <Check size={11} /> : <X size={11} />}
-                  Artiste
+                  Titre d&apos;animé
                   {!a.correctArtist && a.guessArtist && (
                     <span className="text-[color:var(--muted)] line-through ml-1">
                       {a.guessArtist}

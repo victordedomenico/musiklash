@@ -30,9 +30,9 @@ import { getI18n } from "@/lib/i18n";
 import { buildPageMetadata } from "@/lib/seo";
 
 export const metadata = buildPageMetadata({
-  title: "Explorer les jeux musicaux",
+  title: "Explorer les jeux anime",
   description:
-    "Découvrez des brackets, tierlists, blindtests, défis BattleFeat et Stream Clash créés par la communauté AnimeKlash.",
+    "Découvrez des brackets, tierlists, blindtests, défis BattleClash, Smash or Pass et Stream Clash créés par la communauté AnimeKlash.",
   path: "/explore",
 });
 

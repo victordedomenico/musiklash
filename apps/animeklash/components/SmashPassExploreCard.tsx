@@ -23,9 +23,12 @@ export type SmashPassRoomSummary = {
 };
 
 const itemTypeLabel: Record<string, string> = {
-  track: "Morceaux",
-  album: "Albums",
-  artist: "Artistes",
+  anime: "Titres d'animé",
+  character: "Persos d'animé",
+  arc: "Arcs d'animé",
+  track: "Openings/Endings",
+  album: "Titres d'animé",
+  artist: "Persos d'animé",
 };
 
 const roomStatusLabel: Record<string, string> = {

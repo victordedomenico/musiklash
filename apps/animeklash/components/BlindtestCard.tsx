@@ -38,7 +38,7 @@ export default function BlindtestCard({
         <p className="font-semibold line-clamp-1">{b.title}</p>
         {b.trackCount != null ? (
           <p className="mt-0.5 text-xs text-[color:var(--muted)]">
-            {b.trackCount} morceau{b.trackCount > 1 ? "x" : ""}
+            {b.trackCount} extrait{b.trackCount > 1 ? "s" : ""}
           </p>
         ) : null}
       </div>

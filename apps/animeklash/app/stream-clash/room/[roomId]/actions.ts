@@ -204,7 +204,7 @@ export async function startGame(roomId: string) {
   const usedIndices = new Set<string>();
   const firstPair = pickPair(tracks, room.difficulty as StreamClashDifficulty, usedIndices);
   if (!firstPair) {
-    return { ok: false as const, error: "Pas assez de morceaux compatibles avec cette difficulté." };
+    return { ok: false as const, error: "Pas assez d'entrées compatibles avec cette difficulté." };
   }
 
   const nowIso = new Date().toISOString();

@@ -56,7 +56,7 @@ export default async function BlindtestPlayPage({
         </Link>
         <h1 className="text-2xl font-black">{blindtest.title}</h1>
         <p className="mt-1 text-sm text-[color:var(--muted)]">
-          {tracks.length} morceau{tracks.length > 1 ? "x" : ""} · Mode solo
+          {tracks.length} extrait{tracks.length > 1 ? "s" : ""} · Mode solo
         </p>
       </div>
       <BlindtestPlayer blindtestId={blindtest.id} tracks={tracks} transient={transient === "1"} />

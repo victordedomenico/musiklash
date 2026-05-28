@@ -339,7 +339,7 @@ export default function StreamClashRoomClient({
           <Users size={48} className="mx-auto mb-4 text-[color:var(--accent)]" />
           <h2 className="text-xl font-bold">Stream Clash multijoueur</h2>
           <p className="mt-1 text-sm text-[color:var(--muted)]">
-            {room.streamClash.tracks.length} morceaux ·{" "}
+            {room.streamClash.tracks.length} entrées ·{" "}
             {room.difficulty === "easy" ? "Facile" : room.difficulty === "normal" ? "Normal" : "Difficile"}{" "}
             · {room.totalRounds} manches
           </p>

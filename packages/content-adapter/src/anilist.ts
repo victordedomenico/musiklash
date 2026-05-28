@@ -43,18 +43,27 @@ export type AnimeThemeEntry = {
 
 // ─── GraphQL helpers ──────────────────────────────────────────────────────────
 
-async function anilistQuery<T>(query: string, variables: Record<string, unknown>): Promise<T> {
+async function anilistQuery<T>(
+  query: string,
+  variables: Record<string, unknown>,
+  options?: { live?: boolean },
+): Promise<T> {
   const res = await fetch(ANILIST_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ query, variables }),
+    ...(options?.live ? { cache: "no-store" as const } : {}),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    next: { revalidate: 3600 },
-  } as any);
+    ...(options?.live ? {} : ({ next: { revalidate: 3600 } } as any)),
+  });
   if (!res.ok) throw new Error(`AniList query failed: ${res.status}`);
   const json = await res.json() as { data: T; errors?: unknown[] };
   if (json.errors?.length) throw new Error(`AniList GraphQL error: ${JSON.stringify(json.errors[0])}`);
   return json.data;
+}
+
+function mediaDisplayTitle(n: { title: { romaji: string; english: string | null } }): string {
+  return n.title.english ?? n.title.romaji;
 }
 
 // ─── AniList queries ──────────────────────────────────────────────────────────
@@ -96,6 +105,45 @@ query GetAnime($id: Int) {
   }
 }`;
 
+const GET_ANIME_ARCS_QUERY = `
+query GetAnimeArcs($id: Int!) {
+  Media(id: $id, type: ANIME) {
+    id
+    title { romaji english native }
+    relations {
+      edges {
+        relationType
+        node {
+          id
+          type
+          format
+          episodes
+          popularity
+          title { romaji english native }
+          coverImage { large medium }
+        }
+      }
+    }
+  }
+}`;
+
+const SEARCH_ARC_MEDIA_QUERY = `
+query SearchArcMedia($search: String, $perPage: Int) {
+  Page(page: 1, perPage: $perPage) {
+    media(search: $search, type: ANIME, sort: [SEARCH_MATCH, POPULARITY_DESC]) {
+      id
+      format
+      episodes
+      popularity
+      title { romaji english native }
+      coverImage { large medium }
+      relations {
+        edges { relationType }
+      }
+    }
+  }
+}`;
+
 const GET_CHARACTER_BY_ID_QUERY = `
 query GetCharacter($id: Int) {
   Character(id: $id) {
@@ -104,6 +152,51 @@ query GetCharacter($id: Int) {
     image { large medium }
     favourites
     media(sort: [POPULARITY_DESC], perPage: 5) { nodes { id title { romaji } } }
+  }
+}`;
+
+const GET_CHARACTER_CONNECTIONS_QUERY = `
+query GetCharConnections($id: Int!) {
+  Character(id: $id) {
+    id
+    name { full }
+    media(type: ANIME, perPage: 5, sort: POPULARITY_DESC) {
+      nodes {
+        id
+        title { romaji english }
+        popularity
+      }
+    }
+  }
+}`;
+
+const GET_MEDIA_CHARACTERS_QUERY = `
+query GetMediaChars($id: Int!) {
+  Media(id: $id, type: ANIME) {
+    id
+    title { romaji english }
+    characters(perPage: 25, sort: [ROLE, FAVOURITES_DESC]) {
+      nodes {
+        id
+        name { full }
+        image { medium }
+        favourites
+      }
+    }
+  }
+}`;
+
+const VALIDATE_CO_APPEARANCE_QUERY = `
+query ValidateCoAppearance($charAId: Int!, $charBId: Int!) {
+  charA: Character(id: $charAId) {
+    media(type: ANIME, perPage: 20, sort: POPULARITY_DESC) {
+      nodes { id title { romaji english } }
+    }
+  }
+  charB: Character(id: $charBId) {
+    media(type: ANIME, perPage: 20, sort: POPULARITY_DESC) {
+      nodes { id }
+    }
   }
 }`;
 
@@ -220,6 +313,115 @@ export async function searchAnime(query: string, limit = 20): Promise<AniListMed
   return data.Page.media ?? [];
 }
 
+/** Arc/saga split listed as its own AniList media (e.g. « One Piece: Wano »). */
+export type AniListArc = {
+  id: number;
+  title: { romaji: string; english: string | null; native: string | null };
+  coverImage: { large: string | null; medium: string | null };
+  popularity: number;
+  format?: string | null;
+  episodes?: number | null;
+  /** Série parente quand connue (relations AniList). */
+  parentTitle?: string;
+};
+
+const ARC_CHILD_RELATIONS = new Set(["SIDE_STORY", "SEQUEL", "SPIN_OFF", "PREQUEL"]);
+
+type AniListTitleFields = {
+  title: { romaji: string; english: string | null; native?: string | null };
+};
+
+function displayTitle(m: AniListTitleFields): string {
+  return m.title.english ?? m.title.romaji ?? m.title.native ?? "";
+}
+
+function looksLikeArcTitle(title: string): boolean {
+  return /\b(arc|saga)\b/i.test(title) || /:\s*\S/.test(title);
+}
+
+function isLikelyStandaloneArc(
+  media: AniListTitleFields & { relations?: { edges: Array<{ relationType: string }> } },
+): boolean {
+  const title = displayTitle(media);
+  if (looksLikeArcTitle(title)) return true;
+  return (media.relations?.edges ?? []).some((e) => e.relationType === "PARENT");
+}
+
+export async function searchAnimeArcs(query: string, limit = 20): Promise<AniListArc[]> {
+  if (!query.trim()) return [];
+  const data = await anilistQuery<{
+    Page: {
+      media: Array<
+        AniListArc & { relations?: { edges: Array<{ relationType: string }> } }
+      >;
+    };
+  }>(SEARCH_ARC_MEDIA_QUERY, {
+    search: query.trim(),
+    perPage: Math.min(limit * 3, 50),
+  });
+
+  return (data.Page.media ?? [])
+    .filter(isLikelyStandaloneArc)
+    .slice(0, limit)
+    .map((m) => ({
+      id: m.id,
+      title: m.title,
+      coverImage: m.coverImage,
+      popularity: m.popularity,
+      format: m.format,
+      episodes: m.episodes,
+    }));
+}
+
+export async function getAnimeArcs(animeId: number): Promise<AniListArc[]> {
+  const data = await anilistQuery<{
+    Media: {
+      title: { romaji: string; english: string | null; native: string | null };
+      relations: {
+        edges: Array<{
+          relationType: string;
+          node: {
+            id: number;
+            type: string;
+            format: string | null;
+            episodes: number | null;
+            popularity: number;
+            title: { romaji: string; english: string | null; native: string | null };
+            coverImage: { large: string | null; medium: string | null };
+          } | null;
+        }>;
+      };
+    } | null;
+  }>(GET_ANIME_ARCS_QUERY, { id: animeId }, { live: true });
+
+  const parent = data.Media;
+  if (!parent) return [];
+
+  const parentTitle = displayTitle(parent);
+  const arcs: AniListArc[] = [];
+
+  for (const edge of parent.relations?.edges ?? []) {
+    const node = edge.node;
+    if (!node || node.type !== "ANIME") continue;
+    const title = displayTitle(node);
+    if (!ARC_CHILD_RELATIONS.has(edge.relationType) && !looksLikeArcTitle(title)) continue;
+    arcs.push({
+      id: node.id,
+      title: node.title,
+      coverImage: node.coverImage,
+      popularity: node.popularity,
+      format: node.format,
+      episodes: node.episodes,
+      parentTitle,
+    });
+  }
+
+  const rank = (r: string) =>
+    r === "SIDE_STORY" ? 0 : r === "SEQUEL" ? 1 : r === "SPIN_OFF" ? 2 : 3;
+
+  return arcs.sort((a, b) => b.popularity - a.popularity);
+}
+
 export async function searchCharacters(query: string, limit = 20): Promise<AniListCharacter[]> {
   if (!query.trim()) return [];
   const data = await anilistQuery<{ Page: { characters: AniListCharacter[] } }>(SEARCH_CHARACTER_QUERY, {
@@ -246,6 +448,82 @@ export async function getCharacterById(id: number): Promise<AniListCharacter | n
   } catch {
     return null;
   }
+}
+
+/** Personnage lié par co-apparition dans un animé (BattleClash). */
+export type ConnectedCharacter = {
+  id: string;
+  name: string;
+  pictureUrl: string | null;
+  favourites: number;
+  animeTitle: string | null;
+};
+
+type AniListCharNode = {
+  id: number;
+  name: { full: string };
+  image: { medium: string | null };
+  favourites: number;
+};
+
+/** Personnages des 3 animés les plus populaires du personnage source. */
+export async function fetchCharacterCoAppearances(characterId: string): Promise<ConnectedCharacter[]> {
+  const charIdInt = parseInt(characterId, 10);
+  if (!charIdInt) return [];
+
+  const data = await anilistQuery<{
+    Character: { media: { nodes: Array<{ id: number; title: { romaji: string; english: string | null } }> } };
+  }>(GET_CHARACTER_CONNECTIONS_QUERY, { id: charIdInt }, { live: true });
+
+  const topAnime = data.Character.media.nodes.slice(0, 3);
+  if (topAnime.length === 0) return [];
+
+  const results = await Promise.all(
+    topAnime.map(async (anime) => {
+      const mediaData = await anilistQuery<{
+        Media: { title: { romaji: string; english: string | null }; characters: { nodes: AniListCharNode[] } };
+      }>(GET_MEDIA_CHARACTERS_QUERY, { id: anime.id }, { live: true });
+      return { anime, chars: mediaData.Media.characters.nodes };
+    }),
+  );
+
+  const byId = new Map<string, ConnectedCharacter>();
+  for (const { anime, chars } of results) {
+    for (const c of chars) {
+      const id = String(c.id);
+      if (id === characterId) continue;
+      if (!byId.has(id)) {
+        byId.set(id, {
+          id,
+          name: c.name.full,
+          pictureUrl: c.image.medium ?? null,
+          favourites: c.favourites,
+          animeTitle: mediaDisplayTitle(anime),
+        });
+      }
+    }
+  }
+
+  return [...byId.values()];
+}
+
+export async function validateCharacterCoAppearance(
+  charAId: string,
+  charBId: string,
+): Promise<{ animeTitle: string } | null> {
+  const aId = parseInt(charAId, 10);
+  const bId = parseInt(charBId, 10);
+  if (!aId || !bId || aId === bId) return null;
+
+  const data = await anilistQuery<{
+    charA: { media: { nodes: Array<{ id: number; title: { romaji: string; english: string | null } }> } };
+    charB: { media: { nodes: Array<{ id: number }> } };
+  }>(VALIDATE_CO_APPEARANCE_QUERY, { charAId: aId, charBId: bId }, { live: true });
+
+  const bIds = new Set(data.charB.media.nodes.map((n) => n.id));
+  const shared = data.charA.media.nodes.find((n) => bIds.has(n.id));
+  if (!shared) return null;
+  return { animeTitle: mediaDisplayTitle(shared) };
 }
 
 export async function getAnimeThemeItems(animeId: number): Promise<ContentItem[]> {

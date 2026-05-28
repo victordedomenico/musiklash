@@ -1,4 +1,4 @@
-export type SmashPassItemType = "anime" | "character";
+export type SmashPassItemType = "anime" | "character" | "arc";
 export type SmashPassChoice = "smash" | "pass";
 
 export type SmashPassItemData = {

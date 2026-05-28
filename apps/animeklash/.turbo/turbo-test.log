@@ -1,0 +1,14 @@
+
+> animeklash@0.1.0 test /Users/victordedomenico/Projets/bracketfight/apps/animeklash
+> vitest run --passWithNoTests
+
+
+ RUN  v4.1.7 /Users/victordedomenico/Projets/bracketfight/apps/animeklash
+
+No test files found, exiting with code 0
+
+include: **/*.{test,spec}.?(c|m)[jt]s?(x)
+exclude:  **/node_modules/**, **/.git/**
+
+(node:1209) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)

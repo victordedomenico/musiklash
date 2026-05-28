@@ -35,7 +35,7 @@ export async function generateMetadata({
 
   return buildPageMetadata({
     title: bt.title,
-    description: `Testez vos oreilles avec le blindtest « ${bt.title} » sur AnimeKlash. Devinez les morceaux à l'aveugle.`,
+    description: `Testez vos oreilles avec le blindtest « ${bt.title} » sur AnimeKlash. Devinez les openings/endings à l'aveugle.`,
     path: `/blindtest/${id}`,
     noIndex: bt.visibility !== "public",
   });
@@ -83,7 +83,7 @@ export default async function BlindtestPage({
         </div>
         <h1 className="text-4xl font-black">{blindtest.title}</h1>
         <p className="mt-2 text-[color:var(--muted)]">
-          {trackCount} morceau{trackCount > 1 ? "x" : ""} · 30 secondes par morceau
+          {trackCount} extrait{trackCount > 1 ? "s" : ""} · 30 secondes par extrait
         </p>
         {multi === "unavailable" ? (
           <p className="mt-3 text-sm text-amber-300">

@@ -74,7 +74,7 @@ export default async function Footer() {
               className="mt-3 text-sm leading-relaxed"
               style={{ color: "var(--muted)", maxWidth: "18rem" }}
             >
-              Fais s&apos;affronter tes sons, partage tes classements, défie tes amis.
+              Fais s&apos;affronter tes animés, partage tes classements, défie tes amis.
             </p>
           </div>
 

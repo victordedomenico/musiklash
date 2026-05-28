@@ -89,7 +89,7 @@ export function StreamClashCard({
         <p className="line-clamp-1 font-semibold">{sc.title}</p>
         {sc.trackCount != null ? (
           <p className="mt-0.5 text-xs text-[color:var(--muted)]">
-            {sc.trackCount} morceau{sc.trackCount > 1 ? "x" : ""}
+            {sc.trackCount} entrée{sc.trackCount > 1 ? "s" : ""}
           </p>
         ) : null}
       </div>
@@ -148,7 +148,7 @@ export function StreamClashRoomCard({
       <div className="space-y-1 p-4">
         <p className="line-clamp-1 font-semibold">{room.title}</p>
         <p className="text-xs text-[color:var(--muted)]">
-          {room.trackCount} morceau{room.trackCount > 1 ? "x" : ""} ·{" "}
+          {room.trackCount} entrée{room.trackCount > 1 ? "s" : ""} ·{" "}
           {difficultyLabel[room.difficulty] ?? room.difficulty} · Hôte: {room.hostName}
         </p>
         <p className="flex items-center gap-1 text-[11px] text-[color:var(--muted)]">

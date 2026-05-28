@@ -79,7 +79,7 @@ export default async function BracketGamePage({
     return (
       <div className="page-shell max-w-3xl py-12">
         <h1 className="text-2xl font-bold">Ce bracket est vide</h1>
-        <p className="mt-2 text-[color:var(--muted)]">Aucune piste trouvée.</p>
+        <p className="mt-2 text-[color:var(--muted)]">Aucune entrée trouvée.</p>
       </div>
     );
   }

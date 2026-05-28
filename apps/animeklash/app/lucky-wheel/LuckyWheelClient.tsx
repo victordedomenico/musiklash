@@ -10,6 +10,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import { withSearchQuery } from "@/lib/api-url";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -118,7 +119,7 @@ function useSearch<T>(endpoint: string, query: string, enabled: boolean) {
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${endpoint}?q=${encodeURIComponent(trimmed)}`, { signal: ctrl.signal });
+        const res = await fetch(withSearchQuery(endpoint, trimmed), { signal: ctrl.signal });
         const json = (await res.json()) as { data?: T[] };
         setData((json.data ?? []).slice(0, 8) as T[]);
       } catch {

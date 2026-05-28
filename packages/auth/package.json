@@ -1,0 +1,11 @@
+{
+  "name": "@klash/auth",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./supabase": "./src/supabase.ts",
+    "./guest": "./src/guest.ts"
+  }
+}

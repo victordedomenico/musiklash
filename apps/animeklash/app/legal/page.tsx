@@ -50,11 +50,12 @@ export default function LegalPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Contenu musical</h2>
+            <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Contenus tiers</h2>
             <p>
-              Les extraits musicaux sont fournis par l&apos;<strong>API Deezer</strong> (Deezer SA, 24 rue
-              de Calais, 75009 Paris). AnimeKlash n&apos;héberge aucun fichier audio. Les droits sur les
-              œuvres musicales appartiennent à leurs titulaires respectifs.
+              Les métadonnées proviennent d&apos;<strong>AniList</strong> ; les extraits d&apos;openings et
+              d&apos;endings sont fournis par <strong>AnimeThemes.moe</strong>. AnimeKlash n&apos;héberge
+              aucun fichier audio ni les visuels des œuvres. Tous les droits restent la propriété de leurs
+              ayants droit.
             </p>
           </section>
 

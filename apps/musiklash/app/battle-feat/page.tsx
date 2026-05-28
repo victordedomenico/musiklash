@@ -33,8 +33,8 @@ export default async function BattleFeatLandingPage() {
     take: 5,
   });
 
-  const artistCount = await prisma.rapArtist.count();
-  const featCount = await prisma.rapFeat.count();
+  const artistCount = await prisma.entity.count({ where: { kind: "artist" } });
+  const featCount = await prisma.entityLink.count();
 
   const diffLabel: Record<number, string> = { 1: "Facile", 2: "Normal", 3: "Difficile" };
 

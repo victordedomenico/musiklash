@@ -2,18 +2,22 @@
   "name": "klash-monorepo",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.0.0",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w musiklash",
-    "dev:musiklash": "npm run dev -w musiklash",
-    "dev:animeklash": "npm run dev -w animeklash",
-    "build": "npm run build --workspaces --if-present",
-    "build:musiklash": "npm run build -w musiklash",
-    "build:animeklash": "npm run build -w animeklash",
-    "lint": "npm run lint --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "dev": "turbo run dev --filter=musiklash",
+    "dev:musiklash": "turbo run dev --filter=musiklash",
+    "dev:animeklash": "turbo run dev --filter=animeklash",
+    "build": "turbo run build",
+    "build:musiklash": "turbo run build --filter=musiklash",
+    "build:animeklash": "turbo run build --filter=animeklash",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.8"
   }
 }

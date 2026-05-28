@@ -65,7 +65,7 @@ export default async function StreamClashRoomPage({
       <div className="mb-6">
         <SectionHeader title={room.streamClash.title} />
         <p className="mt-1 text-sm text-[color:var(--muted)]">
-          {room.streamClash.tracks.length} morceau{room.streamClash.tracks.length > 1 ? "x" : ""} ·
+          {room.streamClash.tracks.length} entrée{room.streamClash.tracks.length > 1 ? "s" : ""} ·
           Stream Clash multijoueur ·{" "}
           {room.difficulty === "easy" ? "Facile" : room.difficulty === "normal" ? "Normal" : "Difficile"}
         </p>

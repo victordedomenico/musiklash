@@ -49,7 +49,7 @@ export async function createTierlist(input: {
         tracks: {
           create: input.tracks.map((t, i) => ({
             position: i,
-            externalId: BigInt(t.deezer_track_id),
+            externalId: String(t.deezer_track_id),
             title: t.title,
             artist: t.artist,
             previewUrl: t.preview_url,

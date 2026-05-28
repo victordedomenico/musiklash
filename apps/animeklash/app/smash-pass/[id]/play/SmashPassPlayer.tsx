@@ -23,8 +23,9 @@ import {
 } from "./actions";
 
 const ITEM_LABELS: Record<SmashPassItemType, string> = {
-  anime: "Animé",
-  character: "Personnage",
+  anime: "Titre d'animé",
+  character: "Perso d'animé",
+  arc: "Arc d'animé",
 };
 
 type Props = {

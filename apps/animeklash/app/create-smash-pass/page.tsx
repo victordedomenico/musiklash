@@ -18,7 +18,7 @@ export default async function CreateSmashPassPage({
         subtitle={
           resolvedMode === "multi"
             ? "Construis un deck et invite tes amis à voter Smash ou Pass en temps réel."
-            : "Swipe musical : Smash ou Pass sur chaque morceau, album ou artiste."
+            : "Smash ou Pass sur chaque titre d'animé, perso ou arc d'animé."
         }
         right={
           <span

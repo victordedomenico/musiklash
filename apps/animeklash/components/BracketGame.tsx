@@ -820,7 +820,7 @@ export default function BracketGame({
   if (!a || !b) {
     return (
       <div className="card p-6 text-center text-red-400">
-        Impossible de trouver les pistes du duel.
+        Impossible de trouver les entrées du duel.
       </div>
     );
   }

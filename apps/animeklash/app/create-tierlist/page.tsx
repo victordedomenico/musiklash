@@ -8,7 +8,7 @@ export default async function CreateTierlistPage() {
     <div className="page-shell py-12">
       <SectionHeader
         title="Créer une tierlist"
-        subtitle="Sélectionne les morceaux à classer, de S+ à F."
+        subtitle="Sélectionne des titres d'animé, persos, arcs ou openings/endings à classer de S+ à F."
       />
       <div className="mt-8">
         <CreateTierlistForm />

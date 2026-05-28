@@ -62,7 +62,7 @@ model Bracket {
 model BracketTrack {
   bracketId  String  @map("bracket_id") @db.Uuid
   seed       Int     @db.SmallInt
-  externalId BigInt  @map("deezer_track_id")
+  externalId String  @map("deezer_track_id")
   source     String  @default("deezer")
   title      String
   artist     String
@@ -152,7 +152,7 @@ model BlindtestRoom {
 model BlindtestTrack {
   blindtestId String  @map("blindtest_id") @db.Uuid
   position    Int     @db.SmallInt
-  externalId  BigInt  @map("deezer_track_id")
+  externalId  String  @map("deezer_track_id")
   source      String  @default("deezer")
   title       String
   artist      String
@@ -207,7 +207,7 @@ model Tierlist {
 model TierlistTrack {
   tierlistId String  @map("tierlist_id") @db.Uuid
   position   Int     @db.SmallInt
-  externalId BigInt  @map("deezer_track_id")
+  externalId String  @map("deezer_track_id")
   source     String  @default("deezer")
   title      String
   artist     String
@@ -241,36 +241,38 @@ model TierlistSession {
 
 // ─── BattleFeat ───────────────────────────────────────────────────────────────
 
-model RapArtist {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  deezerArtistId BigInt   @unique @map("deezer_artist_id")
-  name           String
-  nameSlug       String   @map("name_slug")
-  popularityTier Int      @default(3) @map("popularity_tier") @db.SmallInt
-  fanCount       Int      @default(0) @map("fan_count")
-  pictureUrl     String?  @map("picture_url")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+model Entity {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  externalId    String   @unique @map("deezer_artist_id")
+  kind          String   @default("artist")
+  name          String
+  nameSlug      String   @map("name_slug")
+  popularityTier Int     @default(3) @map("popularity_tier") @db.SmallInt
+  fanCount      Int      @default(0) @map("fan_count")
+  pictureUrl    String?  @map("picture_url")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  featsAsA RapFeat[] @relation("FeatArtistA")
-  featsAsB RapFeat[] @relation("FeatArtistB")
+  linksAsA EntityLink[] @relation("EntityLinkA")
+  linksAsB EntityLink[] @relation("EntityLinkB")
 
   @@index([nameSlug])
+  @@index([kind, nameSlug])
   @@map("rap_artists")
 }
 
-model RapFeat {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  artistAId     String    @map("artist_a_id") @db.Uuid
-  artistBId     String    @map("artist_b_id") @db.Uuid
-  trackDeezerId BigInt?   @map("track_deezer_id")
-  trackTitle    String?   @map("track_title")
+model EntityLink {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityAId       String  @map("artist_a_id") @db.Uuid
+  entityBId       String  @map("artist_b_id") @db.Uuid
+  trackExternalId String? @map("track_deezer_id")
+  trackTitle      String? @map("track_title")
 
-  artistA RapArtist @relation("FeatArtistA", fields: [artistAId], references: [id], onDelete: Cascade)
-  artistB RapArtist @relation("FeatArtistB", fields: [artistBId], references: [id], onDelete: Cascade)
+  entityA Entity @relation("EntityLinkA", fields: [entityAId], references: [id], onDelete: Cascade)
+  entityB Entity @relation("EntityLinkB", fields: [entityBId], references: [id], onDelete: Cascade)
 
-  @@unique([artistAId, artistBId, trackDeezerId])
-  @@index([artistAId])
-  @@index([artistBId])
+  @@unique([entityAId, entityBId, trackExternalId])
+  @@index([entityAId])
+  @@index([entityBId])
   @@map("rap_feats")
 }
 
@@ -364,7 +366,7 @@ model StreamClash {
 model StreamClashTrack {
   streamClashId String  @map("stream_clash_id") @db.Uuid
   position      Int     @db.SmallInt
-  externalId    BigInt  @map("deezer_track_id")
+  externalId    String  @map("deezer_track_id")
   source        String  @default("deezer")
   title         String
   artist        String
@@ -447,7 +449,7 @@ model SmashPass {
 model SmashPassItem {
   smashPassId String  @map("smash_pass_id") @db.Uuid
   position    Int     @db.SmallInt
-  externalId  BigInt  @map("deezer_id")
+  externalId  String  @map("deezer_id")
   source      String  @default("deezer")
   title       String
   subtitle    String?
@@ -465,7 +467,7 @@ model SmashPassItem {
 
 model SmashPassItemStats {
   itemType   String   @map("item_type")
-  externalId BigInt   @map("deezer_id")
+  externalId String   @map("deezer_id")
   source     String   @default("deezer")
   smashCount BigInt   @default(0) @map("smash_count")
   passCount  BigInt   @default(0) @map("pass_count")

@@ -2,8 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { Trophy, Swords, ArrowLeft } from "lucide-react";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Classement BattleClash — AnimeKlash" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "Classement BattleClash",
+  description:
+    "Les meilleurs scores BattleClash solo sur AnimeKlash, par niveau de difficulté.",
+  path: "/battle-feat/leaderboard",
+});
 
 type DifficultyTab = "1" | "2" | "3";
 

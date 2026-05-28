@@ -574,11 +574,11 @@ export default function BlindtestRoomClient({
           <Users size={48} className="mx-auto mb-4 text-[color:var(--accent)]" />
           <h2 className="text-xl font-bold">Blindtest multijoueur</h2>
           <p className="mt-1 text-sm text-[color:var(--muted)]">
-            {room.blindtest.tracks.length} morceaux · 30 secondes par morceau
+            {room.blindtest.tracks.length} extraits · 30 secondes par extrait
             {singleArtistBlindtest ? (
               <>
                 {" "}
-                · un seul artiste : tu ne saisis que le <strong>titre</strong>
+                · un seul animé : tu ne saisis que l&apos;<strong>opening / ending</strong>
               </>
             ) : null}
           </p>
@@ -778,7 +778,7 @@ export default function BlindtestRoomClient({
 
           {/* Track-by-track recap */}
           <div className="card p-6 space-y-4">
-            <h3 className="font-bold">Morceau par morceau</h3>
+            <h3 className="font-bold">Extrait par extrait</h3>
             {room.blindtest.tracks.map((t) => (
               <div
                 key={t.position}
@@ -817,13 +817,13 @@ export default function BlindtestRoomClient({
                             <span
                               className={`inline-flex items-center gap-1 ${a.correctTitle ? "text-green-400" : "text-red-400"}`}
                             >
-                              {a.correctTitle ? <Check size={10} /> : <X size={10} />} Titre
+                              {a.correctTitle ? <Check size={10} /> : <X size={10} />} OP/ED
                             </span>
                             <span className="mx-1 text-[color:var(--muted)]">·</span>
                             <span
                               className={`inline-flex items-center gap-1 ${a.correctArtist ? "text-green-400" : "text-red-400"}`}
                             >
-                              {a.correctArtist ? <Check size={10} /> : <X size={10} />} Artiste
+                              {a.correctArtist ? <Check size={10} /> : <X size={10} />} Animé
                             </span>
                             <span className="ml-1 font-bold">+{a.points} pts</span>
                           </>
@@ -995,20 +995,20 @@ export default function BlindtestRoomClient({
                   className="rounded-xl border px-3 py-2 text-sm text-[color:var(--muted)]"
                   style={{ borderColor: "#2a3242", background: "#131822" }}
                 >
-                  Un seul artiste sur tout le blindtest : indique uniquement le{" "}
-                  <strong className="text-[color:var(--foreground)]">titre</strong>. Les{" "}
-                  <strong className="text-[color:var(--foreground)]">+{POINTS_ARTIST} pt</strong> artiste sont
+                  Un seul animé sur tout le blindtest : indique uniquement l&apos;{" "}
+                  <strong className="text-[color:var(--foreground)]">opening / ending</strong>. Les{" "}
+                  <strong className="text-[color:var(--foreground)]">+{POINTS_ARTIST} pt</strong> titre d&apos;animé sont
                   ajoutés automatiquement.
                 </p>
               ) : null}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
-                  Titre du morceau (+{POINTS_TITLE} pts)
+                  Opening / ending (+{POINTS_TITLE} pts)
                 </label>
                 <input
                   ref={titleInputRef}
                   className="input mt-1"
-                  placeholder="Tape le titre…"
+                  placeholder="Nom de l'opening / ending…"
                   value={guessTitle}
                   onChange={(e) => setGuessTitle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -1019,11 +1019,11 @@ export default function BlindtestRoomClient({
               {!singleArtistBlindtest ? (
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
-                    Artiste (+{POINTS_ARTIST} pt)
+                    Titre d&apos;animé (+{POINTS_ARTIST} pt)
                   </label>
                   <input
                     className="input mt-1"
-                    placeholder="Tape l'artiste…"
+                    placeholder="Titre d'animé…"
                     value={guessArtist}
                     onChange={(e) => setGuessArtist(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -1076,7 +1076,7 @@ export default function BlindtestRoomClient({
 
             <div className="flex-1 w-full space-y-3">
               <AnswerRow
-                label={`Titre (+${POINTS_TITLE} pts)`}
+                label={`Opening / ending (+${POINTS_TITLE} pts)`}
                 truth={track.title}
                 guess={myLastAnswer.guessTitle}
                 correct={myLastAnswer.correctTitle}
@@ -1085,8 +1085,8 @@ export default function BlindtestRoomClient({
               <AnswerRow
                 label={
                   singleArtistBlindtest
-                    ? `Artiste (+${POINTS_ARTIST} pt) · commun à tous les titres`
-                    : `Artiste (+${POINTS_ARTIST} pt)`
+                    ? `Titre d'animé (+${POINTS_ARTIST} pt) · commun à tous les extraits`
+                    : `Titre d'animé (+${POINTS_ARTIST} pt)`
                 }
                 truth={track.artist}
                 guess={myLastAnswer.guessArtist}
@@ -1204,7 +1204,7 @@ export default function BlindtestRoomClient({
               Mode spectateur
             </p>
             <p className="text-sm text-[color:var(--muted)]">
-              En attente du prochain morceau…
+              En attente du prochain extrait…
             </p>
           </div>
         )}

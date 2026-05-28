@@ -734,7 +734,7 @@ export default function TierlistBoard({
           ))}
         </div>
 
-        {/* Pool (morceaux non placés) */}
+        {/* Pool (entrées non placées) */}
         <PoolZone
           poolItems={poolItems}
           tracks={tracks}

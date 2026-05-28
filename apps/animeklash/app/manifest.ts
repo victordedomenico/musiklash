@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#0a0a0f",
     theme_color: "#ff2f6d",
     lang: "fr",
-    categories: ["games", "music", "entertainment"],
+    categories: ["games", "anime", "entertainment"],
     icons: [
       {
         src: "/icon",

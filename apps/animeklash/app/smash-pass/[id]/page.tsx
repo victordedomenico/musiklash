@@ -8,8 +8,9 @@ import { mapPrismaItem, type SmashPassItemType } from "@/lib/smash-pass";
 export const dynamic = "force-dynamic";
 
 const ITEM_TYPE_LABELS: Record<SmashPassItemType, string> = {
-  anime: "Animés",
-  character: "Personnages",
+  anime: "Titres d'animé",
+  character: "Persos d'animé",
+  arc: "Arcs d'animé",
 };
 
 export async function generateMetadata({

@@ -7,15 +7,12 @@ import { resolvePlayerIdentity } from "@/lib/guest";
 import { createClient } from "@/lib/supabase/server";
 import type { SmashPassItemType } from "@/lib/smash-pass";
 import type { SmashPassParticipant } from "@/lib/smash-pass";
+import { selectedItemToSmashPassFields } from "@/lib/content-item";
+import type { SelectedContentItem } from "@/lib/content-item";
 
-export type SmashPassItemInput = {
-  external_id: string;
-  title: string;
-  subtitle: string | null;
-  cover_url: string | null;
-  preview_url: string | null;
-  tags: string[];
-  description: string | null;
+export type SmashPassItemInput = SelectedContentItem & {
+  tags?: string[];
+  description?: string | null;
 };
 
 export async function createSmashPass(input: {
@@ -60,13 +57,9 @@ export async function createSmashPass(input: {
         items: {
           create: input.items.map((item, i) => ({
             position: i,
-            externalId: item.external_id,
-            title: item.title,
-            subtitle: item.subtitle,
-            coverUrl: item.cover_url,
-            previewUrl: item.preview_url,
-            tags: item.tags as Prisma.InputJsonValue,
-            description: item.description,
+            ...selectedItemToSmashPassFields(item),
+            tags: (item.tags ?? []) as Prisma.InputJsonValue,
+            description: item.description ?? null,
           })),
         },
       },

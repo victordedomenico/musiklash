@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import BattleFeatSolo from "./BattleFeatSolo";
+import { buildPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "BattleClash Solo — AnimeKlash" };
+export const metadata: Metadata = buildPageMetadata({
+  title: "BattleClash Solo vs IA",
+  description:
+    "Affronte l'IA dans un duel de co-apparitions : enchaîne les personnages d'animé qui se sont croisés. 3 niveaux de difficulté.",
+  path: "/battle-feat/solo",
+});
 
 export default function BattleFeatSoloPage() {
   return (

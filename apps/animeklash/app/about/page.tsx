@@ -6,7 +6,7 @@ import { buildPageMetadata } from "@/lib/seo";
 export const metadata: Metadata = buildPageMetadata({
   title: "À propos",
   description:
-    "AnimeKlash permet de trancher les débats musicaux avec des tournois, tierlists et blindtests. Découvrez notre mission et nos modes de jeu.",
+    "AnimeKlash permet de trancher les débats anime avec des tournois, tierlists, blindtests openings et BattleClash. Mission et modes de jeu.",
   path: "/about",
 });
 
@@ -22,13 +22,13 @@ export default function AboutPage() {
         <section className="mt-10 space-y-4">
           <h2 className="text-2xl font-bold">L&apos;idée</h2>
           <p style={{ color: "var(--muted-strong)", lineHeight: 1.75 }}>
-            AnimeKlash est né d&apos;une frustration : les débats sur la musique ne se concluent jamais.
-            Quel est le meilleur son de cet artiste ? L&apos;album le plus fort ? Plutôt que de tourner
-            en rond, on a construit un outil pour trancher — écoute par écoute, duel par duel.
+            AnimeKlash est né d&apos;une frustration : les débats anime ne se concluent jamais.
+            Quel est le meilleur shōnen ? La meilleure opening ? Plutôt que de tourner en rond,
+            on a construit un outil pour trancher — duel par duel, vote par vote.
           </p>
           <p style={{ color: "var(--muted-strong)", lineHeight: 1.75 }}>
-            N&apos;importe qui peut créer un tournoi en quelques clics, l&apos;écouter via les extraits Deezer
-            et partager le verdict avec ses amis ou la communauté.
+            N&apos;importe qui peut créer un tournoi en quelques clics à partir d&apos;AniList,
+            écouter les openings via AnimeThemes.moe et partager le verdict avec ses amis ou la communauté.
           </p>
         </section>
 
@@ -36,9 +36,9 @@ export default function AboutPage() {
           <h2 className="text-2xl font-bold">Ce qu&apos;on propose</h2>
           <div className="grid gap-3 sm:grid-cols-3 mt-2">
             {[
-              { icon: <Swords size={18} />, title: "Brackets", desc: "Tournois à élimination directe de 4 à 32 morceaux." },
-              { icon: <Users size={18} />, title: "Tierlists & Blindtests", desc: "Classer ou deviner des morceaux sans les voir." },
-              { icon: <Zap size={18} />, title: "BattleFeat", desc: "Le jeu de chaîne de featurings, solo ou multijoueur." },
+              { icon: <Swords size={18} />, title: "Brackets", desc: "Tournois à élimination directe de 4 à 32 animés ou personnages." },
+              { icon: <Users size={18} />, title: "Tierlists & Blindtests", desc: "Classer ou deviner des openings et personnages." },
+              { icon: <Zap size={18} />, title: "BattleClash", desc: "Le jeu de chaîne de co-apparitions, solo ou multijoueur." },
             ].map(({ icon, title, desc }) => (
               <div
                 key={title}

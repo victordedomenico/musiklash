@@ -17,8 +17,8 @@ export default async function CreateBlindtestPage({
         title="Créer un blindtest"
         subtitle={
           resolvedMode === "multi"
-            ? "Sélectionne les morceaux — les joueurs devront deviner les titres en temps réel."
-            : "Sélectionne les morceaux — les titres seront cachés pendant la partie."
+            ? "Sélectionne des openings/endings — les joueurs devinent en temps réel."
+            : "Sélectionne des openings/endings — les réponses seront cachées pendant la partie."
         }
         right={
           <span

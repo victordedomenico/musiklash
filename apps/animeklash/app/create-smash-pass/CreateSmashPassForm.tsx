@@ -1,14 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import AnimePicker from "@/components/AnimePicker";
 import SmashPassItemPicker from "@/components/smash-pass/SmashPassItemPicker";
 import Input from "@/components/ui/Input";
 import type { SmashPassItemType } from "@/lib/smash-pass";
 import { createSmashPass, type SmashPassItemInput } from "./actions";
 
 const ITEM_TYPES: { value: SmashPassItemType; label: string }[] = [
-  { value: "anime", label: "Animés" },
-  { value: "character", label: "Personnages" },
+  { value: "anime", label: "Titres d'animé" },
+  { value: "character", label: "Persos d'animé" },
+  { value: "arc", label: "Arcs d'animé" },
 ];
 
 export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }) {
@@ -51,7 +53,7 @@ export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }
           className="mt-1 max-w-md"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ex. Rap FR — Smash or Pass"
+          placeholder="Ex. Shōnen favoris — Smash or Pass"
         />
       </div>
 
@@ -100,7 +102,11 @@ export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }
       </div>
 
       {/* Picker */}
-      <SmashPassItemPicker itemType={itemType} selected={items} onChange={setItems} />
+      {itemType === "arc" ? (
+        <AnimePicker freeMode size={100} selected={items} onChange={setItems} tabs={["arc"]} />
+      ) : (
+        <SmashPassItemPicker itemType={itemType} selected={items} onChange={setItems} />
+      )}
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">

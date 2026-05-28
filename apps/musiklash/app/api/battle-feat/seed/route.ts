@@ -26,7 +26,7 @@ type DeezerArtistFull = NonNullable<Awaited<ReturnType<typeof getArtistById>>>;
 type FeatSample = {
   name: string;
   trackTitle: string;
-  trackDeezerId: number;
+  trackExternalId: string;
 };
 
 function getOrderedArtistIds(aId: string, bId: string) {
@@ -35,9 +35,10 @@ function getOrderedArtistIds(aId: string, bId: string) {
 
 async function upsertArtist(deezerArtist: DeezerArtistFull) {
   const fanCount = deezerArtist.nb_fan ?? 0;
-  return prisma.rapArtist.upsert({
-    where: { deezerArtistId: BigInt(deezerArtist.id) },
+  return prisma.entity.upsert({
+    where: { externalId: String(deezerArtist.id) },
     update: {
+      kind: "artist",
       name: deezerArtist.name,
       nameSlug: slugifyName(deezerArtist.name),
       fanCount,
@@ -45,7 +46,8 @@ async function upsertArtist(deezerArtist: DeezerArtistFull) {
       pictureUrl: deezerArtist.picture_medium ?? deezerArtist.picture_small ?? null,
     },
     create: {
-      deezerArtistId: BigInt(deezerArtist.id),
+      externalId: String(deezerArtist.id),
+      kind: "artist",
       name: deezerArtist.name,
       nameSlug: slugifyName(deezerArtist.name),
       fanCount,
@@ -70,7 +72,7 @@ async function collectFeatSamples(deezerArtistId: number, artistName: string) {
         samples.set(featSlug, {
           name: featName,
           trackTitle: track.title,
-          trackDeezerId: track.id,
+          trackExternalId: String(track.id),
         });
       }
     }
@@ -93,7 +95,7 @@ async function collectFeatSamples(deezerArtistId: number, artistName: string) {
             samples.set(featSlug, {
               name: featName,
               trackTitle: track.title,
-              trackDeezerId: track.id,
+              trackExternalId: String(track.id),
             });
           }
         }
@@ -153,28 +155,28 @@ export async function processArtist(
       stats.artists++;
 
       const [artistAId, artistBId] = getOrderedArtistIds(artistRecord.id, featRecord.id);
-      const trackDeezerId = BigInt(sample.trackDeezerId);
+      const trackExternalId = sample.trackExternalId;
 
       try {
-        const existing = await prisma.rapFeat.findFirst({
+        const existing = await prisma.entityLink.findFirst({
           where: {
-            artistAId,
-            artistBId,
-            trackDeezerId,
+            entityAId: artistAId,
+            entityBId: artistBId,
+            trackExternalId,
           },
         });
 
         if (existing) {
-          await prisma.rapFeat.update({
+          await prisma.entityLink.update({
             where: { id: existing.id },
             data: { trackTitle: sample.trackTitle },
           });
         } else {
-          await prisma.rapFeat.create({
+          await prisma.entityLink.create({
             data: {
-              artistAId,
-              artistBId,
-              trackDeezerId,
+              entityAId: artistAId,
+              entityBId: artistBId,
+              trackExternalId,
               trackTitle: sample.trackTitle,
             },
           });
