@@ -33,6 +33,7 @@ export default async function RootLayout({
       data-theme={theme}
       data-scroll-behavior="smooth"
       className="h-full antialiased"
+      suppressHydrationWarning
     >
       <body className="min-h-full">
         <JsonLd

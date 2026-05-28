@@ -36,6 +36,7 @@ export const en: Dictionary = {
     openMainMenu: "Open menu",
     closeMainMenu: "Close menu",
     mainNavigation: "Main navigation",
+    luckyWheel: "I'm feeling lucky",
   },
   sidebar: {
     tagline: "Arena of sound",

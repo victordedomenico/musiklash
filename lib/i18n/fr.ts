@@ -34,6 +34,7 @@ export interface Dictionary {
     openMainMenu: string;
     closeMainMenu: string;
     mainNavigation: string;
+    luckyWheel: string;
   };
   sidebar: {
     tagline: string;
@@ -244,6 +245,7 @@ export const fr: Dictionary = {
     openMainMenu: "Ouvrir le menu",
     closeMainMenu: "Fermer le menu",
     mainNavigation: "Navigation principale",
+    luckyWheel: "J'ai de la chance",
   },
   sidebar: {
     tagline: "L'arène du son",

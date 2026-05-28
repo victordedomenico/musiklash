@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   CirclePlus,
+  Dice6,
   House,
   Library,
   Search,
@@ -12,7 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-type IconName = "home" | "search" | "create" | "library" | "guide" | "settings";
+type IconName = "home" | "search" | "create" | "library" | "guide" | "settings" | "lucky";
 
 type NavItem = {
   href: string;
@@ -31,6 +32,7 @@ const iconMap: Record<IconName, LucideIcon> = {
   library: Library,
   guide: BookOpen,
   settings: Settings,
+  lucky: Dice6,
 };
 
 function isActivePath(pathname: string, href: string) {

@@ -28,6 +28,7 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
     { href: "/", label: t.nav.home, icon: "home" as const },
     { href: "/explore", label: t.nav.explore, icon: "search" as const },
     { href: "/create", label: t.nav.create, icon: "create" as const },
+    { href: "/lucky-wheel", label: t.nav.luckyWheel, icon: "lucky" as const },
   ];
 
   const bottomLinks = [
