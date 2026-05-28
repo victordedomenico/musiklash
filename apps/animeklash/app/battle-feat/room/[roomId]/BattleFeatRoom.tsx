@@ -1,4 +1,5 @@
 "use client";
+import type { BattleFeatEntity } from "@klash/klash-app/lib/battle-feat/types";
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -23,7 +24,6 @@ import ArtistSearchInput from "@/components/ArtistSearchInput";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
 import RoomChat from "@/components/RoomChat";
 import type {
-  CharacterResult,
   BattleFeatParticipant,
   BattleFeatRoomSnapshot,
   RoomBroadcastPayload,
@@ -333,7 +333,7 @@ export default function BattleFeatRoom({
     };
   }, [waitingRematch, room.status, room.id, isParticipant, broadcastSync]);
 
-  const handleStartGame = async (character: CharacterResult) => {
+  const handleStartGame = async (character: BattleFeatEntity) => {
     setSubmitting(true);
     setError("");
     const result = await startGame(room.id, character.id, character.name, character.pictureUrl);
@@ -347,7 +347,7 @@ export default function BattleFeatRoom({
     setSubmitting(false);
   };
 
-  const handleMove = async (character: CharacterResult) => {
+  const handleMove = async (character: BattleFeatEntity) => {
     if (!isMyTurn || submitting) return;
     setSubmitting(true);
     setError("");

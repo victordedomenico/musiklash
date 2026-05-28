@@ -1,5 +1,22 @@
 /** Shared BattleFeat multiplayer / solo types (vertical-agnostic field names). */
 
+/**
+ * A BattleFeat participant entity (artist, character, etc.).
+ * Normalises ArtistResult (fanCount) and CharacterResult (favourites) into
+ * a single type. The `previewUrl` is optional — only music verticals provide it.
+ */
+export type BattleFeatEntity = {
+  id: string;
+  name: string;
+  nameSlug: string;
+  /** Normalised popularity score (fanCount for artists, favourites for characters). */
+  fanCount: number;
+  popularityTier: number;
+  pictureUrl: string | null;
+  /** Optional audio preview URL — present only for music verticals. */
+  previewUrl?: string | null;
+};
+
 export type FeatMove = {
   artistId: string;
   artistName: string;

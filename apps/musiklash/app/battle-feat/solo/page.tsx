@@ -34,7 +34,7 @@ export default async function BattleFeatSoloPage({
         id: challenge.id,
         title: challenge.title,
         difficulty: challenge.difficulty,
-        startingArtist: {
+        startingEntity: {
           id: challenge.startingArtistId,
           name: challenge.startingArtistName,
           pictureUrl: challenge.startingArtistPic,

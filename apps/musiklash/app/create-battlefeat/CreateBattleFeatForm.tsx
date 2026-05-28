@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Swords, User, Loader2 } from "lucide-react";
 import ArtistSearchInput from "@/components/ArtistSearchInput";
 import Input from "@/components/ui/Input";
-import type { ArtistResult } from "@/lib/battle-feat";
+import type { BattleFeatEntity } from "@klash/klash-app/lib/battle-feat/types";
 import { createBattleFeatChallenge } from "./actions";
 
 const DIFFICULTY_OPTIONS = [
@@ -17,7 +17,7 @@ export default function CreateBattleFeatForm() {
   const [title, setTitle] = useState("");
   const [difficulty, setDifficulty] = useState(2);
   const [visibility, setVisibility] = useState<"private" | "public">("private");
-  const [startingArtist, setStartingArtist] = useState<ArtistResult | null>(null);
+  const [startingEntity, setStartingEntity] = useState<BattleFeatEntity | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -28,7 +28,7 @@ export default function CreateBattleFeatForm() {
       setError("Le titre est requis.");
       return;
     }
-    if (!startingArtist) {
+    if (!startingEntity) {
       setError("Choisis un artiste de départ.");
       return;
     }
@@ -37,9 +37,9 @@ export default function CreateBattleFeatForm() {
         title,
         difficulty,
         visibility,
-        startingArtistId: startingArtist.id,
-        startingArtistName: startingArtist.name,
-        startingArtistPic: startingArtist.pictureUrl,
+        startingArtistId: startingEntity.id,
+        startingArtistName: startingEntity.name,
+        startingArtistPic: startingEntity.pictureUrl,
       });
       if (res?.error) setError(res.error);
     });
@@ -86,12 +86,12 @@ export default function CreateBattleFeatForm() {
       <div>
         <label className="text-sm font-medium">Artiste de départ</label>
         <div className="mt-1">
-          {startingArtist ? (
+          {startingEntity ? (
             <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5">
-              {startingArtist.pictureUrl ? (
+              {startingEntity.pictureUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={startingArtist.pictureUrl}
+                  src={startingEntity.pictureUrl}
                   alt=""
                   className="h-10 w-10 shrink-0 rounded-full object-cover"
                 />
@@ -100,10 +100,10 @@ export default function CreateBattleFeatForm() {
                   <User size={16} className="text-[color:var(--muted)]" />
                 </div>
               )}
-              <p className="flex-1 truncate font-semibold">{startingArtist.name}</p>
+              <p className="flex-1 truncate font-semibold">{startingEntity.name}</p>
               <button
                 type="button"
-                onClick={() => setStartingArtist(null)}
+                onClick={() => setStartingEntity(null)}
                 className="btn-ghost !px-3 !py-1.5 text-sm"
               >
                 Changer
@@ -111,7 +111,7 @@ export default function CreateBattleFeatForm() {
             </div>
           ) : (
             <ArtistSearchInput
-              onSelect={setStartingArtist}
+              onSelect={setStartingEntity}
               placeholder="Recherche un artiste de départ…"
             />
           )}
@@ -150,11 +150,11 @@ export default function CreateBattleFeatForm() {
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
         <p className="text-sm text-[color:var(--muted)]">
-          {startingArtist ? `Artiste : ${startingArtist.name}` : "Aucun artiste sélectionné"}
+          {startingEntity ? `Artiste : ${startingEntity.name}` : "Aucun artiste sélectionné"}
         </p>
         <button
           type="submit"
-          disabled={pending || !startingArtist || !title.trim()}
+          disabled={pending || !startingEntity || !title.trim()}
           className="btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {pending ? <Loader2 size={16} className="animate-spin" /> : <Swords size={16} />}
