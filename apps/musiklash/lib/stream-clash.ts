@@ -14,7 +14,7 @@ export type StreamClashDifficulty = "easy" | "normal" | "hard";
 
 export type StreamClashTrackData = {
   position: number;
-  deezerTrackId: number;
+  externalId: number;
   title: string;
   artist: string;
   previewUrl: string;

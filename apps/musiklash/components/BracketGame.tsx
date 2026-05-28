@@ -23,8 +23,8 @@ function roundLabel(round: number, total: number) {
   return `Tour ${round}`;
 }
 
-async function fetchFreshPreview(deezerTrackId: number): Promise<string> {
-  const res = await fetch(`/api/deezer/track/${deezerTrackId}`);
+async function fetchFreshPreview(externalId: number): Promise<string> {
+  const res = await fetch(`/api/deezer/track/${externalId}`);
   const data = (await res.json()) as { preview?: string };
   return data.preview ?? "";
 }
@@ -181,7 +181,7 @@ export default function BracketGame({
         const results = await Promise.all(
           batch.map(async (track) => {
             try {
-              const fresh = await fetchFreshPreview(track.deezerTrackId);
+              const fresh = await fetchFreshPreview(track.externalId);
               return fresh ? ([track.seed, fresh] as const) : null;
             } catch {
               return null;
@@ -291,7 +291,7 @@ export default function BracketGame({
   ): Promise<string | null> => {
     setLoadingSeed(track.seed);
     try {
-      const fresh = await fetchFreshPreview(track.deezerTrackId);
+      const fresh = await fetchFreshPreview(track.externalId);
       if (!fresh) return null;
       setRefreshedPreviewBySeed((prev) => {
         const next = new Map(prev);

@@ -38,7 +38,7 @@ export async function startSmashPassSession(smashPassId: string) {
 export async function submitSmashPassChoice(
   sessionId: string,
   itemType: SmashPassItemType,
-  deezerId: number,
+  externalId: number,
   position: number,
   choice: SmashPassChoice,
 ) {
@@ -64,7 +64,7 @@ export async function submitSmashPassChoice(
     return { error: "Déjà voté pour cet élément." };
   }
 
-  const stats = await recordGlobalVote(itemType, deezerId, choice);
+  const stats = await recordGlobalVote(itemType, externalId, choice);
   const nextChoices = [...choices, { position, choice }];
   const smashCount = session.smashCount + (choice === "smash" ? 1 : 0);
   const passCount = session.passCount + (choice === "pass" ? 1 : 0);
@@ -94,9 +94,9 @@ export async function finishSmashPassSession(
 
 export async function fetchItemStats(
   itemType: SmashPassItemType,
-  deezerId: number,
+  externalId: number,
 ) {
-  const stats = await getGlobalStats(itemType, deezerId);
+  const stats = await getGlobalStats(itemType, externalId);
   return { stats };
 }
 

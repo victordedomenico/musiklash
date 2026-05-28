@@ -45,7 +45,7 @@ import type { Dictionary } from "@/lib/i18n";
 
 export type TierItem = {
   position: number;
-  deezerTrackId: number;
+  externalId: number;
   title: string;
   artist: string;
   coverUrl: string | null;
@@ -101,7 +101,7 @@ function TrackChip({
 }: {
   item: TierItem;
   isDragging?: boolean;
-  onPreview: (pos: number, deezerTrackId: number, url: string) => void;
+  onPreview: (pos: number, externalId: number, url: string) => void;
   playingPosition: number | null;
   texts: TierlistBoardTexts;
 }) {
@@ -124,7 +124,7 @@ function TrackChip({
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
-            onPreview(item.position, item.deezerTrackId, item.previewUrl);
+            onPreview(item.position, item.externalId, item.previewUrl);
           }}
           className="pointer-events-auto rounded-full bg-black/65 p-2 text-white transition hover:bg-black/80"
           aria-label={isPlaying ? "Pause" : texts.listen}
@@ -150,7 +150,7 @@ function SortableTrack({
   texts,
 }: {
   item: TierItem;
-  onPreview: (pos: number, deezerTrackId: number, url: string) => void;
+  onPreview: (pos: number, externalId: number, url: string) => void;
   playingPosition: number | null;
   texts: TierlistBoardTexts;
 }) {
@@ -195,7 +195,7 @@ function TierRow({
   onMoveDown: (tierId: string) => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
-  onPreview: (pos: number, deezerTrackId: number, url: string) => void;
+  onPreview: (pos: number, externalId: number, url: string) => void;
   playingPosition: number | null;
   texts: TierlistBoardTexts;
 }) {
@@ -379,7 +379,7 @@ function PoolZone({
 }: {
   poolItems: TierItem[];
   tracks: TierItem[];
-  onPreview: (pos: number, deezerTrackId: number, url: string) => void;
+  onPreview: (pos: number, externalId: number, url: string) => void;
   playingPosition: number | null;
   texts: TierlistBoardTexts;
 }) {
@@ -471,7 +471,7 @@ export default function TierlistBoard({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  const handlePreview = useCallback(async (pos: number, deezerTrackId: number, staleUrl: string) => {
+  const handlePreview = useCallback(async (pos: number, externalId: number, staleUrl: string) => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.onended = () => setPlayingPosition(null);
@@ -485,14 +485,14 @@ export default function TierlistBoard({
     }
 
     // Résoudre l'URL fraîche (cache ou fetch)
-    let url = freshUrlCache.current.get(deezerTrackId) ?? staleUrl;
-    if (!freshUrlCache.current.has(deezerTrackId)) {
+    let url = freshUrlCache.current.get(externalId) ?? staleUrl;
+    if (!freshUrlCache.current.has(externalId)) {
       try {
-        const res = await fetch(`/api/deezer/track/${deezerTrackId}`);
+        const res = await fetch(`/api/deezer/track/${externalId}`);
         const data = await res.json() as { preview?: string };
         if (data.preview) {
           url = data.preview;
-          freshUrlCache.current.set(deezerTrackId, url);
+          freshUrlCache.current.set(externalId, url);
         }
       } catch { /* garde l'URL stale */ }
     }

@@ -193,7 +193,7 @@ export async function startGame(roomId: string) {
 
   const tracks: StreamClashTrackData[] = room.streamClash.tracks.map((t) => ({
     position: t.position,
-    deezerTrackId: Number(t.deezerTrackId),
+    externalId: Number(t.externalId),
     title: t.title,
     artist: t.artist,
     previewUrl: t.previewUrl,
@@ -316,7 +316,7 @@ export async function nextRound(roomId: string) {
 
   const tracks: StreamClashTrackData[] = room.streamClash.tracks.map((t) => ({
     position: t.position,
-    deezerTrackId: Number(t.deezerTrackId),
+    externalId: Number(t.externalId),
     title: t.title,
     artist: t.artist,
     previewUrl: t.previewUrl,
@@ -370,7 +370,7 @@ export async function rematch(roomId: string) {
 
   const tracks: StreamClashTrackData[] = room.streamClash.tracks.map((t) => ({
     position: t.position,
-    deezerTrackId: Number(t.deezerTrackId),
+    externalId: Number(t.externalId),
     title: t.title,
     artist: t.artist,
     previewUrl: t.previewUrl,

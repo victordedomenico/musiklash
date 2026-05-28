@@ -54,7 +54,7 @@ export default async function TierlistPage({
         orderBy: { position: "asc" },
         select: {
           position: true,
-          deezerTrackId: true,
+          externalId: true,
           title: true,
           artist: true,
           coverUrl: true,
@@ -68,7 +68,7 @@ export default async function TierlistPage({
 
   const tracks: TierItem[] = tl.tracks.map((t) => ({
     position: t.position,
-    deezerTrackId: Number(t.deezerTrackId),
+    externalId: Number(t.externalId),
     title: t.title,
     artist: t.artist,
     coverUrl: t.coverUrl,

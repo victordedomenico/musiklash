@@ -68,7 +68,7 @@ export default async function StreamClashPlayPage({
 
   const tracks = sc.tracks.map((t) => ({
     position: t.position,
-    deezerTrackId: Number(t.deezerTrackId),
+    externalId: Number(t.externalId),
     title: t.title,
     artist: t.artist,
     previewUrl: t.previewUrl,

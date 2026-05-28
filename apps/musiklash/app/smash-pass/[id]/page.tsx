@@ -105,7 +105,7 @@ export default async function SmashPassDetailPage({
         {previewItems.length > 0 ? (
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
             {previewItems.map((item) => (
-              <div key={item.deezerId} className="relative aspect-square overflow-hidden rounded-xl">
+              <div key={item.externalId} className="relative aspect-square overflow-hidden rounded-xl">
                 {item.coverUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img

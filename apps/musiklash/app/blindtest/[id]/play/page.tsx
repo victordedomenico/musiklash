@@ -29,7 +29,7 @@ export default async function BlindtestPlayPage({
       id: true,
       title: true,
       tracks: {
-        select: { position: true, deezerTrackId: true, title: true, artist: true, coverUrl: true },
+        select: { position: true, externalId: true, title: true, artist: true, coverUrl: true },
         orderBy: { position: "asc" },
       },
     },
@@ -39,7 +39,7 @@ export default async function BlindtestPlayPage({
 
   const tracks: BlindtrackData[] = blindtest.tracks.map((t) => ({
     position: t.position,
-    deezerTrackId: Number(t.deezerTrackId),
+    externalId: Number(t.externalId),
     title: t.title,
     artist: t.artist,
     coverUrl: t.coverUrl,

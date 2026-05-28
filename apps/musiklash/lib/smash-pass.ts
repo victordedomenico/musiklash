@@ -3,7 +3,7 @@ export type SmashPassChoice = "smash" | "pass";
 
 export type SmashPassItemData = {
   position: number;
-  deezerId: number;
+  externalId: number;
   title: string;
   subtitle: string | null;
   coverUrl: string | null;
@@ -19,7 +19,7 @@ export type SmashPassSessionChoice = {
 
 export type SmashPassItemStatsSnapshot = {
   itemType: SmashPassItemType;
-  deezerId: number;
+  externalId: number;
   smashCount: number;
   passCount: number;
   smashPercent: number;
@@ -58,14 +58,14 @@ export function computePercentages(smashCount: number, passCount: number): {
 
 export function toStatsSnapshot(
   itemType: SmashPassItemType,
-  deezerId: number,
+  externalId: number,
   smashCount: number,
   passCount: number,
 ): SmashPassItemStatsSnapshot {
   const { smashPercent, passPercent } = computePercentages(smashCount, passCount);
   return {
     itemType,
-    deezerId,
+    externalId,
     smashCount,
     passCount,
     smashPercent,
@@ -146,7 +146,7 @@ export function computeRoomVoteTotals(
 export function mapPrismaItem(
   item: {
     position: number;
-    deezerId: bigint;
+    externalId: bigint;
     title: string;
     subtitle: string | null;
     coverUrl: string | null;
@@ -160,7 +160,7 @@ export function mapPrismaItem(
     : [];
   return {
     position: item.position,
-    deezerId: Number(item.deezerId),
+    externalId: Number(item.externalId),
     title: item.title,
     subtitle: item.subtitle,
     coverUrl: item.coverUrl,

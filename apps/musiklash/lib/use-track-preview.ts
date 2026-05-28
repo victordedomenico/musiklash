@@ -7,8 +7,8 @@ function safePreviewUrl(url: string) {
   return url.replace(/^http:\/\//i, "https://");
 }
 
-async function fetchFreshPreview(deezerTrackId: number): Promise<string> {
-  const res = await fetch(`/api/deezer/track/${deezerTrackId}`);
+async function fetchFreshPreview(externalId: number): Promise<string> {
+  const res = await fetch(`/api/deezer/track/${externalId}`);
   const data = (await res.json()) as { preview?: string };
   return data.preview ?? "";
 }
@@ -41,14 +41,14 @@ export function useTrackPreview() {
   }, []);
 
   const playUrl = useCallback(
-    (key: string, title: string, previewUrl: string, deezerTrackId?: number) => {
+    (key: string, title: string, previewUrl: string, externalId?: number) => {
       const url = safePreviewUrl(previewUrl);
 
       if (audioRef.current && nowPlaying?.key === key) {
         if (audioRef.current.paused) {
           void audioRef.current.play().catch(async () => {
-            if (!deezerTrackId) return;
-            const fresh = await fetchFreshPreview(deezerTrackId);
+            if (!externalId) return;
+            const fresh = await fetchFreshPreview(externalId);
             if (fresh) playUrl(key, title, fresh);
           });
         } else {
@@ -74,12 +74,12 @@ export function useTrackPreview() {
       audio.src = url;
       setNowPlaying({ key, title });
       void audio.play().catch(async () => {
-        if (!deezerTrackId) {
+        if (!externalId) {
           setIsPlaying(false);
           setNowPlaying(null);
           return;
         }
-        const fresh = await fetchFreshPreview(deezerTrackId);
+        const fresh = await fetchFreshPreview(externalId);
         if (!fresh) {
           setIsPlaying(false);
           setNowPlaying(null);
@@ -100,13 +100,13 @@ export function useTrackPreview() {
       key: string,
       title: string,
       previewUrl: string | null | undefined,
-      deezerTrackId: number,
+      externalId: number,
     ) => {
       if (audioRef.current && nowPlaying?.key === key) {
         if (audioRef.current.paused) {
           void audioRef.current.play().catch(async () => {
-            const fresh = await fetchFreshPreview(deezerTrackId);
-            if (fresh) playUrl(key, title, fresh, deezerTrackId);
+            const fresh = await fetchFreshPreview(externalId);
+            if (fresh) playUrl(key, title, fresh, externalId);
           });
         } else {
           audioRef.current.pause();
@@ -115,10 +115,10 @@ export function useTrackPreview() {
       }
 
       let url = previewUrl?.trim() ? safePreviewUrl(previewUrl.trim()) : "";
-      if (!url) url = safePreviewUrl(await fetchFreshPreview(deezerTrackId));
+      if (!url) url = safePreviewUrl(await fetchFreshPreview(externalId));
       if (!url) return;
 
-      playUrl(key, title, url, deezerTrackId);
+      playUrl(key, title, url, externalId);
     },
     [playUrl, nowPlaying?.key],
   );

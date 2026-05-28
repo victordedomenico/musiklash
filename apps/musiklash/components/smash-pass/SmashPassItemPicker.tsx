@@ -81,16 +81,16 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
         ? albumSearch.loading
         : artistSearch.loading;
 
-  const isSelected = (deezerId: number) =>
-    selected.some((s) => s.deezer_id === deezerId);
+  const isSelected = (externalId: number) =>
+    selected.some((s) => s.deezer_id === externalId);
 
   const addItem = (item: SmashPassItemInput) => {
     if (!canAdd || isSelected(item.deezer_id)) return;
     onChange([...selected, item]);
   };
 
-  const remove = (deezerId: number) =>
-    onChange(selected.filter((s) => s.deezer_id !== deezerId));
+  const remove = (externalId: number) =>
+    onChange(selected.filter((s) => s.deezer_id !== externalId));
 
   const addTrack = (t: DeezerTrack) => {
     addItem({

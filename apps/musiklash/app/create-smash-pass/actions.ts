@@ -60,7 +60,7 @@ export async function createSmashPass(input: {
         items: {
           create: input.items.map((item, i) => ({
             position: i,
-            deezerId: BigInt(item.deezer_id),
+            externalId: BigInt(item.deezer_id),
             title: item.title,
             subtitle: item.subtitle,
             coverUrl: item.cover_url,

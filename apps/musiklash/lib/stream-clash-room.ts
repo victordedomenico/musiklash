@@ -97,7 +97,7 @@ export function toStreamClashRoomSnapshot(room: NonNullable<RoomRaw>): StreamCla
       title: room.streamClash.title,
       tracks: room.streamClash.tracks.map((t) => ({
         position: t.position,
-        deezerTrackId: Number(t.deezerTrackId),
+        externalId: Number(t.externalId),
         title: t.title,
         artist: t.artist,
         previewUrl: t.previewUrl,

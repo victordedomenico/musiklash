@@ -26,7 +26,7 @@ type WheelItem = {
   sublabel?: string;
   coverUrl?: string;
   previewUrl?: string;
-  deezerTrackId?: number;
+  externalId?: number;
   type: ItemType;
 };
 
@@ -234,7 +234,7 @@ export default function LuckyWheelClient() {
           sublabel: track.artist.name,
           coverUrl: track.album.cover_small,
           previewUrl: track.preview,
-          deezerTrackId: track.id,
+          externalId: track.id,
           type: "track" as const,
         },
       ];
@@ -829,14 +829,14 @@ export default function LuckyWheelClient() {
               </p>
             )}
 
-            {winner.previewUrl && winner.deezerTrackId ? (
+            {winner.previewUrl && winner.externalId ? (
               <button
                 onClick={() => {
                   void playTrack(
                     winner.id,
                     winner.label,
                     winner.previewUrl ?? "",
-                    winner.deezerTrackId!,
+                    winner.externalId!,
                   );
                 }}
                 className="btn-primary mb-3 w-full"

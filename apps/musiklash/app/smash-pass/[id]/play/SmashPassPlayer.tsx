@@ -77,7 +77,7 @@ export default function SmashPassPlayer({
 
   const handlePreview = useCallback(() => {
     if (!currentItem?.previewUrl) return;
-    const key = `sp-${currentItem.deezerId}`;
+    const key = `sp-${currentItem.externalId}`;
     if (isPlayingKey(key)) {
       toggle();
       return;
@@ -86,7 +86,7 @@ export default function SmashPassPlayer({
       key,
       currentItem.title,
       currentItem.previewUrl,
-      currentItem.deezerId,
+      currentItem.externalId,
     );
   }, [currentItem, isPlayingKey, toggle, playTrack]);
 
@@ -99,7 +99,7 @@ export default function SmashPassPlayer({
       void submitSmashPassChoice(
         sessionId,
         itemType,
-        currentItem.deezerId,
+        currentItem.externalId,
         position,
         choice,
       ).then((res) => {
@@ -180,7 +180,7 @@ export default function SmashPassPlayer({
         onPreview={currentItem.previewUrl ? handlePreview : undefined}
         isPreviewPlaying={
           currentItem.previewUrl
-            ? isPlayingKey(`sp-${currentItem.deezerId}`)
+            ? isPlayingKey(`sp-${currentItem.externalId}`)
             : false
         }
       />

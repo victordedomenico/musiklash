@@ -234,7 +234,7 @@ export async function submitVote(roomId: string, choice: SmashPassChoice) {
   }
 
   const itemType = room.smashPass.itemType as SmashPassItemType;
-  const stats = await recordGlobalVote(itemType, Number(item.deezerId), choice);
+  const stats = await recordGlobalVote(itemType, Number(item.externalId), choice);
 
   const updated = participants.map((p) => {
     if (p.playerId !== user.id) return p;

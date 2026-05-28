@@ -334,7 +334,7 @@ export default function BlindtestRoomClient({
     freshUrlRef.current = "";
     audioRef.current?.pause();
 
-    fetch(`/api/deezer/track/${track.deezerTrackId}`)
+    fetch(`/api/deezer/track/${track.externalId}`)
       .then((r) => r.json())
       .then((d: { preview?: string }) => {
         freshUrlRef.current = d.preview ?? "";

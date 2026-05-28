@@ -6,15 +6,15 @@ import { usePreviewVolume } from "@/lib/audio-volume";
 
 export type BracketTrack = {
   seed: number;
-  deezerTrackId: number;
+  externalId: number;
   title: string;
   artist: string;
   preview_url: string;
   cover_url: string | null;
 };
 
-async function fetchFreshPreview(deezerTrackId: number): Promise<string> {
-  const res = await fetch(`/api/deezer/track/${deezerTrackId}`);
+async function fetchFreshPreview(externalId: number): Promise<string> {
+  const res = await fetch(`/api/deezer/track/${externalId}`);
   const data = await res.json() as { preview?: string };
   return data.preview ?? "";
 }
@@ -40,9 +40,9 @@ export default function MatchCard({
   const [previewB, setPreviewB] = useState(b.preview_url);
 
   useEffect(() => {
-    fetchFreshPreview(a.deezerTrackId).then((url) => { if (url) setPreviewA(url); }).catch(() => {});
-    fetchFreshPreview(b.deezerTrackId).then((url) => { if (url) setPreviewB(url); }).catch(() => {});
-  }, [a.deezerTrackId, b.deezerTrackId]);
+    fetchFreshPreview(a.externalId).then((url) => { if (url) setPreviewA(url); }).catch(() => {});
+    fetchFreshPreview(b.externalId).then((url) => { if (url) setPreviewB(url); }).catch(() => {});
+  }, [a.externalId, b.externalId]);
 
   useEffect(() => {
     return () => {

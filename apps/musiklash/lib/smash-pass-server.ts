@@ -8,20 +8,20 @@ import {
 
 export async function recordGlobalVote(
   itemType: SmashPassItemType,
-  deezerId: number,
+  externalId: number,
   choice: SmashPassChoice,
 ): Promise<SmashPassItemStatsSnapshot> {
-  const id = BigInt(deezerId);
+  const id = BigInt(externalId);
   const smashDelta = choice === "smash" ? BigInt(1) : BigInt(0);
   const passDelta = choice === "pass" ? BigInt(1) : BigInt(0);
 
   const row = await prisma.smashPassItemStats.upsert({
     where: {
-      itemType_deezerId: { itemType, deezerId: id },
+      itemType_externalId: { itemType, externalId: id },
     },
     create: {
       itemType,
-      deezerId: id,
+      externalId: id,
       smashCount: smashDelta,
       passCount: passDelta,
     },
@@ -33,7 +33,7 @@ export async function recordGlobalVote(
 
   return toStatsSnapshot(
     itemType,
-    deezerId,
+    externalId,
     Number(row.smashCount),
     Number(row.passCount),
   );
@@ -41,21 +41,21 @@ export async function recordGlobalVote(
 
 export async function getGlobalStats(
   itemType: SmashPassItemType,
-  deezerId: number,
+  externalId: number,
 ): Promise<SmashPassItemStatsSnapshot> {
   const row = await prisma.smashPassItemStats.findUnique({
     where: {
-      itemType_deezerId: { itemType, deezerId: BigInt(deezerId) },
+      itemType_externalId: { itemType, externalId: BigInt(externalId) },
     },
   });
 
   if (!row) {
-    return toStatsSnapshot(itemType, deezerId, 0, 0);
+    return toStatsSnapshot(itemType, externalId, 0, 0);
   }
 
   return toStatsSnapshot(
     itemType,
-    deezerId,
+    externalId,
     Number(row.smashCount),
     Number(row.passCount),
   );
@@ -70,7 +70,7 @@ export async function getGlobalStatsBatch(
   const rows = await prisma.smashPassItemStats.findMany({
     where: {
       itemType,
-      deezerId: { in: deezerIds.map((id) => BigInt(id)) },
+      externalId: { in: deezerIds.map((id) => BigInt(id)) },
     },
   });
 
@@ -79,7 +79,7 @@ export async function getGlobalStatsBatch(
     map.set(id, toStatsSnapshot(itemType, id, 0, 0));
   }
   for (const row of rows) {
-    const id = Number(row.deezerId);
+    const id = Number(row.externalId);
     map.set(
       id,
       toStatsSnapshot(itemType, id, Number(row.smashCount), Number(row.passCount)),

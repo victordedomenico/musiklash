@@ -67,7 +67,7 @@ export async function createBracket(input: {
         tracks: {
           create: input.tracks.map((t, i) => ({
             seed: i + 1,
-            deezerTrackId: BigInt(t.deezer_track_id),
+            externalId: BigInt(t.deezer_track_id),
             title: t.title,
             artist: t.artist,
             previewUrl: t.preview_url,

@@ -318,7 +318,7 @@ export default function StreamClashPlayer({
               String(pair.trackA.position),
               pair.trackA.title,
               pair.trackA.previewUrl,
-              pair.trackA.deezerTrackId,
+              pair.trackA.externalId,
             )
           }
           isPlayingPreview={isPlayingKey(String(pair.trackA.position))}
@@ -335,7 +335,7 @@ export default function StreamClashPlayer({
               String(pair.trackB.position),
               pair.trackB.title,
               pair.trackB.previewUrl,
-              pair.trackB.deezerTrackId,
+              pair.trackB.externalId,
             )
           }
           isPlayingPreview={isPlayingKey(String(pair.trackB.position))}
