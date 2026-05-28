@@ -1,5 +1,14 @@
 export type Locale = "fr" | "en";
 
+export {
+  fr,
+  en,
+  buildDictionary,
+  type Dictionary,
+  type DeepPartial,
+  type DictionaryOverrides,
+} from "./dictionary";
+
 const FRANCOPHONE_MAJOR_COUNTRIES = new Set([
   "FR",
   "BE",

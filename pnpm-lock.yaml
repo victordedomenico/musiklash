@@ -38,12 +38,21 @@ importers:
       '@klash/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@klash/klash-app':
+        specifier: workspace:*
+        version: link:../../packages/klash-app
+      '@klash/klash-config':
+        specifier: workspace:*
+        version: link:../../packages/klash-config
+      '@klash/relation-graph':
+        specifier: workspace:*
+        version: link:../../packages/relation-graph
       '@prisma/adapter-pg':
         specifier: ^7.7.0
         version: 7.8.0
       '@prisma/client':
         specifier: ^7.7.0
-        version: 7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
+        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
       '@supabase/ssr':
         specifier: ^0.10.2
         version: 0.10.3(@supabase/supabase-js@2.106.2)
@@ -136,6 +145,88 @@ importers:
         specifier: ^4.1.4
         version: 4.1.7(@types/node@20.19.41)(@vitest/ui@4.1.7)(vite@8.0.14(@types/node@20.19.41)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3))
 
+  apps/demoklash:
+    dependencies:
+      '@klash/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@klash/content-adapter':
+        specifier: workspace:*
+        version: link:../../packages/content-adapter
+      '@klash/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
+      '@klash/klash-app':
+        specifier: workspace:*
+        version: link:../../packages/klash-app
+      '@klash/klash-config':
+        specifier: workspace:*
+        version: link:../../packages/klash-config
+      '@prisma/adapter-pg':
+        specifier: ^7.7.0
+        version: 7.8.0
+      '@prisma/client':
+        specifier: ^7.7.0
+        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
+      '@supabase/ssr':
+        specifier: ^0.10.2
+        version: 0.10.3(@supabase/supabase-js@2.106.2)
+      '@supabase/supabase-js':
+        specifier: ^2.103.3
+        version: 2.106.2
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      lucide-react:
+        specifier: ^1.8.0
+        version: 1.17.0(react@19.2.4)
+      next:
+        specifier: 16.2.4
+        version: 16.2.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      pg:
+        specifier: ^8.20.0
+        version: 8.21.0
+      react:
+        specifier: 19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: 19.2.4
+        version: 19.2.4(react@19.2.4)
+      tailwind-merge:
+        specifier: ^3.5.0
+        version: 3.6.0
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.3.0
+      '@types/node':
+        specifier: ^20
+        version: 20.19.41
+      '@types/pg':
+        specifier: ^8.20.0
+        version: 8.20.0
+      '@types/react':
+        specifier: ^19
+        version: 19.2.15
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.3(@types/react@19.2.15)
+      eslint:
+        specifier: ^9
+        version: 9.39.4(jiti@2.7.0)
+      eslint-config-next:
+        specifier: 16.2.4
+        version: 16.2.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
+      prisma:
+        specifier: ^7.7.0
+        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      tailwindcss:
+        specifier: ^4
+        version: 4.3.0
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
   apps/musiklash:
     dependencies:
       '@dnd-kit/core':
@@ -162,12 +253,18 @@ importers:
       '@klash/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
+      '@klash/klash-app':
+        specifier: workspace:*
+        version: link:../../packages/klash-app
+      '@klash/klash-config':
+        specifier: workspace:*
+        version: link:../../packages/klash-config
       '@prisma/adapter-pg':
         specifier: ^7.7.0
         version: 7.8.0
       '@prisma/client':
         specifier: ^7.7.0
-        version: 7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
+        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
       '@supabase/ssr':
         specifier: ^0.10.2
         version: 0.10.3(@supabase/supabase-js@2.106.2)
@@ -264,9 +361,100 @@ importers:
 
   packages/content-adapter: {}
 
+  packages/db:
+    dependencies:
+      '@prisma/client':
+        specifier: ^7.7.0
+        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
+    devDependencies:
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+      prisma:
+        specifier: ^7.7.0
+        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      tsx:
+        specifier: ^4.21.0
+        version: 4.22.3
+
   packages/game-engine: {}
 
   packages/i18n: {}
+
+  packages/klash-app:
+    dependencies:
+      '@klash/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@klash/content-adapter':
+        specifier: workspace:*
+        version: link:../content-adapter
+      '@klash/game-engine':
+        specifier: workspace:*
+        version: link:../game-engine
+      '@klash/i18n':
+        specifier: workspace:*
+        version: link:../i18n
+      '@klash/klash-config':
+        specifier: workspace:*
+        version: link:../klash-config
+      '@klash/relation-graph':
+        specifier: workspace:*
+        version: link:../relation-graph
+      '@prisma/adapter-pg':
+        specifier: ^7.7.0
+        version: 7.8.0
+      '@prisma/client':
+        specifier: ^7.7.0
+        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      html-to-image:
+        specifier: ^1.11.13
+        version: 1.11.13
+      next:
+        specifier: '*'
+        version: 16.2.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      pg:
+        specifier: ^8.20.0
+        version: 8.21.0
+      react:
+        specifier: '*'
+        version: 19.2.4
+      react-dom:
+        specifier: '*'
+        version: 19.2.4(react@19.2.4)
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
+      tailwind-merge:
+        specifier: ^3.5.0
+        version: 3.6.0
+
+  packages/klash-config:
+    dependencies:
+      '@klash/content-adapter':
+        specifier: workspace:*
+        version: link:../content-adapter
+      '@klash/i18n':
+        specifier: workspace:*
+        version: link:../i18n
+      next:
+        specifier: '*'
+        version: 16.2.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+
+  packages/relation-graph:
+    dependencies:
+      '@klash/content-adapter':
+        specifier: workspace:*
+        version: link:../content-adapter
+      '@klash/klash-config':
+        specifier: workspace:*
+        version: link:../klash-config
+      '@prisma/client':
+        specifier: '*'
+        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
 
 packages:
 
@@ -2925,6 +3113,9 @@ packages:
   seq-queue@0.0.5:
     resolution: {integrity: sha512-hr3Wtp/GZIc/6DAGPDcV4/9WoZhjrkXsi5B/07QgX8tsdc6ilr7BFM6PM6rbdAX1kFSDYeZGLipIZZKyQP0O5Q==}
 
+  server-only@0.0.1:
+    resolution: {integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==}
+
   set-function-length@1.2.2:
     resolution: {integrity: sha512-pgRc4hJ4/sNjWCSS9AmnS40x3bNMDTknHgL5UaMBTMyJnU90EgWh1Rz+MC9eFu4BuN/UwZjKQuY/1v3rM7HMfg==}
     engines: {node: '>= 0.4'}
@@ -3817,7 +4008,7 @@ snapshots:
 
   '@prisma/client-runtime-utils@7.8.0': {}
 
-  '@prisma/client@7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)':
+  '@prisma/client@7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
       '@prisma/client-runtime-utils': 7.8.0
     optionalDependencies:
@@ -6033,6 +6224,8 @@ snapshots:
   semver@7.8.1: {}
 
   seq-queue@0.0.5: {}
+
+  server-only@0.0.1: {}
 
   set-function-length@1.2.2:
     dependencies:

@@ -288,6 +288,26 @@ function mediaToCollection(m: AniListMedia): ContentCollection {
     title: animeTitle(m),
     coverUrl: m.coverImage.large ?? m.coverImage.medium ?? undefined,
     source: "anilist",
+    metadata: {
+      episodes: m.episodes,
+      popularity: m.popularity,
+      seasonYear: m.seasonYear,
+    },
+  };
+}
+
+function arcToCollection(a: AniListArc): ContentCollection {
+  return {
+    id: String(a.id),
+    title: a.title.english ?? a.title.romaji ?? a.title.native ?? String(a.id),
+    coverUrl: a.coverImage.large ?? a.coverImage.medium ?? undefined,
+    source: "anilist",
+    metadata: {
+      episodes: a.episodes,
+      format: a.format,
+      popularity: a.popularity,
+      parentTitle: a.parentTitle,
+    },
   };
 }
 
@@ -597,5 +617,50 @@ export const anilistContentSource: ContentSource = {
     }
     const anime = await getAnimeById(Number(entityId));
     return anime ? mediaToEntity(anime) : null;
+  },
+
+  async getEntityCollections(entityId, { limit = 100 } = {}) {
+    // For an anime entity: its arcs/sagas are the collections.
+    const animeId = Number(entityId);
+    if (isNaN(animeId)) return [];
+    const arcs = await getAnimeArcs(animeId);
+    return arcs.slice(0, limit).map(arcToCollection);
+  },
+
+  async searchItemsByKind(kind, query, { limit = 20 } = {}) {
+    switch (kind) {
+      case "anime": {
+        const animes = await searchAnime(query, limit);
+        return animes.map(mediaToItem);
+      }
+      case "character": {
+        const chars = await searchCharacters(query, limit);
+        return chars.map(characterToItem);
+      }
+      case "arc": {
+        const arcs = await searchAnimeArcs(query, limit);
+        return arcs.map((a) => ({
+          id: String(a.id),
+          title: a.title.english ?? a.title.romaji ?? a.title.native ?? String(a.id),
+          coverUrl: a.coverImage.large ?? a.coverImage.medium ?? undefined,
+          source: "anilist" as const,
+          metadata: {
+            type: "arc",
+            episodes: a.episodes,
+            format: a.format,
+            popularity: a.popularity,
+            parentTitle: a.parentTitle,
+          },
+        }));
+      }
+      default: {
+        // Fallback: merge anime + characters
+        const [animes, chars] = await Promise.all([
+          searchAnime(query, Math.ceil(limit / 2)),
+          searchCharacters(query, Math.floor(limit / 2)),
+        ]);
+        return [...animes.map(mediaToItem), ...chars.map(characterToItem)].slice(0, limit);
+      }
+    }
   },
 };

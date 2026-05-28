@@ -20,6 +20,7 @@ export type ContentCollection = {
   title: string;
   coverUrl?: string;
   source: string;
+  metadata?: Record<string, unknown>;
 };
 
 /**
@@ -31,6 +32,7 @@ export type ContentEntity = {
   pictureUrl?: string;
   fanCount?: number;
   source: string;
+  metadata?: Record<string, unknown>;
 };
 
 /**
@@ -41,6 +43,14 @@ export interface ContentSource {
 
   /** Full-text search returning items (tracks, openings, characters…). */
   searchItems(query: string, options?: { limit?: number; requirePreview?: boolean }): Promise<ContentItem[]>;
+
+  /**
+   * Search a vertical-native item kind that doesn't fit the generic
+   * items/collections/entities split (e.g. AniList "anime" vs "character" vs "arc").
+   * The `kind` strings are defined by the adapter and used by that vertical's picker UI.
+   * Adapters whose taxonomy is fully covered by the three standard searches may omit this.
+   */
+  searchItemsByKind?(kind: string, query: string, options?: { limit?: number }): Promise<ContentItem[]>;
 
   /** Search for collections (albums, anime series, arcs…). */
   searchCollections(query: string, options?: { limit?: number }): Promise<ContentCollection[]>;
@@ -56,4 +66,13 @@ export interface ContentSource {
 
   /** Fetch a single entity by ID. */
   getEntityById(entityId: string): Promise<ContentEntity | null>;
+
+  /** Get collections owned by an entity (artist→albums, anime→arcs). */
+  getEntityCollections(entityId: string, options?: { limit?: number }): Promise<ContentCollection[]>;
+
+  /**
+   * Refresh a single item's preview URL when it expires (Deezer signed URLs).
+   * Adapters whose previews never expire (AniList) may omit this.
+   */
+  refreshItemPreview?(itemId: string): Promise<string | null>;
 }

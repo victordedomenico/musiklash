@@ -6,6 +6,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./supabase": "./src/supabase.ts",
+    "./supabase/browser": "./src/supabase/browser.ts",
+    "./supabase/server": "./src/supabase/server.ts",
+    "./supabase/session": "./src/supabase/session.ts",
     "./guest": "./src/guest.ts"
   }
 }

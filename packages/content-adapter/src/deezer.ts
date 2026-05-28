@@ -146,7 +146,11 @@ function trackToItem(t: DeezerTrack | DeezerAlbumTrack): ContentItem {
     coverUrl: album?.cover_medium ?? album?.cover_big ?? album?.cover_small,
     previewUrl: t.preview || undefined,
     source: "deezer",
-    metadata: { rank: ("rank" in t ? t.rank : undefined) ?? 0 },
+    metadata: {
+      rank: ("rank" in t ? t.rank : undefined) ?? 0,
+      duration: t.duration,
+      artistName: t.artist.name,
+    },
   };
 }
 
@@ -156,6 +160,11 @@ function albumToCollection(a: DeezerAlbum): ContentCollection {
     title: a.title,
     coverUrl: a.cover_medium ?? a.cover_big ?? a.cover_small,
     source: "deezer",
+    metadata: {
+      nbTracks: a.nb_tracks,
+      releaseDate: a.release_date,
+      artistName: a.artist?.name,
+    },
   };
 }
 
@@ -166,6 +175,7 @@ function artistToEntity(a: DeezerArtist): ContentEntity {
     pictureUrl: a.picture_medium ?? a.picture_small,
     fanCount: a.nb_fan,
     source: "deezer",
+    metadata: { albumCount: a.nb_album },
   };
 }
 
@@ -200,5 +210,21 @@ export const deezerContentSource: ContentSource = {
   async getEntityById(entityId) {
     const artist = await getArtistById(entityId);
     return artist ? artistToEntity(artist) : null;
+  },
+
+  async getEntityCollections(entityId, { limit = 100 } = {}) {
+    const albums = await getArtistAlbums(entityId);
+    return albums.slice(0, limit).map(albumToCollection);
+  },
+
+  async refreshItemPreview(itemId) {
+    // Deezer preview URLs are signed and expire — never cache the refresh.
+    const res = await fetch(`${BASE_URL}/track/${itemId}`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { preview?: string };
+    return json.preview || null;
   },
 };
