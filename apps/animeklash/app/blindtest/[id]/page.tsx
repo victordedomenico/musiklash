@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import prisma from "@/lib/prisma";
 import { createBlindtestRoom } from "../room/new/actions";
-import { User, Users, ArrowRight, Music } from "lucide-react";
+import { User, Users, ArrowRight, Headphones } from "lucide-react";
 import { buildPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -79,7 +79,7 @@ export default async function BlindtestPage({
           className="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl"
           style={{ background: "var(--accent-dim)" }}
         >
-          <Music size={28} style={{ color: "var(--accent)" }} />
+          <Headphones size={28} style={{ color: "var(--accent)" }} />
         </div>
         <h1 className="text-4xl font-black">{blindtest.title}</h1>
         <p className="mt-2 text-[color:var(--muted)]">

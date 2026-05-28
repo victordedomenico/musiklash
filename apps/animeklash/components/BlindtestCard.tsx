@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, EyeOff, Music } from "lucide-react";
+import { Eye, EyeOff, Headphones } from "lucide-react";
 import LibraryVisibilityToggle from "@/components/LibraryVisibilityToggle";
 
 export type BlindtestSummary = {
@@ -20,7 +20,7 @@ export default function BlindtestCard({
   const inner = (
     <>
       <div className="media-thumb flex items-center justify-center">
-        <Music size={36} className="text-[color:var(--muted)] group-hover:text-[color:var(--accent)] transition" />
+        <Headphones size={36} className="text-[color:var(--muted)] group-hover:text-[color:var(--accent)] transition" />
         <span className="media-pill absolute right-2 top-2">Blindtest</span>
         <span className="media-pill absolute left-2 top-2">
           {vis === "public" ? (

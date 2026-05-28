@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, EyeOff, Music, Users } from "lucide-react";
+import { Eye, EyeOff, Headphones, Users } from "lucide-react";
 import LibraryVisibilityToggle from "@/components/LibraryVisibilityToggle";
 
 export type BlindtestRoomSummary = {
@@ -56,7 +56,7 @@ export default function BlindtestRoomCard({
           {room.trackCount} extrait{room.trackCount > 1 ? "s" : ""} · Hôte: {room.hostName}
         </p>
         <p className="text-[11px] text-[color:var(--muted)] flex items-center gap-1">
-          <Music size={11} />
+          <Headphones size={11} />
           Room #{room.id.slice(0, 8)}
         </p>
       </div>

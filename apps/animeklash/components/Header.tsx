@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/(auth)/actions";
-import { ChevronDown, Library, Music, Plus, Swords } from "lucide-react";
+import { ChevronDown, Headphones, Library, Plus, Swords } from "lucide-react";
 import { getI18n } from "@/lib/i18n";
 import { cookies } from "next/headers";
 import ThemeToggle from "./ThemeToggle";
@@ -86,7 +86,7 @@ export default async function Header() {
                   {[
                     { href: "/create-bracket", icon: <Swords size={14} />, label: t.nav.createBracket },
                     { href: "/create-tierlist", icon: <Library size={14} />, label: t.nav.createTierlist },
-                    { href: "/create-blindtest", icon: <Music size={14} />, label: t.nav.createBlindtest },
+                    { href: "/create-blindtest", icon: <Headphones size={14} />, label: t.nav.createBlindtest },
                   ].map(({ href, icon, label }) => (
                     <Link
                       key={href}

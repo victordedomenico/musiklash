@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Music, Play, Users, ArrowLeft } from "lucide-react";
+import { Headphones, Play, Users, ArrowLeft } from "lucide-react";
 import prisma from "@/lib/prisma";
 import SectionHeader from "@/components/ui/SectionHeader";
 import { buildPageMetadata } from "@/lib/seo";
@@ -86,7 +86,7 @@ export default async function StreamClashPage({
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg"
                 style={{ background: "var(--surface-2)" }}
               >
-                <Music size={16} className="text-[color:var(--muted)]" />
+                <Headphones size={16} className="text-[color:var(--muted)]" />
               </div>
             )}
             <div className="min-w-0 flex-1">

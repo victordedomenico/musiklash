@@ -196,7 +196,7 @@ export const en: Dictionary = {
     loginLink: "Log in",
   },
   footer: {
-    catalog: "Music catalog via",
+    catalog: "Anime catalog via",
     features: "Features",
     support: "Help & Support",
     legal: "Legal",

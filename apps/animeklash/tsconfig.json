@@ -19,7 +19,13 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@klash/auth": ["../../packages/auth/src/index.ts"],
+      "@klash/auth/guest": ["../../packages/auth/src/guest.ts"],
+      "@klash/auth/supabase": ["../../packages/auth/src/supabase.ts"],
+      "@klash/i18n": ["../../packages/i18n/src/index.ts"],
+      "@klash/game-engine": ["../../packages/game-engine/src/index.ts"],
+      "@klash/content-adapter": ["../../packages/content-adapter/src/index.ts"]
     }
   },
   "include": [

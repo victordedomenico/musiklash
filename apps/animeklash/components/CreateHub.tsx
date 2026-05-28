@@ -6,8 +6,8 @@ import {
   ArrowLeft,
   Bot,
   Heart,
+  Headphones,
   Library,
-  Music,
   Swords,
   Users,
   User,
@@ -59,7 +59,7 @@ const MAIN_OPTIONS = [
   {
     key: "blindtest" as const,
     href: null,
-    icon: Music,
+    icon: Headphones,
     accent: "#ef4444",
     bg: "rgba(239,68,68,0.12)",
     hasSubMenu: true,
