@@ -16,6 +16,16 @@ export type VerticalManifest = {
   blindtestItemNoun?: string;
   blindtestItemsNoun?: string;
   /**
+   * Label for the "title" guess field in the blindtest game.
+   * e.g. "Titre du morceau" (music) or "Opening / ending" (anime).
+   */
+  blindtestTitleLabel?: string;
+  /**
+   * Label for the "artist" guess field in the blindtest game.
+   * e.g. "Artiste" (music) or "Titre d'animé" (anime).
+   */
+  blindtestArtistLabel?: string;
+  /**
    * Lucide icon name used in blindtest/bracket cards.
    * "music" for music verticals, "headphones" for theme/anime, "film" for movies, etc.
    */
@@ -65,6 +75,8 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
     blindtestItemNoun: "extrait",
     blindtestItemsNoun: "extraits",
     mediaIcon: "headphones",
+    blindtestTitleLabel: "Opening / ending",
+    blindtestArtistLabel: "Titre d'animé",
     smashPassTypeLabels: {
       anime: "Titres d'animé",
       character: "Persos d'animé",

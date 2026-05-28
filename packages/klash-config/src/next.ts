@@ -19,6 +19,7 @@ export function createKlashNextConfig(slug: string): NextConfig {
   const {
     imageHosts, name, itemNoun, itemsNoun,
     blindtestItemNoun, blindtestItemsNoun,
+    blindtestTitleLabel, blindtestArtistLabel,
     mediaIcon, smashPassTypeLabels,
     contactEmail, apiCredit,
   } = getVerticalManifest(slug);
@@ -31,6 +32,8 @@ export function createKlashNextConfig(slug: string): NextConfig {
       NEXT_PUBLIC_KLASH_ITEMS_NOUN: itemsNoun,
       NEXT_PUBLIC_KLASH_BLINDTEST_ITEM_NOUN: blindtestItemNoun ?? itemNoun,
       NEXT_PUBLIC_KLASH_BLINDTEST_ITEMS_NOUN: blindtestItemsNoun ?? itemsNoun,
+      NEXT_PUBLIC_KLASH_BLINDTEST_TITLE_LABEL: blindtestTitleLabel ?? "Titre",
+      NEXT_PUBLIC_KLASH_BLINDTEST_ARTIST_LABEL: blindtestArtistLabel ?? "Artiste",
       NEXT_PUBLIC_KLASH_MEDIA_ICON: mediaIcon,
       NEXT_PUBLIC_KLASH_SMASH_PASS_TYPES: JSON.stringify(smashPassTypeLabels),
       NEXT_PUBLIC_KLASH_CONTACT_EMAIL: contactEmail,
