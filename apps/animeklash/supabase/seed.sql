@@ -1,0 +1,2 @@
+-- Ce fichier a été vidé car les insertions manuelles dans auth.users causent des erreurs avec Supabase Auth (GoTrue).
+-- Nous utilisons maintenant un script en NodeJS (seed.js) pour générer les données de la base.
