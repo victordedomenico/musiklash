@@ -1,1 +1,1 @@
-export * from "@klash/klash-app/app/manifest";
+export { default } from "@klash/klash-app/app/manifest";
