@@ -1,7 +1,11 @@
 import { ImageResponse } from "next/og";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@klash/klash-app/lib/seo";
 
-export const runtime = "edge";
+// Rendered on demand (node runtime). The OG image pulls SITE_* from the
+// vertical config via seo.ts (which loads the ContentSource adapter, node-only,
+// so it cannot run on the edge runtime). force-dynamic skips build-time
+// prerendering — the image is generated per request, matching production.
+export const dynamic = "force-dynamic";
 export const alt = `${SITE_NAME} — ${SITE_TAGLINE}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

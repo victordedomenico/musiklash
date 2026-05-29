@@ -15,6 +15,13 @@ import { absoluteUrl, rootMetadata, SITE_DESCRIPTION, SITE_NAME } from "@klash/k
 
 export const metadata = rootMetadata;
 
+// The root layout reads cookies() / locale on every request (auth, guest
+// sessions, theme, cookie-consent), so the whole app is inherently dynamic.
+// Without this, Next 16 attempts to statically prerender /_not-found and
+// throws "Expected workStore to be initialized" because cookies() runs
+// outside a request scope during static export.
+export const dynamic = "force-dynamic";
+
 export default async function RootLayout({
   children,
 }: Readonly<{
