@@ -97,11 +97,16 @@ export async function searchSets(query: string, limit = 20): Promise<Rebrickable
   if (!query.trim()) return [];
   const json = await rebrickableGet<RebrickablePaged<RebrickableSet>>("/lego/sets/", {
     search: query.trim(),
-    page_size: String(Math.min(limit, 40)),
+    page_size: String(Math.min(limit * 2, 40)),
     page: "1",
-    ordering: "-year",
+    ordering: "-num_parts",
+    min_parts: "10", // exclude keychains, magnets and other gear (1-5 pieces)
   });
-  return (json.results ?? []).slice(0, limit);
+  // Secondary filter: exclude known non-set patterns in name
+  const excluded = /keychain|porte-clef|magnet|pen |stylo|watch|montre|bag charm/i;
+  return (json.results ?? [])
+    .filter((s) => !excluded.test(s.name))
+    .slice(0, limit);
 }
 
 export async function searchMinifigs(
@@ -152,19 +157,22 @@ export async function getThemeSets(
 ): Promise<RebrickableSet[]> {
   const json = await rebrickableGet<RebrickablePaged<RebrickableSet>>("/lego/sets/", {
     theme_id: String(themeId),
-    page_size: String(Math.min(limit, 40)),
+    page_size: String(Math.min(limit * 2, 40)),
     page: "1",
-    ordering: "-year",
+    ordering: "-num_parts",
+    min_parts: "10",
   });
-  return (json.results ?? []).slice(0, limit);
+  const excluded = /keychain|porte-clef|magnet|pen |stylo|watch|montre|bag charm/i;
+  return (json.results ?? []).filter((s) => !excluded.test(s.name)).slice(0, limit);
 }
 
 export async function getTrendingSets(limit = 18): Promise<RebrickableSet[]> {
   const json = await rebrickableGet<RebrickablePaged<RebrickableSet>>("/lego/sets/", {
-    page_size: String(Math.min(limit, 40)),
+    page_size: String(Math.min(limit * 2, 40)),
     page: "1",
-    ordering: "-year",
-    min_year: "2020",
+    ordering: "-num_parts",
+    min_year: "2022",
+    min_parts: "50", // trending = real sets, no polybags
   });
   return (json.results ?? []).slice(0, limit);
 }
