@@ -16,10 +16,11 @@ type CharResult = { id: number; name: string; imageUrl: string | null; animes: s
 function useDebouncedSearch<T>(endpoint: string, query: string, enabled: boolean) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
+  const trimmed = query.trim();
+  const active = Boolean(trimmed && enabled);
 
   useEffect(() => {
-    const trimmed = query.trim();
-    if (!trimmed || !enabled) { setData([]); return; }
+    if (!active) return;
     const ctrl = new AbortController();
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -34,9 +35,9 @@ function useDebouncedSearch<T>(endpoint: string, query: string, enabled: boolean
       }
     }, 400);
     return () => { ctrl.abort(); clearTimeout(timer); };
-  }, [query, endpoint, enabled]);
+  }, [trimmed, endpoint, active]);
 
-  return { data, loading };
+  return { data: active ? data : [], loading: active ? loading : false };
 }
 
 type Props = {

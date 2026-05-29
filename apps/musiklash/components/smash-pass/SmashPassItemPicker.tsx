@@ -19,10 +19,7 @@ function useDebouncedSearch<T>(
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (!trimmed || !enabled) {
-      setData([]);
-      return;
-    }
+    if (!trimmed || !enabled) return;
     const ctrl = new AbortController();
     const timer = setTimeout(async () => {
       setLoading(true);

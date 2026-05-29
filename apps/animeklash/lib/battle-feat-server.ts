@@ -16,7 +16,8 @@ export {
 export { getBattleFeatRoomSnapshot } from "@klash/klash-app/lib/battle-feat/room-snapshot";
 
 /** Pre-warms the AniList co-appearance graph for a character (seed only). */
-export async function warmCharacterGraph(_characterId: string): Promise<number> {
+export async function warmCharacterGraph(characterId: string): Promise<number> {
+  void characterId;
   // Graph is warmed lazily via createAnilistRelationGraph on first query.
   // Full pre-seeding requires the anilist-cache module — call from seed script directly.
   return 0;

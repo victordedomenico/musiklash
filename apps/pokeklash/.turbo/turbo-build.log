@@ -1,0 +1,1675 @@
+
+> pokeklash@0.1.0 build /Users/victordedomenico/Projets/bracketfight/apps/pokeklash
+> prisma generate && next build
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from ../../packages/db/prisma/schema.prisma.
+
+✔ Generated Prisma Client (v7.8.0) to ./../../node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.15_react-dom@19.2.4_react@19.2.4__r_9b44924ca1c8bf7c944112217bb1417b/node_modules/@prisma/client in 448ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+▲ Next.js 16.2.4 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+(node:84916) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> Build error occurred
+Error: Turbopack build failed with 27 errors:
+./packages/content-adapter/src/sneaks.ts:8:1
+You're importing a module that depends on "server-only". This API is only available in Server Components in the App Router, but you are using it in the Pages Router.
+    Learn more: https://nextjs.org/docs/app/building-your-application/rendering/server-components
+  [90m 6 |[0m  * [33mVoir[0m catalog [32m`sneakerklash.notes`[0m et apps/sneakerklash/[33mSNEAKS_API[0m.md.
+  [90m 7 |[0m  */
+[31m[1m>[0m [90m 8 |[0m [36mimport[0m [32m"server-only"[0m;
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m 9 |[0m [36mimport[0m [36mtype[0m {
+  [90m10 |[0m   [33mContentCollection[0m,
+  [90m11 |[0m   [33mContentEntity[0m,
+
+Ecmascript file had an error
+
+Import traces:
+  App Route:
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+
+./packages/content-adapter/src/sneaks.ts:8:1
+'server-only' cannot be imported from a Client Component module
+  [90m 6 |[0m  * [33mVoir[0m catalog [32m`sneakerklash.notes`[0m et apps/sneakerklash/[33mSNEAKS_API[0m.md.
+  [90m 7 |[0m  */
+[31m[1m>[0m [90m 8 |[0m [36mimport[0m [32m"server-only"[0m;
+  [90m   |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m 9 |[0m [36mimport[0m [36mtype[0m {
+  [90m10 |[0m   [33mContentCollection[0m,
+  [90m11 |[0m   [33mContentEntity[0m,
+
+It should only be used from a Server Component.
+
+Import traces:
+  App Route:
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+
+./node_modules/.pnpm/cacheable-lookup@5.0.4/node_modules/cacheable-lookup/source/index.js:10:5
+Module not found: Can't resolve 'dns'
+  [90m 8 |[0m 	},
+  [90m 9 |[0m 	lookup: dnsLookup
+[31m[1m>[0m [90m10 |[0m } = require([32m'dns'[0m);
+  [90m   |[0m     [31m[1m^^^^^^^^^^^^^^[0m
+  [90m11 |[0m [36mconst[0m {promisify} = require([32m'util'[0m);
+  [90m12 |[0m [36mconst[0m os = require([32m'os'[0m);
+  [90m13 |[0m
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/cacheable-lookup@5.0.4/node_modules/cacheable-lookup/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/cacheable-lookup@5.0.4/node_modules/cacheable-lookup/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/cacheable-lookup@5.0.4/node_modules/cacheable-lookup/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/cacheable-lookup@5.0.4/node_modules/cacheable-lookup/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/destroy@1.2.0/node_modules/destroy/index.js:16:18
+Module not found: Can't resolve 'fs'
+  [90m14 |[0m
+  [90m15 |[0m [36mvar[0m [33mEventEmitter[0m = require([32m'events'[0m).[33mEventEmitter[0m
+[31m[1m>[0m [90m16 |[0m [36mvar[0m [33mReadStream[0m = require([32m'fs'[0m).[33mReadStream[0m
+  [90m   |[0m                  [31m[1m^^^^^^^^^^^^^[0m
+  [90m17 |[0m [36mvar[0m [33mStream[0m = require([32m'stream'[0m)
+  [90m18 |[0m [36mvar[0m [33mZlib[0m = require([32m'zlib'[0m)
+  [90m19 |[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./node_modules/.pnpm/destroy@1.2.0/node_modules/destroy/index.js [Client Component Browser]
+    ./node_modules/.pnpm/send@0.19.2/node_modules/send/index.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/response.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/express.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/dotenv@8.6.0/node_modules/dotenv/lib/main.js:24:12
+Module not found: Can't resolve 'fs'
+  [90m22 |[0m */
+  [90m23 |[0m
+[31m[1m>[0m [90m24 |[0m [36mconst[0m fs = require([32m'fs'[0m)
+  [90m   |[0m            [31m[1m^^^^^^^^^^^^^[0m
+  [90m25 |[0m [36mconst[0m path = require([32m'path'[0m)
+  [90m26 |[0m
+  [90m27 |[0m [36mfunction[0m log (message [90m/*: string */[0m) {
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/dotenv@8.6.0/node_modules/dotenv/lib/main.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/dotenv@8.6.0/node_modules/dotenv/lib/main.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/dotenv@8.6.0/node_modules/dotenv/lib/main.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/dotenv@8.6.0/node_modules/dotenv/lib/main.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/etag@1.8.1/node_modules/etag/index.js:22:13
+Module not found: Can't resolve 'fs'
+  [90m20 |[0m
+  [90m21 |[0m [36mvar[0m crypto = require([32m'crypto'[0m)
+[31m[1m>[0m [90m22 |[0m [36mvar[0m [33mStats[0m = require([32m'fs'[0m).[33mStats[0m
+  [90m   |[0m             [31m[1m^^^^^^^^^^^^^[0m
+  [90m23 |[0m
+  [90m24 |[0m /**
+  [90m25 |[0m  * [33mModule[0m variables.
+
+
+
+Import trace:
+  Client Component Browser:
+    ./node_modules/.pnpm/etag@1.8.1/node_modules/etag/index.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/utils.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/response.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/express.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/view.js:18:10
+Module not found: Can't resolve 'fs'
+  [90m16 |[0m [36mvar[0m debug = require([32m'debug'[0m)([32m'express:view'[0m);
+  [90m17 |[0m [36mvar[0m path = require([32m'path'[0m);
+[31m[1m>[0m [90m18 |[0m [36mvar[0m fs = require([32m'fs'[0m);
+  [90m   |[0m          [31m[1m^^^^^^^^^^^^^[0m
+  [90m19 |[0m
+  [90m20 |[0m /**
+  [90m21 |[0m  * [33mModule[0m variables.
+
+
+
+Import trace:
+  Client Component Browser:
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/view.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/application.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/express.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js:6:14
+Module not found: Can't resolve 'fs'
+  [90m4 |[0m [36mconst[0m util_1 = require([32m"util"[0m);
+  [90m5 |[0m [36mconst[0m stream_1 = require([32m"stream"[0m);
+[31m[1m>[0m [90m6 |[0m [36mconst[0m fs_1 = require([32m"fs"[0m);
+  [90m  |[0m              [31m[1m^^^^^^^^^^^^^[0m
+  [90m7 |[0m [36mconst[0m url_1 = require([32m"url"[0m);
+  [90m8 |[0m [36mconst[0m http = require([32m"http"[0m);
+  [90m9 |[0m [36mconst[0m http_1 = require([32m"http"[0m);
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/utils/get-body-size.js:3:14
+Module not found: Can't resolve 'fs'
+  [90m1 |[0m [32m"use strict"[0m;
+  [90m2 |[0m [33mObject[0m.defineProperty(exports, [32m"__esModule"[0m, { value: [36mtrue[0m });
+[31m[1m>[0m [90m3 |[0m [36mconst[0m fs_1 = require([32m"fs"[0m);
+  [90m  |[0m              [31m[1m^^^^^^^^^^^^^[0m
+  [90m4 |[0m [36mconst[0m util_1 = require([32m"util"[0m);
+  [90m5 |[0m [36mconst[0m is_1 = require([32m"@sindresorhus/is"[0m);
+  [90m6 |[0m [36mconst[0m is_form_data_1 = require([32m"./is-form-data"[0m);
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/utils/get-body-size.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/utils/get-body-size.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/utils/get-body-size.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/utils/get-body-size.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/mime@1.6.0/node_modules/mime/mime.js:2:10
+Module not found: Can't resolve 'fs'
+  [90m1 |[0m [36mvar[0m path = require([32m'path'[0m);
+[31m[1m>[0m [90m2 |[0m [36mvar[0m fs = require([32m'fs'[0m);
+  [90m  |[0m          [31m[1m^^^^^^^^^^^^^[0m
+  [90m3 |[0m
+  [90m4 |[0m [36mfunction[0m [33mMime[0m() {
+  [90m5 |[0m   [90m// Map of extension -> mime type[0m
+
+
+
+Import trace:
+  Client Component Browser:
+    ./node_modules/.pnpm/mime@1.6.0/node_modules/mime/mime.js [Client Component Browser]
+    ./node_modules/.pnpm/send@0.19.2/node_modules/send/index.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/response.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/express.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/har.js:3:10
+Module not found: Can't resolve 'fs'
+  [90m1 |[0m [32m'use strict'[0m
+  [90m2 |[0m
+[31m[1m>[0m [90m3 |[0m [36mvar[0m fs = require([32m'fs'[0m)
+  [90m  |[0m          [31m[1m^^^^^^^^^^^^^[0m
+  [90m4 |[0m [36mvar[0m qs = require([32m'querystring'[0m)
+  [90m5 |[0m [36mvar[0m validate = require([32m'har-validator'[0m)
+  [90m6 |[0m [36mvar[0m extend = require([32m'extend'[0m)
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/har.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/har.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/har.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/har.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/send@0.19.2/node_modules/send/index.js:23:10
+Module not found: Can't resolve 'fs'
+  [90m21 |[0m [36mvar[0m etag = require([32m'etag'[0m)
+  [90m22 |[0m [36mvar[0m fresh = require([32m'fresh'[0m)
+[31m[1m>[0m [90m23 |[0m [36mvar[0m fs = require([32m'fs'[0m)
+  [90m   |[0m          [31m[1m^^^^^^^^^^^^^[0m
+  [90m24 |[0m [36mvar[0m mime = require([32m'mime'[0m)
+  [90m25 |[0m [36mvar[0m ms = require([32m'ms'[0m)
+  [90m26 |[0m [36mvar[0m onFinished = require([32m'on-finished'[0m)
+
+
+
+Import trace:
+  Client Component Browser:
+    ./node_modules/.pnpm/send@0.19.2/node_modules/send/index.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/response.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/express.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/agent.js:4:15
+Module not found: Can't resolve 'http2'
+  [90m2 |[0m [36mconst[0m [33mEventEmitter[0m = require([32m'events'[0m);
+  [90m3 |[0m [36mconst[0m tls = require([32m'tls'[0m);
+[31m[1m>[0m [90m4 |[0m [36mconst[0m http2 = require([32m'http2'[0m);
+  [90m  |[0m               [31m[1m^^^^^^^^^^^^^^^^[0m
+  [90m5 |[0m [36mconst[0m [33mQuickLRU[0m = require([32m'quick-lru'[0m);
+  [90m6 |[0m
+  [90m7 |[0m [36mconst[0m kCurrentStreamsCount = [33mSymbol[0m([32m'currentStreamsCount'[0m);
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/agent.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/agent.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/agent.js [Client Component Browser]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/agent.js [Client Component SSR]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/client-request.js:2:15
+Module not found: Can't resolve 'http2'
+  [90m1 |[0m [32m'use strict'[0m;
+[31m[1m>[0m [90m2 |[0m [36mconst[0m http2 = require([32m'http2'[0m);
+  [90m  |[0m               [31m[1m^^^^^^^^^^^^^^^^[0m
+  [90m3 |[0m [36mconst[0m {[33mWritable[0m} = require([32m'stream'[0m);
+  [90m4 |[0m [36mconst[0m {[33mAgent[0m, globalAgent} = require([32m'./agent'[0m);
+  [90m5 |[0m [36mconst[0m [33mIncomingMessage[0m = require([32m'./incoming-message'[0m);
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/client-request.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/client-request.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/client-request.js [Client Component Browser]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/client-request.js [Client Component SSR]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js:2:15
+Module not found: Can't resolve 'http2'
+  [90m1 |[0m [32m'use strict'[0m;
+[31m[1m>[0m [90m2 |[0m [36mconst[0m http2 = require([32m'http2'[0m);
+  [90m  |[0m               [31m[1m^^^^^^^^^^^^^^^^[0m
+  [90m3 |[0m [36mconst[0m agent = require([32m'./agent'[0m);
+  [90m4 |[0m [36mconst[0m [33mClientRequest[0m = require([32m'./client-request'[0m);
+  [90m5 |[0m [36mconst[0m [33mIncomingMessage[0m = require([32m'./incoming-message'[0m);
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/request.js:18:12
+Module not found: Can't resolve 'net'
+  [90m16 |[0m [36mvar[0m accepts = require([32m'accepts'[0m);
+  [90m17 |[0m [36mvar[0m deprecate = require([32m'depd'[0m)([32m'express'[0m);
+[31m[1m>[0m [90m18 |[0m [36mvar[0m isIP = require([32m'net'[0m).isIP;
+  [90m   |[0m            [31m[1m^^^^^^^^^^^^^^[0m
+  [90m19 |[0m [36mvar[0m typeis = require([32m'type-is'[0m);
+  [90m20 |[0m [36mvar[0m http = require([32m'http'[0m);
+  [90m21 |[0m [36mvar[0m fresh = require([32m'fresh'[0m);
+
+
+
+Import trace:
+  Client Component Browser:
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/request.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/express.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/forever-agent@0.6.1/node_modules/forever-agent/index.js:6:11
+Module not found: Can't resolve 'net'
+  [90m4 |[0m [36mvar[0m util = require([32m'util'[0m)
+  [90m5 |[0m   , [33mAgent[0m = require([32m'http'[0m).[33mAgent[0m
+[31m[1m>[0m [90m6 |[0m   , net = require([32m'net'[0m)
+  [90m  |[0m           [31m[1m^^^^^^^^^^^^^^[0m
+  [90m7 |[0m   , tls = require([32m'tls'[0m)
+  [90m8 |[0m   , [33mAgentSSL[0m = require([32m'https'[0m).[33mAgent[0m
+  [90m9 |[0m
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/forever-agent@0.6.1/node_modules/forever-agent/index.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/forever-agent@0.6.1/node_modules/forever-agent/index.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/forever-agent@0.6.1/node_modules/forever-agent/index.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/forever-agent@0.6.1/node_modules/forever-agent/index.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/utils/timed-out.js:4:13
+Module not found: Can't resolve 'net'
+  [90m2 |[0m [33mObject[0m.defineProperty(exports, [32m"__esModule"[0m, { value: [36mtrue[0m });
+  [90m3 |[0m exports.[33mTimeoutError[0m = [36mvoid[0m [35m0[0m;
+[31m[1m>[0m [90m4 |[0m [36mconst[0m net = require([32m"net"[0m);
+  [90m  |[0m             [31m[1m^^^^^^^^^^^^^^[0m
+  [90m5 |[0m [36mconst[0m unhandle_1 = require([32m"./unhandle"[0m);
+  [90m6 |[0m [36mconst[0m reentry = [33mSymbol[0m([32m'reentry'[0m);
+  [90m7 |[0m [36mconst[0m noop = () => { };
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/utils/timed-out.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/utils/timed-out.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/utils/timed-out.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/utils/timed-out.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/utils/calculate-server-name.js:2:13
+Module not found: Can't resolve 'net'
+  [90m1 |[0m [32m'use strict'[0m;
+[31m[1m>[0m [90m2 |[0m [36mconst[0m net = require([32m'net'[0m);
+  [90m  |[0m             [31m[1m^^^^^^^^^^^^^^[0m
+  [90m3 |[0m [90m/* istanbul ignore file: https://github.com/nodejs/node/blob/v13.0.1/lib/_http_agent.js */[0m
+  [90m4 |[0m
+  [90m5 |[0m module.exports = options => {
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/utils/calculate-server-name.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/auto.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/utils/calculate-server-name.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/auto.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/utils/calculate-server-name.js [Client Component Browser]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/auto.js [Client Component Browser]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/utils/calculate-server-name.js [Client Component SSR]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/auto.js [Client Component SSR]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/tough-cookie@2.5.0/node_modules/tough-cookie/lib/cookie.js:32:11
+Module not found: Can't resolve 'net'
+  [90m30 |[0m  */
+  [90m31 |[0m [32m'use strict'[0m;
+[31m[1m>[0m [90m32 |[0m [36mvar[0m net = require([32m'net'[0m);
+  [90m   |[0m           [31m[1m^^^^^^^^^^^^^^[0m
+  [90m33 |[0m [36mvar[0m urlParse = require([32m'url'[0m).parse;
+  [90m34 |[0m [36mvar[0m util = require([32m'util'[0m);
+  [90m35 |[0m [36mvar[0m pubsuffix = require([32m'./pubsuffix-psl'[0m);
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/tough-cookie@2.5.0/node_modules/tough-cookie/lib/cookie.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/cookies.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/tough-cookie@2.5.0/node_modules/tough-cookie/lib/cookie.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/cookies.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/tough-cookie@2.5.0/node_modules/tough-cookie/lib/cookie.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/cookies.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/tough-cookie@2.5.0/node_modules/tough-cookie/lib/cookie.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/cookies.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/tunnel-agent@0.6.0/node_modules/tunnel-agent/index.js:3:11
+Module not found: Can't resolve 'net'
+  [90m1 |[0m [32m'use strict'[0m
+  [90m2 |[0m
+[31m[1m>[0m [90m3 |[0m [36mvar[0m net = require([32m'net'[0m)
+  [90m  |[0m           [31m[1m^^^^^^^^^^^^^^[0m
+  [90m4 |[0m   , tls = require([32m'tls'[0m)
+  [90m5 |[0m   , http = require([32m'http'[0m)
+  [90m6 |[0m   , https = require([32m'https'[0m)
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/tunnel-agent@0.6.0/node_modules/tunnel-agent/index.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/tunnel.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/tunnel-agent@0.6.0/node_modules/tunnel-agent/index.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/tunnel.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/tunnel-agent@0.6.0/node_modules/tunnel-agent/index.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/tunnel.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/tunnel-agent@0.6.0/node_modules/tunnel-agent/index.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/tunnel.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/forever-agent@0.6.1/node_modules/forever-agent/index.js:7:11
+Module not found: Can't resolve 'tls'
+  [90m 5 |[0m   , [33mAgent[0m = require([32m'http'[0m).[33mAgent[0m
+  [90m 6 |[0m   , net = require([32m'net'[0m)
+[31m[1m>[0m [90m 7 |[0m   , tls = require([32m'tls'[0m)
+  [90m   |[0m           [31m[1m^^^^^^^^^^^^^^[0m
+  [90m 8 |[0m   , [33mAgentSSL[0m = require([32m'https'[0m).[33mAgent[0m
+  [90m 9 |[0m   
+  [90m10 |[0m [36mfunction[0m getConnectionName(host, port) {
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/forever-agent@0.6.1/node_modules/forever-agent/index.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/forever-agent@0.6.1/node_modules/forever-agent/index.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/forever-agent@0.6.1/node_modules/forever-agent/index.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/forever-agent@0.6.1/node_modules/forever-agent/index.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/agent.js:3:13
+Module not found: Can't resolve 'tls'
+  [90m1 |[0m [32m'use strict'[0m;
+  [90m2 |[0m [36mconst[0m [33mEventEmitter[0m = require([32m'events'[0m);
+[31m[1m>[0m [90m3 |[0m [36mconst[0m tls = require([32m'tls'[0m);
+  [90m  |[0m             [31m[1m^^^^^^^^^^^^^^[0m
+  [90m4 |[0m [36mconst[0m http2 = require([32m'http2'[0m);
+  [90m5 |[0m [36mconst[0m [33mQuickLRU[0m = require([32m'quick-lru'[0m);
+  [90m6 |[0m
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/agent.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/agent.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/agent.js [Client Component Browser]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/agent.js [Client Component SSR]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/resolve-alpn@1.2.1/node_modules/resolve-alpn/index.js:2:13
+Module not found: Can't resolve 'tls'
+  [90m1 |[0m [32m'use strict'[0m;
+[31m[1m>[0m [90m2 |[0m [36mconst[0m tls = require([32m'tls'[0m);
+  [90m  |[0m             [31m[1m^^^^^^^^^^^^^^[0m
+  [90m3 |[0m
+  [90m4 |[0m module.exports = (options = {}, connect = tls.connect) => [36mnew[0m [33mPromise[0m((resolve, reject) => {
+  [90m5 |[0m 	[36mlet[0m timeout = [36mfalse[0m;
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/resolve-alpn@1.2.1/node_modules/resolve-alpn/index.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/auto.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/resolve-alpn@1.2.1/node_modules/resolve-alpn/index.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/auto.js
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/resolve-alpn@1.2.1/node_modules/resolve-alpn/index.js [Client Component Browser]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/auto.js [Client Component Browser]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/resolve-alpn@1.2.1/node_modules/resolve-alpn/index.js [Client Component SSR]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/auto.js [Client Component SSR]
+    ./node_modules/.pnpm/http2-wrapper@1.0.3/node_modules/http2-wrapper/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component SSR]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/tunnel-agent@0.6.0/node_modules/tunnel-agent/index.js:4:11
+Module not found: Can't resolve 'tls'
+  [90m2 |[0m
+  [90m3 |[0m [36mvar[0m net = require([32m'net'[0m)
+[31m[1m>[0m [90m4 |[0m   , tls = require([32m'tls'[0m)
+  [90m  |[0m           [31m[1m^^^^^^^^^^^^^^[0m
+  [90m5 |[0m   , http = require([32m'http'[0m)
+  [90m6 |[0m   , https = require([32m'https'[0m)
+  [90m7 |[0m   , events = require([32m'events'[0m)
+
+
+
+Import traces:
+  App Route:
+    ./node_modules/.pnpm/tunnel-agent@0.6.0/node_modules/tunnel-agent/index.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/tunnel.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts
+
+  Server Component:
+    ./node_modules/.pnpm/tunnel-agent@0.6.0/node_modules/tunnel-agent/index.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/tunnel.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js
+    ./packages/content-adapter/src/sneaks.ts
+    ./packages/klash-config/src/configs/sneakerklash.ts
+    ./packages/klash-config/src/index.ts
+    ./packages/klash-app/src/lib/i18n.ts
+    ./packages/klash-app/src/app/layout.tsx
+    ./apps/pokeklash/app/layout.tsx
+
+  Client Component Browser:
+    ./node_modules/.pnpm/tunnel-agent@0.6.0/node_modules/tunnel-agent/index.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/tunnel.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js [Client Component Browser]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+  Client Component SSR:
+    ./node_modules/.pnpm/tunnel-agent@0.6.0/node_modules/tunnel-agent/index.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/lib/tunnel.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/request.js [Client Component SSR]
+    ./node_modules/.pnpm/request@2.88.2/node_modules/request/index.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component SSR]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component SSR]
+    ./packages/content-adapter/src/sneaks.ts [Client Component SSR]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component SSR]
+    ./packages/klash-config/src/index.ts [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component SSR]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/keyv@4.5.4/node_modules/keyv/src/index.js:22:15
+Module not found: Can't resolve ('@keyv/redis' | '@keyv/mongo' | '@keyv/sqlite' | '@keyv/postgres' | '@keyv/mysql' | '@keyv/etcd' | '@keyv/offline' | '@keyv/tiered' | <dynamic>)
+  [90m20 |[0m 	[36mif[0m (options.adapter || options.uri) {
+  [90m21 |[0m 		[36mconst[0m adapter = options.adapter || [35m/^[^:+]*/[0m.exec(options.uri)[[35m0[0m];
+[31m[1m>[0m [90m22 |[0m 		[36mreturn[0m [36mnew[0m (require(adapters[adapter]))(options);
+  [90m   |[0m             [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m23 |[0m 	}
+  [90m24 |[0m
+  [90m25 |[0m 	[36mreturn[0m [36mnew[0m [33mMap[0m();
+
+
+
+Import traces:
+  externals-tracing:
+    ./node_modules/.pnpm/keyv@4.5.4/node_modules/keyv/src/index.js [externals-tracing]
+    [externals]/keyv [external]
+    ./node_modules/.pnpm/cacheable-request@7.0.4/node_modules/cacheable-request/src/index.js [App Route]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [App Route]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [App Route]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [App Route]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [App Route]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [App Route]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [App Route]
+    ./packages/content-adapter/src/sneaks.ts [App Route]
+    ./packages/klash-config/src/configs/sneakerklash.ts [App Route]
+    ./packages/klash-config/src/index.ts [App Route]
+    ./packages/klash-app/src/app/api/content/collection/[id]/items/route.ts [App Route]
+    ./apps/pokeklash/app/api/content/collection/[id]/items/route.ts [App Route]
+
+  Client Component Browser:
+    ./node_modules/.pnpm/keyv@4.5.4/node_modules/keyv/src/index.js [Client Component Browser]
+    ./node_modules/.pnpm/cacheable-request@7.0.4/node_modules/cacheable-request/src/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/core/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/as-promise/index.js [Client Component Browser]
+    ./node_modules/.pnpm/got@11.8.6/node_modules/got/dist/source/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/scrapers/stadiumgoods-scraper.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/controllers/sneaks.controllers.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/view.js:81:14
+Module not found: Can't resolve (<dynamic> | 'undefined')
+  [90m79 |[0m
+  [90m80 |[0m     [90m// default engine export[0m
+[31m[1m>[0m [90m81 |[0m     [36mvar[0m fn = require(mod).__express
+  [90m   |[0m              [31m[1m^^^^^^^^^^^^[0m
+  [90m82 |[0m
+  [90m83 |[0m     [36mif[0m ([36mtypeof[0m fn !== [32m'function'[0m) {
+  [90m84 |[0m       [36mthrow[0m [36mnew[0m [33mError[0m([32m'Module "'[0m + mod + [32m'" does not provide a view engine.'[0m)
+
+
+
+Import trace:
+  Client Component Browser:
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/view.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/application.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/lib/express.js [Client Component Browser]
+    ./node_modules/.pnpm/express@4.22.2/node_modules/express/index.js [Client Component Browser]
+    ./node_modules/.pnpm/sneaks-api@1.2.3/node_modules/sneaks-api/index.js [Client Component Browser]
+    ./packages/content-adapter/src/sneaks.ts [Client Component Browser]
+    ./packages/klash-config/src/configs/sneakerklash.ts [Client Component Browser]
+    ./packages/klash-config/src/index.ts [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Client Component Browser]
+    ./packages/klash-app/src/components/CreateHub.tsx [Server Component]
+    ./packages/klash-app/src/app/create/page.tsx [Server Component]
+    ./apps/pokeklash/app/create/page.ts [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at <unknown> (./packages/content-adapter/src/sneaks.ts:8:1)
+    at <unknown> (./packages/content-adapter/src/sneaks.ts:8:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    ... collapsed 24 duplicate lines matching above 1 lines 24 times...
+ ELIFECYCLE  Command failed with exit code 1.

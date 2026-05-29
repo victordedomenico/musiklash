@@ -1,0 +1,44 @@
+
+> foodklash@0.1.0 build /Users/victordedomenico/Projets/bracketfight/apps/foodklash
+> prisma generate && next build
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from ../../packages/db/prisma/schema.prisma.
+
+✔ Generated Prisma Client (v7.8.0) to ./../../node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.15_react-dom@19.2.4_react@19.2.4__r_9b44924ca1c8bf7c944112217bb1417b/node_modules/@prisma/client in 223ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+▲ Next.js 16.2.4 (Turbopack)
+
+  Creating an optimized production build ...
+(node:81655) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./packages/klash-app/src/components/CreateHub.tsx
+Code generation for chunk item errored
+An error occurred while generating the chunk item [project]/packages/klash-app/src/components/CreateHub.tsx [app-client] (ecmascript)
+
+Caused by:
+- the chunking context (unknown) does not support external modules (request: node:module)
+
+Debug info:
+- An error occurred while generating the chunk item [project]/packages/klash-app/src/components/CreateHub.tsx [app-client] (ecmascript)
+- Execution of <MergedEcmascriptModule as EcmascriptChunkPlaceable>::chunk_item_content failed
+- Execution of *EcmascriptChunkItemContent::new failed
+- Execution of EcmascriptModuleContent::new_merged failed
+- the chunking context (unknown) does not support external modules (request: node:module)
+
+Import trace:
+  Server Component:
+    ./packages/klash-app/src/components/CreateHub.tsx
+    ./packages/klash-app/src/app/create/page.tsx
+    ./apps/foodklash/app/create/page.ts
+
+
+    at ignore-listed frames
+ ELIFECYCLE  Command failed with exit code 1.

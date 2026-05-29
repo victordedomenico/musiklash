@@ -1,0 +1,40 @@
+
+> characterklash@0.1.0 build /Users/victordedomenico/Projets/bracketfight/apps/characterklash
+> prisma generate && next build
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from ../../packages/db/prisma/schema.prisma.
+
+✔ Generated Prisma Client (v7.8.0) to ./../../node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.15_react-dom@19.2.4_react@19.2.4__r_9b44924ca1c8bf7c944112217bb1417b/node_modules/@prisma/client in 423ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+▲ Next.js 16.2.4 (Turbopack)
+
+  Creating an optimized production build ...
+(node:59549) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✓ Compiled successfully in 4.4s
+  Running TypeScript ...
+  Finished TypeScript in 3.3s ...
+  Collecting page data using 10 workers ...
+  Generating static pages using 10 workers (0/3) ...
+✓ Generating static pages using 10 workers (3/3) in 246ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /blindtest/[id]
+├ ƒ /bracket-game/[id]
+├ ƒ /explore
+├ ○ /robots.txt
+├ ○ /sitemap.xml
+└ ƒ /tierlist/[id]
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

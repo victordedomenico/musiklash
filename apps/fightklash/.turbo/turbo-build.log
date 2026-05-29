@@ -1,0 +1,60 @@
+
+> fightklash@0.1.0 build /Users/victordedomenico/Projets/bracketfight/apps/fightklash
+> prisma generate && next build
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from ../../packages/db/prisma/schema.prisma.
+
+✔ Generated Prisma Client (v7.8.0) to ./../../node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react-dom@19.2.3_@types+react@19.2.15__@types+_67baf5dc6f96eb38677f4c716571e4f5/node_modules/@prisma/client in 3.20s
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+▲ Next.js 16.2.4 (Turbopack)
+
+  Creating an optimized production build ...
+(node:31993) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✓ Compiled successfully in 34.6s
+  Running TypeScript ...
+  Finished TypeScript in 17.3s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/6) ...
+  Generating static pages using 11 workers (1/6) 
+  Generating static pages using 11 workers (2/6) 
+  Generating static pages using 11 workers (4/6) 
+✓ Generating static pages using 11 workers (6/6) in 355ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/content/collection/[id]/items
+├ ƒ /api/content/entity/[id]
+├ ƒ /api/content/entity/[id]/items
+├ ƒ /api/content/search
+├ ƒ /api/guest/ensure
+├ ƒ /bracket-game/[id]
+├ ƒ /cookies
+├ ƒ /create
+├ ƒ /create-bracket
+├ ƒ /create-tierlist
+├ ƒ /explore
+├ ○ /icon
+├ ƒ /legal
+├ ƒ /login
+├ ○ /manifest.webmanifest
+├ ƒ /my-library
+├ ƒ /privacy
+├ ○ /robots.txt
+├ ƒ /settings
+├ ƒ /signup
+├ ○ /sitemap.xml
+├ ƒ /terms
+└ ƒ /tierlist/[id]
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

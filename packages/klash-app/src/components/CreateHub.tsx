@@ -14,8 +14,8 @@ import {
   User,
   Zap,
 } from "lucide-react";
-import { VERTICAL_MANIFESTS } from "@klash/klash-config";
-import type { GameMode } from "@klash/klash-config";
+import { VERTICAL_MANIFESTS } from "@klash/klash-config/manifests";
+import type { GameMode } from "@klash/klash-config/types";
 
 export type CreateHubLabels = {
   chooseMode: string;

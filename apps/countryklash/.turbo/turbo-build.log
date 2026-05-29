@@ -1,0 +1,36 @@
+
+> countryklash@0.1.0 build /Users/victordedomenico/Projets/bracketfight/apps/countryklash
+> prisma generate && next build
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from ../../packages/db/prisma/schema.prisma.
+
+✔ Generated Prisma Client (v7.8.0) to ./../../node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.15_react-dom@19.2.4_react@19.2.4__r_9b44924ca1c8bf7c944112217bb1417b/node_modules/@prisma/client in 129ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+▲ Next.js 16.2.4 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+(node:45462) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✓ Compiled successfully in 4.9s
+  Running TypeScript ...
+Failed to type check.
+
+../../packages/content-adapter/src/deezer-rap.ts:143:45
+Type error: Argument of type 'DeezerAlbumTrack[]' is not assignable to parameter of type '{ album: { id: number; }; }[]'.
+  Property 'album' is missing in type 'DeezerAlbumTrack' but required in type '{ album: { id: number; }; }'.
+
+  [90m141 |[0m   [36masync[0m getCollectionItems(collectionId, { requirePreview = [36mtrue[0m } = {}) {
+  [90m142 |[0m     [36mconst[0m tracks = [36mawait[0m getAlbumTracks(collectionId, { requirePreview });
+[31m[1m>[0m [90m143 |[0m     [36mconst[0m rapTracks = [36mawait[0m filterRapTracks(tracks, albumGenreCache);
+  [90m    |[0m                                             [31m[1m^[0m
+  [90m144 |[0m     [36mreturn[0m rapTracks.map(trackToItem);
+  [90m145 |[0m   },
+  [90m146 |[0m
+Next.js build worker exited with code: 1 and signal: null
+ ELIFECYCLE  Command failed with exit code 1.

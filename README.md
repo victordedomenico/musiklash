@@ -70,6 +70,14 @@ Optionnel :
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 ```
 
+Pour **MovieKlash** (recherche films, sagas, casting) :
+
+```env
+TMDB_API_KEY=YOUR_TMDB_API_KEY
+```
+
+Clé gratuite sur [developer.themoviedb.org](https://developer.themoviedb.org/docs/getting-started). Sans cette clé, l'app démarre mais la recherche TMDB et le bandeau « films tendance » restent vides.
+
 ### 4) Lancer un vertical
 
 **Utiliser le sélecteur interactif** (recommandé) :
@@ -84,6 +92,7 @@ On peut aussi lancer un vertical directement par nom :
 
 ```bash
 npm run dev animeklash
+npm run dev movieklash   # port 3003 — nécessite TMDB_API_KEY
 ```
 
 Studio Supabase local : [http://127.0.0.1:54323](http://127.0.0.1:54323)

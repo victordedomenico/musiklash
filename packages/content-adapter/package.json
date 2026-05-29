@@ -4,6 +4,11 @@
   "private": true,
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./sneaks": "./src/sneaks.ts"
+  },
+  "dependencies": {
+    "server-only": "^0.0.1",
+    "sneaks-api": "^1.2.3"
   }
 }
