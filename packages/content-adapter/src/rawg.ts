@@ -235,22 +235,28 @@ function seriesToCollection(s: RawgGameSeries): ContentCollection {
   };
 }
 
-/** Extracts the franchise name from a game title by stripping version numbers, subtitles, etc.
+/** Extracts the franchise name from a game title.
  *  "Mario Kart 8 Deluxe" → "Mario Kart"
  *  "FIFA 23" → "FIFA"
  *  "The Witcher 3: Wild Hunt" → "The Witcher"
+ *  "Mario Kart DS" → "Mario Kart"
  */
 function extractFranchiseName(name: string): string {
-  const clean = name
-    .replace(/\s*:.*$/, "")          // Remove ": subtitle" (The Witcher 3: Wild Hunt → The Witcher 3)
-    .replace(/\s+[IVX]{1,4}$/, "")   // Remove Roman numerals (Dark Souls III → Dark Souls)
-    .replace(/\s+\d+(\.\d+)?$/, "")  // Remove trailing numbers (FIFA 23 → FIFA, Half-Life 2 → Half-Life)
-    .replace(
-      /\s+(HD|4K|VR|Remastered|Remake|Deluxe|Complete|Edition|Ultimate|Anniversary|Collection|Origins|Legends|Classic)$/i,
-      "",
-    )
-    .trim();
-  return clean || name;
+  const steps: RegExp[] = [
+    /\s*:.*$/,                                           // ": subtitle"
+    /\s+v\d+(\.\d+)*$/i,                                // version suffix "V1.0"
+    /\s+(hd|4k|vr|remastered|remake|deluxe|complete|ultimate|anniversary|collection|classic|origins|legends|goty|game\s+of\s+the\s+year|director'?s?\s+cut|enhanced)\b.*/i,
+    /\s+(live|home\s+circuit|battle\s+royale)\b.*/i,    // known subtitles
+    /\s+(ds|wii\s?u?|3ds|switch|n64|64|gba|gc|gamecube|ps\d?|xbox\s?\w*)\s*$/i,  // platforms
+    /\s+[ivxlcdm]{1,6}$/i,                              // Roman numerals
+    /\s+\d+(\.\d+)?\s*$/,                               // trailing numbers
+  ];
+  let result = name;
+  for (const re of steps) {
+    const next = result.replace(re, "").trim();
+    if (next) result = next;
+  }
+  return result || name;
 }
 
 function developerToEntity(d: RawgDeveloper): ContentEntity {
@@ -313,20 +319,21 @@ export const rawgContentSource: ContentSource = {
   },
 
   async searchCollections(query, { limit = 20 } = {}) {
-    // Fetch more results so grouping by franchise name yields enough entries
+    // Fetch more results so grouping yields enough unique franchises
     const games = await searchGames(query, Math.min(limit * 3, 40));
-    // Group by extracted franchise name, keep the first (most relevant) game as anchor
-    const seen = new Map<string, RawgGame>();
+    // Deduplicate by franchise name (case-insensitive), keep first/most-relevant game as anchor
+    const seen = new Map<string, { name: string; game: RawgGame }>();
     for (const g of games) {
       const franchise = extractFranchiseName(g.name);
-      if (!seen.has(franchise)) seen.set(franchise, g);
+      const key = franchise.toLowerCase();
+      if (!seen.has(key)) seen.set(key, { name: franchise, game: g });
     }
-    return [...seen.entries()].slice(0, limit).map(([franchise, anchor]) => ({
-      id: `series-${anchor.id}`,
-      title: franchise,
-      coverUrl: anchor.background_image ?? undefined,
+    return [...seen.values()].slice(0, limit).map(({ name, game }) => ({
+      id: `series-${game.id}`,
+      title: name,
+      coverUrl: game.background_image ?? undefined,
       source: "rawg",
-      metadata: { collectionKind: "franchise", gameId: anchor.id },
+      metadata: { collectionKind: "franchise", gameId: game.id },
     })) satisfies ContentCollection[];
   },
 
