@@ -136,21 +136,33 @@ async function bggFetch(path: string, params: Record<string, string> = {}): Prom
 
   for (let attempt = 0; attempt < 6; attempt++) {
     const res = await fetch(url.toString(), {
-      headers: { Accept: "application/xml", "User-Agent": BGG_USER_AGENT },
+      headers: {
+        Accept: "application/xml, text/xml",
+        // BGG blocks custom User-Agents on some server IPs — omit to use default
+      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ...(attempt > 0 ? { cache: "no-store" as const } : ({ next: { revalidate: 3600 } } as any)),
     });
 
+    // 202 = BGG is generating the response, retry after a delay
     if (res.status === 202) {
       await sleep(800 + attempt * 400);
       continue;
+    }
+    // 401/429/503 = rate-limited or bot-detected, retry with back-off
+    if (res.status === 401 || res.status === 429 || res.status === 503) {
+      if (attempt < 5) {
+        await sleep(1000 * (attempt + 1));
+        continue;
+      }
+      return ""; // Give up gracefully — callers handle empty XML as no results
     }
     if (!res.ok) {
       throw new Error(`BGG ${path} → ${res.status}`);
     }
     return res.text();
   }
-  throw new Error(`BGG ${path} → timed out (202 retries)`);
+  return ""; // Timed out — return empty rather than crashing
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
