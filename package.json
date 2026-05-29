@@ -20,7 +20,19 @@
     "build:movieklash": "turbo run build --filter=movieklash",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "scaffold:vertical": "tsx scripts/scaffold-klash-vertical.ts"
+    "scaffold:vertical": "tsx scripts/scaffold-klash-vertical.ts",
+    "db:start": "pnpm --filter=musiklash run db:start",
+    "db:stop": "pnpm --filter=musiklash run db:stop",
+    "db:status": "pnpm --filter=musiklash run db:status",
+    "db:reset": "pnpm --filter=musiklash run db:reset",
+    "db:up": "pnpm --filter=musiklash run db:up",
+    "db:migrate": "pnpm --filter=musiklash run db:migrate",
+    "db:start:animeklash": "pnpm --filter=animeklash run db:start",
+    "db:stop:animeklash": "pnpm --filter=animeklash run db:stop",
+    "db:status:animeklash": "pnpm --filter=animeklash run db:status",
+    "db:reset:animeklash": "pnpm --filter=animeklash run db:reset",
+    "db:up:animeklash": "pnpm --filter=animeklash run db:up",
+    "db:migrate:animeklash": "pnpm --filter=animeklash run db:migrate"
   },
   "devDependencies": {
     "tsx": "^4.21.0",

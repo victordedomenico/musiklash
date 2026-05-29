@@ -104,21 +104,26 @@ npm run scaffold:vertical    # scaffolde un nouveau vertical
 
 ### Base de données
 
-Chaque vertical a sa propre instance Supabase locale. Les commandes DB se lancent depuis le dossier de l'app concernée :
+Chaque vertical a sa propre instance Supabase locale. Les commandes s'exécutent depuis la racine :
 
 ```bash
-cd apps/musiklash   # ou animeklash, movieklash…
+# musiklash (défaut)
+npm run db:start       # démarre la stack Supabase locale (Docker)
+npm run db:stop        # arrête la stack Supabase locale
+npm run db:status      # affiche les URLs et clés locales
+npm run db:reset       # reset + ré-applique toutes les migrations + seed
+npm run db:up          # applique les migrations en attente
+npm run db:migrate     # crée un nouveau fichier de migration
 
-npm run db:start    # démarre la stack Supabase locale (Docker)
-npm run db:stop     # arrête la stack Supabase locale
-npm run db:status   # affiche les URLs et clés locales
-npm run db:reset    # reset + ré-applique toutes les migrations + seed
-npm run db:up       # applique les migrations en attente
-npm run db:migrate  # crée un nouveau fichier de migration
-npm run seed        # exécute le seed Prisma
+# animeklash (suffixe :animeklash)
+npm run db:start:animeklash
+npm run db:reset:animeklash
+# … même pattern pour stop / status / up / migrate
 ```
 
-Ports locaux par défaut (musiklash / bracketfight) :
+Depuis le dossier de l'app, `npm run seed` exécute le seed Prisma.
+
+Ports locaux (musiklash) :
 - API Supabase : http://127.0.0.1:54321
 - DB PostgreSQL : postgresql://postgres:postgres@127.0.0.1:54322/postgres
 - Studio : http://127.0.0.1:54323
