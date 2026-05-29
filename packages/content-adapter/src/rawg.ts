@@ -130,16 +130,12 @@ export async function searchGenres(query: string, limit = 20): Promise<RawgGenre
 }
 
 export async function searchGameSeries(
-  query: string,
-  limit = 20,
+  _query: string,
+  _limit = 20,
 ): Promise<RawgGameSeries[]> {
-  if (!query.trim()) return [];
-  const json = await rawgGet<RawgPaged<RawgGameSeries>>("/game-series", {
-    search: query.trim(),
-    page_size: String(Math.min(limit, 40)),
-    page: "1",
-  });
-  return (json.results ?? []).slice(0, limit);
+  // RAWG has no standalone /game-series search endpoint; /games/{id}/game-series
+  // only works for a specific game. Return empty rather than 404.
+  return [];
 }
 
 export async function getGameById(gameId: string | number): Promise<RawgGame | null> {
@@ -284,14 +280,8 @@ export const rawgContentSource: ContentSource = {
       return this.searchItems(query, { limit });
     }
     if (kind === "series") {
-      const series = await searchGameSeries(query, limit);
-      return series.map((s) => ({
-        id: `series-${s.id}`,
-        title: s.name,
-        subtitle: "Série / franchise",
-        source: "rawg",
-        metadata: { itemKind: "series", seriesId: s.id, gamesCount: s.games_count },
-      }));
+      // No standalone series search on RAWG — fall back to game search
+      return this.searchItems(query, { limit });
     }
     return this.searchItems(query, { limit });
   },
