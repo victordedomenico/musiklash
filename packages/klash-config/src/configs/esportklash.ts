@@ -30,7 +30,7 @@ export const esportklash = defineVertical({
     collection: "tournoi",
     entity: "équipe",
   },
-  imageHosts: ["cdn.pandascore.co"],
+  imageHosts: ["cdn.pandascore.co", "cdn-api.pandascore.co"],
   gameModes: ["bracket", "tierlist"],
   guestEmailDomain: "guest.esportklash.app",
   i18nOverrides: {

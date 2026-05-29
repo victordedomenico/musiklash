@@ -345,7 +345,7 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
       label: "PandaScore API",
       url: "https://developers.pandascore.co/",
     },
-    imageHosts: ["cdn.pandascore.co"],
+    imageHosts: ["cdn.pandascore.co", "cdn-api.pandascore.co"],
     gameModes: ["bracket", "tierlist"],
   },
   footklash: {
