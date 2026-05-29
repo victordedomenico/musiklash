@@ -26,7 +26,7 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "card" | "set" | "deck" | "pokemon" | "pokemon-set";
+type Tab = "card" | "set" | "deck" | "pokemon" | "pokemon-set" | "yugioh" | "yugioh-set";
 
 type Props = {
   size: number;
@@ -87,9 +87,11 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
   const [openedSet, setOpenedSet] = useState<ContentCollection | null>(null);
   const [openedDeck, setOpenedDeck] = useState<ContentEntity | null>(null);
   const [openedPokemonSet, setOpenedPokemonSet] = useState<ContentItem | null>(null);
+  const [openedYgoSet, setOpenedYgoSet] = useState<ContentItem | null>(null);
   const [setCards, setSetCards] = useState<ContentItem[]>([]);
   const [deckCards, setDeckCards] = useState<ContentItem[]>([]);
   const [pokemonSetCards, setPokemonSetCards] = useState<ContentItem[]>([]);
+  const [ygoSetCards, setYgoSetCards] = useState<ContentItem[]>([]);
   const [drillLoading, setDrillLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -123,6 +125,18 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
     tab === "pokemon-set" && !openedPokemonSet,
   );
 
+  const { results: yugiohResults, loading: yugiohLoading } = useDebouncedSearch(
+    "/api/content/yugioh/search",
+    query,
+    tab === "yugioh",
+  );
+
+  const { results: yugiohSetResults, loading: yugiohSetLoading } = useDebouncedSearch(
+    "/api/content/yugioh/sets",
+    query,
+    tab === "yugioh-set" && !openedYgoSet,
+  );
+
   const max = freeMode ? Infinity : size;
   const isSelected = (id: string) => selected.some((s) => s.external_id === id);
 
@@ -133,6 +147,25 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
 
   const removeItem = (id: string) => {
     onChange(selected.filter((s) => s.external_id !== id));
+  };
+
+  const openYgoSet = async (setItem: ContentItem) => {
+    setOpenedYgoSet(setItem);
+    setDrillLoading(true);
+    setYgoSetCards([]);
+    const setCode = String(setItem.metadata?.setCode ?? "");
+    const setName = String(setItem.metadata?.setName ?? setItem.title);
+    try {
+      const res = await fetch(
+        `/api/content/yugioh/set/${encodeURIComponent(setCode)}/cards?name=${encodeURIComponent(setName)}`,
+      );
+      const json = await res.json();
+      setYgoSetCards(json.results ?? []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDrillLoading(false);
+    }
   };
 
   const openPokemonSet = async (setItem: ContentItem) => {
@@ -189,6 +222,8 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
     { key: "deck", label: "Decks", icon: Library },
     { key: "pokemon", label: "Pokémon", icon: Zap },
     { key: "pokemon-set", label: "Sets Pokémon", icon: Layers3 },
+    { key: "yugioh", label: "Yu-Gi-Oh", icon: Sparkles },
+    { key: "yugioh-set", label: "Sets YGO", icon: Layers3 },
   ];
 
   return (
@@ -205,9 +240,11 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
               setOpenedSet(null);
               setOpenedDeck(null);
               setOpenedPokemonSet(null);
+              setOpenedYgoSet(null);
               setSetCards([]);
               setDeckCards([]);
               setPokemonSetCards([]);
+              setYgoSetCards([]);
               setQuery("");
             }}
           >
@@ -217,7 +254,7 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
         ))}
       </div>
 
-      {(openedSet || openedDeck || openedPokemonSet) && (
+      {(openedSet || openedDeck || openedPokemonSet || openedYgoSet) && (
         <button
           type="button"
           className="btn-ghost text-sm inline-flex items-center gap-1"
@@ -225,9 +262,11 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
             setOpenedSet(null);
             setOpenedDeck(null);
             setOpenedPokemonSet(null);
+            setOpenedYgoSet(null);
             setSetCards([]);
             setDeckCards([]);
             setPokemonSetCards([]);
+            setYgoSetCards([]);
           }}
         >
           <ChevronLeft size={16} />
@@ -235,7 +274,7 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
         </button>
       )}
 
-      {!openedSet && !openedDeck && !openedPokemonSet && (
+      {!openedSet && !openedDeck && !openedPokemonSet && !openedYgoSet && (
         <div className="relative">
           <Search
             size={18}
@@ -255,7 +294,11 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
                     ? "Rechercher un deck…"
                     : tab === "pokemon"
                       ? "Rechercher une carte Pokémon…"
-                      : "Rechercher un set Pokémon…"
+                      : tab === "pokemon-set"
+                        ? "Rechercher un set Pokémon…"
+                        : tab === "yugioh"
+                          ? "Rechercher une carte Yu-Gi-Oh…"
+                          : "Rechercher un set Yu-Gi-Oh…"
             }
             className="input w-full pl-10"
           />
@@ -400,7 +443,58 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
           </>
         )}
 
-        {(cardLoading || setLoading || deckLoading || pokemonLoading || pokemonSetLoading) && (
+        {tab === "yugioh" &&
+          yugiohResults.map((item) => (
+            <ResultRow
+              key={item.id}
+              title={item.title}
+              subtitle={item.subtitle}
+              coverUrl={item.coverUrl}
+              selected={isSelected(item.id)}
+              onAdd={() => addItem(item)}
+            />
+          ))}
+
+        {tab === "yugioh-set" && !openedYgoSet &&
+          yugiohSetResults.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="w-full flex items-center gap-3 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
+              onClick={() => void openYgoSet(item)}
+            >
+              <div className="w-10 h-[60px] rounded bg-[color:var(--surface-2)] flex items-center justify-center shrink-0 text-xs font-bold text-[color:var(--muted)]">
+                YGO
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{item.title}</p>
+                {item.subtitle && <p className="text-xs text-[color:var(--muted)]">{item.subtitle}</p>}
+              </div>
+              <ChevronLeft size={16} className="rotate-180 text-[color:var(--muted)] shrink-0" />
+            </button>
+          ))}
+
+        {tab === "yugioh-set" && openedYgoSet && (
+          <>
+            <p className="text-sm font-medium text-[color:var(--muted)]">{openedYgoSet.title}</p>
+            {drillLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
+            {!drillLoading && ygoSetCards.length === 0 && (
+              <p className="text-sm text-[color:var(--muted)]">Aucune carte trouvée.</p>
+            )}
+            {ygoSetCards.map((item) => (
+              <ResultRow
+                key={item.id}
+                title={item.title}
+                subtitle={item.subtitle}
+                coverUrl={item.coverUrl}
+                selected={isSelected(item.id)}
+                onAdd={() => addItem(item)}
+              />
+            ))}
+          </>
+        )}
+
+        {(cardLoading || setLoading || deckLoading || pokemonLoading || pokemonSetLoading || yugiohLoading || yugiohSetLoading) && (
           <p className="text-sm text-[color:var(--muted)]">Recherche…</p>
         )}
       </div>

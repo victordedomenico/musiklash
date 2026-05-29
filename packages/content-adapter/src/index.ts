@@ -118,6 +118,15 @@ export {
   INDIE_PLATFORM_IDS,
 } from "./rawg-indie";
 export {
+  searchYgoCards,
+  searchYgoSets,
+  getYgoSetCards,
+  ygoCardToItem,
+  ygoSetToItem,
+  type YgoCard,
+  type YgoCardSet,
+} from "./ygoprodeck";
+export {
   searchPokemonCards,
   getPokemonSets,
   getPokemonSetCards,

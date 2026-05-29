@@ -23,6 +23,8 @@ export function inferSourceFromExternalId(externalId: string): string {
   if (externalId.startsWith("bseries-")) return "openlibrary";
   if (externalId.startsWith("mseries-")) return "mangadex";
   if (externalId.startsWith("tvchar-")) return "tvmaze";
+  if (externalId.startsWith("ptcg-") || externalId.startsWith("ptcgset-")) return "pokemontcg";
+  if (externalId.startsWith("ygo-") || externalId.startsWith("ygoset-")) return "ygoprodeck";
   if (externalId.startsWith("person-")) return "tmdb";
   // Fall back to the vertical's configured source
   if (typeof process !== "undefined") {
