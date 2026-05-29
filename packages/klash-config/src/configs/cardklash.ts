@@ -31,7 +31,7 @@ export const cardklash = defineVertical({
     collection: "set",
     entity: "deck",
   },
-  imageHosts: ["cards.scryfall.io", "c1.scryfall.io", "c2.scryfall.io", "svgs.scryfall.io"],
+  imageHosts: ["cards.scryfall.io", "c1.scryfall.io", "c2.scryfall.io", "svgs.scryfall.io", "images.pokemontcg.io"],
   gameModes: ["bracket", "tierlist"],
   guestEmailDomain: "guest.cardklash.app",
   i18nOverrides: {

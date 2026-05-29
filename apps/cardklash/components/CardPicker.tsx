@@ -11,6 +11,7 @@ import {
   Layers3,
   Library,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import type { ContentCollection, ContentEntity, ContentItem } from "@klash/content-adapter";
 import { withSearchQuery } from "@/lib/api-url";
@@ -25,7 +26,7 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "card" | "set" | "deck";
+type Tab = "card" | "set" | "deck" | "pokemon" | "pokemon-set";
 
 type Props = {
   size: number;
@@ -85,8 +86,10 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
   const [query, setQuery] = useState("");
   const [openedSet, setOpenedSet] = useState<ContentCollection | null>(null);
   const [openedDeck, setOpenedDeck] = useState<ContentEntity | null>(null);
+  const [openedPokemonSet, setOpenedPokemonSet] = useState<ContentItem | null>(null);
   const [setCards, setSetCards] = useState<ContentItem[]>([]);
   const [deckCards, setDeckCards] = useState<ContentItem[]>([]);
+  const [pokemonSetCards, setPokemonSetCards] = useState<ContentItem[]>([]);
   const [drillLoading, setDrillLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -108,6 +111,18 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
     tab === "deck" && !openedDeck,
   );
 
+  const { results: pokemonResults, loading: pokemonLoading } = useDebouncedSearch(
+    "/api/content/pokemon/search",
+    query,
+    tab === "pokemon",
+  );
+
+  const { results: pokemonSetResults, loading: pokemonSetLoading } = useDebouncedSearch(
+    "/api/content/pokemon/sets",
+    query,
+    tab === "pokemon-set" && !openedPokemonSet,
+  );
+
   const max = freeMode ? Infinity : size;
   const isSelected = (id: string) => selected.some((s) => s.external_id === id);
 
@@ -118,6 +133,22 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
 
   const removeItem = (id: string) => {
     onChange(selected.filter((s) => s.external_id !== id));
+  };
+
+  const openPokemonSet = async (setItem: ContentItem) => {
+    setOpenedPokemonSet(setItem);
+    setDrillLoading(true);
+    setPokemonSetCards([]);
+    const setId = String(setItem.metadata?.setId ?? setItem.id.replace(/^ptcgset-/, ""));
+    try {
+      const res = await fetch(`/api/content/pokemon/set/${setId}/cards`);
+      const json = await res.json();
+      setPokemonSetCards(json.results ?? []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDrillLoading(false);
+    }
   };
 
   const openSet = async (col: ContentCollection) => {
@@ -153,9 +184,11 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
   };
 
   const tabs: { key: Tab; label: string; icon: typeof Sparkles }[] = [
-    { key: "card", label: "Cartes", icon: Sparkles },
-    { key: "set", label: "Sets", icon: Layers3 },
+    { key: "card", label: "Magic", icon: Sparkles },
+    { key: "set", label: "Sets Magic", icon: Layers3 },
     { key: "deck", label: "Decks", icon: Library },
+    { key: "pokemon", label: "Pokémon", icon: Zap },
+    { key: "pokemon-set", label: "Sets Pokémon", icon: Layers3 },
   ];
 
   return (
@@ -171,8 +204,10 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
               setTab(key);
               setOpenedSet(null);
               setOpenedDeck(null);
+              setOpenedPokemonSet(null);
               setSetCards([]);
               setDeckCards([]);
+              setPokemonSetCards([]);
               setQuery("");
             }}
           >
@@ -182,15 +217,17 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
         ))}
       </div>
 
-      {(openedSet || openedDeck) && (
+      {(openedSet || openedDeck || openedPokemonSet) && (
         <button
           type="button"
           className="btn-ghost text-sm inline-flex items-center gap-1"
           onClick={() => {
             setOpenedSet(null);
             setOpenedDeck(null);
+            setOpenedPokemonSet(null);
             setSetCards([]);
             setDeckCards([]);
+            setPokemonSetCards([]);
           }}
         >
           <ChevronLeft size={16} />
@@ -198,7 +235,7 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
         </button>
       )}
 
-      {!openedSet && !openedDeck && (
+      {!openedSet && !openedDeck && !openedPokemonSet && (
         <div className="relative">
           <Search
             size={18}
@@ -213,8 +250,12 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
               tab === "card"
                 ? "Rechercher une carte Magic…"
                 : tab === "set"
-                  ? "Rechercher un set…"
-                  : "Rechercher un deck…"
+                  ? "Rechercher un set Magic…"
+                  : tab === "deck"
+                    ? "Rechercher un deck…"
+                    : tab === "pokemon"
+                      ? "Rechercher une carte Pokémon…"
+                      : "Rechercher un set Pokémon…"
             }
             className="input w-full pl-10"
           />
@@ -306,7 +347,60 @@ export default function CardPicker({ size, selected, onChange, freeMode = false 
           </>
         )}
 
-        {(cardLoading || setLoading || deckLoading) && (
+        {tab === "pokemon" &&
+          pokemonResults.map((item) => (
+            <ResultRow
+              key={item.id}
+              title={item.title}
+              subtitle={item.subtitle}
+              coverUrl={item.coverUrl}
+              selected={isSelected(item.id)}
+              onAdd={() => addItem(item)}
+            />
+          ))}
+
+        {tab === "pokemon-set" && !openedPokemonSet &&
+          pokemonSetResults.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="w-full flex items-center gap-3 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
+              onClick={() => void openPokemonSet(item)}
+            >
+              {item.coverUrl ? (
+                <Image src={item.coverUrl} alt="" width={72} height={36} className="rounded object-contain bg-[color:var(--surface-2)] p-1 shrink-0" />
+              ) : (
+                <div className="w-[72px] h-9 rounded bg-[color:var(--surface-2)] shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{item.title}</p>
+                {item.subtitle && <p className="text-xs text-[color:var(--muted)]">{item.subtitle}</p>}
+              </div>
+              <ChevronLeft size={16} className="rotate-180 text-[color:var(--muted)] shrink-0" />
+            </button>
+          ))}
+
+        {tab === "pokemon-set" && openedPokemonSet && (
+          <>
+            <p className="text-sm font-medium text-[color:var(--muted)]">{openedPokemonSet.title}</p>
+            {drillLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
+            {!drillLoading && pokemonSetCards.length === 0 && (
+              <p className="text-sm text-[color:var(--muted)]">Aucune carte trouvée.</p>
+            )}
+            {pokemonSetCards.map((item) => (
+              <ResultRow
+                key={item.id}
+                title={item.title}
+                subtitle={item.subtitle}
+                coverUrl={item.coverUrl}
+                selected={isSelected(item.id)}
+                onAdd={() => addItem(item)}
+              />
+            ))}
+          </>
+        )}
+
+        {(cardLoading || setLoading || deckLoading || pokemonLoading || pokemonSetLoading) && (
           <p className="text-sm text-[color:var(--muted)]">Recherche…</p>
         )}
       </div>

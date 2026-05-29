@@ -118,6 +118,15 @@ export {
   INDIE_PLATFORM_IDS,
 } from "./rawg-indie";
 export {
+  searchPokemonCards,
+  getPokemonSets,
+  getPokemonSetCards,
+  pokemonCardToItem,
+  pokemonSetToItem,
+  type PokeTcgCard,
+  type PokeTcgSet,
+} from "./pokemontcg";
+export {
   scryfallContentSource,
   searchCards,
   searchSets,
