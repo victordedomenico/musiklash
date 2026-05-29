@@ -25,9 +25,13 @@ export type ScryfallCardFace = {
 export type ScryfallCard = {
   id: string;
   name: string;
+  printed_name?: string;  // Localized name (e.g. "Éclair" for "Lightning Bolt" in French)
+  lang?: string;
   set?: string;
   set_name?: string;
+  printed_set_name?: string;
   type_line?: string;
+  printed_type_line?: string;
   mana_cost?: string;
   rarity?: string;
   collector_number?: string;
@@ -82,7 +86,7 @@ function cardSubtitle(card: ScryfallCard): string | undefined {
 function cardToItem(card: ScryfallCard): ContentItem {
   return {
     id: card.id,
-    title: card.name,
+    title: card.printed_name ?? card.name,
     subtitle: cardSubtitle(card),
     coverUrl: cardImageUrl(card),
     source: "scryfall",
@@ -188,14 +192,17 @@ async function scryfallFetchAllPages<T>(firstPath: string, params: Record<string
 
 export async function searchCards(query: string, limit = 20): Promise<ScryfallCard[]> {
   if (!query.trim()) return [];
-  try {
-    const json = await scryfallFetch<ScryfallList<ScryfallCard>>("/cards/search", {
-      q: query.trim(),
-    });
-    return (json.data ?? []).slice(0, limit);
-  } catch {
-    return [];
+  // Try French first, fall back to English if no results
+  for (const q of [`${query.trim()} lang:fr`, query.trim()]) {
+    try {
+      const json = await scryfallFetch<ScryfallList<ScryfallCard>>("/cards/search", { q });
+      const results = (json.data ?? []).slice(0, limit);
+      if (results.length > 0) return results;
+    } catch {
+      // continue to next query
+    }
   }
+  return [];
 }
 
 export async function searchSets(query: string, limit = 20): Promise<ScryfallSet[]> {
@@ -233,15 +240,22 @@ export async function getSetByCode(code: string): Promise<ScryfallSet | null> {
 }
 
 export async function getSetCards(setCode: string, limit = 50): Promise<ScryfallCard[]> {
-  try {
-    const json = await scryfallFetch<ScryfallList<ScryfallCard>>("/cards/search", {
-      q: `e:${setCode} game:paper`,
-      unique: "prints",
-    });
-    return (json.data ?? []).slice(0, limit);
-  } catch {
-    return [];
+  for (const q of [
+    `e:${setCode} lang:fr game:paper`,
+    `e:${setCode} game:paper`,
+  ]) {
+    try {
+      const json = await scryfallFetch<ScryfallList<ScryfallCard>>("/cards/search", {
+        q,
+        unique: "prints",
+      });
+      const results = (json.data ?? []).slice(0, limit);
+      if (results.length > 0) return results;
+    } catch {
+      // continue to next query
+    }
   }
+  return [];
 }
 
 export async function getDeckById(deckId: string): Promise<ScryfallDeck | null> {
