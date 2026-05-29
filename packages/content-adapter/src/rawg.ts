@@ -183,16 +183,18 @@ export async function getGenreGames(
 }
 
 export async function getGameSeriesGames(
-  seriesId: string | number,
+  gameId: string | number,
   limit = 50,
 ): Promise<RawgGame[]> {
-  const json = await rawgGet<RawgPaged<RawgGame>>("/games", {
-    game_series: String(seriesId),
-    ordering: "-released",
-    page_size: String(Math.min(limit, 40)),
-    page: "1",
-  });
-  return (json.results ?? []).slice(0, limit);
+  try {
+    const json = await rawgGet<RawgPaged<RawgGame>>(`/games/${gameId}/game-series`, {
+      page_size: String(Math.min(limit, 40)),
+      page: "1",
+    });
+    return (json.results ?? []).slice(0, limit);
+  } catch {
+    return [];
+  }
 }
 
 export async function getTrendingGames(limit = 18): Promise<RawgGame[]> {
