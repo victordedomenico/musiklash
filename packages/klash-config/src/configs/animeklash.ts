@@ -38,7 +38,7 @@ export const animeklash = defineVertical({
     collection: "série",
     entity: "personnage",
   },
-  imageHosts: ["s4.anilist.co", "media.kitsu.app", "v1.animethemes.moe"],
+  imageHosts: ["s4.anilist.co", "media.kitsu.app", "v1.animethemes.moe", "cdn.myanimelist.net"],
   gameModes: [
     "bracket",
     "tierlist",

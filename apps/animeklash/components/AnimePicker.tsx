@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, Plus, X, ChevronLeft, Check, Tv, User, Layers } from "lucide-react";
+import { Search, Plus, X, ChevronLeft, Check, Tv, User, Layers, Music2, Music, Zap, Flame, PenLine } from "lucide-react";
 import Image from "next/image";
 import type { ContentItem, ContentCollection } from "@klash/content-adapter";
 import { withSearchQuery } from "@/lib/api-url";
@@ -25,9 +25,9 @@ type Props = {
   tabs?: Tab[];
 };
 
-type Tab = "anime" | "character" | "theme" | "arc";
+export type Tab = "anime" | "opening" | "ending" | "arc" | "character" | "transformation" | "power" | "theme";
 
-/** Local display type for opened anime's themes */
+/** Local display type for opened anime's themes (drill-down mode) */
 type ThemeResult = {
   id: string;
   title: string;
@@ -48,6 +48,41 @@ function str(v: unknown): string | undefined {
   return v != null && v !== "" ? String(v) : undefined;
 }
 
+// ─── Tab metadata ─────────────────────────────────────────────────────────────
+
+const TAB_LABEL: Record<Tab, string> = {
+  anime: "Titre d'animé",
+  opening: "Opening",
+  ending: "Ending",
+  arc: "Arc d'animé",
+  character: "Personnage",
+  transformation: "Transformation",
+  power: "Pouvoir",
+  theme: "Opening/Ending",
+};
+
+const TAB_PLACEHOLDER: Record<Tab, string> = {
+  anime: "Rechercher un titre d'animé…",
+  opening: "Rechercher un opening par titre…",
+  ending: "Rechercher un ending par titre…",
+  arc: "Rechercher un arc ou une série…",
+  character: "Rechercher un personnage…",
+  transformation: "Rechercher une transformation…",
+  power: "Rechercher un pouvoir ou une technique…",
+  theme: "Rechercher un animé pour ses openings…",
+};
+
+function TabIcon({ tab }: { tab: Tab }) {
+  if (tab === "anime") return <Tv size={14} />;
+  if (tab === "character") return <User size={14} />;
+  if (tab === "arc") return <Layers size={14} />;
+  if (tab === "theme" || tab === "opening") return <Music2 size={14} />;
+  if (tab === "ending") return <Music size={14} />;
+  if (tab === "transformation") return <Zap size={14} />;
+  if (tab === "power") return <Flame size={14} />;
+  return null;
+}
+
 // ─── Debounced search hook ────────────────────────────────────────────────────
 
 function useDebouncedSearch(
@@ -57,10 +92,11 @@ function useDebouncedSearch(
 ): { results: ContentItem[]; loading: boolean } {
   const [results, setResults] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const trimmed = query.trim();
+  const active = Boolean(trimmed && enabled);
 
   useEffect(() => {
-    const trimmed = query.trim();
-    if (!trimmed || !enabled) { setResults([]); return; }
+    if (!active) return;
     const ctrl = new AbortController();
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -75,9 +111,69 @@ function useDebouncedSearch(
       }
     }, 400);
     return () => { ctrl.abort(); clearTimeout(timer); };
-  }, [query, endpoint, enabled]);
+  }, [trimmed, endpoint, active]);
 
-  return { results, loading };
+  return { results: active ? results : [], loading: active ? loading : false };
+}
+
+// ─── Generic item list ────────────────────────────────────────────────────────
+
+function ItemList({
+  items,
+  loading,
+  query,
+  isSelected,
+  onAdd,
+  maxReached,
+  roundedCover = false,
+  noResultMessage = "Aucun résultat.",
+}: {
+  items: ContentItem[];
+  loading: boolean;
+  query: string;
+  isSelected: (id: string) => boolean;
+  onAdd: (item: ContentItem) => void;
+  maxReached: boolean;
+  roundedCover?: boolean;
+  noResultMessage?: string;
+}) {
+  return (
+    <ul className="flex flex-col gap-1 max-h-72 overflow-y-auto">
+      {loading && <li className="text-sm text-base-content/50 p-2">Chargement…</li>}
+      {!loading && query.trim() && items.length === 0 && (
+        <li className="text-sm text-base-content/50 p-2">{noResultMessage}</li>
+      )}
+      {items.map((item) => {
+        const already = isSelected(item.id);
+        return (
+          <li key={item.id} className="card flex items-center gap-3 p-2 hover:bg-base-200 transition-colors">
+            {item.coverUrl && (
+              <div className="w-10 h-10 flex-shrink-0 relative">
+                <Image
+                  src={item.coverUrl}
+                  alt=""
+                  fill
+                  className={`object-cover ${roundedCover ? "rounded-full" : "rounded"}`}
+                />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{item.title}</p>
+              {item.subtitle && <p className="text-xs text-base-content/60 truncate">{item.subtitle}</p>}
+            </div>
+            <button
+              type="button"
+              disabled={already || maxReached}
+              onClick={() => onAdd(item)}
+              className="btn btn-sm btn-ghost"
+            >
+              {already ? <Check size={14} className="text-success" /> : <Plus size={14} />}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -99,10 +195,16 @@ export default function AnimePicker({
   const [arcsLoading, setArcsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Tabs that use direct anime search
+  const needsAnimeSearch =
+    tab === "anime" ||
+    tab === "theme" ||
+    (tab === "arc" && !openedAnimeForArcs);
+
   const { results: animeResults, loading: animeLoading } = useDebouncedSearch(
     "/api/content/search?kind=anime",
     query,
-    tab === "anime" || tab === "theme" || (tab === "arc" && !openedAnimeForArcs),
+    needsAnimeSearch,
   );
   const { results: charResults, loading: charLoading } = useDebouncedSearch(
     "/api/content/search?kind=character",
@@ -114,16 +216,37 @@ export default function AnimePicker({
     query,
     tab === "arc" && !openedAnimeForArcs,
   );
+  const { results: openingResults, loading: openingLoading } = useDebouncedSearch(
+    "/api/content/search?kind=opening",
+    query,
+    tab === "opening",
+  );
+  const { results: endingResults, loading: endingLoading } = useDebouncedSearch(
+    "/api/content/search?kind=ending",
+    query,
+    tab === "ending",
+  );
+  const { results: transformationResults, loading: transformationLoading } = useDebouncedSearch(
+    "/api/content/search?kind=transformation",
+    query,
+    tab === "transformation",
+  );
+  const { results: powerResults, loading: powerLoading } = useDebouncedSearch(
+    "/api/content/search?kind=power",
+    query,
+    tab === "power",
+  );
 
   const max = freeMode ? Infinity : size;
-  const isSelectedAnime = (id: string) => selected.some((s) => s.external_id === id);
-  const isSelectedChar = (id: string) => selected.some((s) => s.external_id === id);
-  const isSelectedTheme = (id: string) => selected.some((s) => s.external_id === id);
+  const isSelected = (id: string) => selected.some((s) => s.external_id === id);
   // Arc items stored as arc-${numericId}; ContentItem.id is the bare numeric string
   const isSelectedArc = (id: string) => selected.some((s) => s.external_id === `arc-${id}`);
+  const maxReached = selected.length >= max;
+
+  // ─── Add handlers ───────────────────────────────────────────────────────────
 
   const addAnime = (item: ContentItem) => {
-    if (selected.length >= max) return;
+    if (maxReached) return;
     onChange([...selected, {
       external_id: item.id,
       title: item.title,
@@ -140,24 +263,93 @@ export default function AnimePicker({
   };
 
   const addCharacter = (item: ContentItem) => {
-    if (selected.length >= max) return;
+    if (maxReached) return;
     onChange([...selected, {
-      external_id: item.id, // already "char-123" from characterToItem
+      external_id: item.id,
       title: item.title,
       subtitle: item.subtitle,
       cover_url: item.coverUrl ?? null,
       preview_url: null,
-      source: "anilist",
+      source: item.source ?? "anilist",
       metadata: {
         itemKind: "character",
-        anilistCharacterId: num(item.metadata?.anilistCharacterId),
+        anilistCharacterId: item.id.startsWith("char-")
+          ? num(item.metadata?.anilistCharacterId)
+          : undefined,
+        malId: item.id.startsWith("jchar-") ? num(item.metadata?.malId) : undefined,
       },
+    }]);
+  };
+
+  const addThemeItem = (item: ContentItem) => {
+    if (maxReached) return;
+    const themeType = str(item.metadata?.themeType) ?? "";
+    const animeTitle = str(item.metadata?.animeTitle) ?? "";
+    onChange([...selected, {
+      external_id: item.id,
+      title: item.title,
+      subtitle: item.subtitle ?? `${themeType} — ${animeTitle}`,
+      cover_url: item.coverUrl ?? null,
+      preview_url: item.previewUrl ?? null,
+      source: "animethemes",
+      metadata: { itemKind: "theme", themeType, animeTitle },
+    }]);
+  };
+
+  const addTransformation = (item: ContentItem) => {
+    if (maxReached) return;
+    onChange([...selected, {
+      external_id: item.id,
+      title: item.title,
+      subtitle: item.subtitle,
+      cover_url: item.coverUrl ?? null,
+      preview_url: null,
+      source: "jikan",
+      metadata: {
+        itemKind: "transformation",
+        malId: num(item.metadata?.malId),
+        animeTitle: str(item.metadata?.animeTitle),
+      },
+    }]);
+  };
+
+  const addPower = (item: ContentItem) => {
+    if (maxReached) return;
+    onChange([...selected, {
+      external_id: item.id,
+      title: item.title,
+      subtitle: item.subtitle,
+      cover_url: item.coverUrl ?? null,
+      preview_url: null,
+      source: "jikan",
+      metadata: {
+        itemKind: "power",
+        malId: num(item.metadata?.malId),
+        animeTitle: str(item.metadata?.animeTitle),
+      },
+    }]);
+  };
+
+  /** Add a manually typed arc (no external API entry exists). */
+  const addCustomArc = (name: string) => {
+    if (!name.trim() || maxReached) return;
+    const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const id = `arc-free-${slug}`;
+    if (selected.some((s) => s.external_id === id)) return;
+    onChange([...selected, {
+      external_id: id,
+      title: name.trim(),
+      subtitle: undefined,
+      cover_url: null,
+      preview_url: null,
+      source: "manual",
+      metadata: { itemKind: "arc", custom: true },
     }]);
   };
 
   /** Add an arc from direct search results (ContentItem with id = bare numeric string). */
   const addArcItem = (item: ContentItem) => {
-    if (selected.length >= max) return;
+    if (maxReached) return;
     const pt = str(item.metadata?.parentTitle);
     onChange([...selected, {
       external_id: `arc-${item.id}`,
@@ -176,7 +368,7 @@ export default function AnimePicker({
 
   /** Add an arc from a series drill-down (ContentCollection). */
   const addArcCollection = (arc: ContentCollection, parentTitle: string) => {
-    if (selected.length >= max) return;
+    if (maxReached) return;
     onChange([...selected, {
       external_id: `arc-${arc.id}`,
       title: arc.title,
@@ -193,7 +385,7 @@ export default function AnimePicker({
   };
 
   const addTheme = (t: ThemeResult) => {
-    if (selected.length >= max) return;
+    if (maxReached) return;
     onChange([...selected, {
       external_id: t.id,
       title: t.title,
@@ -248,45 +440,29 @@ export default function AnimePicker({
     }
   };
 
-  const loading =
-    tab === "anime"
-      ? animeLoading
-      : tab === "character"
-        ? charLoading
-        : tab === "arc" && !openedAnimeForArcs
-          ? arcSearchLoading
-          : animeLoading;
+  const resetTab = (t: Tab) => {
+    setTab(t);
+    setQuery("");
+    setOpenedAnime(null);
+    setOpenedAnimeForArcs(null);
+  };
 
   return (
     <div className="flex flex-col gap-4">
       {/* Tabs */}
       {tabs.length > 1 && (
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {tabs.map((t) => (
             <button
               key={t}
               type="button"
-              onClick={() => {
-                setTab(t);
-                setQuery("");
-                setOpenedAnime(null);
-                setOpenedAnimeForArcs(null);
-              }}
+              onClick={() => resetTab(t)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 tab === t ? "bg-primary text-primary-content" : "bg-base-200 hover:bg-base-300"
               }`}
             >
-              {t === "anime" && <Tv size={14} />}
-              {t === "character" && <User size={14} />}
-              {t === "arc" && <Layers size={14} />}
-              {t === "theme" && <span className="text-xs">♪</span>}
-              {t === "anime"
-                ? "Titre d'animé"
-                : t === "character"
-                  ? "Perso d'animé"
-                  : t === "arc"
-                    ? "Arc d'animé"
-                    : "Opening/Ending"}
+              <TabIcon tab={t} />
+              {TAB_LABEL[t]}
             </button>
           ))}
         </div>
@@ -305,21 +481,15 @@ export default function AnimePicker({
             setOpenedAnimeForArcs(null);
           }}
           placeholder={
-            tab === "anime"
-              ? "Rechercher un titre d'animé…"
-              : tab === "character"
-                ? "Rechercher un perso d'animé…"
-                : tab === "arc"
-                  ? openedAnimeForArcs
-                    ? "Arcs de la série…"
-                    : "Rechercher un arc ou une série…"
-                  : "Rechercher un animé pour ses openings…"
+            tab === "arc" && openedAnimeForArcs
+              ? "Arcs de la série…"
+              : TAB_PLACEHOLDER[tab]
           }
           className="input input-bordered w-full pl-9"
         />
       </div>
 
-      {/* Theme mode: drill into anime's themes */}
+      {/* ── Theme drill-down (legacy "theme" tab) ── */}
       {tab === "theme" && openedAnime && (
         <div>
           <button
@@ -336,7 +506,7 @@ export default function AnimePicker({
           )}
           <ul className="flex flex-col gap-1">
             {animeThemes.map((t) => {
-              const already = isSelectedTheme(t.id);
+              const already = isSelected(t.id);
               return (
                 <li key={t.id} className="card flex items-center gap-3 p-2">
                   {t.coverUrl && (
@@ -350,7 +520,7 @@ export default function AnimePicker({
                   </div>
                   <button
                     type="button"
-                    disabled={already || selected.length >= max}
+                    disabled={already || maxReached}
                     onClick={() => addTheme(t)}
                     className="btn btn-sm btn-ghost"
                   >
@@ -363,47 +533,87 @@ export default function AnimePicker({
         </div>
       )}
 
-      {/* Anime results */}
-      {tab === "anime" && !openedAnime && (
-        <ul className="flex flex-col gap-1 max-h-72 overflow-y-auto">
-          {loading && <li className="text-sm text-base-content/50 p-2">Chargement…</li>}
-          {!loading && query.trim() && animeResults.length === 0 && (
-            <li className="text-sm text-base-content/50 p-2">Aucun résultat.</li>
-          )}
-          {animeResults.map((item) => {
-            const already = isSelectedAnime(item.id);
-            const episodes = num(item.metadata?.episodes);
-            const status = str(item.metadata?.status);
-            return (
-              <li key={item.id} className="card flex items-center gap-3 p-2 hover:bg-base-200 transition-colors">
-                {item.coverUrl && (
-                  <div className="w-10 h-10 flex-shrink-0 relative">
-                    <Image src={item.coverUrl} alt="" fill className="object-cover rounded" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{item.title}</p>
-                  {(status || episodes) && (
-                    <p className="text-xs text-base-content/60">
-                      {status}{episodes ? ` · ${episodes} éps` : ""}
-                    </p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  disabled={already || selected.length >= max}
-                  onClick={() => addAnime(item)}
-                  className="btn btn-sm btn-ghost"
-                >
-                  {already ? <Check size={14} className="text-success" /> : <Plus size={14} />}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+      {/* ── Anime tab ── */}
+      {tab === "anime" && (
+        <ItemList
+          items={animeResults}
+          loading={animeLoading}
+          query={query}
+          isSelected={isSelected}
+          onAdd={addAnime}
+          maxReached={maxReached}
+        />
       )}
 
-      {/* Arc drill-down */}
+      {/* ── Opening tab (direct song-title search) ── */}
+      {tab === "opening" && (
+        <ItemList
+          items={openingResults}
+          loading={openingLoading}
+          query={query}
+          isSelected={isSelected}
+          onAdd={addThemeItem}
+          maxReached={maxReached}
+          noResultMessage="Aucun opening trouvé."
+        />
+      )}
+
+      {/* ── Ending tab (direct song-title search) ── */}
+      {tab === "ending" && (
+        <ItemList
+          items={endingResults}
+          loading={endingLoading}
+          query={query}
+          isSelected={isSelected}
+          onAdd={addThemeItem}
+          maxReached={maxReached}
+          noResultMessage="Aucun ending trouvé."
+        />
+      )}
+
+      {/* ── Character tab ── */}
+      {tab === "character" && (
+        <ItemList
+          items={charResults}
+          loading={charLoading}
+          query={query}
+          isSelected={isSelected}
+          onAdd={addCharacter}
+          maxReached={maxReached}
+          roundedCover
+          noResultMessage="Aucun personnage trouvé."
+        />
+      )}
+
+      {/* ── Transformation tab ── */}
+      {tab === "transformation" && (
+        <ItemList
+          items={transformationResults}
+          loading={transformationLoading}
+          query={query}
+          isSelected={isSelected}
+          onAdd={addTransformation}
+          maxReached={maxReached}
+          roundedCover
+          noResultMessage="Aucune transformation trouvée. Essaie un nom de personnage ou de forme (ex: Super Saiyan, Bankai…)."
+        />
+      )}
+
+      {/* ── Power tab ── */}
+      {tab === "power" && (
+        <ItemList
+          items={powerResults}
+          loading={powerLoading}
+          query={query}
+          isSelected={isSelected}
+          onAdd={addPower}
+          maxReached={maxReached}
+          roundedCover
+          noResultMessage="Aucun pouvoir trouvé. Essaie un nom de technique ou d'attaque (ex: Kamehameha, Rasengan…)."
+        />
+      )}
+
+      {/* ── Arc drill-down ── */}
       {tab === "arc" && openedAnimeForArcs && (
         <div>
           <button
@@ -440,7 +650,7 @@ export default function AnimePicker({
                   </div>
                   <button
                     type="button"
-                    disabled={already || selected.length >= max}
+                    disabled={already || maxReached}
                     onClick={() => addArcCollection(arc, openedAnimeForArcs.title)}
                     className="btn btn-sm btn-ghost"
                   >
@@ -453,53 +663,71 @@ export default function AnimePicker({
         </div>
       )}
 
-      {/* Arc tab — direct search + pick series */}
+      {/* ── Arc tab — direct search + pick series ── */}
       {tab === "arc" && !openedAnimeForArcs && (
         <>
           {query.trim().length >= 2 && (
-            <ul className="flex flex-col gap-1 max-h-48 overflow-y-auto mb-3">
-              <li className="text-xs font-semibold uppercase tracking-wide text-base-content/50 px-1 pb-1">
-                Arcs correspondants
-              </li>
-              {arcSearchLoading && <li className="text-sm text-base-content/50 p-2">Chargement…</li>}
-              {!arcSearchLoading && arcSearchResults.length === 0 && (
-                <li className="text-sm text-base-content/50 p-2">Aucun arc direct — choisis une série ci-dessous.</li>
-              )}
-              {arcSearchResults.map((item) => {
-                const already = isSelectedArc(item.id);
-                const parentTitle = str(item.metadata?.parentTitle);
-                return (
-                  <li key={item.id} className="card flex items-center gap-3 p-2 hover:bg-base-200 transition-colors">
-                    {item.coverUrl && (
-                      <div className="w-10 h-10 flex-shrink-0 relative">
-                        <Image src={item.coverUrl} alt="" fill className="object-cover rounded" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.title}</p>
-                      {parentTitle && (
-                        <p className="text-xs text-base-content/60 truncate">{parentTitle}</p>
+            <>
+              <ul className="flex flex-col gap-1 max-h-48 overflow-y-auto mb-1">
+                <li className="text-xs font-semibold uppercase tracking-wide text-base-content/50 px-1 pb-1">
+                  Arcs AniList
+                </li>
+                {arcSearchLoading && <li className="text-sm text-base-content/50 p-2">Chargement…</li>}
+                {arcSearchResults.map((item) => {
+                  const already = isSelectedArc(item.id);
+                  const parentTitle = str(item.metadata?.parentTitle);
+                  return (
+                    <li key={item.id} className="card flex items-center gap-3 p-2 hover:bg-base-200 transition-colors">
+                      {item.coverUrl && (
+                        <div className="w-10 h-10 flex-shrink-0 relative">
+                          <Image src={item.coverUrl} alt="" fill className="object-cover rounded" />
+                        </div>
                       )}
-                    </div>
-                    <button
-                      type="button"
-                      disabled={already || selected.length >= max}
-                      onClick={() => addArcItem(item)}
-                      className="btn btn-sm btn-ghost"
-                    >
-                      {already ? <Check size={14} className="text-success" /> : <Plus size={14} />}
-                    </button>
-                  </li>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{item.title}</p>
+                        {parentTitle && (
+                          <p className="text-xs text-base-content/60 truncate">{parentTitle}</p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={already || maxReached}
+                        onClick={() => addArcItem(item)}
+                        className="btn btn-sm btn-ghost"
+                      >
+                        {already ? <Check size={14} className="text-success" /> : <Plus size={14} />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {/* Free-text fallback — always shown when user has typed something */}
+              {(() => {
+                const name = query.trim();
+                const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+                const alreadyAdded = selected.some((s) => s.external_id === `arc-free-${slug}`);
+                return (
+                  <button
+                    type="button"
+                    disabled={alreadyAdded || maxReached}
+                    onClick={() => addCustomArc(name)}
+                    className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-dashed border-base-content/20 text-sm text-base-content/70 hover:border-primary hover:text-primary transition-colors disabled:opacity-40 mb-3"
+                  >
+                    <PenLine size={14} />
+                    {alreadyAdded
+                      ? `« ${name} » déjà ajouté`
+                      : `Créer l'arc « ${name} » manuellement`}
+                  </button>
                 );
-              })}
-            </ul>
+              })()}
+            </>
           )}
           <p className="text-xs font-semibold uppercase tracking-wide text-base-content/50 px-1 pb-1">
             Par série
           </p>
           <ul className="flex flex-col gap-1 max-h-48 overflow-y-auto">
-            {loading && <li className="text-sm text-base-content/50 p-2">Chargement…</li>}
-            {!loading && query.trim() && animeResults.length === 0 && (
+            {animeLoading && <li className="text-sm text-base-content/50 p-2">Chargement…</li>}
+            {!animeLoading && query.trim() && animeResults.length === 0 && (
               <li className="text-sm text-base-content/50 p-2">Aucune série trouvée.</li>
             )}
             {animeResults.map((item) => (
@@ -523,11 +751,11 @@ export default function AnimePicker({
         </>
       )}
 
-      {/* Theme mode — show anime search results to pick from */}
+      {/* ── Theme tab — anime drill-down (legacy) ── */}
       {tab === "theme" && !openedAnime && (
         <ul className="flex flex-col gap-1 max-h-72 overflow-y-auto">
-          {loading && <li className="text-sm text-base-content/50 p-2">Chargement…</li>}
-          {!loading && query.trim() && animeResults.length === 0 && (
+          {animeLoading && <li className="text-sm text-base-content/50 p-2">Chargement…</li>}
+          {!animeLoading && query.trim() && animeResults.length === 0 && (
             <li className="text-sm text-base-content/50 p-2">Aucun résultat.</li>
           )}
           {animeResults.map((item) => (
@@ -547,40 +775,6 @@ export default function AnimePicker({
               <ChevronLeft size={14} className="rotate-180 text-base-content/40" />
             </li>
           ))}
-        </ul>
-      )}
-
-      {/* Character results */}
-      {tab === "character" && (
-        <ul className="flex flex-col gap-1 max-h-72 overflow-y-auto">
-          {charLoading && <li className="text-sm text-base-content/50 p-2">Chargement…</li>}
-          {!charLoading && query.trim() && charResults.length === 0 && (
-            <li className="text-sm text-base-content/50 p-2">Aucun résultat.</li>
-          )}
-          {charResults.map((item) => {
-            const already = isSelectedChar(item.id);
-            return (
-              <li key={item.id} className="card flex items-center gap-3 p-2 hover:bg-base-200 transition-colors">
-                {item.coverUrl && (
-                  <div className="w-10 h-10 flex-shrink-0 relative">
-                    <Image src={item.coverUrl} alt="" fill className="object-cover rounded-full" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{item.title}</p>
-                  {item.subtitle && <p className="text-xs text-base-content/60 truncate">{item.subtitle}</p>}
-                </div>
-                <button
-                  type="button"
-                  disabled={already || selected.length >= max}
-                  onClick={() => addCharacter(item)}
-                  className="btn btn-sm btn-ghost"
-                >
-                  {already ? <Check size={14} className="text-success" /> : <Plus size={14} />}
-                </button>
-              </li>
-            );
-          })}
         </ul>
       )}
 

@@ -101,7 +101,12 @@ export default function CreateBracketForm() {
         <p className="mt-2 text-xs text-[color:var(--muted)]">{VIS_HINTS[visibility]}</p>
       </div>
 
-      <AnimePicker size={size} selected={selected} onChange={setSelected} tabs={["anime", "character", "arc"]} />
+      <AnimePicker
+        size={size}
+        selected={selected}
+        onChange={setSelected}
+        tabs={["anime", "character", "arc", "opening", "ending", "transformation", "power"]}
+      />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">
