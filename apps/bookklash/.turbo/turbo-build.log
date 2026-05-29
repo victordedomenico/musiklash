@@ -1,0 +1,39 @@
+
+> bookklash@0.1.0 build /Users/victordedomenico/Projets/bracketfight/apps/bookklash
+> prisma generate && next build
+
+Loaded Prisma config from prisma.config.ts.
+
+Prisma schema loaded from ../../packages/db/prisma/schema.prisma.
+
+✔ Generated Prisma Client (v7.8.0) to ./../../node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.15_react-dom@19.2.4_react@19.2.4__r_9b44924ca1c8bf7c944112217bb1417b/node_modules/@prisma/client in 320ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+
+▲ Next.js 16.2.4 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+(node:86108) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✓ Compiled successfully in 15.4s
+  Running TypeScript ...
+Failed to type check.
+
+../../packages/content-adapter/src/dogceo.ts:380:23
+Type error: A type predicate's type must be assignable to its parameter's type.
+  Type 'PetBreedRef' is not assignable to type '{ id: string; species: "cat"; title: string; subtitle: string; catBreedId: string; }'.
+    Types of property 'species' are incompatible.
+      Type '"dog" | "cat"' is not assignable to type '"cat"'.
+        Type '"dog"' is not assignable to type '"cat"'.
+
+  [90m378 |[0m       };
+  [90m379 |[0m     })
+[31m[1m>[0m [90m380 |[0m     .filter((r): r is [33mPetBreedRef[0m => r !== [36mnull[0m);
+  [90m    |[0m                       [31m[1m^[0m
+  [90m381 |[0m   [36mreturn[0m [33mPromise[0m.all(refs.map(breedRefToItem));
+  [90m382 |[0m }
+  [90m383 |[0m
+Next.js build worker exited with code: 1 and signal: null
+ ELIFECYCLE  Command failed with exit code 1.
