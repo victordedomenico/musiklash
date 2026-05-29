@@ -11,6 +11,7 @@ import {
   Gamepad2,
   Layers,
   Building2,
+  Tag,
 } from "lucide-react";
 import type { ContentCollection, ContentEntity, ContentItem } from "@klash/content-adapter";
 import { withSearchQuery } from "@/lib/api-url";
@@ -25,7 +26,7 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "game" | "collection" | "studio";
+type Tab = "game" | "collection" | "genre" | "studio";
 
 type Props = {
   size: number;
@@ -85,8 +86,10 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
   const [query, setQuery] = useState("");
   const [openedCollection, setOpenedCollection] = useState<ContentCollection | null>(null);
   const [openedStudio, setOpenedStudio] = useState<ContentEntity | null>(null);
+  const [openedGenre, setOpenedGenre] = useState<ContentItem | null>(null);
   const [collectionGames, setCollectionGames] = useState<ContentItem[]>([]);
   const [studioGames, setStudioGames] = useState<ContentItem[]>([]);
+  const [genreGames, setGenreGames] = useState<ContentItem[]>([]);
   const [drillLoading, setDrillLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -108,6 +111,12 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
     tab === "studio" && !openedStudio,
   );
 
+  const { results: genreResults, loading: genreLoading } = useDebouncedSearch(
+    "/api/content/search?kind=genre",
+    query,
+    tab === "genre" && !openedGenre,
+  );
+
   const max = freeMode ? Infinity : size;
   const isSelected = (id: string) => selected.some((s) => s.external_id === id);
 
@@ -118,6 +127,21 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
 
   const removeItem = (id: string) => {
     onChange(selected.filter((s) => s.external_id !== id));
+  };
+
+  const openGenre = async (genre: ContentItem) => {
+    setOpenedGenre(genre);
+    setDrillLoading(true);
+    setGenreGames([]);
+    try {
+      const res = await fetch(`/api/content/collection/${genre.id}/items`);
+      const json = await res.json();
+      setGenreGames(json.items ?? json.results ?? []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDrillLoading(false);
+    }
   };
 
   const openCollection = async (col: ContentCollection) => {
@@ -171,6 +195,7 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
   const tabs: { key: Tab; label: string; icon: typeof Gamepad2 }[] = [
     { key: "game", label: "Jeux", icon: Gamepad2 },
     { key: "collection", label: "Franchises", icon: Layers },
+    { key: "genre", label: "Genres", icon: Tag },
     { key: "studio", label: "Studios", icon: Building2 },
   ];
 
@@ -191,8 +216,10 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
               setTab(key);
               setOpenedCollection(null);
               setOpenedStudio(null);
+              setOpenedGenre(null);
               setCollectionGames([]);
               setStudioGames([]);
+              setGenreGames([]);
               setQuery("");
             }}
           >
@@ -202,15 +229,17 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
         ))}
       </div>
 
-      {(openedCollection || openedStudio) && (
+      {(openedCollection || openedStudio || openedGenre) && (
         <button
           type="button"
           className="btn-ghost text-sm inline-flex items-center gap-1"
           onClick={() => {
             setOpenedCollection(null);
             setOpenedStudio(null);
+            setOpenedGenre(null);
             setCollectionGames([]);
             setStudioGames([]);
+            setGenreGames([]);
           }}
         >
           <ChevronLeft size={16} />
@@ -218,7 +247,7 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
         </button>
       )}
 
-      {!openedCollection && !openedStudio && (
+      {!openedCollection && !openedStudio && !openedGenre && (
         <div className="relative">
           <Search
             size={18}
@@ -233,8 +262,10 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
               tab === "game"
                 ? "Rechercher un jeu…"
                 : tab === "collection"
-                  ? "Rechercher une franchise ou un genre…"
-                  : "Rechercher un studio ou un genre…"
+                  ? "Rechercher une franchise (Mario Kart, FIFA…)"
+                  : tab === "genre"
+                    ? "Rechercher un genre (RPG, Horreur…)"
+                    : "Rechercher un studio…"
             }
             className="input w-full pl-10"
           />
@@ -269,7 +300,7 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
               )}
               <div>
                 <p className="font-semibold">{col.title}</p>
-                <p className="text-xs text-[color:var(--muted)]">Voir les jeux</p>
+                <p className="text-xs text-[color:var(--muted)]">Voir les jeux de la franchise</p>
               </div>
             </button>
           ))}
@@ -279,6 +310,53 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
             <p className="text-sm font-medium text-[color:var(--muted)]">{openedCollection.title}</p>
             {drillLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
             {collectionGames.map((item) => (
+              <ResultRow
+                key={item.id}
+                title={item.title}
+                subtitle={item.subtitle}
+                coverUrl={item.coverUrl}
+                selected={isSelected(item.id)}
+                onAdd={() => addItem(item)}
+              />
+            ))}
+          </>
+        )}
+
+        {tab === "genre" && !openedGenre &&
+          genreResults.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="w-full flex items-center gap-3 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
+              onClick={() => void openGenre(item)}
+            >
+              {item.coverUrl ? (
+                <Image src={item.coverUrl} alt="" width={48} height={48} className="rounded-md object-cover shrink-0" />
+              ) : (
+                <div className="w-12 h-12 rounded-md bg-[color:var(--surface-2)] shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold truncate">{item.title}</p>
+                <p className="text-xs text-[color:var(--muted)]">
+                  {item.metadata?.gamesCount ? `${item.metadata.gamesCount as number} jeux` : "Voir les jeux"}
+                </p>
+              </div>
+              <ChevronLeft size={16} className="rotate-180 text-[color:var(--muted)] shrink-0" />
+            </button>
+          ))}
+
+        {tab === "genre" && !openedGenre && genreLoading && (
+          <p className="text-sm text-[color:var(--muted)]">Recherche…</p>
+        )}
+
+        {tab === "genre" && openedGenre && (
+          <>
+            <p className="text-sm font-medium text-[color:var(--muted)]">{openedGenre.title}</p>
+            {drillLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
+            {!drillLoading && genreGames.length === 0 && (
+              <p className="text-sm text-[color:var(--muted)]">Aucun jeu trouvé.</p>
+            )}
+            {genreGames.map((item) => (
               <ResultRow
                 key={item.id}
                 title={item.title}

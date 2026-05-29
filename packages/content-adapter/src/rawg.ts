@@ -279,21 +279,29 @@ export const rawgContentSource: ContentSource = {
     if (kind === "game") {
       return this.searchItems(query, { limit });
     }
-    if (kind === "series") {
-      // No standalone series search on RAWG — fall back to game search
-      return this.searchItems(query, { limit });
+    if (kind === "genre") {
+      const genres = await searchGenres(query, limit);
+      return genres.map((g) => ({
+        id: `genre-${g.id}`,
+        title: g.name,
+        coverUrl: g.image_background ?? undefined,
+        source: "rawg",
+        metadata: { itemKind: "genre", genreId: g.id, gamesCount: g.games_count },
+      })) satisfies ContentItem[];
     }
     return this.searchItems(query, { limit });
   },
 
   async searchCollections(query, { limit = 20 } = {}) {
-    const [series, genres] = await Promise.all([
-      searchGameSeries(query, limit),
-      searchGenres(query, limit),
-    ]);
-    const seriesCols = series.map(seriesToCollection);
-    const genreCols = genres.map(genreToCollection);
-    return [...seriesCols, ...genreCols].slice(0, limit);
+    // Return games as franchise anchors — user drills into a game to see its whole series
+    const games = await searchGames(query, limit);
+    return games.map((g) => ({
+      id: `series-${g.id}`,
+      title: g.name,
+      coverUrl: g.background_image ?? undefined,
+      source: "rawg",
+      metadata: { collectionKind: "franchise", gameId: g.id },
+    })) satisfies ContentCollection[];
   },
 
   async searchEntities(query, { limit = 20 } = {}) {
