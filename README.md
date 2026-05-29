@@ -1,51 +1,62 @@
-# MusiKlash (BracketFight)
+# Klash Monorepo
 
-Plateforme de jeux musicaux construite avec Next.js, Supabase, Prisma et l'API Deezer.
+Monorepo de la famille Klash : plateformes de jeux interactifs construites sur Next.js, Supabase, Prisma et des APIs de contenu tierces.
+
+## Verticals
+
+| App | Port | Contenu |
+|-----|------|---------|
+| `musiklash` | 3000 | Musique (API Deezer) |
+| `animeklash` | 3001 | Anime |
+| `demoklash` | 3002 | Demo / sandbox |
+| `movieklash` | 3003 | Films (API TMDB) |
+
+Chaque vertical est un projet Next.js indépendant dans `apps/`. La logique métier et les composants sont partagés via des packages internes dans `packages/`.
 
 ## Fonctionnalités principales
 
-- Brackets musicaux (tournois a elimination directe)
+- Brackets (tournois à élimination directe)
 - Tierlists personnalisables
 - Blindtests solo et multijoueur
 - BattleFeat (solo et rooms)
-- Bibliotheque personnelle et exploration de contenus publics
-- Authentification Supabase (email/mot de passe et flux invite)
-- Interface FR/EN + gestion des preferences utilisateur
+- Bibliothèque personnelle et exploration de contenus publics
+- Authentification Supabase (email/mot de passe et flux invité)
+- Interface FR/EN + gestion des préférences utilisateur
 
 ## Stack technique
 
-- Next.js 16 (App Router) + React 19
-- TypeScript + Tailwind CSS 4
-- Prisma 7 + PostgreSQL
-- Supabase (Auth + DB locale via CLI)
-- Vitest pour les tests unitaires
+- **Next.js 16** (App Router) + **React 19** + React Compiler
+- **TypeScript** + **Tailwind CSS 4**
+- **Prisma 7** + PostgreSQL
+- **Supabase** (Auth + DB locale via CLI)
+- **Turborepo** pour l'orchestration du monorepo
+- **Vitest** pour les tests unitaires
 
-## Demarrage local
+## Démarrage local
 
-### Prerequis
+### Prérequis
 
 - Node.js 20+
-- npm
-- Docker Desktop (ou alternative compatible)
-- Supabase CLI
+- pnpm 10+
+- Docker Desktop (pour Supabase local)
 
-### 1) Installer les dependances
+### 1) Installer les dépendances
 
 ```bash
-npm install
+pnpm install
 ```
 
-### 2) Demarrer Supabase en local
+### 2) Démarrer Supabase en local
 
 ```bash
 npm run db:start
 ```
 
-La commande affiche notamment les URL locales (API, DB, Studio) ainsi que les cles necessaires.
+La commande affiche les URL locales (API, DB, Studio) ainsi que les clés nécessaires.
 
 ### 3) Configurer les variables d'environnement
 
-Creer un fichier `.env.local` a la racine avec au minimum:
+Créer un fichier `.env.local` dans le dossier de l'app voulue (ex: `apps/musiklash/.env.local`) :
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
@@ -53,61 +64,72 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
 ```
 
-Optionnel (seed/admin):
+Optionnel :
 
 ```env
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 ```
 
-Optionnel (top albums de la home):
+### 4) Lancer un vertical
 
-```env
-HOME_TOP_ALBUMS_COUNTRY=FR
-```
-
-### 4) Lancer l'application
+**Utiliser le sélecteur interactif** (recommandé) :
 
 ```bash
 npm run dev
 ```
 
-Application: [http://localhost:3000](http://localhost:3000)  
-Studio Supabase local: [http://127.0.0.1:54323](http://127.0.0.1:54323)
+Un menu s'affiche pour choisir le vertical à lancer. Le script tue automatiquement tout serveur déjà actif avant d'en démarrer un nouveau — **ne jamais faire tourner deux verticals simultanément** (chaque instance réserve 6 Go de heap + workers turbopack, ce qui sature la RAM).
+
+On peut aussi lancer un vertical directement par nom :
+
+```bash
+npm run dev animeklash
+```
+
+Studio Supabase local : [http://127.0.0.1:54323](http://127.0.0.1:54323)
 
 ## Scripts utiles
 
-- `npm run dev` - lance le serveur de developpement
-- `npm run build` - build de production
-- `npm run start` - demarre l'app en mode production
-- `npm run lint` - lance ESLint
-- `npm run test` - lance les tests Vitest
-- `npm run test:watch` - tests en mode watch
-- `npm run db:start` - demarre la stack Supabase locale
-- `npm run db:stop` - arrete la stack Supabase locale
-- `npm run db:status` - affiche l'etat de la stack locale
-- `npm run db:reset` - reset complet de la base locale
-- `npm run db:up` - applique les migrations locales
-- `npm run db:migrate` - cree un nouveau fichier de migration
-
-## Structure du projet (simplifiee)
-
-```txt
-app/                 Pages App Router + routes API
-components/          Composants UI et metier
-lib/                 Helpers (i18n, cookies, Supabase, Prisma, etc.)
-prisma/              Schema Prisma, migrations, seed
+```bash
+npm run dev                  # sélecteur interactif de vertical
+npm run dev <nom>            # lancer un vertical directement
+npm run build                # build de production (tous les verticals)
+npm run build:musiklash      # build d'un seul vertical
+npm run lint                 # ESLint (tous les packages)
+npm run test                 # tests Vitest
+npm run db:start             # démarre la stack Supabase locale
+npm run db:stop              # arrête la stack Supabase locale
+npm run db:reset             # reset complet de la base locale
+npm run db:up                # applique les migrations locales
+npm run db:migrate           # crée un nouveau fichier de migration
+npm run scaffold:vertical    # scaffolde un nouveau vertical
 ```
 
-## Donnees et legal
+## Structure du projet
+
+```txt
+apps/
+  musiklash/       Next.js app — musique
+  animeklash/      Next.js app — anime
+  demoklash/       Next.js app — demo
+  movieklash/      Next.js app — films
+packages/
+  klash-app/       Composants UI et logique partagés
+  klash-config/    Config, manifests, Klash Engine catalog
+  content-adapter/ Adaptateurs de contenu (Deezer, TMDB…)
+scripts/
+  dev.ts           Sélecteur interactif de vertical
+  scaffold-klash-vertical.ts
+prisma/            Schéma Prisma, migrations, seed
+supabase/          Config Supabase CLI et migrations locales
+```
+
+## Données et legal
 
 - Les extraits musicaux sont servis via l'API Deezer.
-- Les pages legales sont disponibles dans l'application:
-  - `/privacy`
-  - `/cookies`
-  - `/legal`
-  - `/terms`
-  - `/privacy-rights`
+- Les données films via l'API TMDB.
+- Pages légales disponibles dans chaque app (`/privacy`, `/cookies`, `/legal`, `/terms`).
 
 ## Licence
 
-Ce projet est distribue sous licence MIT. Voir le fichier `LICENSE`.
+Ce projet est distribué sous licence MIT. Voir le fichier `LICENSE`.

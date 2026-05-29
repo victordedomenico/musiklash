@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev --filter=musiklash",
+    "dev": "tsx scripts/dev.ts",
     "dev:musiklash": "turbo run dev --filter=musiklash",
     "dev:animeklash": "turbo run dev --filter=animeklash",
     "build": "turbo run build",
@@ -16,10 +16,14 @@
     "build:animeklash": "turbo run build --filter=animeklash",
     "build:demoklash": "turbo run build --filter=demoklash",
     "dev:demoklash": "turbo run dev --filter=demoklash",
+    "dev:movieklash": "turbo run dev --filter=movieklash",
+    "build:movieklash": "turbo run build --filter=movieklash",
     "lint": "turbo run lint",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "scaffold:vertical": "tsx scripts/scaffold-klash-vertical.ts"
   },
   "devDependencies": {
+    "tsx": "^4.21.0",
     "turbo": "^2.5.8"
   }
 }
