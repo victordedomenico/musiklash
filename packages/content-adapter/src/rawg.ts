@@ -235,6 +235,24 @@ function seriesToCollection(s: RawgGameSeries): ContentCollection {
   };
 }
 
+/** Extracts the franchise name from a game title by stripping version numbers, subtitles, etc.
+ *  "Mario Kart 8 Deluxe" → "Mario Kart"
+ *  "FIFA 23" → "FIFA"
+ *  "The Witcher 3: Wild Hunt" → "The Witcher"
+ */
+function extractFranchiseName(name: string): string {
+  const clean = name
+    .replace(/\s*:.*$/, "")          // Remove ": subtitle" (The Witcher 3: Wild Hunt → The Witcher 3)
+    .replace(/\s+[IVX]{1,4}$/, "")   // Remove Roman numerals (Dark Souls III → Dark Souls)
+    .replace(/\s+\d+(\.\d+)?$/, "")  // Remove trailing numbers (FIFA 23 → FIFA, Half-Life 2 → Half-Life)
+    .replace(
+      /\s+(HD|4K|VR|Remastered|Remake|Deluxe|Complete|Edition|Ultimate|Anniversary|Collection|Origins|Legends|Classic)$/i,
+      "",
+    )
+    .trim();
+  return clean || name;
+}
+
 function developerToEntity(d: RawgDeveloper): ContentEntity {
   return {
     id: String(d.id),
@@ -295,14 +313,20 @@ export const rawgContentSource: ContentSource = {
   },
 
   async searchCollections(query, { limit = 20 } = {}) {
-    // Return games as franchise anchors — user drills into a game to see its whole series
-    const games = await searchGames(query, limit);
-    return games.map((g) => ({
-      id: `series-${g.id}`,
-      title: g.name,
-      coverUrl: g.background_image ?? undefined,
+    // Fetch more results so grouping by franchise name yields enough entries
+    const games = await searchGames(query, Math.min(limit * 3, 40));
+    // Group by extracted franchise name, keep the first (most relevant) game as anchor
+    const seen = new Map<string, RawgGame>();
+    for (const g of games) {
+      const franchise = extractFranchiseName(g.name);
+      if (!seen.has(franchise)) seen.set(franchise, g);
+    }
+    return [...seen.entries()].slice(0, limit).map(([franchise, anchor]) => ({
+      id: `series-${anchor.id}`,
+      title: franchise,
+      coverUrl: anchor.background_image ?? undefined,
       source: "rawg",
-      metadata: { collectionKind: "franchise", gameId: g.id },
+      metadata: { collectionKind: "franchise", gameId: anchor.id },
     })) satisfies ContentCollection[];
   },
 
