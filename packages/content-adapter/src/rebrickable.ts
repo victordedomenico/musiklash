@@ -100,7 +100,7 @@ export async function searchSets(query: string, limit = 20): Promise<Rebrickable
     page_size: String(Math.min(limit * 2, 40)),
     page: "1",
     ordering: "-num_parts",
-    min_parts: "10", // exclude keychains, magnets and other gear (1-5 pieces)
+    min_parts: "5", // exclude keychains/magnets (1-4 pieces), keep polybags (20+ pieces)
   });
   // Secondary filter: exclude known non-set patterns in name
   const excluded = /keychain|porte-clef|magnet|pen |stylo|watch|montre|bag charm/i;
@@ -160,7 +160,7 @@ export async function getThemeSets(
     page_size: String(Math.min(limit * 2, 40)),
     page: "1",
     ordering: "-num_parts",
-    min_parts: "10",
+    min_parts: "5",
   });
   const excluded = /keychain|porte-clef|magnet|pen |stylo|watch|montre|bag charm/i;
   return (json.results ?? []).filter((s) => !excluded.test(s.name)).slice(0, limit);
