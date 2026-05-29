@@ -29,16 +29,12 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
     e.preventDefault();
     setError(null);
     if (tracks.length < 4) {
-      setError("Il faut au moins 4 morceaux.");
+      setError("Il faut au moins 4 éléments.");
       return;
     }
     const tracksWithRank: StreamClashTrackInput[] = tracks.map((t) => ({
-      deezer_track_id: t.deezer_track_id,
-      title: t.title,
-      artist: t.artist,
-      preview_url: t.preview_url,
-      cover_url: t.cover_url,
-      rank: (t as unknown as { rank?: number }).rank ?? 0,
+      ...t,
+      rank: (t as StreamClashTrackInput).rank ?? 0,
     }));
     startTransition(async () => {
       const res = await createStreamClash({ title, visibility, tracks: tracksWithRank, mode, difficulty, totalRounds });

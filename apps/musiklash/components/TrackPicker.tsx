@@ -6,13 +6,13 @@ import {
   Music, Disc3, User, ListMusic,
 } from "lucide-react";
 import type { ContentItem, ContentCollection, ContentEntity } from "@klash/content-adapter";
-import type { SelectedTrack } from "@/app/create-bracket/actions";
+import type { SelectedContentItem } from "@klash/klash-app/lib/content-item";
 import { usePreviewVolume } from "@/lib/audio-volume";
 
 type Props = {
   size: number;
-  selected: SelectedTrack[];
-  onChange: (next: SelectedTrack[]) => void;
+  selected: SelectedContentItem[];
+  onChange: (next: SelectedContentItem[]) => void;
   freeMode?: boolean;
 };
 
@@ -273,7 +273,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
 
   const maxTracks = freeMode ? 50 : size;
   const canAdd = selected.length < maxTracks;
-  const isSelected = (id: string) => selected.some((s) => s.deezer_track_id === Number(id));
+  const isSelected = (id: string) => selected.some((s) => s.external_id === id);
 
   const togglePlay = (id: string, url: string) => {
     if (!audioRef.current) {
@@ -294,13 +294,14 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
     });
   };
 
-  const itemToSelected = (t: ContentItem, coverFallback?: string | null): SelectedTrack => ({
-    deezer_track_id: Number(t.id),
+  const itemToSelected = (t: ContentItem, coverFallback?: string | null): SelectedContentItem => ({
+    external_id: t.id,
     title: t.title,
-    artist: t.subtitle ?? str(t.metadata?.artistName) ?? "",
-    preview_url: t.previewUrl ?? "",
+    subtitle: t.subtitle ?? undefined,
     cover_url: t.coverUrl ?? coverFallback ?? null,
-    rank: num(t.metadata?.rank) ?? 0,
+    preview_url: t.previewUrl ?? null,
+    source: t.source,
+    metadata: t.metadata,
   });
 
   const addTrack = (t: ContentItem) => {
@@ -312,8 +313,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
     if (!openedAlbum || isSelected(t.id) || !canAdd || !t.previewUrl) return;
     onChange([...selected, {
       ...itemToSelected(t, openedAlbum.coverUrl ?? null),
-      artist: str(openedAlbum.metadata?.artistName) ?? t.subtitle ?? "",
-      rank: 0,
+      subtitle: t.subtitle ?? str(openedAlbum.metadata?.artistName) ?? "",
     }]);
   };
 
@@ -326,13 +326,13 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
       .slice(0, remaining)
       .map((t) => ({
         ...itemToSelected(t, openedAlbum.coverUrl ?? null),
-        artist: albumArtist || (t.subtitle ?? ""),
+        subtitle: albumArtist || undefined || (t.subtitle ?? ""),
         rank: 0,
       }));
     if (batch.length > 0) onChange([...selected, ...batch]);
   };
 
-  const remove = (id: number) => onChange(selected.filter((s) => s.deezer_track_id !== id));
+  const remove = (id: string) => onChange(selected.filter((s) => s.external_id !== id));
 
   const openAlbum = async (album: ContentCollection) => {
     setOpenedAlbum(album);
@@ -582,7 +582,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
 
         <ul className="mt-2 max-h-[520px] overflow-y-auto space-y-2 pr-1">
           {selected.map((t, i) => (
-            <li key={t.deezer_track_id} className="card flex items-center gap-3 p-2">
+            <li key={t.external_id} className="card flex items-center gap-3 p-2">
               <div className="w-6 text-center text-sm font-bold text-[color:var(--muted)]">
                 #{i + 1}
               </div>
@@ -594,11 +594,11 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{t.title}</p>
-                <p className="truncate text-xs text-[color:var(--muted)]">{t.artist}</p>
+                <p className="truncate text-xs text-[color:var(--muted)]">{t.subtitle ?? ""}</p>
               </div>
               <button
                 type="button"
-                onClick={() => remove(t.deezer_track_id)}
+                onClick={() => remove(t.external_id)}
                 className="btn-ghost btn-xs px-2"
                 aria-label="Retirer"
               >

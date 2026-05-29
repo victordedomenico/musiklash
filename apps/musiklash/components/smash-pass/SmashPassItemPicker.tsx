@@ -81,26 +81,25 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
         ? albumSearch.loading
         : artistSearch.loading;
 
-  const isSelected = (externalId: number) =>
-    selected.some((s) => s.deezer_id === externalId);
+  const isSelected = (externalId: number | string) =>
+    selected.some((s) => s.external_id === String(externalId));
 
   const addItem = (item: SmashPassItemInput) => {
-    if (!canAdd || isSelected(item.deezer_id)) return;
+    if (!canAdd || isSelected(item.external_id)) return;
     onChange([...selected, item]);
   };
 
-  const remove = (externalId: number) =>
-    onChange(selected.filter((s) => s.deezer_id !== externalId));
+  const remove = (externalId: number | string) =>
+    onChange(selected.filter((s) => s.external_id !== String(externalId)));
 
   const addTrack = (t: DeezerTrack) => {
     addItem({
-      deezer_id: t.id,
+      external_id: String(t.id),
       title: t.title,
       subtitle: t.artist.name,
       cover_url: t.album.cover_medium ?? t.album.cover_small ?? null,
       preview_url: t.preview || null,
       tags: [],
-      description: null,
     });
   };
 
@@ -109,13 +108,12 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
     if (a.nb_tracks) tags.push(`${a.nb_tracks} titres`);
     if (a.release_date) tags.push(a.release_date.slice(0, 4));
     addItem({
-      deezer_id: a.id,
+      external_id: String(a.id),
       title: a.title,
-      subtitle: a.artist?.name ?? null,
+      subtitle: a.artist?.name ?? undefined,
       cover_url: a.cover_medium ?? a.cover_small ?? null,
       preview_url: null,
       tags,
-      description: null,
     });
   };
 
@@ -124,13 +122,11 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
     if (a.nb_fan) tags.push(`${Math.round(a.nb_fan / 1000)}K fans`);
     if (a.nb_album) tags.push(`${a.nb_album} albums`);
     addItem({
-      deezer_id: a.id,
+      external_id: String(a.id),
       title: a.name,
-      subtitle: null,
       cover_url: a.picture_medium ?? a.picture_small ?? null,
       preview_url: null,
       tags,
-      description: null,
     });
   };
 
@@ -250,7 +246,7 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
         </label>
         <ul className="mt-2 max-h-[520px] overflow-y-auto space-y-2">
           {selected.map((item, i) => (
-            <li key={item.deezer_id} className="card flex items-center gap-3 p-2">
+            <li key={item.external_id} className="card flex items-center gap-3 p-2">
               <div className="w-6 text-center text-sm font-bold text-[color:var(--muted)]">
                 #{i + 1}
               </div>
@@ -272,7 +268,7 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
               </div>
               <button
                 type="button"
-                onClick={() => remove(item.deezer_id)}
+                onClick={() => remove(item.external_id)}
                 className="btn-ghost btn-xs px-2"
                 aria-label="Retirer"
               >

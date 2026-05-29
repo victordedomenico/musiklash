@@ -34,7 +34,7 @@ export default function CreateBracketForm() {
       return;
     }
     startTransition(async () => {
-      const res = await createBracket({ title, theme, size, visibility, items: selected });
+      const res = await createBracket({ title, theme, size, visibility, tracks: selected });
       if (res?.error) setError(res.error);
     });
   };
