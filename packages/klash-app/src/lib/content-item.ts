@@ -14,12 +14,32 @@ export type SelectedContentItem = {
 
 export function inferSourceFromExternalId(externalId: string): string {
   if (externalId.startsWith("theme-")) return "animethemes";
+  if (externalId.startsWith("arc-free-")) return "manual";
   if (externalId.startsWith("arc-")) return "anilist";
   if (externalId.startsWith("char-")) return "anilist";
+  if (externalId.startsWith("jchar-")) return "jikan";
+  if (externalId.startsWith("mchar-")) return "tmdb";
+  if (externalId.startsWith("gb-")) return "googlebooks";
+  if (externalId.startsWith("bseries-")) return "openlibrary";
+  if (externalId.startsWith("mseries-")) return "mangadex";
+  if (externalId.startsWith("tvchar-")) return "tvmaze";
+  if (externalId.startsWith("person-")) return "tmdb";
   // Fall back to the vertical's configured source
-  return typeof process !== "undefined"
-    ? (process.env.NEXT_PUBLIC_KLASH_VERTICAL === "animeklash" ? "anilist" : "deezer")
-    : "deezer";
+  if (typeof process !== "undefined") {
+    const vertical = process.env.NEXT_PUBLIC_KLASH_VERTICAL;
+    if (vertical === "animeklash") return "anilist";
+    if (vertical === "movieklash") return "tmdb";
+    if (vertical === "seriesklash") return "tvmaze";
+    if (vertical === "comicklash") return "comicvine";
+    if (vertical === "characterklash") {
+      if (externalId.startsWith("person-")) return "tmdb";
+      return "anilist";
+    }
+    if (vertical === "gameklash" || vertical === "retroklash" || vertical === "indieklash")
+      return "rawg";
+    if (vertical === "sneakerklash") return "sneaks";
+  }
+  return "deezer";
 }
 
 export function selectedItemToTrackFields(
@@ -41,11 +61,30 @@ export function selectedItemToTrackFields(
   };
 }
 
-export function inferItemKind(externalId: string): "anime" | "character" | "theme" | "arc" | "track" {
+export function inferItemKind(
+  externalId: string,
+): "anime" | "character" | "theme" | "arc" | "track" | "movie" | "show" | "episode" | "game" | "transformation" | "power" | "series" {
   if (externalId.startsWith("char-")) return "character";
+  if (externalId.startsWith("person-")) return "character";
+  if (externalId.startsWith("jchar-")) return "character";
+  if (externalId.startsWith("mchar-")) return "character";
+  if (externalId.startsWith("bseries-")) return "series";
+  if (externalId.startsWith("mseries-")) return "series";
+  if (externalId.startsWith("tvchar-")) return "character";
   if (externalId.startsWith("theme-")) return "theme";
+  if (externalId.startsWith("arc-free-")) return "arc";
   if (externalId.startsWith("arc-")) return "arc";
-  if (/^\d+$/.test(externalId)) return "track"; // Deezer numeric IDs
+  if (externalId.startsWith("col-")) return "movie";
+  if (externalId.startsWith("ep-")) return "episode";
+  if (/^\d+$/.test(externalId)) {
+    const vertical = process.env.NEXT_PUBLIC_KLASH_VERTICAL;
+    if (vertical === "movieklash") return "movie";
+    if (vertical === "seriesklash") return "show";
+    if (vertical === "comicklash") return "movie";
+    if (vertical === "gameklash" || vertical === "retroklash" || vertical === "indieklash")
+      return "game";
+    return "track";
+  }
   return "anime";
 }
 

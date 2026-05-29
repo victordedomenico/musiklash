@@ -1,4 +1,5 @@
 import type { ContentItem, ContentCollection, ContentEntity, ContentSource } from "./types";
+import { searchJikanCharacters, jikanCharToContentItem } from "./jikan";
 
 const ANILIST_URL = "https://graphql.anilist.co";
 const ANIMETHEMES_URL = "https://api.animethemes.moe";
@@ -442,6 +443,40 @@ export async function getAnimeArcs(animeId: number): Promise<AniListArc[]> {
   return arcs.sort((a, b) => b.popularity - a.popularity);
 }
 
+const TRENDING_CHARACTERS_QUERY = `
+query TrendingCharacters($perPage: Int) {
+  Page(page: 1, perPage: $perPage) {
+    characters(sort: [FAVOURITES_DESC]) {
+      id
+      name { full native }
+      image { large medium }
+      favourites
+      media(sort: [POPULARITY_DESC], perPage: 1) { nodes { id title { romaji } } }
+    }
+  }
+}`;
+
+export async function getTrendingCharacters(limit = 18): Promise<AniListCharacter[]> {
+  const data = await anilistQuery<{ Page: { characters: AniListCharacter[] } }>(
+    TRENDING_CHARACTERS_QUERY,
+    { perPage: limit },
+  );
+  return data.Page.characters ?? [];
+}
+
+export async function getAnimeCharacters(animeId: number, limit = 25): Promise<AniListCharacter[]> {
+  const data = await anilistQuery<{
+    Media: { characters: { nodes: AniListCharNode[] } } | null;
+  }>(GET_MEDIA_CHARACTERS_QUERY, { id: animeId }, { live: true });
+
+  return (data.Media?.characters?.nodes ?? []).slice(0, limit).map((c) => ({
+    id: c.id,
+    name: { full: c.name.full, native: null },
+    image: { large: c.image.medium, medium: c.image.medium },
+    favourites: c.favourites,
+  }));
+}
+
 export async function searchCharacters(query: string, limit = 20): Promise<AniListCharacter[]> {
   if (!query.trim()) return [];
   const data = await anilistQuery<{ Page: { characters: AniListCharacter[] } }>(SEARCH_CHARACTER_QUERY, {
@@ -553,6 +588,73 @@ export async function getAnimeThemeItems(animeId: number): Promise<ContentItem[]
   return themes.map((t) => themeToItem(t, anime));
 }
 
+// ─── AnimeThemes song-title search ───────────────────────────────────────────
+
+type AnimeThemeSearchEntry = {
+  id: number;
+  type: "OP" | "ED";
+  sequence: number | null;
+  slug: string;
+  song: { title: string; artists: Array<{ name: string }> };
+  animethemeentries: Array<{ videos: Array<{ link: string; filename: string }> }>;
+  anime: {
+    id: number;
+    name: string;
+    slug: string;
+    images: Array<{ facet: string | null; link: string }>;
+  } | null;
+};
+
+async function searchAnimeThemesBySong(
+  query: string,
+  type?: "OP" | "ED",
+  limit = 20,
+): Promise<ContentItem[]> {
+  if (!query.trim()) return [];
+  try {
+    const params = new URLSearchParams({
+      q: query.trim(),
+      "fields[search]": "animethemes",
+      include: "animethemes.song.artists,animethemes.animethemeentries.videos,animethemes.anime.images",
+      "page[limit]": String(Math.min(limit * 2, 50)),
+    });
+    const res = await fetch(`${ANIMETHEMES_URL}/search?${params}`, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...(({ next: { revalidate: 3600 } } as any)),
+    });
+    if (!res.ok) return [];
+    const json = await res.json() as { search?: { animethemes?: AnimeThemeSearchEntry[] } };
+    const themes = (json.search?.animethemes ?? [])
+      .filter((t) => !type || t.type === type)
+      .slice(0, limit);
+    return themes.map((t) => {
+      const artist = t.song.artists.map((a) => a.name).join(", ");
+      const video = t.animethemeentries[0]?.videos[0];
+      const cover = t.anime?.images?.find(
+        (i) => i.facet === "Small Cover" || i.facet === "Large Cover",
+      )?.link ?? t.anime?.images?.[0]?.link;
+      const label = `${t.type}${t.sequence ?? ""}`;
+      return {
+        id: `theme-${t.id}`,
+        title: t.song.title,
+        subtitle: `${label} — ${t.anime?.name ?? ""}${artist ? ` (${artist})` : ""}`,
+        coverUrl: cover,
+        previewUrl: video?.link,
+        source: "animethemes",
+        metadata: {
+          themeType: t.type,
+          sequence: t.sequence,
+          animeId: t.anime?.id,
+          animeTitle: t.anime?.name,
+          artist,
+        },
+      } satisfies ContentItem;
+    });
+  } catch {
+    return [];
+  }
+}
+
 // ─── ContentSource implementation ────────────────────────────────────────────
 
 export const anilistContentSource: ContentSource = {
@@ -652,6 +754,18 @@ export const anilistContentSource: ContentSource = {
             parentTitle: a.parentTitle,
           },
         }));
+      }
+      case "opening":
+        return searchAnimeThemesBySong(query, "OP", limit);
+      case "ending":
+        return searchAnimeThemesBySong(query, "ED", limit);
+      case "transformation": {
+        const chars = await searchJikanCharacters(query, limit);
+        return chars.map((c) => jikanCharToContentItem(c, "transformation"));
+      }
+      case "power": {
+        const chars = await searchJikanCharacters(query, limit);
+        return chars.map((c) => jikanCharToContentItem(c, "power"));
       }
       default: {
         // Fallback: merge anime + characters
