@@ -118,6 +118,12 @@ export {
   INDIE_PLATFORM_IDS,
 } from "./rawg-indie";
 export {
+  searchDrinks,
+  getDrinksByCategory,
+  offProductToItem,
+  DRINK_CATEGORIES,
+} from "./openfoodfacts";
+export {
   searchYgoCards,
   searchYgoSets,
   getYgoSetCards,

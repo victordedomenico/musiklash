@@ -30,7 +30,7 @@ export const drinkklash = defineVertical({
     items: "boissons",
     entity: "cocktail",
   },
-  imageHosts: ["www.thecocktaildb.com", "thecocktaildb.com"],
+  imageHosts: ["www.thecocktaildb.com", "thecocktaildb.com", "images.openfoodfacts.org", "static.openfoodfacts.org"],
   gameModes: ["bracket", "tierlist"],
   guestEmailDomain: "guest.drinkklash.app",
   i18nOverrides: {

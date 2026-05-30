@@ -442,7 +442,7 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
       label: "TheCocktailDB API",
       url: "https://www.thecocktaildb.com/api.php",
     },
-    imageHosts: ["www.thecocktaildb.com", "thecocktaildb.com"],
+    imageHosts: ["www.thecocktaildb.com", "thecocktaildb.com", "images.openfoodfacts.org", "static.openfoodfacts.org"],
     gameModes: ["bracket", "tierlist"],
   },
   foodklash: {

@@ -2,7 +2,26 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Search, Plus, X, ChevronLeft, Check, Wine, Tag, FlaskConical } from "lucide-react";
+import { Search, Plus, X, ChevronLeft, Check, Wine, Tag, FlaskConical, Droplets } from "lucide-react";
+
+const DRINK_CATEGORIES = [
+  { slug: "en:sodas", label: "Sodas", emoji: "🥤" },
+  { slug: "en:fruit-juices", label: "Jus de fruits", emoji: "🍊" },
+  { slug: "en:nectars", label: "Nectars", emoji: "🍑" },
+  { slug: "en:waters", label: "Eaux", emoji: "💧" },
+  { slug: "en:sparkling-waters", label: "Eaux pétillantes", emoji: "🫧" },
+  { slug: "en:iced-teas", label: "Ice Tea", emoji: "🧊" },
+  { slug: "en:energy-drinks", label: "Boissons énergisantes", emoji: "⚡" },
+  { slug: "en:sports-drinks", label: "Boissons sportives", emoji: "🏃" },
+  { slug: "en:wines", label: "Vins", emoji: "🍷" },
+  { slug: "en:beers", label: "Bières", emoji: "🍺" },
+  { slug: "en:ciders", label: "Cidres", emoji: "🍎" },
+  { slug: "fr:champagnes", label: "Champagnes", emoji: "🥂" },
+  { slug: "en:coffees", label: "Cafés", emoji: "☕" },
+  { slug: "en:teas", label: "Thés", emoji: "🍵" },
+  { slug: "en:hot-chocolates", label: "Chocolats chauds", emoji: "🍫" },
+  { slug: "en:plant-milks", label: "Laits végétaux", emoji: "🌱" },
+];
 import type { ContentCollection, ContentEntity, ContentItem } from "@klash/content-adapter";
 import { withSearchQuery } from "@/lib/api-url";
 
@@ -16,7 +35,7 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "cocktail" | "category" | "ingredient";
+type Tab = "cocktail" | "category" | "ingredient" | "drink" | "drink-type";
 
 type Props = {
   size: number;
@@ -76,8 +95,10 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
   const [query, setQuery] = useState("");
   const [openedCategory, setOpenedCategory] = useState<ContentCollection | null>(null);
   const [openedIngredient, setOpenedIngredient] = useState<ContentEntity | null>(null);
+  const [openedDrinkType, setOpenedDrinkType] = useState<{ slug: string; label: string; emoji: string } | null>(null);
   const [categoryDrinks, setCategoryDrinks] = useState<ContentItem[]>([]);
   const [ingredientDrinks, setIngredientDrinks] = useState<ContentItem[]>([]);
+  const [drinkTypeDrinks, setDrinkTypeDrinks] = useState<ContentItem[]>([]);
   const [drillLoading, setDrillLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -97,6 +118,12 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
     "/api/content/search?kind=entities",
     query,
     tab === "ingredient" && !openedIngredient,
+  );
+
+  const { results: drinkResults, loading: drinkLoading } = useDebouncedSearch(
+    "/api/drinks/search",
+    query,
+    tab === "drink",
   );
 
   const max = freeMode ? Infinity : size;
@@ -130,8 +157,10 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
   }, [openedIngredient]);
 
   const tabs: { key: Tab; label: string; icon: typeof Wine }[] = [
+    { key: "drink", label: "Boissons", icon: Droplets },
+    { key: "drink-type", label: "Par type", icon: Tag },
     { key: "cocktail", label: "Cocktails", icon: Wine },
-    { key: "category", label: "Catégories", icon: Tag },
+    { key: "category", label: "Cat. cocktails", icon: Tag },
     { key: "ingredient", label: "Ingrédients", icon: FlaskConical },
   ];
 
@@ -148,6 +177,8 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
               setTab(key);
               setOpenedCategory(null);
               setOpenedIngredient(null);
+              setOpenedDrinkType(null);
+              setDrinkTypeDrinks([]);
               setQuery("");
             }}
           >
@@ -157,13 +188,15 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
         ))}
       </div>
 
-      {(openedCategory || openedIngredient) && (
+      {(openedCategory || openedIngredient || openedDrinkType) && (
         <button
           type="button"
           className="btn-ghost text-sm inline-flex items-center gap-1"
           onClick={() => {
             setOpenedCategory(null);
             setOpenedIngredient(null);
+            setOpenedDrinkType(null);
+            setDrinkTypeDrinks([]);
           }}
         >
           <ChevronLeft size={16} />
@@ -171,7 +204,7 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
         </button>
       )}
 
-      {!openedCategory && !openedIngredient && (
+      {!openedCategory && !openedIngredient && !openedDrinkType && (
         <div className="relative">
           <Search
             size={18}
@@ -183,11 +216,13 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={
-              tab === "cocktail"
-                ? "Rechercher un cocktail…"
-                : tab === "category"
-                  ? "Rechercher une catégorie…"
-                  : "Rechercher un ingrédient…"
+              tab === "drink"
+                ? "Coca-Cola, jus d'orange, eau, vin, bière…"
+                : tab === "cocktail"
+                  ? "Rechercher un cocktail…"
+                  : tab === "category"
+                    ? "Rechercher une catégorie de cocktails…"
+                    : "Rechercher un ingrédient…"
             }
             className="input w-full pl-10"
           />
@@ -195,6 +230,69 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
       )}
 
       <div className="min-h-[200px] space-y-2">
+        {tab === "drink" &&
+          drinkResults.map((item) => (
+            <ResultRow
+              key={item.id}
+              title={item.title}
+              subtitle={item.subtitle}
+              coverUrl={item.coverUrl}
+              selected={isSelected(item.id)}
+              onAdd={() => addItem(item)}
+            />
+          ))}
+
+        {tab === "drink" && drinkLoading && (
+          <p className="text-sm text-[color:var(--muted)]">Recherche…</p>
+        )}
+
+        {tab === "drink-type" && !openedDrinkType && (
+          <div className="grid grid-cols-2 gap-2">
+            {DRINK_CATEGORIES.map((cat) => (
+              <button
+                key={cat.slug}
+                type="button"
+                className="flex items-center gap-2 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
+                onClick={() => {
+                  setOpenedDrinkType(cat);
+                  setDrillLoading(true);
+                  setDrinkTypeDrinks([]);
+                  fetch(`/api/drinks/category/${encodeURIComponent(cat.slug)}`)
+                    .then((r) => r.json())
+                    .then((json) => setDrinkTypeDrinks(json.results ?? []))
+                    .catch(console.error)
+                    .finally(() => setDrillLoading(false));
+                }}
+              >
+                <span className="text-xl shrink-0">{cat.emoji}</span>
+                <span className="font-medium text-sm truncate">{cat.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {tab === "drink-type" && openedDrinkType && (
+          <>
+            <p className="text-sm font-medium text-[color:var(--muted)]">
+              {openedDrinkType.emoji} {openedDrinkType.label}
+            </p>
+            {drillLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
+            {!drillLoading && drinkTypeDrinks.length === 0 && (
+              <p className="text-sm text-[color:var(--muted)]">Aucune boisson trouvée.</p>
+            )}
+            {drinkTypeDrinks.map((item) => (
+              <ResultRow
+                key={item.id}
+                title={item.title}
+                subtitle={item.subtitle}
+                coverUrl={item.coverUrl}
+                selected={isSelected(item.id)}
+                onAdd={() => addItem(item)}
+              />
+            ))}
+          </>
+        )}
+
         {tab === "cocktail" &&
           cocktailResults.map((item) => (
             <ResultRow
