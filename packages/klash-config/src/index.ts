@@ -23,7 +23,6 @@ import { basketklash } from "./configs/basketklash";
 import { fitnessklash } from "./configs/fitnessklash";
 import { fightklash } from "./configs/fightklash";
 import { tennisklash } from "./configs/tennisklash";
-import { carklash } from "./configs/carklash";
 import { sportklash } from "./configs/sportklash";
 import { footklash } from "./configs/footklash";
 import { rapklash } from "./configs/rapklash";
@@ -50,7 +49,6 @@ export {
   fitnessklash,
   fightklash,
   tennisklash,
-  carklash,
   sportklash,
   footklash,
   rapklash,
@@ -80,7 +78,6 @@ const REGISTRY: Record<string, VerticalConfig> = {
   [fitnessklash.slug]: fitnessklash,
   [fightklash.slug]: fightklash,
   [tennisklash.slug]: tennisklash,
-  [carklash.slug]: carklash,
   [sportklash.slug]: sportklash,
   [footklash.slug]: footklash,
   [rapklash.slug]: rapklash,

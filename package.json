@@ -44,8 +44,6 @@
     "build:petklash": "turbo run build --filter=petklash",
     "dev:sportklash": "turbo run dev --filter=sportklash",
     "build:sportklash": "turbo run build --filter=sportklash",
-    "dev:carklash": "turbo run dev --filter=carklash",
-    "build:carklash": "turbo run build --filter=carklash",
     "dev:tennisklash": "turbo run dev --filter=tennisklash",
     "build:tennisklash": "turbo run build --filter=tennisklash",
     "dev:footklash": "turbo run dev --filter=footklash",

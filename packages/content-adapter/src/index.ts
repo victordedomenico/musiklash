@@ -298,12 +298,3 @@ export {
   type MmaCategory,
   type MmaTeam,
 } from "./api-sports-mma";
-export {
-  carQueryContentSource,
-  searchCarMakes,
-  searchCarModels,
-  getMakeById,
-  getModelsForMake,
-  getModelsForBody,
-  getTrendingCars,
-} from "./carquery";

@@ -547,25 +547,6 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
     imageHosts: ["flagcdn.com", "api.jolpi.ca"],
     gameModes: ["bracket", "tierlist"],
   },
-  carklash: {
-    slug: "carklash",
-    name: "CarKlash",
-    itemNoun: "modèle",
-    itemsNoun: "modèles",
-    mediaIcon: "star",
-    smashPassTypeLabels: {
-      model: "Modèles",
-      make: "Marques",
-      body: "Carrosseries",
-    },
-    contactEmail: "contact@carklash.app",
-    apiCredit: {
-      label: "CarQuery & NHTSA vPIC",
-      url: "https://www.carqueryapi.com/documentation/",
-    },
-    imageHosts: ["www.carqueryapi.com"],
-    gameModes: ["bracket", "tierlist"],
-  },
 };
 
 export function getVerticalManifest(slug: string): VerticalManifest {

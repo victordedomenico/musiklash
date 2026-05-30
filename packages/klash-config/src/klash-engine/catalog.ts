@@ -342,21 +342,6 @@ export const KLASH_ENGINE_CATALOG: KlashEngineVertical[] = [
   },
 
   // ── Tech ──────────────────────────────────────────────────────────────────
-  {
-    slug: "carklash",
-    name: "CarKlash",
-    emoji: "🚗",
-    category: "tech",
-    status: "active",
-    appPackage: "carklash",
-    entities: ["Voitures", "Marques", "Modèles"],
-    apis: [
-      { name: "CarQuery", access: "open" },
-      { name: "NHTSA", access: "open" },
-    ],
-    source: "carquery",
-    nouns: { item: "modèle", items: "modèles", entity: "marque" },
-  },
 
   // ── Art, Créativité & Musique ─────────────────────────────────────────────
   {

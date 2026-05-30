@@ -32,7 +32,6 @@
     "./configs/fightklash": "./src/configs/fightklash.ts",
     "./configs/tennisklash": "./src/configs/tennisklash.ts",
     "./configs/sportklash": "./src/configs/sportklash.ts",
-    "./configs/carklash": "./src/configs/carklash.ts",
     "./configs/rapklash": "./src/configs/rapklash.ts"
   },
   "peerDependencies": {
