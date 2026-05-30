@@ -276,41 +276,63 @@ export async function getGenerationById(generationId: string | number): Promise<
   }
 }
 
-export async function getTypePokemon(typeId: string | number, limit = 50): Promise<PokePokemon[]> {
+export async function getTypePokemon(typeId: string | number, limit = 200): Promise<PokePokemon[]> {
   const type = await getTypeById(typeId);
   if (!type) return [];
-  const entries = type.pokemon.slice(0, Math.min(limit, 50));
-  const results = await Promise.all(
-    entries.map(async (entry) => {
-      const id = pokemonIdFromUrl(entry.pokemon.url);
-      if (id) return getPokemonById(id);
-      try {
-        return await pokeGet<PokePokemon>(`/pokemon/${entry.pokemon.name}`);
-      } catch {
-        return null;
-      }
-    }),
-  );
-  return results.filter((p): p is PokePokemon => p !== null);
+  // Filter to only main-series pokemon (no forms like "-alola", "-galar" duplicates)
+  const mainEntries = type.pokemon
+    .filter((e) => {
+      const name = e.pokemon.name;
+      // Keep base forms + common forms, skip most alternate forms to avoid clutter
+      return !/-totem$|-mega-?[xy]?$|-gmax$|-eternamax$|-low-key|-amped/.test(name);
+    })
+    .slice(0, limit);
+
+  // Fetch in batches of 20 to avoid rate-limiting
+  const results: PokePokemon[] = [];
+  const BATCH = 20;
+  for (let i = 0; i < mainEntries.length; i += BATCH) {
+    const batch = mainEntries.slice(i, i + BATCH);
+    const fetched = await Promise.all(
+      batch.map(async (entry) => {
+        const id = pokemonIdFromUrl(entry.pokemon.url);
+        if (id) return getPokemonById(id);
+        try {
+          return await pokeGet<PokePokemon>(`/pokemon/${entry.pokemon.name}`);
+        } catch {
+          return null;
+        }
+      }),
+    );
+    results.push(...fetched.filter((p): p is PokePokemon => p !== null));
+  }
+  return results;
 }
 
 export async function getGenerationPokemon(
   generationId: string | number,
-  limit = 50,
+  limit = 200,
 ): Promise<PokePokemon[]> {
   const generation = await getGenerationById(generationId);
   if (!generation) return [];
-  const species = generation.pokemon_species.slice(0, Math.min(limit, 50));
-  const results = await Promise.all(
-    species.map(async (entry) => {
-      try {
-        return await pokeGet<PokePokemon>(`/pokemon/${entry.name}`);
-      } catch {
-        return null;
-      }
-    }),
-  );
-  return results.filter((p): p is PokePokemon => p !== null);
+  const species = generation.pokemon_species.slice(0, limit);
+  // Fetch in batches of 20
+  const results: PokePokemon[] = [];
+  const BATCH = 20;
+  for (let i = 0; i < species.length; i += BATCH) {
+    const batch = species.slice(i, i + BATCH);
+    const fetched = await Promise.all(
+      batch.map(async (entry) => {
+        try {
+          return await pokeGet<PokePokemon>(`/pokemon/${entry.name}`);
+        } catch {
+          return null;
+        }
+      }),
+    );
+    results.push(...fetched.filter((p): p is PokePokemon => p !== null));
+  }
+  return results;
 }
 
 function flattenEvolutionChain(link: PokeEvolutionLink): string[] {
@@ -474,7 +496,7 @@ export const pokeapiContentSource: ContentSource = {
     return [];
   },
 
-  async getEntityTopItems(entityId, { limit = 50 } = {}) {
+  async getEntityTopItems(entityId, { limit = 200 } = {}) {
     if (entityId.startsWith("type-")) {
       const typeId = entityId.replace(/^type-/, "");
       const pokemon = await getTypePokemon(typeId, limit);
