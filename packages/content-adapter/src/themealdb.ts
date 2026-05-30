@@ -28,26 +28,26 @@ export const FOOD_FRUITS: [string, string][] = [
 export const FOOD_FISH: [string, string][] = [
   ["Saumon", "Salmon"], ["Thon", "Tuna"], ["Cabillaud", "Cod"],
   ["Crevettes", "Prawns"], ["Sardine", "Sardines"], ["Truite", "Trout"],
-  ["Dorade", "Sea Bass"], ["Sole", "Sole"], ["Maquereau", "Mackerel"],
+  ["Dorade", "Seabream"], ["Sole", "Sole"], ["Maquereau", "Mackerel"],
   ["Hareng", "Herring"], ["Anchois", "Anchovies"], ["Espadon", "Swordfish"],
   ["Homard", "Lobster"], ["Crabe", "Crab"], ["Moules", "Mussels"],
   ["Coquilles Saint-Jacques", "Scallops"], ["Calamars", "Squid"],
   ["Pieuvre", "Octopus"], ["Palourdes", "Clams"], ["Huîtres", "Oysters"],
-  ["Tilapia", "Tilapia"], ["Bar", "Sea Bass"], ["Loup de mer", "Sea Bass"],
-  ["Turbot", "Turbot"], ["Merlu", "Haddock"], ["Langoustine", "Crayfish"],
+  ["Tilapia", "Tilapia"], ["Bar", "Sea Bass"], ["Turbot", "Turbot"],
+  ["Merlu", "Haddock"], ["Langoustine", "Crayfish"], ["Flétan", "Halibut"],
 ];
 
 export const FOOD_MEATS: [string, string][] = [
   ["Bœuf", "Beef"], ["Agneau", "Lamb"], ["Porc", "Pork"],
   ["Poulet", "Chicken"], ["Dinde", "Turkey"], ["Canard", "Duck"],
-  ["Veau", "Veal"], ["Lapin", "Rabbit"], ["Gibier", "Venison"],
-  ["Cerf", "Venison"], ["Sanglier", "Pork"], ["Chèvre", "Goat"],
-  ["Côtelettes", "Lamb Chops"], ["Bacon", "Bacon"], ["Jambon", "Ham"],
-  ["Saucisse", "Sausages"], ["Lardons", "Bacon"], ["Steak", "Beef"],
-  ["Côte de bœuf", "Beef"], ["Entrecôte", "Beef"], ["Filet mignon", "Pork"],
-  ["Côte d'agneau", "Lamb"], ["Épaule d'agneau", "Lamb"],
+  ["Veau", "Veal"], ["Lapin", "Rabbit"], ["Cerf", "Venison"],
+  ["Sanglier", "Wild Boar"], ["Chèvre", "Goat"],
+  ["Bacon", "Bacon"], ["Jambon", "Ham"], ["Saucisse", "Sausages"],
+  ["Lardons", "Lardons"], ["Steak", "Steak"], ["Entrecôte", "Rib Eye"],
+  ["Filet mignon", "Tenderloin"], ["Côte d'agneau", "Lamb Chops"],
   ["Poitrine de poulet", "Chicken Breast"], ["Cuisses de poulet", "Chicken Thighs"],
-  ["Magret de canard", "Duck"], ["Andouillette", "Sausages"],
+  ["Magret de canard", "Duck Breast"], ["Andouille", "Sausages"],
+  ["Chorizo", "Chorizo"], ["Merguez", "Merguez"],
 ];
 
 export const FOOD_VEGETABLES: [string, string][] = [
@@ -169,8 +169,14 @@ function ingredientImageUrl(englishName: string): string {
 }
 
 export function ingredientToItem(frenchName: string, englishName: string, kind = "ingredient"): ContentItem {
+  // Use French name for ID to avoid collisions when multiple French items share the same English name
+  const idSlug = frenchName
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "") // strip accents
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
   return {
-    id: `ingr-${englishName.toLowerCase().replace(/\s+/g, "-")}`,
+    id: `ingr-${idSlug}`,
     title: frenchName,
     subtitle: undefined,
     coverUrl: ingredientImageUrl(englishName),
