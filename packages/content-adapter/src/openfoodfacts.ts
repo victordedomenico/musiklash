@@ -22,6 +22,43 @@ type OffSearchResponse = {
   products?: OffProduct[];
 };
 
+// ─── Fast food chains ─────────────────────────────────────────────────────────
+
+export const FAST_FOOD_CHAINS: { slug: string; label: string; emoji: string }[] = [
+  { slug: "mcdonald-s",        label: "McDonald's",      emoji: "🍟" },
+  { slug: "burger-king",       label: "Burger King",     emoji: "🍔" },
+  { slug: "quick",             label: "Quick",           emoji: "🍔" },
+  { slug: "kfc",               label: "KFC",             emoji: "🍗" },
+  { slug: "subway",            label: "Subway",          emoji: "🥖" },
+  { slug: "domino-s-pizza",    label: "Domino's Pizza",  emoji: "🍕" },
+  { slug: "pizza-hut",         label: "Pizza Hut",       emoji: "🍕" },
+  { slug: "five-guys",         label: "Five Guys",       emoji: "🍔" },
+  { slug: "buffalo-grill",     label: "Buffalo Grill",   emoji: "🥩" },
+  { slug: "taco-bell",         label: "Taco Bell",       emoji: "🌮" },
+  { slug: "paul",              label: "Paul",            emoji: "🥐" },
+  { slug: "la-boulangerie",    label: "La Boulangère",   emoji: "🥖" },
+  { slug: "picard",            label: "Picard",          emoji: "❄️" },
+  { slug: "flunch",            label: "Flunch",          emoji: "🍽️" },
+];
+
+export async function getFastFoodByChain(brandSlug: string, limit = 24): Promise<OffProduct[]> {
+  try {
+    const json = await offFetch<OffSearchResponse>("/api/v2/search", {
+      brands_tags: brandSlug,
+      sort_by: "unique_scans_n",
+      page_size: String(Math.min(limit * 2, 48)),
+      page: "1",
+      lc: "fr",
+      fields: FIELDS,
+    });
+    return (json.products ?? [])
+      .filter((p) => (p.product_name_fr ?? p.product_name ?? "").trim())
+      .slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
 // ─── Drink categories ─────────────────────────────────────────────────────────
 
 export const DRINK_CATEGORIES: { slug: string; label: string; emoji: string }[] = [

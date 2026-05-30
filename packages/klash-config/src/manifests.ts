@@ -461,7 +461,7 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
       label: "TheMealDB API",
       url: "https://www.themealdb.com/api.php",
     },
-    imageHosts: ["www.themealdb.com"],
+    imageHosts: ["www.themealdb.com", "images.openfoodfacts.org", "static.openfoodfacts.org"],
     gameModes: ["bracket", "tierlist"],
   },
   sneakerklash: {

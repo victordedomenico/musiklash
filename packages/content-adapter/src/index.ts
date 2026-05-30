@@ -121,8 +121,10 @@ export {
   searchDrinks,
   getDrinksByCategory,
   getDrinksByBrand,
+  getFastFoodByChain,
   offProductToItem,
   DRINK_CATEGORIES,
+  FAST_FOOD_CHAINS,
 } from "./openfoodfacts";
 export {
   searchYgoCards,

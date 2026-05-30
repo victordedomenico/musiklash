@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Search, Plus, X, ChevronLeft, Check, UtensilsCrossed, Tag, Globe, Apple, Carrot, ShoppingBasket, Fish, Beef } from "lucide-react";
+import { Search, Plus, X, ChevronLeft, Check, UtensilsCrossed, Tag, Globe, Apple, Carrot, ShoppingBasket, Fish, Beef, Store } from "lucide-react";
 import type { ContentCollection, ContentEntity, ContentItem } from "@klash/content-adapter";
 import { withSearchQuery } from "@/lib/api-url";
 
@@ -16,7 +16,23 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "meal" | "category" | "cuisine" | "ingredient" | "fruit" | "vegetable" | "fish" | "meat";
+type Tab = "meal" | "category" | "cuisine" | "ingredient" | "fruit" | "vegetable" | "fish" | "meat" | "fastfood";
+
+const FAST_FOOD_CHAINS = [
+  { slug: "mcdonald-s",     label: "McDonald's",     emoji: "🍟" },
+  { slug: "burger-king",    label: "Burger King",    emoji: "🍔" },
+  { slug: "quick",          label: "Quick",          emoji: "🍔" },
+  { slug: "kfc",            label: "KFC",            emoji: "🍗" },
+  { slug: "subway",         label: "Subway",         emoji: "🥖" },
+  { slug: "domino-s-pizza", label: "Domino's Pizza", emoji: "🍕" },
+  { slug: "pizza-hut",      label: "Pizza Hut",      emoji: "🍕" },
+  { slug: "five-guys",      label: "Five Guys",      emoji: "🍔" },
+  { slug: "buffalo-grill",  label: "Buffalo Grill",  emoji: "🥩" },
+  { slug: "taco-bell",      label: "Taco Bell",      emoji: "🌮" },
+  { slug: "paul",           label: "Paul",           emoji: "🥐" },
+  { slug: "picard",         label: "Picard",         emoji: "❄️" },
+  { slug: "flunch",         label: "Flunch",         emoji: "🍽️" },
+];
 
 type Props = {
   size: number;
@@ -113,6 +129,9 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
   const [fishLoading, setFishLoading] = useState(false);
   const [meatResults, setMeatResults] = useState<ContentItem[]>([]);
   const [meatLoading, setMeatLoading] = useState(false);
+  const [openedChain, setOpenedChain] = useState<typeof FAST_FOOD_CHAINS[0] | null>(null);
+  const [chainItems, setChainItems] = useState<ContentItem[]>([]);
+  const [chainLoading, setChainLoading] = useState(false);
 
   useEffect(() => {
     if (tab !== "fruit") return;
@@ -197,6 +216,7 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
     { key: "vegetable", label: "Légumes", icon: Carrot },
     { key: "fish", label: "Poissons", icon: Fish },
     { key: "meat", label: "Viandes", icon: Beef },
+    { key: "fastfood", label: "Fast Food", icon: Store },
   ];
 
   return (
@@ -212,6 +232,8 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
               setTab(key);
               setOpenedCategory(null);
               setOpenedCuisine(null);
+              setOpenedChain(null);
+              setChainItems([]);
               setQuery("");
             }}
           >
@@ -221,13 +243,15 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
         ))}
       </div>
 
-      {(openedCategory || openedCuisine) && (
+      {(openedCategory || openedCuisine || openedChain) && (
         <button
           type="button"
           className="btn-ghost text-sm inline-flex items-center gap-1"
           onClick={() => {
             setOpenedCategory(null);
             setOpenedCuisine(null);
+            setOpenedChain(null);
+            setChainItems([]);
           }}
         >
           <ChevronLeft size={16} />
@@ -360,32 +384,75 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
         {tab === "ingredient" &&
           ingredientResults.map((item) => (
             <ResultRow key={item.id} title={item.title} subtitle={item.subtitle}
-              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
+              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} unoptimized />
           ))}
 
         {tab === "fruit" &&
-          (fruitResults.length > 0 ? fruitResults : /* show all when no query */ []).map((item) => (
+          fruitResults.map((item) => (
             <ResultRow key={item.id} title={item.title} subtitle={item.subtitle}
-              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
+              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} unoptimized />
           ))}
 
         {tab === "vegetable" &&
-          (vegetableResults.length > 0 ? vegetableResults : []).map((item) => (
+          vegetableResults.map((item) => (
             <ResultRow key={item.id} title={item.title} subtitle={item.subtitle}
-              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
+              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} unoptimized />
           ))}
 
         {tab === "fish" &&
           fishResults.map((item) => (
             <ResultRow key={item.id} title={item.title} subtitle={item.subtitle}
-              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
+              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} unoptimized />
           ))}
 
         {tab === "meat" &&
           meatResults.map((item) => (
             <ResultRow key={item.id} title={item.title} subtitle={item.subtitle}
-              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
+              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} unoptimized />
           ))}
+
+        {tab === "fastfood" && !openedChain && (
+          <div className="grid grid-cols-2 gap-2">
+            {FAST_FOOD_CHAINS.map((chain) => (
+              <button
+                key={chain.slug}
+                type="button"
+                className="flex items-center gap-2 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
+                onClick={() => {
+                  setOpenedChain(chain);
+                  setChainLoading(true);
+                  setChainItems([]);
+                  fetch(`/api/food/fastfood/${chain.slug}`)
+                    .then((r) => r.json())
+                    .then((json) => setChainItems(json.results ?? []))
+                    .catch(console.error)
+                    .finally(() => setChainLoading(false));
+                }}
+              >
+                <span className="text-xl shrink-0">{chain.emoji}</span>
+                <span className="font-medium text-sm truncate">{chain.label}</span>
+                <ChevronLeft size={14} className="rotate-180 text-[color:var(--muted)] ml-auto shrink-0" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {tab === "fastfood" && openedChain && (
+          <>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{openedChain.emoji}</span>
+              <p className="text-sm font-medium text-[color:var(--muted)]">{openedChain.label}</p>
+            </div>
+            {chainLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
+            {!chainLoading && chainItems.length === 0 && (
+              <p className="text-sm text-[color:var(--muted)]">Aucun produit trouvé pour cette enseigne.</p>
+            )}
+            {chainItems.map((item) => (
+              <ResultRow key={item.id} title={item.title} subtitle={item.subtitle}
+                coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
+            ))}
+          </>
+        )}
 
         {(mealLoading || categoryLoading || cuisineLoading || ingredientLoading || fruitLoading || vegetableLoading || fishLoading || meatLoading) && (
           <p className="text-sm text-[color:var(--muted)]">Recherche…</p>
@@ -428,17 +495,28 @@ function ResultRow({
   coverUrl,
   selected,
   onAdd,
+  unoptimized = false,
 }: {
   title: string;
   subtitle?: string;
   coverUrl?: string | null;
   selected: boolean;
   onAdd: () => void;
+  unoptimized?: boolean;
 }) {
+  const [imgFailed, setImgFailed] = useState(false);
   return (
     <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] p-3">
-      {coverUrl ? (
-        <Image src={coverUrl} alt="" width={48} height={48} className="rounded object-cover shrink-0" />
+      {coverUrl && !imgFailed ? (
+        <Image
+          src={coverUrl}
+          alt=""
+          width={48}
+          height={48}
+          className="rounded object-cover shrink-0"
+          unoptimized={unoptimized}
+          onError={() => setImgFailed(true)}
+        />
       ) : (
         <div className="w-12 h-12 rounded bg-[color:var(--surface-2)] shrink-0" />
       )}
