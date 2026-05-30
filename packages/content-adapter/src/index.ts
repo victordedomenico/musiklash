@@ -118,6 +118,19 @@ export {
   INDIE_PLATFORM_IDS,
 } from "./rawg-indie";
 export {
+  musicbrainzContentSource,
+  searchMbRecordings,
+  searchMbReleases,
+  searchMbArtists,
+  getMbArtistReleases,
+  getMbReleaseRecordings,
+  mbRecordingToItem,
+  mbReleaseToItem,
+  mbReleaseToCollection,
+  mbArtistToEntity,
+  getMbCoverArt,
+} from "./musicbrainz";
+export {
   getPetsBySpecies,
   PET_SPECIES_TABS,
 } from "./pets-extended";

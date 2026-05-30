@@ -27,6 +27,7 @@ export function inferSourceFromExternalId(externalId: string): string {
   if (externalId.startsWith("ygo-") || externalId.startsWith("ygoset-")) return "ygoprodeck";
   if (externalId.startsWith("off-")) return "openfoodfacts";
   if (externalId.startsWith("sdb-")) return "sneakerdb";
+  if (externalId.startsWith("mb-rec-") || externalId.startsWith("mb-rel-") || externalId.startsWith("mb-art-")) return "musicbrainz";
   if (externalId.startsWith("person-")) return "tmdb";
   // Fall back to the vertical's configured source
   if (typeof process !== "undefined") {
@@ -41,7 +42,9 @@ export function inferSourceFromExternalId(externalId: string): string {
     }
     if (vertical === "gameklash" || vertical === "retroklash" || vertical === "indieklash")
       return "rawg";
-    if (vertical === "sneakerklash") return "sneaks";
+    if (vertical === "sneakerklash") {
+      return process.env.RAPIDAPI_KEY?.trim() ? "sneakerdb" : "sneaks";
+    }
   }
   return "deezer";
 }
