@@ -30,7 +30,7 @@ export const petklash = defineVertical({
     items: "races",
     entity: "espèce",
   },
-  imageHosts: ["images.dog.ceo", "cdn2.thecatapi.com"],
+  imageHosts: ["images.dog.ceo", "cdn2.thecatapi.com", "upload.wikimedia.org"],
   gameModes: ["bracket", "tierlist"],
   guestEmailDomain: "guest.petklash.app",
   i18nOverrides: {

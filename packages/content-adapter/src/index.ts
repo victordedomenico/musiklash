@@ -118,11 +118,21 @@ export {
   INDIE_PLATFORM_IDS,
 } from "./rawg-indie";
 export {
+  getPetsBySpecies,
+  PET_SPECIES_TABS,
+} from "./pets-extended";
+export {
   sneakerDbContentSource,
   searchSneakerDb,
   getTrendingSneakerDb,
+  isSneakerDbConfigured,
   type SneakerDbItem,
 } from "./sneakerdb";
+export {
+  sneakerklashContentSource,
+  getTrendingSneakerKlashCovers,
+  type HomeSneakerCover,
+} from "./sneakerklash";
 export {
   searchDrinks,
   getDrinksByCategory,

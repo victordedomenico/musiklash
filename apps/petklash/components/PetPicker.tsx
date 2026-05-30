@@ -25,7 +25,16 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "breed" | "species" | "behavior";
+type Tab = "breed" | "species" | "behavior" | "rabbit" | "bird" | "rodent" | "reptile" | "fish" | "horse";
+
+const OTHER_SPECIES = [
+  { key: "rabbit",  label: "Lapins",   emoji: "🐇" },
+  { key: "bird",    label: "Oiseaux",  emoji: "🐦" },
+  { key: "rodent",  label: "Rongeurs", emoji: "🐹" },
+  { key: "reptile", label: "Reptiles", emoji: "🦎" },
+  { key: "fish",    label: "Poissons", emoji: "🐠" },
+  { key: "horse",   label: "Chevaux",  emoji: "🐴" },
+] as const;
 
 type Props = {
   size: number;
@@ -87,6 +96,8 @@ export default function PetPicker({ size, selected, onChange, freeMode = false }
   const [openedSpecies, setOpenedSpecies] = useState<ContentEntity | null>(null);
   const [collectionBreeds, setCollectionBreeds] = useState<ContentItem[]>([]);
   const [speciesBreeds, setSpeciesBreeds] = useState<ContentItem[]>([]);
+  const [otherPets, setOtherPets] = useState<ContentItem[]>([]);
+  const [otherPetsLoading, setOtherPetsLoading] = useState(false);
   const [drillLoading, setDrillLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -152,10 +163,27 @@ export default function PetPicker({ size, selected, onChange, freeMode = false }
     }
   };
 
+  const isOtherSpecies = (t: Tab) => OTHER_SPECIES.some((s) => s.key === t);
+
+  // Load other species (rabbit, bird, etc.) whenever tab or query changes
+  useEffect(() => {
+    if (!isOtherSpecies(tab)) return;
+    setOtherPetsLoading(true);
+    setOtherPets([]);
+    const q = query.trim();
+    fetch(`/api/pets/${tab}${q ? `?q=${encodeURIComponent(q)}` : ""}`)
+      .then((r) => r.json())
+      .then((json) => setOtherPets(json.results ?? []))
+      .catch(console.error)
+      .finally(() => setOtherPetsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, query]);
+
   const tabs: { key: Tab; label: string; icon: typeof PawPrint }[] = [
-    { key: "breed", label: "Races", icon: PawPrint },
-    { key: "species", label: "Espèces", icon: Dog },
-    { key: "behavior", label: "Comportements", icon: Heart },
+    { key: "breed",    label: "Races (chien/chat)", icon: PawPrint },
+    { key: "species",  label: "Espèces",            icon: Dog },
+    { key: "behavior", label: "Comportements",      icon: Heart },
+    ...OTHER_SPECIES.map((s) => ({ key: s.key as Tab, label: `${s.emoji} ${s.label}`, icon: PawPrint })),
   ];
 
   const behaviorCollections = (behaviorResults as unknown as ContentCollection[]).filter(
@@ -177,6 +205,7 @@ export default function PetPicker({ size, selected, onChange, freeMode = false }
               setOpenedSpecies(null);
               setCollectionBreeds([]);
               setSpeciesBreeds([]);
+              setOtherPets([]);
               setQuery("");
             }}
           >
@@ -309,6 +338,23 @@ export default function PetPicker({ size, selected, onChange, freeMode = false }
             ))}
           </>
         )}
+
+        {isOtherSpecies(tab) && otherPetsLoading && (
+          <p className="text-sm text-[color:var(--muted)]">Chargement…</p>
+        )}
+        {isOtherSpecies(tab) && !otherPetsLoading && otherPets.length === 0 && query && (
+          <p className="text-sm text-[color:var(--muted)]">Aucun résultat.</p>
+        )}
+        {isOtherSpecies(tab) && otherPets.map((item) => (
+          <ResultRow
+            key={item.id}
+            title={item.title}
+            subtitle={item.subtitle}
+            coverUrl={item.coverUrl}
+            selected={isSelected(item.id)}
+            onAdd={() => addItem(item)}
+          />
+        ))}
 
         {(breedLoading || behaviorLoading || speciesLoading) && (
           <p className="text-sm text-[color:var(--muted)]">Recherche…</p>

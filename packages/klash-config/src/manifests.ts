@@ -506,7 +506,7 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
       label: "Dog CEO API & TheCatAPI",
       url: "https://dog.ceo/dog-api/documentation/",
     },
-    imageHosts: ["images.dog.ceo", "cdn2.thecatapi.com"],
+    imageHosts: ["images.dog.ceo", "cdn2.thecatapi.com", "upload.wikimedia.org"],
     gameModes: ["bracket", "tierlist"],
   },
   fitnessklash: {
