@@ -30,7 +30,7 @@ export const characterklash = defineVertical({
     collection: "univers",
     entity: "héros",
   },
-  imageHosts: ["s4.anilist.co", "image.tmdb.org", "cdn.jsdelivr.net", "raw.githubusercontent.com"],
+  imageHosts: ["s4.anilist.co", "image.tmdb.org", "cdn.jsdelivr.net", "raw.githubusercontent.com", "static.tvmaze.com"],
   gameModes: ["bracket", "tierlist"],
   guestEmailDomain: "guest.characterklash.app",
   i18nOverrides: {

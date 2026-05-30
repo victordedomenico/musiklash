@@ -2,6 +2,7 @@ import type { ContentEntity, ContentItem, ContentSource } from "./types";
 import { anilistContentSource, getCharacterById, searchCharacters } from "./anilist";
 import { searchMovies, getMovieCharacters, castToCharacterItem, getMovieById } from "./tmdb";
 import { pokeapiContentSource } from "./pokeapi";
+import { searchShows, getShowCast, castEntryToCharacterItem } from "./tvmaze";
 import {
   searchSuperheroes,
   getSuperheroesByPublisher,
@@ -54,22 +55,42 @@ async function movieAnchors(query: string, limit: number): Promise<ContentItem[]
   }
 }
 
+// ─── Series characters (TVMaze) — search shows, expose as drill-down anchors ───
+
+async function seriesAnchors(query: string, limit: number): Promise<ContentItem[]> {
+  try {
+    const shows = await searchShows(query, limit);
+    return shows.map((s) => ({
+      id: `show-${s.id}`,
+      title: s.name,
+      subtitle: s.premiered?.slice(0, 4) ? `Série · ${s.premiered.slice(0, 4)}` : "Série",
+      coverUrl: s.image?.medium ?? s.image?.original ?? undefined,
+      source: "tvmaze" as const,
+      metadata: { itemKind: "show-anchor", tvmazeShowId: s.id },
+    }));
+  } catch {
+    return [];
+  }
+}
+
 /**
  * CharacterKlash — cross-universe character battles.
- * Sources: AniList (anime), Superhero API (Marvel/DC/Star Wars/...), PokéAPI, TMDB (films).
+ * Sources: AniList (anime), Superhero API (Marvel/DC/Star Wars/...), PokéAPI,
+ * TMDB (films), TVMaze (séries).
  */
 export const characterKlashContentSource: ContentSource = {
   source: "characterklash",
 
-  async searchItems(query, { limit = 24 } = {}) {
-    const quarter = Math.max(2, Math.ceil(limit / 4));
-    const [anime, heroes, pokemon, movies] = await Promise.all([
-      animeCharacterItems(query, quarter),
-      searchSuperheroes(query, quarter).then((hs) => hs.map(superheroToItem)),
-      pokemonItems(query, quarter),
-      movieAnchors(query, quarter),
+  async searchItems(query, { limit = 25 } = {}) {
+    const fifth = Math.max(2, Math.ceil(limit / 5));
+    const [anime, heroes, pokemon, movies, series] = await Promise.all([
+      animeCharacterItems(query, fifth),
+      searchSuperheroes(query, fifth).then((hs) => hs.map(superheroToItem)),
+      pokemonItems(query, fifth),
+      movieAnchors(query, fifth),
+      seriesAnchors(query, fifth),
     ]);
-    return [...heroes, ...anime, ...pokemon, ...movies].slice(0, limit);
+    return [...heroes, ...anime, ...pokemon, ...movies, ...series].slice(0, limit);
   },
 
   async searchItemsByKind(kind, query, { limit = 24 } = {}) {
@@ -85,6 +106,9 @@ export const characterKlashContentSource: ContentSource = {
       case "movie":
       case "film":
         return movieAnchors(query, limit);
+      case "series":
+      case "show":
+        return seriesAnchors(query, limit);
       default:
         return this.searchItems(query, { limit });
     }
@@ -113,6 +137,11 @@ export const characterKlashContentSource: ContentSource = {
       const slug = collectionId.replace("universe-", "");
       const heroes = await getSuperheroesByPublisher(slug, 60);
       return heroes.map(superheroToItem);
+    }
+    if (collectionId.startsWith("show-")) {
+      const showId = collectionId.replace("show-", "");
+      const cast = await getShowCast(showId);
+      return cast.map((entry) => castEntryToCharacterItem(entry, showId));
     }
     if (collectionId.startsWith("movie-")) {
       const movieId = collectionId.replace("movie-", "");

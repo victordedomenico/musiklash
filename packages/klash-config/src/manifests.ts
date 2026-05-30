@@ -650,7 +650,7 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
       label: "AniList & TMDB",
       url: "https://anilist.co",
     },
-    imageHosts: ["s4.anilist.co", "image.tmdb.org", "cdn.jsdelivr.net", "raw.githubusercontent.com"],
+    imageHosts: ["s4.anilist.co", "image.tmdb.org", "cdn.jsdelivr.net", "raw.githubusercontent.com", "static.tvmaze.com"],
     gameModes: ["bracket", "tierlist"],
   },
   powerklash: {

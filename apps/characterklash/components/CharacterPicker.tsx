@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, Plus, X, ChevronLeft, Check, User, Sparkles, Film, Globe } from "lucide-react";
+import { Search, Plus, X, ChevronLeft, Check, User, Sparkles, Film, Globe, Tv } from "lucide-react";
 import Image from "next/image";
 import type { ContentItem } from "@klash/content-adapter";
 import { withSearchQuery } from "@/lib/api-url";
@@ -16,7 +16,7 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "hero" | "character" | "pokemon" | "movie" | "universe";
+type Tab = "hero" | "character" | "pokemon" | "movie" | "series" | "universe";
 
 type Props = {
   size: number;
@@ -31,6 +31,7 @@ const TAB_META: Record<Tab, { label: string; icon: typeof User; placeholder: str
   character: { label: "Perso d'animé",  icon: User,     placeholder: "Goku, Naruto, Luffy…",          kind: "character" },
   pokemon:   { label: "Pokémon",        icon: Sparkles, placeholder: "Pikachu, Dracaufeu…",           kind: "pokemon" },
   movie:     { label: "Films",          icon: Film,     placeholder: "Harry Potter, Star Wars…",      kind: "movie" },
+  series:    { label: "Séries",         icon: Tv,       placeholder: "Breaking Bad, Game of Thrones…", kind: "series" },
   universe:  { label: "Univers",        icon: Globe,    placeholder: "Marvel, DC, Star Wars…" },
 };
 
@@ -73,7 +74,7 @@ function itemToSelected(item: ContentItem): SelectedItem {
 
 export default function CharacterPicker({
   size, selected, onChange, freeMode = false,
-  tabs = ["hero", "character", "pokemon", "movie", "universe"],
+  tabs = ["hero", "character", "pokemon", "movie", "series", "universe"],
 }: Props) {
   const [tab, setTab] = useState<Tab>(tabs[0]);
   const [query, setQuery] = useState("");
@@ -161,6 +162,12 @@ export default function CharacterPicker({
           results.map((item) => (
             <DrillRow key={item.id} item={item} subtitle="Voir les personnages"
               onClick={() => void openDrill(item, item.id)} icon={<Film size={18} />} />
+          ))}
+
+        {!opened && tab === "series" &&
+          results.map((item) => (
+            <DrillRow key={item.id} item={item} subtitle="Voir les personnages"
+              onClick={() => void openDrill(item, item.id)} icon={<Tv size={18} />} />
           ))}
 
         {!opened && tab === "universe" &&
