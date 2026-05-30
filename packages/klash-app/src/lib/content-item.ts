@@ -26,6 +26,7 @@ export function inferSourceFromExternalId(externalId: string): string {
   if (externalId.startsWith("ptcg-") || externalId.startsWith("ptcgset-")) return "pokemontcg";
   if (externalId.startsWith("ygo-") || externalId.startsWith("ygoset-")) return "ygoprodeck";
   if (externalId.startsWith("off-")) return "openfoodfacts";
+  if (externalId.startsWith("sdb-")) return "sneakerdb";
   if (externalId.startsWith("person-")) return "tmdb";
   // Fall back to the vertical's configured source
   if (typeof process !== "undefined") {

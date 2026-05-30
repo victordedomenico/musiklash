@@ -118,6 +118,12 @@ export {
   INDIE_PLATFORM_IDS,
 } from "./rawg-indie";
 export {
+  sneakerDbContentSource,
+  searchSneakerDb,
+  getTrendingSneakerDb,
+  type SneakerDbItem,
+} from "./sneakerdb";
+export {
   searchDrinks,
   getDrinksByCategory,
   getDrinksByBrand,

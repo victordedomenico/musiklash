@@ -1,15 +1,15 @@
-import { sneaksContentSource } from "@klash/content-adapter/sneaks";
+import { sneakerDbContentSource } from "@klash/content-adapter";
 import { defineVertical } from "../define";
 
 export const sneakerklash = defineVertical({
   slug: "sneakerklash",
   name: "SneakerKlash",
-  source: "sneaks",
-  contentSource: sneaksContentSource,
+  source: "sneakerdb",
+  contentSource: sneakerDbContentSource,
   branding: {
     tagline: "Fais s'affronter tes sneakers",
     description:
-      "Crée des tournois et tierlists autour de tes colorways et modèles préférés. Brackets et classements sneaker — gratuit, via proxy SneaksAPI.",
+      "Crée des tournois et tierlists autour de tes colorways et modèles préférés. Brackets et classements sneaker — gratuit.",
     keywords: [
       "tournoi sneakers",
       "bracket sneakers",
@@ -18,8 +18,11 @@ export const sneakerklash = defineVertical({
       "duel sneakers",
       "SneakerKlash",
       "sneaker bracket",
-      "StockX",
       "colorway",
+      "Jordan",
+      "Nike",
+      "Adidas",
+      "Yeezy",
     ],
     category: "lifestyle",
     siteUrlFallback: "https://sneakerklash.vercel.app",
@@ -27,16 +30,15 @@ export const sneakerklash = defineVertical({
   nouns: {
     item: "colorway",
     items: "colorways",
-    collection: "drop",
-    entity: "modèle",
+    collection: "modèle",
+    entity: "marque",
   },
   imageHosts: [
+    "images.thesneakerdatabase.com",
+    "image.goat.com",
+    "cdn.shopify.com",
     "images.stockx.com",
     "stockx-assets.imgix.net",
-    "cdn.shopify.com",
-    "image.goat.com",
-    "media.stadiumgoods.com",
-    "images.flightclub.com",
   ],
   gameModes: ["bracket", "tierlist"],
   guestEmailDomain: "guest.sneakerklash.app",
@@ -58,7 +60,7 @@ export const sneakerklash = defineVertical({
         coversTopFallback: "Colorways populaires cette semaine",
       },
       home: {
-        badge: "Gratuit · Sneakers · SneaksAPI",
+        badge: "Gratuit · Sneakers · The Sneaker Database",
         hero2: "tes sneakers.",
         heroSubtitle:
           "Compose des tournois entre tes colorways préférés, vote et découvre les vrais gagnants.",
