@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Search, Plus, X, ChevronLeft, Check, UtensilsCrossed, Tag, Globe, Apple, Carrot, ShoppingBasket } from "lucide-react";
+import { Search, Plus, X, ChevronLeft, Check, UtensilsCrossed, Tag, Globe, Apple, Carrot, ShoppingBasket, Fish, Beef } from "lucide-react";
 import type { ContentCollection, ContentEntity, ContentItem } from "@klash/content-adapter";
 import { withSearchQuery } from "@/lib/api-url";
 
@@ -16,7 +16,7 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "meal" | "category" | "cuisine" | "ingredient" | "fruit" | "vegetable";
+type Tab = "meal" | "category" | "cuisine" | "ingredient" | "fruit" | "vegetable" | "fish" | "meat";
 
 type Props = {
   size: number;
@@ -109,6 +109,10 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
   const [fruitLoading, setFruitLoading] = useState(false);
   const [vegetableResults, setVegetableResults] = useState<ContentItem[]>([]);
   const [vegetableLoading, setVegetableLoading] = useState(false);
+  const [fishResults, setFishResults] = useState<ContentItem[]>([]);
+  const [fishLoading, setFishLoading] = useState(false);
+  const [meatResults, setMeatResults] = useState<ContentItem[]>([]);
+  const [meatLoading, setMeatLoading] = useState(false);
 
   useEffect(() => {
     if (tab !== "fruit") return;
@@ -130,6 +134,28 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
       .then((json) => setVegetableResults(json.results ?? []))
       .catch(console.error)
       .finally(() => setVegetableLoading(false));
+  }, [tab, query]);
+
+  useEffect(() => {
+    if (tab !== "fish") return;
+    setFishLoading(true);
+    const q = query.trim();
+    fetch(`/api/food/fish${q ? `?q=${encodeURIComponent(q)}` : ""}`)
+      .then((r) => r.json())
+      .then((json) => setFishResults(json.results ?? []))
+      .catch(console.error)
+      .finally(() => setFishLoading(false));
+  }, [tab, query]);
+
+  useEffect(() => {
+    if (tab !== "meat") return;
+    setMeatLoading(true);
+    const q = query.trim();
+    fetch(`/api/food/meats${q ? `?q=${encodeURIComponent(q)}` : ""}`)
+      .then((r) => r.json())
+      .then((json) => setMeatResults(json.results ?? []))
+      .catch(console.error)
+      .finally(() => setMeatLoading(false));
   }, [tab, query]);
 
   const max = freeMode ? Infinity : size;
@@ -169,6 +195,8 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
     { key: "ingredient", label: "Aliments", icon: ShoppingBasket },
     { key: "fruit", label: "Fruits", icon: Apple },
     { key: "vegetable", label: "Légumes", icon: Carrot },
+    { key: "fish", label: "Poissons", icon: Fish },
+    { key: "meat", label: "Viandes", icon: Beef },
   ];
 
   return (
@@ -229,7 +257,11 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
                       ? "Rechercher un aliment…"
                       : tab === "fruit"
                         ? "Banane, pomme, fraise…"
-                        : "Concombre, aubergine, carotte…"
+                        : tab === "vegetable"
+                          ? "Concombre, aubergine, carotte…"
+                          : tab === "fish"
+                            ? "Saumon, thon, crevettes…"
+                            : "Bœuf, agneau, poulet…"
             }
             className="input w-full pl-10"
           />
@@ -343,7 +375,19 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
               coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
           ))}
 
-        {(mealLoading || categoryLoading || cuisineLoading || ingredientLoading || fruitLoading || vegetableLoading) && (
+        {tab === "fish" &&
+          fishResults.map((item) => (
+            <ResultRow key={item.id} title={item.title} subtitle={item.subtitle}
+              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
+          ))}
+
+        {tab === "meat" &&
+          meatResults.map((item) => (
+            <ResultRow key={item.id} title={item.title} subtitle={item.subtitle}
+              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
+          ))}
+
+        {(mealLoading || categoryLoading || cuisineLoading || ingredientLoading || fruitLoading || vegetableLoading || fishLoading || meatLoading) && (
           <p className="text-sm text-[color:var(--muted)]">Recherche…</p>
         )}
       </div>

@@ -25,6 +25,31 @@ export const FOOD_FRUITS: [string, string][] = [
   ["Avocat", "Avocado"], ["Datte", "Dates"], ["Mangoustan", "Lychee"],
 ];
 
+export const FOOD_FISH: [string, string][] = [
+  ["Saumon", "Salmon"], ["Thon", "Tuna"], ["Cabillaud", "Cod"],
+  ["Crevettes", "Prawns"], ["Sardine", "Sardines"], ["Truite", "Trout"],
+  ["Dorade", "Sea Bass"], ["Sole", "Sole"], ["Maquereau", "Mackerel"],
+  ["Hareng", "Herring"], ["Anchois", "Anchovies"], ["Espadon", "Swordfish"],
+  ["Homard", "Lobster"], ["Crabe", "Crab"], ["Moules", "Mussels"],
+  ["Coquilles Saint-Jacques", "Scallops"], ["Calamars", "Squid"],
+  ["Pieuvre", "Octopus"], ["Palourdes", "Clams"], ["Huîtres", "Oysters"],
+  ["Tilapia", "Tilapia"], ["Bar", "Sea Bass"], ["Loup de mer", "Sea Bass"],
+  ["Turbot", "Turbot"], ["Merlu", "Haddock"], ["Langoustine", "Crayfish"],
+];
+
+export const FOOD_MEATS: [string, string][] = [
+  ["Bœuf", "Beef"], ["Agneau", "Lamb"], ["Porc", "Pork"],
+  ["Poulet", "Chicken"], ["Dinde", "Turkey"], ["Canard", "Duck"],
+  ["Veau", "Veal"], ["Lapin", "Rabbit"], ["Gibier", "Venison"],
+  ["Cerf", "Venison"], ["Sanglier", "Pork"], ["Chèvre", "Goat"],
+  ["Côtelettes", "Lamb Chops"], ["Bacon", "Bacon"], ["Jambon", "Ham"],
+  ["Saucisse", "Sausages"], ["Lardons", "Bacon"], ["Steak", "Beef"],
+  ["Côte de bœuf", "Beef"], ["Entrecôte", "Beef"], ["Filet mignon", "Pork"],
+  ["Côte d'agneau", "Lamb"], ["Épaule d'agneau", "Lamb"],
+  ["Poitrine de poulet", "Chicken Breast"], ["Cuisses de poulet", "Chicken Thighs"],
+  ["Magret de canard", "Duck"], ["Andouillette", "Sausages"],
+];
+
 export const FOOD_VEGETABLES: [string, string][] = [
   ["Concombre", "Cucumber"], ["Aubergine", "Aubergines"], ["Tomate", "Tomatoes"],
   ["Carotte", "Carrots"], ["Pomme de terre", "Potatoes"], ["Oignon", "Onion"],

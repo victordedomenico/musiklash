@@ -207,6 +207,8 @@ export {
   ingredientToItem,
   FOOD_FRUITS,
   FOOD_VEGETABLES,
+  FOOD_FISH,
+  FOOD_MEATS,
   listCategories,
   listAreas,
   filterByCategory,
