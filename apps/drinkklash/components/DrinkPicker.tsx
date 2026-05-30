@@ -103,6 +103,9 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
   const [categoryDrinks, setCategoryDrinks] = useState<ContentItem[]>([]);
   const [ingredientDrinks, setIngredientDrinks] = useState<ContentItem[]>([]);
   const [drinkTypeDrinks, setDrinkTypeDrinks] = useState<ContentItem[]>([]);
+  const [brandQuery, setBrandQuery] = useState("");
+  const [brandDrinks, setBrandDrinks] = useState<ContentItem[]>([]);
+  const [brandLoading, setBrandLoading] = useState(false);
   const [drillLoading, setDrillLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -129,6 +132,29 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
     query,
     tab === "drink",
   );
+
+  // Brand search within a category
+  useEffect(() => {
+    const trimmed = brandQuery.trim();
+    if (!trimmed || !openedDrinkType) {
+      setBrandDrinks([]);
+      return;
+    }
+    const ctrl = new AbortController();
+    const timer = setTimeout(async () => {
+      setBrandLoading(true);
+      try {
+        const res = await fetch(`/api/drinks/brand/${encodeURIComponent(trimmed)}`, { signal: ctrl.signal });
+        const json = await res.json();
+        setBrandDrinks(json.results ?? []);
+      } catch (e) {
+        if ((e as { name?: string }).name !== "AbortError") console.error(e);
+      } finally {
+        setBrandLoading(false);
+      }
+    }, 500);
+    return () => { ctrl.abort(); clearTimeout(timer); };
+  }, [brandQuery, openedDrinkType]);
 
   const max = freeMode ? Infinity : size;
   const isSelected = (id: string) => selected.some((s) => s.external_id === id);
@@ -183,6 +209,8 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
               setOpenedIngredient(null);
               setOpenedDrinkType(null);
               setDrinkTypeDrinks([]);
+              setBrandQuery("");
+              setBrandDrinks([]);
               setQuery("");
             }}
           >
@@ -201,6 +229,8 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
             setOpenedIngredient(null);
             setOpenedDrinkType(null);
             setDrinkTypeDrinks([]);
+            setBrandQuery("");
+            setBrandDrinks([]);
           }}
         >
           <ChevronLeft size={16} />
@@ -261,6 +291,8 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
                   setOpenedDrinkType(cat);
                   setDrillLoading(true);
                   setDrinkTypeDrinks([]);
+                  setBrandQuery("");
+                  setBrandDrinks([]);
                   fetch(`/api/drinks/category/${encodeURIComponent(cat.slug)}`)
                     .then((r) => r.json())
                     .then((json) => setDrinkTypeDrinks(json.results ?? []))
@@ -283,20 +315,55 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
             <p className="text-sm font-medium text-[color:var(--muted)]">
               {openedDrinkType.emoji} {openedDrinkType.label}
             </p>
-            {drillLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
-            {!drillLoading && drinkTypeDrinks.length === 0 && (
-              <p className="text-sm text-[color:var(--muted)]">Aucune boisson trouvée.</p>
-            )}
-            {drinkTypeDrinks.map((item) => (
-              <ResultRow
-                key={item.id}
-                title={item.title}
-                subtitle={item.subtitle}
-                coverUrl={item.coverUrl}
-                selected={isSelected(item.id)}
-                onAdd={() => addItem(item)}
+
+            {/* Brand filter */}
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]" />
+              <input
+                type="search"
+                value={brandQuery}
+                onChange={(e) => setBrandQuery(e.target.value)}
+                placeholder="Filtrer par marque (ex: Coca-Cola, Evian…)"
+                className="input w-full pl-9 text-sm"
               />
-            ))}
+            </div>
+
+            {/* Brand results */}
+            {brandQuery.trim() ? (
+              <>
+                {brandLoading && <p className="text-sm text-[color:var(--muted)]">Recherche…</p>}
+                {!brandLoading && brandDrinks.length === 0 && (
+                  <p className="text-sm text-[color:var(--muted)]">Aucune variante trouvée pour cette marque.</p>
+                )}
+                {brandDrinks.map((item) => (
+                  <ResultRow
+                    key={item.id}
+                    title={item.title}
+                    subtitle={item.subtitle}
+                    coverUrl={item.coverUrl}
+                    selected={isSelected(item.id)}
+                    onAdd={() => addItem(item)}
+                  />
+                ))}
+              </>
+            ) : (
+              <>
+                {drillLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
+                {!drillLoading && drinkTypeDrinks.length === 0 && (
+                  <p className="text-sm text-[color:var(--muted)]">Aucune boisson trouvée.</p>
+                )}
+                {drinkTypeDrinks.map((item) => (
+                  <ResultRow
+                    key={item.id}
+                    title={item.title}
+                    subtitle={item.subtitle}
+                    coverUrl={item.coverUrl}
+                    selected={isSelected(item.id)}
+                    onAdd={() => addItem(item)}
+                  />
+                ))}
+              </>
+            )}
           </>
         )}
 
