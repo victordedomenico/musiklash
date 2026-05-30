@@ -25,7 +25,7 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "breed" | "species" | "behavior" | "rabbit" | "bird" | "rodent" | "reptile" | "fish" | "horse";
+type Tab = "dog" | "cat" | "species" | "behavior" | "rabbit" | "bird" | "rodent" | "reptile" | "fish" | "horse";
 
 const OTHER_SPECIES = [
   { key: "rabbit",  label: "Lapins",   emoji: "🐇" },
@@ -90,7 +90,7 @@ function itemToSelected(item: ContentItem): SelectedItem {
 }
 
 export default function PetPicker({ size, selected, onChange, freeMode = false }: Props) {
-  const [tab, setTab] = useState<Tab>("breed");
+  const [tab, setTab] = useState<Tab>("dog");
   const [query, setQuery] = useState("");
   const [openedCollection, setOpenedCollection] = useState<ContentCollection | null>(null);
   const [openedSpecies, setOpenedSpecies] = useState<ContentEntity | null>(null);
@@ -101,10 +101,16 @@ export default function PetPicker({ size, selected, onChange, freeMode = false }
   const [drillLoading, setDrillLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { results: breedResults, loading: breedLoading } = useDebouncedSearch(
-    "/api/content/search?kind=items",
+  const { results: dogResults, loading: dogLoading } = useDebouncedSearch(
+    "/api/content/search?kind=dog",
     query,
-    tab === "breed",
+    tab === "dog",
+  );
+
+  const { results: catResults, loading: catLoading } = useDebouncedSearch(
+    "/api/content/search?kind=cat",
+    query,
+    tab === "cat",
   );
 
   const { results: behaviorResults, loading: behaviorLoading } = useDebouncedSearch(
@@ -180,9 +186,10 @@ export default function PetPicker({ size, selected, onChange, freeMode = false }
   }, [tab, query]);
 
   const tabs: { key: Tab; label: string; icon: typeof PawPrint }[] = [
-    { key: "breed",    label: "Races (chien/chat)", icon: PawPrint },
-    { key: "species",  label: "Espèces",            icon: Dog },
+    { key: "dog",      label: "🐶 Chiens",          icon: Dog },
+    { key: "cat",      label: "🐱 Chats",           icon: PawPrint },
     { key: "behavior", label: "Comportements",      icon: Heart },
+    { key: "species",  label: "Espèces",            icon: PawPrint },
     ...OTHER_SPECIES.map((s) => ({ key: s.key as Tab, label: `${s.emoji} ${s.label}`, icon: PawPrint })),
   ];
 
@@ -243,11 +250,15 @@ export default function PetPicker({ size, selected, onChange, freeMode = false }
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={
-              tab === "breed"
-                ? "Rechercher une race…"
-                : tab === "species"
-                  ? "Rechercher une espèce…"
-                  : "Rechercher un comportement…"
+              tab === "dog"
+                ? "Labrador, Berger, Husky…"
+                : tab === "cat"
+                  ? "Persan, Siamois, Maine Coon…"
+                  : tab === "species"
+                    ? "Rechercher une espèce…"
+                    : tab === "behavior"
+                      ? "Rechercher un comportement…"
+                      : "Filtrer…"
             }
             className="input w-full pl-10"
           />
@@ -255,16 +266,16 @@ export default function PetPicker({ size, selected, onChange, freeMode = false }
       )}
 
       <div className="min-h-[200px] space-y-2">
-        {tab === "breed" &&
-          breedResults.map((item) => (
-            <ResultRow
-              key={item.id}
-              title={item.title}
-              subtitle={item.subtitle}
-              coverUrl={item.coverUrl}
-              selected={isSelected(item.id)}
-              onAdd={() => addItem(item)}
-            />
+        {tab === "dog" &&
+          dogResults.map((item) => (
+            <ResultRow key={item.id} title={item.title} subtitle={item.subtitle}
+              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
+          ))}
+
+        {tab === "cat" &&
+          catResults.map((item) => (
+            <ResultRow key={item.id} title={item.title} subtitle={item.subtitle}
+              coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
           ))}
 
         {tab === "species" && !openedSpecies &&
@@ -356,7 +367,7 @@ export default function PetPicker({ size, selected, onChange, freeMode = false }
           />
         ))}
 
-        {(breedLoading || behaviorLoading || speciesLoading) && (
+        {(dogLoading || catLoading || behaviorLoading || speciesLoading) && (
           <p className="text-sm text-[color:var(--muted)]">Recherche…</p>
         )}
       </div>
