@@ -1,26 +1,15 @@
 import type { ContentEntity, ContentItem, ContentSource } from "./types";
 import { anilistContentSource, getCharacterById, searchCharacters } from "./anilist";
-import type { TmdbPerson } from "./tmdb";
-import { getPersonById, searchPeople } from "./tmdb";
+import { searchMovies, getMovieCharacters, castToCharacterItem, getMovieById } from "./tmdb";
+import { pokeapiContentSource } from "./pokeapi";
+import {
+  searchSuperheroes,
+  getSuperheroesByPublisher,
+  superheroToItem,
+  SUPERHERO_PUBLISHERS,
+} from "./superhero";
 
-const TMDB_IMAGE = "https://image.tmdb.org/t/p/w500";
-
-function personToItem(p: TmdbPerson): ContentItem {
-  const knownFor = p.known_for_department;
-  return {
-    id: `person-${p.id}`,
-    title: p.name,
-    subtitle: knownFor ? `Cinéma · ${knownFor}` : "Cinéma & séries",
-    coverUrl: p.profile_path ? `${TMDB_IMAGE}${p.profile_path}` : undefined,
-    source: "tmdb",
-    metadata: {
-      itemKind: "person",
-      tmdbPersonId: p.id,
-      knownForDepartment: p.known_for_department,
-      popularity: p.popularity,
-    },
-  };
-}
+// ─── Anime characters (AniList) ───────────────────────────────────────────────
 
 async function animeCharacterItems(query: string, limit: number): Promise<ContentItem[]> {
   if (anilistContentSource.searchItemsByKind) {
@@ -37,94 +26,108 @@ async function animeCharacterItems(query: string, limit: number): Promise<Conten
   }));
 }
 
-async function filmPersonItems(query: string, limit: number): Promise<ContentItem[]> {
+// ─── Pokémon (PokéAPI) ────────────────────────────────────────────────────────
+
+async function pokemonItems(query: string, limit: number): Promise<ContentItem[]> {
   try {
-    const people = await searchPeople(query, limit);
-    return people.map(personToItem);
+    return await pokeapiContentSource.searchItems(query, { limit });
+  } catch {
+    return [];
+  }
+}
+
+// ─── Movie characters (TMDB) — search films, expose as drill-down anchors ──────
+
+async function movieAnchors(query: string, limit: number): Promise<ContentItem[]> {
+  try {
+    const movies = await searchMovies(query, limit);
+    return movies.map((m) => ({
+      id: `movie-${m.id}`,
+      title: m.title,
+      subtitle: m.release_date?.slice(0, 4) ? `Film · ${m.release_date.slice(0, 4)}` : "Film",
+      coverUrl: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : undefined,
+      source: "tmdb" as const,
+      metadata: { itemKind: "movie-anchor", tmdbMovieId: m.id, movieTitle: m.title },
+    }));
   } catch {
     return [];
   }
 }
 
 /**
- * Cross-universe character battles — AniList (anime) + TMDB (cinéma / séries).
- * MVP: two sources via `searchItemsByKind` subtypes in the picker.
+ * CharacterKlash — cross-universe character battles.
+ * Sources: AniList (anime), Superhero API (Marvel/DC/Star Wars/...), PokéAPI, TMDB (films).
  */
 export const characterKlashContentSource: ContentSource = {
   source: "characterklash",
 
-  async searchItems(query, { limit = 20 } = {}) {
-    const half = Math.ceil(limit / 2);
-    const [anime, film] = await Promise.all([
-      animeCharacterItems(query, half),
-      filmPersonItems(query, Math.floor(limit / 2)),
+  async searchItems(query, { limit = 24 } = {}) {
+    const quarter = Math.max(2, Math.ceil(limit / 4));
+    const [anime, heroes, pokemon, movies] = await Promise.all([
+      animeCharacterItems(query, quarter),
+      searchSuperheroes(query, quarter).then((hs) => hs.map(superheroToItem)),
+      pokemonItems(query, quarter),
+      movieAnchors(query, quarter),
     ]);
-    return [...anime, ...film].slice(0, limit);
+    return [...heroes, ...anime, ...pokemon, ...movies].slice(0, limit);
   },
 
-  async searchItemsByKind(kind, query, { limit = 20 } = {}) {
+  async searchItemsByKind(kind, query, { limit = 24 } = {}) {
     switch (kind) {
       case "character":
       case "anime_character":
         return animeCharacterItems(query, limit);
-      case "person":
-      case "film_person":
-        return filmPersonItems(query, limit);
+      case "hero":
+      case "superhero":
+        return (await searchSuperheroes(query, limit)).map(superheroToItem);
+      case "pokemon":
+        return pokemonItems(query, limit);
+      case "movie":
+      case "film":
+        return movieAnchors(query, limit);
       default:
         return this.searchItems(query, { limit });
     }
   },
 
-  async searchCollections(query, options) {
-    return anilistContentSource.searchCollections(query, options);
+  async searchCollections(query, { limit = 20 } = {}) {
+    // "Univers" = publishers (Marvel, DC, Star Wars...) — static, query filters labels
+    const q = query.trim().toLowerCase();
+    const pubs = q
+      ? SUPERHERO_PUBLISHERS.filter((p) => p.label.toLowerCase().includes(q))
+      : SUPERHERO_PUBLISHERS;
+    return pubs.slice(0, limit).map((p) => ({
+      id: `universe-${p.slug}`,
+      title: p.label,
+      source: "superhero" as const,
+      metadata: { collectionKind: "universe", publisherSlug: p.slug },
+    }));
   },
 
   async searchEntities(query, options) {
-    const limit = options?.limit ?? 20;
-    const half = Math.ceil(limit / 2);
-    const [anime, film] = await Promise.all([
-      anilistContentSource.searchEntities(query, { limit: half }),
-      (async () => {
-        try {
-          const people = await searchPeople(query, Math.floor(limit / 2));
-          return people.map(
-            (p): ContentEntity => ({
-              id: `person-${p.id}`,
-              name: p.name,
-              pictureUrl: p.profile_path ? `${TMDB_IMAGE}${p.profile_path}` : undefined,
-              fanCount: p.popularity ? Math.round(p.popularity) : undefined,
-              source: "tmdb",
-              metadata: { knownForDepartment: p.known_for_department },
-            }),
-          );
-        } catch {
-          return [];
-        }
-      })(),
-    ]);
-    return [...anime, ...film].slice(0, limit);
+    return anilistContentSource.searchEntities(query, options);
   },
 
-  getCollectionItems: (...args) => anilistContentSource.getCollectionItems(...args),
-  getEntityTopItems: (...args) => anilistContentSource.getEntityTopItems(...args),
-
-  async getEntityById(entityId) {
-    if (entityId.startsWith("person-")) {
-      const id = entityId.replace("person-", "");
-      const person = await getPersonById(id);
-      if (!person) return null;
-      return {
-        id: entityId,
-        name: person.name,
-        pictureUrl: person.profile_path ? `${TMDB_IMAGE}${person.profile_path}` : undefined,
-        fanCount: person.popularity ? Math.round(person.popularity) : undefined,
-        source: "tmdb",
-        metadata: { knownForDepartment: person.known_for_department },
-      };
+  async getCollectionItems(collectionId) {
+    if (collectionId.startsWith("universe-")) {
+      const slug = collectionId.replace("universe-", "");
+      const heroes = await getSuperheroesByPublisher(slug, 60);
+      return heroes.map(superheroToItem);
     }
-    return anilistContentSource.getEntityById(entityId);
+    if (collectionId.startsWith("movie-")) {
+      const movieId = collectionId.replace("movie-", "");
+      const [cast, movie] = await Promise.all([
+        getMovieCharacters(movieId),
+        getMovieById(movieId),
+      ]);
+      const m = movie ?? { id: Number(movieId), title: "", poster_path: null };
+      return cast.map((c) => castToCharacterItem(c, m));
+    }
+    return anilistContentSource.getCollectionItems(collectionId);
   },
 
+  getEntityTopItems: (...args) => anilistContentSource.getEntityTopItems(...args),
+  getEntityById: (...args) => anilistContentSource.getEntityById(...args),
   getEntityCollections: (...args) => anilistContentSource.getEntityCollections(...args),
 };
 

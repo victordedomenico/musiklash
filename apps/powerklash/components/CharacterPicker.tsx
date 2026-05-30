@@ -25,7 +25,7 @@ type Props = {
   tabs?: Tab[];
 };
 
-type Tab = "anime" | "character" | "theme" | "arc";
+type Tab = "anime" | "character" | "theme" | "arc" | "transformation" | "power" | "hero";
 
 /** Local display type for opened anime's themes */
 type ThemeResult = {
@@ -114,6 +114,21 @@ export default function CharacterPicker({
     "/api/content/search?kind=arc",
     query,
     tab === "arc" && !openedAnimeForArcs,
+  );
+  const { results: transfoResults, loading: transfoLoading } = useDebouncedSearch(
+    "/api/content/search?kind=transformation",
+    query,
+    tab === "transformation",
+  );
+  const { results: powerResults, loading: powerLoading } = useDebouncedSearch(
+    "/api/content/search?kind=power",
+    query,
+    tab === "power",
+  );
+  const { results: heroResults, loading: heroLoading } = useDebouncedSearch(
+    "/api/content/search?kind=hero",
+    query,
+    tab === "hero",
   );
 
   const max = freeMode ? Infinity : size;
@@ -281,13 +296,22 @@ export default function CharacterPicker({
               {t === "character" && <User size={14} />}
               {t === "arc" && <Layers size={14} />}
               {t === "theme" && <span className="text-xs">♪</span>}
+              {t === "transformation" && <span className="text-xs">⚡</span>}
+              {t === "power" && <span className="text-xs">🔥</span>}
+              {t === "hero" && <span className="text-xs">🦸</span>}
               {t === "anime"
                 ? "Titre d'animé"
                 : t === "character"
                   ? "Perso d'animé"
                   : t === "arc"
                     ? "Arc d'animé"
-                    : "Opening/Ending"}
+                    : t === "transformation"
+                      ? "Transformation"
+                      : t === "power"
+                        ? "Pouvoir/Technique"
+                        : t === "hero"
+                          ? "Héros (power scaling)"
+                          : "Opening/Ending"}
             </button>
           ))}
         </div>
@@ -314,7 +338,13 @@ export default function CharacterPicker({
                   ? openedAnimeForArcs
                     ? "Arcs de la série…"
                     : "Rechercher un arc ou une série…"
-                  : "Rechercher un animé pour ses openings…"
+                  : tab === "transformation"
+                    ? "Super Saiyan, Bankai, Sage Mode…"
+                    : tab === "power"
+                      ? "Rasengan, Kamehameha, Geass…"
+                      : tab === "hero"
+                        ? "Goku, Saitama, Superman, Thanos…"
+                        : "Rechercher un animé pour ses openings…"
           }
           className="input input-bordered w-full pl-9"
         />
@@ -582,6 +612,60 @@ export default function CharacterPicker({
               </li>
             );
           })}
+        </ul>
+      )}
+
+      {/* Transformation / Power / Hero tabs — same row layout as character */}
+      {(tab === "transformation" || tab === "power" || tab === "hero") && (
+        <ul className="flex flex-col gap-1 max-h-72 overflow-y-auto">
+          {(() => {
+            const map = {
+              transformation: { results: transfoResults, loading: transfoLoading },
+              power: { results: powerResults, loading: powerLoading },
+              hero: { results: heroResults, loading: heroLoading },
+            } as const;
+            const { results, loading } = map[tab];
+            return (
+              <>
+                {loading && <li className="text-sm text-base-content/50 p-2">Chargement…</li>}
+                {!loading && query.trim() && results.length === 0 && (
+                  <li className="text-sm text-base-content/50 p-2">Aucun résultat.</li>
+                )}
+                {results.map((item) => {
+                  const already = isSelectedChar(item.id);
+                  const stats = item.metadata?.powerstats as
+                    | { intelligence: number; strength: number; speed: number; durability: number; power: number; combat: number }
+                    | undefined;
+                  return (
+                    <li key={item.id} className="card flex items-center gap-3 p-2 hover:bg-base-200 transition-colors">
+                      {item.coverUrl && (
+                        <div className="w-10 h-10 flex-shrink-0 relative">
+                          <Image src={item.coverUrl} alt="" fill className="object-cover rounded-full" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{item.title}</p>
+                        {item.subtitle && <p className="text-xs text-base-content/60 truncate">{item.subtitle}</p>}
+                        {stats && (
+                          <p className="text-[10px] text-base-content/50 truncate">
+                            💪 {stats.strength} · ⚡ {stats.speed} · 🧠 {stats.intelligence} · 🔥 {stats.power}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={already || selected.length >= max}
+                        onClick={() => addCharacter(item)}
+                        className="btn btn-sm btn-ghost"
+                      >
+                        {already ? <Check size={14} className="text-success" /> : <Plus size={14} />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </>
+            );
+          })()}
         </ul>
       )}
 

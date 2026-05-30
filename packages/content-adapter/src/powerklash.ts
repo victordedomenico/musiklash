@@ -9,6 +9,8 @@ import {
   type AniListCharacter,
   type AniListMedia,
 } from "./anilist";
+import { searchJikanCharacters, jikanCharToContentItem } from "./jikan";
+import { searchSuperheroes, superheroToItem, totalPower } from "./superhero";
 
 function animeTitle(m: AniListMedia): string {
   return m.title.english ?? m.title.romaji ?? m.title.native ?? String(m.id);
@@ -124,6 +126,23 @@ export const powerklashContentSource: ContentSource = {
       case "character": {
         const chars = await searchCharacters(query, limit);
         return chars.map(characterToItem);
+      }
+      case "transformation": {
+        const chars = await searchJikanCharacters(query, limit);
+        return chars.map((c) => jikanCharToContentItem(c, "transformation"));
+      }
+      case "power":
+      case "technique": {
+        const chars = await searchJikanCharacters(query, limit);
+        return chars.map((c) => jikanCharToContentItem(c, "power"));
+      }
+      case "hero":
+      case "superhero": {
+        const heroes = await searchSuperheroes(query, limit);
+        // Sort by total power — power scaling relevance
+        return heroes
+          .sort((a, b) => totalPower(b.powerstats) - totalPower(a.powerstats))
+          .map(superheroToItem);
       }
       case "anime": {
         const animes = await searchAnime(query, limit);

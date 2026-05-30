@@ -230,6 +230,15 @@ export {
   getTrendingPowerCharacters,
 } from "./powerklash";
 export { characterKlashContentSource } from "./characterklash";
+export {
+  searchSuperheroes,
+  getSuperheroesByPublisher,
+  superheroToItem,
+  totalPower,
+  SUPERHERO_PUBLISHERS,
+  type Superhero,
+  type SuperheroPowerstats,
+} from "./superhero";
 export { searchWikidataPlaces } from "./wikidata";
 export {
   themealdbContentSource,

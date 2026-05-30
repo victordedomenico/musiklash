@@ -3,7 +3,7 @@ import CreateTierlistForm from "./CreateTierlistForm";
 import SectionHeader from "@/components/ui/SectionHeader";
 
 export const metadata: Metadata = {
-  title: "Créer une tierlist — ComicKlash",
+  title: "Créer une tierlist — PowerKlash",
 };
 
 export default function CreateTierlistPage() {

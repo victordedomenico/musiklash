@@ -28,6 +28,8 @@ export function inferSourceFromExternalId(externalId: string): string {
   if (externalId.startsWith("off-")) return "openfoodfacts";
   if (externalId.startsWith("sdb-")) return "sneakerdb";
   if (externalId.startsWith("mb-rec-") || externalId.startsWith("mb-rel-") || externalId.startsWith("mb-art-")) return "musicbrainz";
+  if (externalId.startsWith("hero-")) return "superhero";
+  if (externalId.startsWith("movie-")) return "tmdb";
   if (externalId.startsWith("person-")) return "tmdb";
   // Fall back to the vertical's configured source
   if (typeof process !== "undefined") {
@@ -78,6 +80,7 @@ export function inferItemKind(
   if (externalId.startsWith("bseries-")) return "series";
   if (externalId.startsWith("mseries-")) return "series";
   if (externalId.startsWith("tvchar-")) return "character";
+  if (externalId.startsWith("hero-")) return "character";
   if (externalId.startsWith("theme-")) return "theme";
   if (externalId.startsWith("arc-free-")) return "arc";
   if (externalId.startsWith("arc-")) return "arc";

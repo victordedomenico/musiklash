@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Conditions d'utilisation — ComicKlash" };
+export const metadata: Metadata = { title: "Conditions d'utilisation — PowerKlash" };
 
 export default function TermsPage() {
   return (
@@ -13,7 +13,7 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Acceptation</h2>
             <p>
-              En utilisant ComicKlash, vous acceptez les présentes conditions. Si vous n&apos;êtes pas
+              En utilisant PowerKlash, vous acceptez les présentes conditions. Si vous n&apos;êtes pas
               d&apos;accord, veuillez ne pas utiliser la plateforme.
             </p>
           </section>
@@ -21,7 +21,7 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Accès au service</h2>
             <p>
-              ComicKlash est accessible gratuitement. La création d&apos;un compte peut être requise pour
+              PowerKlash est accessible gratuitement. La création d&apos;un compte peut être requise pour
               créer et sauvegarder du contenu. Nous nous réservons le droit de suspendre ou de
               supprimer un compte qui violerait ces conditions.
             </p>
@@ -31,8 +31,8 @@ export default function TermsPage() {
             <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Propriété intellectuelle</h2>
             <p>
               Les couvertures et métadonnées proviennent de Comic Vine et restent la propriété de leurs
-              ayants droit. ComicKlash n&apos;héberge aucun fichier numérique de bande dessinée.
-              L&apos;interface et le code sont protégés par le droit d&apos;auteur © 2026 ComicKlash.
+              ayants droit. PowerKlash n&apos;héberge aucun fichier numérique de bande dessinée.
+              L&apos;interface et le code sont protégés par le droit d&apos;auteur © 2026 PowerKlash.
             </p>
           </section>
 

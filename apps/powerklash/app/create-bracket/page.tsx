@@ -3,7 +3,7 @@ import CreateBracketForm from "./CreateBracketForm";
 import SectionHeader from "@/components/ui/SectionHeader";
 
 export const metadata: Metadata = {
-  title: "Créer un bracket — ComicKlash",
+  title: "Créer un bracket — PowerKlash",
 };
 
 export default function CreateBracketPage() {

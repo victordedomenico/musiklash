@@ -30,7 +30,7 @@ export const powerklash = defineVertical({
     collection: "univers",
     entity: "série",
   },
-  imageHosts: ["s4.anilist.co", "media.kitsu.app", "i.anncdn.com"],
+  imageHosts: ["s4.anilist.co", "media.kitsu.app", "i.anncdn.com", "cdn.myanimelist.net", "cdn.jsdelivr.net"],
   gameModes: ["tierlist", "bracket"],
   guestEmailDomain: "guest.powerklash.app",
   i18nOverrides: {

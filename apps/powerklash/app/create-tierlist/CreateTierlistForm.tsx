@@ -74,7 +74,7 @@ export default function CreateTierlistForm() {
         <p className="mt-2 text-xs text-[color:var(--muted)]">{VIS_HINTS[visibility]}</p>
       </div>
 
-      <CharacterPicker size={64} selected={items} onChange={setItems} freeMode tabs={["character", "anime"]} />
+      <CharacterPicker size={64} selected={items} onChange={setItems} freeMode tabs={["character", "transformation", "power", "hero", "anime"]} />
 
       {error && <p className="text-sm text-[color:var(--danger)]">{error}</p>}
 

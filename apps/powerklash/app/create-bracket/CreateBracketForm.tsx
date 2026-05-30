@@ -107,7 +107,7 @@ export default function CreateBracketForm() {
         <p className="mt-2 text-xs text-[color:var(--muted)]">{VIS_HINTS[visibility]}</p>
       </div>
 
-      <CharacterPicker size={size} selected={selected} onChange={setSelected} tabs={["character", "anime"]} />
+      <CharacterPicker size={size} selected={selected} onChange={setSelected} tabs={["character", "transformation", "power", "hero", "anime"]} />
 
       {error && <p className="text-sm text-[color:var(--danger)]">{error}</p>}
 

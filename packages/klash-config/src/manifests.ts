@@ -650,7 +650,7 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
       label: "AniList & TMDB",
       url: "https://anilist.co",
     },
-    imageHosts: ["s4.anilist.co", "image.tmdb.org"],
+    imageHosts: ["s4.anilist.co", "image.tmdb.org", "cdn.jsdelivr.net", "raw.githubusercontent.com"],
     gameModes: ["bracket", "tierlist"],
   },
   powerklash: {
@@ -668,7 +668,7 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
       label: "AniList API",
       url: "https://anilist.gitbook.io/anilist-apiv2-docs/",
     },
-    imageHosts: ["s4.anilist.co", "media.kitsu.app"],
+    imageHosts: ["s4.anilist.co", "media.kitsu.app", "cdn.myanimelist.net", "cdn.jsdelivr.net"],
     gameModes: ["tierlist", "bracket"],
   },
   countryklash: {
