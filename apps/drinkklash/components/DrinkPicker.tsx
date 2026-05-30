@@ -5,22 +5,26 @@ import Image from "next/image";
 import { Search, Plus, X, ChevronLeft, Check, Wine, Tag, FlaskConical, Droplets } from "lucide-react";
 
 const DRINK_CATEGORIES = [
-  { slug: "en:sodas", label: "Sodas", emoji: "🥤" },
-  { slug: "en:fruit-juices", label: "Jus de fruits", emoji: "🍊" },
-  { slug: "en:nectars", label: "Nectars", emoji: "🍑" },
-  { slug: "en:waters", label: "Eaux", emoji: "💧" },
-  { slug: "en:sparkling-waters", label: "Eaux pétillantes", emoji: "🫧" },
-  { slug: "en:iced-teas", label: "Ice Tea", emoji: "🧊" },
-  { slug: "en:energy-drinks", label: "Boissons énergisantes", emoji: "⚡" },
-  { slug: "en:sports-drinks", label: "Boissons sportives", emoji: "🏃" },
-  { slug: "en:wines", label: "Vins", emoji: "🍷" },
-  { slug: "en:beers", label: "Bières", emoji: "🍺" },
-  { slug: "en:ciders", label: "Cidres", emoji: "🍎" },
-  { slug: "fr:champagnes", label: "Champagnes", emoji: "🥂" },
-  { slug: "en:coffees", label: "Cafés", emoji: "☕" },
-  { slug: "en:teas", label: "Thés", emoji: "🍵" },
-  { slug: "en:hot-chocolates", label: "Chocolats chauds", emoji: "🍫" },
-  { slug: "en:plant-milks", label: "Laits végétaux", emoji: "🌱" },
+  { slug: "en:colas",            label: "Colas",              emoji: "🥤" },
+  { slug: "en:waters",           label: "Eaux",               emoji: "💧" },
+  { slug: "en:sparkling-waters", label: "Eaux pétillantes",   emoji: "🫧" },
+  { slug: "en:fruit-juices",     label: "Jus de fruits",      emoji: "🍊" },
+  { slug: "en:nectars",          label: "Nectars",            emoji: "🍑" },
+  { slug: "en:iced-teas",        label: "Ice Tea",            emoji: "🧊" },
+  { slug: "en:lemonades",        label: "Limonades",          emoji: "🍋" },
+  { slug: "en:energy-drinks",    label: "Boissons énergisantes", emoji: "⚡" },
+  { slug: "en:sports-drinks",    label: "Boissons sportives", emoji: "🏃" },
+  { slug: "en:fruit-drinks",     label: "Boissons aux fruits",emoji: "🍹" },
+  { slug: "en:wines",            label: "Vins",               emoji: "🍷" },
+  { slug: "en:beers",            label: "Bières",             emoji: "🍺" },
+  { slug: "en:ciders",           label: "Cidres",             emoji: "🍎" },
+  { slug: "fr:champagnes",       label: "Champagnes",         emoji: "🥂" },
+  { slug: "en:coffees",          label: "Cafés",              emoji: "☕" },
+  { slug: "en:teas",             label: "Thés",               emoji: "🍵" },
+  { slug: "en:hot-chocolates",   label: "Chocolats chauds",   emoji: "🍫" },
+  { slug: "en:syrups",           label: "Sirops",             emoji: "🍬" },
+  { slug: "en:plant-milks",      label: "Laits végétaux",     emoji: "🌱" },
+  { slug: "en:milk",             label: "Laits",              emoji: "🥛" },
 ];
 import type { ContentCollection, ContentEntity, ContentItem } from "@klash/content-adapter";
 import { withSearchQuery } from "@/lib/api-url";
@@ -265,7 +269,10 @@ export default function DrinkPicker({ size, selected, onChange, freeMode = false
                 }}
               >
                 <span className="text-xl shrink-0">{cat.emoji}</span>
-                <span className="font-medium text-sm truncate">{cat.label}</span>
+                <div className="min-w-0">
+                  <p className="font-medium text-sm truncate">{cat.label}</p>
+                </div>
+                <ChevronLeft size={14} className="rotate-180 text-[color:var(--muted)] ml-auto shrink-0" />
               </button>
             ))}
           </div>

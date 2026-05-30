@@ -120,6 +120,7 @@ export {
 export {
   searchDrinks,
   getDrinksByCategory,
+  getDrinksByBrand,
   offProductToItem,
   DRINK_CATEGORIES,
 } from "./openfoodfacts";

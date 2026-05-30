@@ -14,7 +14,7 @@ type OffProduct = {
   image_front_small_url?: string;
   image_small_url?: string;
   categories_tags?: string[];
-  quantity?: string;
+  unique_scans_n?: number;
 };
 
 type OffSearchResponse = {
@@ -25,23 +25,26 @@ type OffSearchResponse = {
 // ─── Drink categories ─────────────────────────────────────────────────────────
 
 export const DRINK_CATEGORIES: { slug: string; label: string; emoji: string }[] = [
-  { slug: "en:sodas", label: "Sodas", emoji: "🥤" },
-  { slug: "en:fruit-juices", label: "Jus de fruits", emoji: "🍊" },
-  { slug: "en:nectars", label: "Nectars", emoji: "🍑" },
-  { slug: "en:waters", label: "Eaux", emoji: "💧" },
-  { slug: "en:sparkling-waters", label: "Eaux pétillantes", emoji: "🫧" },
-  { slug: "en:iced-teas", label: "Ice Tea", emoji: "🧊" },
-  { slug: "en:energy-drinks", label: "Boissons énergisantes", emoji: "⚡" },
-  { slug: "en:sports-drinks", label: "Boissons sportives", emoji: "🏃" },
-  { slug: "en:wines", label: "Vins", emoji: "🍷" },
-  { slug: "en:beers", label: "Bières", emoji: "🍺" },
-  { slug: "en:ciders", label: "Cidres", emoji: "🍎" },
-  { slug: "fr:champagnes", label: "Champagnes", emoji: "🥂" },
-  { slug: "en:coffees", label: "Cafés", emoji: "☕" },
-  { slug: "en:teas", label: "Thés", emoji: "🍵" },
-  { slug: "en:hot-chocolates", label: "Chocolats chauds", emoji: "🍫" },
-  { slug: "en:syrups", label: "Sirops", emoji: "🍬" },
-  { slug: "en:plant-milks", label: "Laits végétaux", emoji: "🌱" },
+  { slug: "en:colas",            label: "Colas",              emoji: "🥤" },
+  { slug: "en:waters",           label: "Eaux",               emoji: "💧" },
+  { slug: "en:sparkling-waters", label: "Eaux pétillantes",   emoji: "🫧" },
+  { slug: "en:fruit-juices",     label: "Jus de fruits",      emoji: "🍊" },
+  { slug: "en:nectars",          label: "Nectars",            emoji: "🍑" },
+  { slug: "en:iced-teas",        label: "Ice Tea",            emoji: "🧊" },
+  { slug: "en:lemonades",        label: "Limonades",          emoji: "🍋" },
+  { slug: "en:energy-drinks",    label: "Boissons énergisantes", emoji: "⚡" },
+  { slug: "en:sports-drinks",    label: "Boissons sportives", emoji: "🏃" },
+  { slug: "en:fruit-drinks",     label: "Boissons aux fruits",emoji: "🍹" },
+  { slug: "en:wines",            label: "Vins",               emoji: "🍷" },
+  { slug: "en:beers",            label: "Bières",             emoji: "🍺" },
+  { slug: "en:ciders",           label: "Cidres",             emoji: "🍎" },
+  { slug: "fr:champagnes",       label: "Champagnes",         emoji: "🥂" },
+  { slug: "en:coffees",          label: "Cafés",              emoji: "☕" },
+  { slug: "en:teas",             label: "Thés",               emoji: "🍵" },
+  { slug: "en:hot-chocolates",   label: "Chocolats chauds",   emoji: "🍫" },
+  { slug: "en:syrups",           label: "Sirops",             emoji: "🍬" },
+  { slug: "en:plant-milks",      label: "Laits végétaux",     emoji: "🌱" },
+  { slug: "en:milk",             label: "Laits",              emoji: "🥛" },
 ];
 
 // ─── Fetch ────────────────────────────────────────────────────────────────────
@@ -58,6 +61,8 @@ async function offFetch<T>(path: string, params: Record<string, string> = {}): P
   return res.json() as Promise<T>;
 }
 
+const FIELDS = "id,_id,product_name,product_name_fr,brands,image_front_small_url,image_small_url,image_url,unique_scans_n";
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export async function searchDrinks(query: string, limit = 20): Promise<OffProduct[]> {
@@ -70,10 +75,11 @@ export async function searchDrinks(query: string, limit = 20): Promise<OffProduc
       tagtype_0: "categories",
       tag_contains_0: "contains",
       tag_0: "en:beverages",
+      sort_by: "unique_scans_n",
       page_size: String(Math.min(limit * 2, 40)),
       page: "1",
       lc: "fr",
-      fields: "id,_id,product_name,product_name_fr,brands,image_front_small_url,image_small_url,image_url",
+      fields: FIELDS,
     });
     return (json.products ?? [])
       .filter((p) => (p.product_name_fr ?? p.product_name ?? "").trim())
@@ -85,12 +91,33 @@ export async function searchDrinks(query: string, limit = 20): Promise<OffProduc
 
 export async function getDrinksByCategory(categorySlug: string, limit = 24): Promise<OffProduct[]> {
   try {
-    const slug = categorySlug.replace(/^(en|fr):/, "");
-    const json = await offFetch<OffSearchResponse>(`/category/${encodeURIComponent(slug)}.json`, {
+    // Use the v2 search API with sort_by=unique_scans_n to get the most popular/well-known brands first
+    const json = await offFetch<OffSearchResponse>("/api/v2/search", {
+      categories_tags: categorySlug,
+      sort_by: "unique_scans_n",
       page_size: String(Math.min(limit * 2, 48)),
       page: "1",
       lc: "fr",
-      fields: "id,_id,product_name,product_name_fr,brands,image_front_small_url,image_small_url,image_url",
+      fields: FIELDS,
+    });
+    return (json.products ?? [])
+      .filter((p) => (p.product_name_fr ?? p.product_name ?? "").trim())
+      .slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
+export async function getDrinksByBrand(brand: string, limit = 20): Promise<OffProduct[]> {
+  try {
+    const json = await offFetch<OffSearchResponse>("/api/v2/search", {
+      brands_tags: brand.toLowerCase().replace(/\s+/g, "-"),
+      categories_tags: "en:beverages",
+      sort_by: "unique_scans_n",
+      page_size: String(Math.min(limit * 2, 40)),
+      page: "1",
+      lc: "fr",
+      fields: FIELDS,
     });
     return (json.products ?? [])
       .filter((p) => (p.product_name_fr ?? p.product_name ?? "").trim())
@@ -111,7 +138,10 @@ export function offProductToItem(p: OffProduct, categoryLabel?: string): Content
   return {
     id: `off-${id}`,
     title: name,
-    subtitle: [brand, categoryLabel].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(" · ") || undefined,
+    subtitle: [brand, categoryLabel]
+      .filter(Boolean)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .join(" · ") || undefined,
     coverUrl: coverUrl?.replace(/^http:\/\//, "https://") ?? undefined,
     source: "openfoodfacts",
     metadata: {
