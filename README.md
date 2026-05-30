@@ -9,7 +9,7 @@ Monorepo de la famille Klash : plateformes de jeux interactifs construites sur N
 | `musiklash` | 3000 | Musique (API Deezer) |
 | `animeklash` | 3001 | Anime |
 | `demoklash` | 3002 | Demo / sandbox |
-| `movieklash` | 3003 | Films (API TMDB) |
+| `screenklash` | 3003 | Films & séries (TMDB + TVMaze) |
 
 Chaque vertical est un projet Next.js indépendant dans `apps/`. La logique métier et les composants sont partagés via des packages internes dans `packages/`.
 
@@ -70,7 +70,7 @@ Optionnel :
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 ```
 
-Pour **MovieKlash** (recherche films, sagas, casting) :
+Pour **ScreenKlash** (films, séries, sagas) :
 
 ```env
 TMDB_API_KEY=YOUR_TMDB_API_KEY
@@ -92,7 +92,7 @@ On peut aussi lancer un vertical directement par nom :
 
 ```bash
 npm run dev animeklash
-npm run dev movieklash   # port 3003 — nécessite TMDB_API_KEY
+npm run dev screenklash   # port 3003 — nécessite TMDB_API_KEY
 ```
 
 Studio Supabase local : [http://127.0.0.1:54323](http://127.0.0.1:54323)
@@ -144,7 +144,7 @@ apps/
   musiklash/       Next.js app — musique
   animeklash/      Next.js app — anime
   demoklash/       Next.js app — demo
-  movieklash/      Next.js app — films
+  screenklash/     Next.js app — films & séries
 packages/
   klash-app/       Composants UI et logique partagés
   klash-config/    Config, manifests, Klash Engine catalog

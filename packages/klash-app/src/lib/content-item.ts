@@ -32,11 +32,9 @@ export function inferSourceFromExternalId(externalId: string): string {
   if (typeof process !== "undefined") {
     const vertical = process.env.NEXT_PUBLIC_KLASH_VERTICAL;
     if (vertical === "animeklash") return "anilist";
-    if (vertical === "movieklash") return "tmdb";
-    if (vertical === "seriesklash") return "tvmaze";
+    if (vertical === "screenklash") return "tmdb";
     if (vertical === "comicklash") return "comicvine";
-    if (vertical === "gameklash" || vertical === "retroklash" || vertical === "indieklash")
-      return "rawg";
+    if (vertical === "gameklash") return "rawg";
   }
   return "deezer";
 }
@@ -77,11 +75,9 @@ export function inferItemKind(
   if (externalId.startsWith("ep-")) return "episode";
   if (/^\d+$/.test(externalId)) {
     const vertical = process.env.NEXT_PUBLIC_KLASH_VERTICAL;
-    if (vertical === "movieklash") return "movie";
-    if (vertical === "seriesklash") return "show";
+    if (vertical === "screenklash") return "movie";
     if (vertical === "comicklash") return "movie";
-    if (vertical === "gameklash" || vertical === "retroklash" || vertical === "indieklash")
-      return "game";
+    if (vertical === "gameklash") return "game";
     return "track";
   }
   return "anime";

@@ -12,6 +12,9 @@ import {
   Layers,
   Building2,
   Tag,
+  Clock,
+  Sparkles,
+  Users,
 } from "lucide-react";
 import type { ContentCollection, ContentEntity, ContentItem } from "@klash/content-adapter";
 import { withSearchQuery } from "@/lib/api-url";
@@ -26,7 +29,17 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "game" | "collection" | "genre" | "studio";
+type Tab =
+  | "game"
+  | "retro"
+  | "indie"
+  | "collection"
+  | "retro-console"
+  | "indie-tag"
+  | "genre"
+  | "studio"
+  | "retro-era"
+  | "indie-dev";
 
 type Props = {
   size: number;
@@ -76,7 +89,7 @@ function itemToSelected(item: ContentItem): SelectedItem {
     subtitle: item.subtitle,
     cover_url: item.coverUrl ?? null,
     preview_url: null,
-    source: "rawg",
+    source: item.source ?? "rawg",
     metadata: { itemKind: item.metadata?.itemKind ?? "game", ...item.metadata },
   };
 }
@@ -92,6 +105,42 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
   const [genreGames, setGenreGames] = useState<ContentItem[]>([]);
   const [drillLoading, setDrillLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { results: retroResults, loading: retroLoading } = useDebouncedSearch(
+    "/api/content/search?kind=retro",
+    query,
+    tab === "retro",
+  );
+
+  const { results: indieResults, loading: indieLoading } = useDebouncedSearch(
+    "/api/content/search?kind=indie",
+    query,
+    tab === "indie",
+  );
+
+  const { results: retroConsoleResults, loading: retroConsoleLoading } = useDebouncedSearch(
+    "/api/content/search?kind=retro-collections",
+    query,
+    tab === "retro-console" && !openedCollection,
+  );
+
+  const { results: indieTagResults, loading: indieTagLoading } = useDebouncedSearch(
+    "/api/content/search?kind=indie-collections",
+    query,
+    tab === "indie-tag" && !openedCollection,
+  );
+
+  const { results: retroEraResults, loading: retroEraLoading } = useDebouncedSearch(
+    "/api/content/search?kind=retro-entities",
+    query,
+    tab === "retro-era" && !openedStudio,
+  );
+
+  const { results: indieDevResults, loading: indieDevLoading } = useDebouncedSearch(
+    "/api/content/search?kind=indie-entities",
+    query,
+    tab === "indie-dev" && !openedStudio,
+  );
 
   const { results: gameResults, loading: gameLoading } = useDebouncedSearch(
     "/api/content/search?kind=items",
@@ -194,9 +243,15 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
 
   const tabs: { key: Tab; label: string; icon: typeof Gamepad2 }[] = [
     { key: "game", label: "Jeux", icon: Gamepad2 },
+    { key: "retro", label: "Rétro", icon: Clock },
+    { key: "indie", label: "Indés", icon: Sparkles },
     { key: "collection", label: "Franchises", icon: Layers },
+    { key: "retro-console", label: "Consoles", icon: Layers },
+    { key: "indie-tag", label: "Tags indés", icon: Tag },
     { key: "genre", label: "Genres", icon: Tag },
     { key: "studio", label: "Studios", icon: Building2 },
+    { key: "retro-era", label: "Ères", icon: Clock },
+    { key: "indie-dev", label: "Devs indés", icon: Users },
   ];
 
   const studioEntities = (studioResults as unknown as ContentEntity[]).filter(
@@ -259,13 +314,21 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={
-              tab === "game"
+              tab === "game" || tab === "retro" || tab === "indie"
                 ? "Rechercher un jeu…"
                 : tab === "collection"
                   ? "Rechercher une franchise (Mario Kart, FIFA…)"
-                  : tab === "genre"
-                    ? "Rechercher un genre (RPG, Horreur…)"
-                    : "Rechercher un studio…"
+                  : tab === "retro-console"
+                    ? "Rechercher une console (NES, SNES…)"
+                    : tab === "indie-tag"
+                      ? "Rechercher un tag indé…"
+                      : tab === "genre"
+                        ? "Rechercher un genre (RPG, Horreur…)"
+                        : tab === "retro-era"
+                          ? "Rechercher une ère (80s, 90s…)"
+                          : tab === "indie-dev"
+                            ? "Rechercher un studio indé…"
+                            : "Rechercher un studio…"
             }
             className="input w-full pl-10"
           />
@@ -285,27 +348,61 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
             />
           ))}
 
-        {tab === "collection" && !openedCollection &&
-          (collectionResults as unknown as ContentCollection[]).map((col) => (
+        {tab === "retro" &&
+          retroResults.map((item) => (
+            <ResultRow
+              key={item.id}
+              title={item.title}
+              subtitle={item.subtitle}
+              coverUrl={item.coverUrl}
+              selected={isSelected(item.id)}
+              onAdd={() => addItem(item)}
+            />
+          ))}
+
+        {tab === "indie" &&
+          indieResults.map((item) => (
+            <ResultRow
+              key={item.id}
+              title={item.title}
+              subtitle={item.subtitle}
+              coverUrl={item.coverUrl}
+              selected={isSelected(item.id)}
+              onAdd={() => addItem(item)}
+            />
+          ))}
+
+        {(tab === "collection" || tab === "retro-console" || tab === "indie-tag") && !openedCollection &&
+          (tab === "collection"
+            ? (collectionResults as unknown as ContentCollection[])
+            : tab === "retro-console"
+              ? retroConsoleResults
+              : indieTagResults
+          ).map((col) => {
+            const collection = col as ContentCollection & ContentItem;
+            return (
             <button
-              key={col.id}
+              key={collection.id}
               type="button"
               className="w-full flex items-center gap-3 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
-              onClick={() => void openCollection(col)}
+              onClick={() => void openCollection({ id: collection.id, title: collection.title, coverUrl: collection.coverUrl, source: collection.source, metadata: collection.metadata })}
             >
-              {col.coverUrl ? (
-                <Image src={col.coverUrl} alt="" width={48} height={72} className="rounded-md object-cover" />
+              {collection.coverUrl ? (
+                <Image src={collection.coverUrl} alt="" width={48} height={72} className="rounded-md object-cover" />
               ) : (
                 <div className="w-12 h-[72px] rounded-md bg-[color:var(--surface-2)]" />
               )}
               <div>
-                <p className="font-semibold">{col.title}</p>
-                <p className="text-xs text-[color:var(--muted)]">Voir les jeux de la franchise</p>
+                <p className="font-semibold">{collection.title}</p>
+                <p className="text-xs text-[color:var(--muted)]">
+                  {tab === "retro-console" ? "Voir les jeux rétro" : tab === "indie-tag" ? "Voir les jeux indés" : "Voir les jeux de la franchise"}
+                </p>
               </div>
             </button>
-          ))}
+            );
+          })}
 
-        {tab === "collection" && openedCollection && (
+        {(tab === "collection" || tab === "retro-console" || tab === "indie-tag") && openedCollection && (
           <>
             <p className="text-sm font-medium text-[color:var(--muted)]">{openedCollection.title}</p>
             {drillLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
@@ -369,17 +466,26 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
           </>
         )}
 
-        {tab === "studio" && !openedStudio &&
-          studioEntities.map((entity) => (
+        {(tab === "studio" || tab === "retro-era" || tab === "indie-dev") && !openedStudio &&
+          (tab === "studio"
+            ? studioEntities
+            : tab === "retro-era"
+              ? retroEraResults
+              : indieDevResults
+          ).map((entry) => {
+            const entity = entry as ContentEntity & ContentItem;
+            const name = entity.name ?? entity.title;
+            const picture = entity.pictureUrl ?? entity.coverUrl;
+            return (
             <button
               key={entity.id}
               type="button"
               className="w-full flex items-center gap-3 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
-              onClick={() => void openStudio(entity)}
+              onClick={() => void openStudio({ id: entity.id, name, pictureUrl: picture ?? null } as ContentEntity)}
             >
-              {entity.pictureUrl ? (
+              {picture ? (
                 <Image
-                  src={entity.pictureUrl}
+                  src={picture}
                   alt=""
                   width={48}
                   height={48}
@@ -389,15 +495,16 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
                 <div className="w-12 h-12 rounded-full bg-[color:var(--surface-2)]" />
               )}
               <div>
-                <p className="font-semibold">{entity.name}</p>
+                <p className="font-semibold">{name}</p>
                 <p className="text-xs text-[color:var(--muted)]">
-                  {entity.id.startsWith("genre-") ? "Jeux du genre" : "Catalogue du studio"}
+                  {entity.id.startsWith("genre-") ? "Jeux du genre" : tab === "retro-era" ? "Jeux de l'ère" : tab === "indie-dev" ? "Jeux du dev" : "Catalogue du studio"}
                 </p>
               </div>
             </button>
-          ))}
+            );
+          })}
 
-        {tab === "studio" && openedStudio && (
+        {(tab === "studio" || tab === "retro-era" || tab === "indie-dev") && openedStudio && (
           <>
             <p className="text-sm font-medium">{openedStudio.name}</p>
             {drillLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
@@ -414,7 +521,15 @@ export default function GamePicker({ size, selected, onChange, freeMode = false 
           </>
         )}
 
-        {(gameLoading || collectionLoading || studioLoading) && (
+        {(gameLoading ||
+          retroLoading ||
+          indieLoading ||
+          collectionLoading ||
+          retroConsoleLoading ||
+          indieTagLoading ||
+          studioLoading ||
+          retroEraLoading ||
+          indieDevLoading) && (
           <p className="text-sm text-[color:var(--muted)]">Recherche…</p>
         )}
       </div>

@@ -9,7 +9,7 @@ export const rapklash = defineVertical({
   branding: {
     tagline: "Fais s'affronter le rap",
     description:
-      "Tournois, tierlists et blindtests autour du rap français et international. Morceaux filtrés Deezer (genre hip-hop/rap) — punchlines Genius en option.",
+      "Tournois, tierlists et blindtests autour du rap français et international. Morceaux filtrés Deezer (genre hip-hop/rap).",
     keywords: [
       "tournoi rap",
       "bracket rap",
@@ -20,7 +20,6 @@ export const rapklash = defineVertical({
       "hip-hop",
       "RapKlash",
       "rap bracket",
-      "Genius paroles",
     ],
     category: "music",
     siteUrlFallback: "https://rapklash.vercel.app",
@@ -35,8 +34,6 @@ export const rapklash = defineVertical({
     "e-cdns-images.dzcdn.net",
     "cdns-images.dzcdn.net",
     "api.deezer.com",
-    "images.genius.com",
-    "assets.genius.com",
   ],
   gameModes: [
     "bracket",
