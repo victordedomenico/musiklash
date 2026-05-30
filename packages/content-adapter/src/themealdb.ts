@@ -6,6 +6,38 @@ import type {
 } from "./types";
 
 const MEALDB_BASE = "https://www.themealdb.com/api/json/v1/1";
+const MEALDB_IMG = "https://www.themealdb.com/images/ingredients";
+
+// ─── Ingredient categories ────────────────────────────────────────────────────
+
+// [french name, english name for TheMealDB image]
+export const FOOD_FRUITS: [string, string][] = [
+  ["Banane", "Banana"], ["Pomme", "Apple"], ["Poire", "Pear"], ["Orange", "Orange"],
+  ["Fraise", "Strawberry"], ["Mangue", "Mango"], ["Ananas", "Pineapple"],
+  ["Raisin", "Grapes"], ["Pastèque", "Watermelon"], ["Cerise", "Cherry"],
+  ["Citron", "Lemon"], ["Citron vert", "Lime"], ["Pêche", "Peach"],
+  ["Abricot", "Apricot"], ["Prune", "Plum"], ["Kiwi", "Kiwi"],
+  ["Noix de coco", "Coconut"], ["Myrtille", "Blueberries"],
+  ["Framboise", "Raspberries"], ["Mûre", "Blackberries"],
+  ["Papaye", "Papaya"], ["Fruit de la passion", "Passion Fruit"],
+  ["Grenade", "Pomegranate"], ["Figue", "Figs"], ["Melon", "Cantaloupe"],
+  ["Pamplemousse", "Grapefruit"], ["Clémentine", "Clementine"],
+  ["Avocat", "Avocado"], ["Datte", "Dates"], ["Mangoustan", "Lychee"],
+];
+
+export const FOOD_VEGETABLES: [string, string][] = [
+  ["Concombre", "Cucumber"], ["Aubergine", "Aubergines"], ["Tomate", "Tomatoes"],
+  ["Carotte", "Carrots"], ["Pomme de terre", "Potatoes"], ["Oignon", "Onion"],
+  ["Ail", "Garlic"], ["Épinards", "Spinach"], ["Brocoli", "Brocolli"],
+  ["Chou-fleur", "Cauliflower"], ["Courgette", "Courgettes"], ["Poireau", "Leek"],
+  ["Céleri", "Celery"], ["Champignon", "Mushrooms"], ["Poivron rouge", "Red Pepper"],
+  ["Poivron vert", "Green Pepper"], ["Maïs", "Sweetcorn"], ["Laitue", "Lettuce"],
+  ["Asperge", "Asparagus"], ["Artichaut", "Artichoke"], ["Citrouille", "Pumpkin"],
+  ["Betterave", "Beetroot"], ["Radis", "Radishes"], ["Échalote", "Shallots"],
+  ["Fenouil", "Fennel"], ["Chou", "Cabbage"], ["Haricots verts", "Green Beans"],
+  ["Petit pois", "Peas"], ["Chou de Bruxelles", "Brussels Sprouts"],
+  ["Courge butternut", "Butternut Squash"], ["Endive", "Chicory"],
+];
 
 // ─── Raw TheMealDB types (subset) ─────────────────────────────────────────────
 
@@ -106,6 +138,46 @@ function areaToEntity(entry: MealListEntry): ContentEntity {
 }
 
 // ─── Raw API (for routes / home trending) ─────────────────────────────────────
+
+function ingredientImageUrl(englishName: string): string {
+  return `${MEALDB_IMG}/${encodeURIComponent(englishName)}-Small.png`;
+}
+
+export function ingredientToItem(frenchName: string, englishName: string, kind = "ingredient"): ContentItem {
+  return {
+    id: `ingr-${englishName.toLowerCase().replace(/\s+/g, "-")}`,
+    title: frenchName,
+    subtitle: undefined,
+    coverUrl: ingredientImageUrl(englishName),
+    source: "themealdb",
+    metadata: { itemKind: kind, englishName },
+  };
+}
+
+export async function searchFoodIngredients(query: string, limit = 20): Promise<ContentItem[]> {
+  if (!query.trim()) return [];
+  // Combine and search across fruits + vegetables + a general ingredient list
+  const combined: [string, string][] = [...FOOD_FRUITS, ...FOOD_VEGETABLES];
+  const q = query.trim().toLowerCase();
+  const matches = combined.filter(
+    ([fr, en]) => fr.toLowerCase().includes(q) || en.toLowerCase().includes(q),
+  );
+  if (matches.length > 0) {
+    return matches.slice(0, limit).map(([fr, en]) => ingredientToItem(fr, en));
+  }
+  // Also try TheMealDB ingredient list for less common items
+  try {
+    const json = await mealDbFetch<{ meals: Array<{ strIngredient: string }> | null }>(
+      "list.php", { i: "list" },
+    );
+    return (json.meals ?? [])
+      .filter((i) => i.strIngredient.toLowerCase().includes(q))
+      .slice(0, limit)
+      .map((i) => ingredientToItem(i.strIngredient, i.strIngredient));
+  } catch {
+    return [];
+  }
+}
 
 export async function searchMeals(query: string, limit = 20): Promise<MealSummary[]> {
   if (!query.trim()) return [];
@@ -236,6 +308,9 @@ export const themealdbContentSource: ContentSource = {
     if (kind === "ingredient") {
       const meals = await filterByIngredient(query, limit);
       return meals.map(mealToItem);
+    }
+    if (kind === "food-ingredient") {
+      return searchFoodIngredients(query, limit);
     }
     return this.searchItems(query, { limit });
   },

@@ -203,6 +203,10 @@ export { searchWikidataPlaces } from "./wikidata";
 export {
   themealdbContentSource,
   searchMeals,
+  searchFoodIngredients,
+  ingredientToItem,
+  FOOD_FRUITS,
+  FOOD_VEGETABLES,
   listCategories,
   listAreas,
   filterByCategory,
