@@ -19,19 +19,21 @@ export type SelectedItem = {
 type Tab = "meal" | "category" | "cuisine" | "ingredient" | "fruit" | "vegetable" | "fish" | "meat" | "fastfood";
 
 const FAST_FOOD_CHAINS = [
-  { slug: "mcdonald-s",     label: "McDonald's",     emoji: "🍟" },
-  { slug: "burger-king",    label: "Burger King",    emoji: "🍔" },
-  { slug: "quick",          label: "Quick",          emoji: "🍔" },
-  { slug: "kfc",            label: "KFC",            emoji: "🍗" },
-  { slug: "subway",         label: "Subway",         emoji: "🥖" },
-  { slug: "domino-s-pizza", label: "Domino's Pizza", emoji: "🍕" },
-  { slug: "pizza-hut",      label: "Pizza Hut",      emoji: "🍕" },
-  { slug: "five-guys",      label: "Five Guys",      emoji: "🍔" },
-  { slug: "buffalo-grill",  label: "Buffalo Grill",  emoji: "🥩" },
-  { slug: "taco-bell",      label: "Taco Bell",      emoji: "🌮" },
-  { slug: "paul",           label: "Paul",           emoji: "🥐" },
-  { slug: "picard",         label: "Picard",         emoji: "❄️" },
-  { slug: "flunch",         label: "Flunch",         emoji: "🍽️" },
+  { slug: "mcdonald-s",     label: "McDonald's",     logo: "https://logo.clearbit.com/mcdonalds.com" },
+  { slug: "burger-king",    label: "Burger King",    logo: "https://logo.clearbit.com/burgerking.com" },
+  { slug: "quick",          label: "Quick",          logo: "https://logo.clearbit.com/quick.be" },
+  { slug: "kfc",            label: "KFC",            logo: "https://logo.clearbit.com/kfc.com" },
+  { slug: "subway",         label: "Subway",         logo: "https://logo.clearbit.com/subway.com" },
+  { slug: "domino-s-pizza", label: "Domino's Pizza", logo: "https://logo.clearbit.com/dominos.com" },
+  { slug: "pizza-hut",      label: "Pizza Hut",      logo: "https://logo.clearbit.com/pizzahut.com" },
+  { slug: "five-guys",      label: "Five Guys",      logo: "https://logo.clearbit.com/fiveguys.com" },
+  { slug: "buffalo-grill",  label: "Buffalo Grill",  logo: "https://logo.clearbit.com/buffalo-grill.fr" },
+  { slug: "taco-bell",      label: "Taco Bell",      logo: "https://logo.clearbit.com/tacobell.com" },
+  { slug: "paul",           label: "Paul",           logo: "https://logo.clearbit.com/paul.fr" },
+  { slug: "picard",         label: "Picard",         logo: "https://logo.clearbit.com/picard.fr" },
+  { slug: "flunch",         label: "Flunch",         logo: "https://logo.clearbit.com/flunch.fr" },
+  { slug: "courtepaille",   label: "Courtepaille",   logo: "https://logo.clearbit.com/courtepaille.com" },
+  { slug: "kebab",          label: "O'Tacos",        logo: "https://logo.clearbit.com/otacos.fr" },
 ];
 
 type Props = {
@@ -414,10 +416,9 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
         {tab === "fastfood" && !openedChain && (
           <div className="grid grid-cols-2 gap-2">
             {FAST_FOOD_CHAINS.map((chain) => (
-              <button
+              <ChainButton
                 key={chain.slug}
-                type="button"
-                className="flex items-center gap-2 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
+                chain={chain}
                 onClick={() => {
                   setOpenedChain(chain);
                   setChainLoading(true);
@@ -428,11 +429,7 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
                     .catch(console.error)
                     .finally(() => setChainLoading(false));
                 }}
-              >
-                <span className="text-xl shrink-0">{chain.emoji}</span>
-                <span className="font-medium text-sm truncate">{chain.label}</span>
-                <ChevronLeft size={14} className="rotate-180 text-[color:var(--muted)] ml-auto shrink-0" />
-              </button>
+              />
             ))}
           </div>
         )}
@@ -440,7 +437,10 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
         {tab === "fastfood" && openedChain && (
           <>
             <div className="flex items-center gap-2">
-              <span className="text-lg">{openedChain.emoji}</span>
+              <div className="w-6 h-6 rounded bg-white flex items-center justify-center overflow-hidden border border-[color:var(--border)] shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={openedChain.logo} alt="" className="w-full h-full object-contain" />
+              </div>
               <p className="text-sm font-medium text-[color:var(--muted)]">{openedChain.label}</p>
             </div>
             {chainLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
@@ -486,6 +486,43 @@ export default function FoodPicker({ size, selected, onChange, freeMode = false 
         </div>
       )}
     </div>
+  );
+}
+
+function ChainButton({
+  chain,
+  onClick,
+}: {
+  chain: { slug: string; label: string; logo: string };
+  onClick: () => void;
+}) {
+  const [logoFailed, setLogoFailed] = useState(false);
+  return (
+    <button
+      type="button"
+      className="flex items-center gap-2 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
+      onClick={onClick}
+    >
+      <div className="w-8 h-8 rounded bg-white flex items-center justify-center shrink-0 overflow-hidden border border-[color:var(--border)]">
+        {!logoFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={chain.logo}
+            alt={chain.label}
+            width={32}
+            height={32}
+            className="object-contain w-full h-full"
+            onError={() => setLogoFailed(true)}
+          />
+        ) : (
+          <span className="text-xs font-bold text-[color:var(--muted)]">
+            {chain.label.slice(0, 2).toUpperCase()}
+          </span>
+        )}
+      </div>
+      <span className="font-medium text-sm truncate flex-1">{chain.label}</span>
+      <ChevronLeft size={14} className="rotate-180 text-[color:var(--muted)] shrink-0" />
+    </button>
   );
 }
 

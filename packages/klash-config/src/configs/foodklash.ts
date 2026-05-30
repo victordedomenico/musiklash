@@ -30,7 +30,7 @@ export const foodklash = defineVertical({
     items: "plats",
     entity: "cuisine",
   },
-  imageHosts: ["www.themealdb.com", "images.openfoodfacts.org", "static.openfoodfacts.org"],
+  imageHosts: ["www.themealdb.com", "images.openfoodfacts.org", "static.openfoodfacts.org", "logo.clearbit.com"],
   gameModes: ["bracket", "tierlist"],
   guestEmailDomain: "guest.foodklash.app",
   i18nOverrides: {
