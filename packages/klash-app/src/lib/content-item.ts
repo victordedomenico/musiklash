@@ -26,9 +26,6 @@ export function inferSourceFromExternalId(externalId: string): string {
   if (externalId.startsWith("ptcg-") || externalId.startsWith("ptcgset-")) return "pokemontcg";
   if (externalId.startsWith("ygo-") || externalId.startsWith("ygoset-")) return "ygoprodeck";
   if (externalId.startsWith("off-")) return "openfoodfacts";
-  if (externalId.startsWith("sdb-")) return "sneakerdb";
-  if (externalId.startsWith("mb-rec-") || externalId.startsWith("mb-rel-") || externalId.startsWith("mb-art-")) return "musicbrainz";
-  if (externalId.startsWith("hero-")) return "superhero";
   if (externalId.startsWith("movie-")) return "tmdb";
   if (externalId.startsWith("person-")) return "tmdb";
   // Fall back to the vertical's configured source
@@ -38,15 +35,8 @@ export function inferSourceFromExternalId(externalId: string): string {
     if (vertical === "movieklash") return "tmdb";
     if (vertical === "seriesklash") return "tvmaze";
     if (vertical === "comicklash") return "comicvine";
-    if (vertical === "characterklash") {
-      if (externalId.startsWith("person-")) return "tmdb";
-      return "anilist";
-    }
     if (vertical === "gameklash" || vertical === "retroklash" || vertical === "indieklash")
       return "rawg";
-    if (vertical === "sneakerklash") {
-      return process.env.RAPIDAPI_KEY?.trim() ? "sneakerdb" : "sneaks";
-    }
   }
   return "deezer";
 }
@@ -80,7 +70,6 @@ export function inferItemKind(
   if (externalId.startsWith("bseries-")) return "series";
   if (externalId.startsWith("mseries-")) return "series";
   if (externalId.startsWith("tvchar-")) return "character";
-  if (externalId.startsWith("hero-")) return "character";
   if (externalId.startsWith("theme-")) return "theme";
   if (externalId.startsWith("arc-free-")) return "arc";
   if (externalId.startsWith("arc-")) return "arc";

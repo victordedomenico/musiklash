@@ -5,11 +5,6 @@ export {
   rapDeezerContentSource,
   DEEZER_RAP_GENRE_ID,
 } from "./deezer-rap";
-export {
-  searchGeniusSongs,
-  isGeniusConfigured,
-  type GeniusSongHit,
-} from "./genius";
 export * from "./anilist";
 export * from "./tmdb";
 export {
@@ -118,34 +113,9 @@ export {
   INDIE_PLATFORM_IDS,
 } from "./rawg-indie";
 export {
-  musicbrainzContentSource,
-  searchMbRecordings,
-  searchMbReleases,
-  searchMbArtists,
-  getMbArtistReleases,
-  getMbReleaseRecordings,
-  mbRecordingToItem,
-  mbReleaseToItem,
-  mbReleaseToCollection,
-  mbArtistToEntity,
-  getMbCoverArt,
-} from "./musicbrainz";
-export {
   getPetsBySpecies,
   PET_SPECIES_TABS,
 } from "./pets-extended";
-export {
-  sneakerDbContentSource,
-  searchSneakerDb,
-  getTrendingSneakerDb,
-  isSneakerDbConfigured,
-  type SneakerDbItem,
-} from "./sneakerdb";
-export {
-  sneakerklashContentSource,
-  getTrendingSneakerKlashCovers,
-  type HomeSneakerCover,
-} from "./sneakerklash";
 export {
   searchDrinks,
   getDrinksByCategory,
@@ -184,11 +154,6 @@ export {
   getTrendingCards,
 } from "./scryfall";
 export {
-  openFashionContentSource,
-  searchGarments,
-  getTrendingGarments,
-} from "./openfashion";
-export {
   pokeapiContentSource,
   searchPokemon,
   searchTypes,
@@ -225,20 +190,6 @@ export {
   getCountryByCode as getCountryKlashByCode,
   getCountriesByRegion as getCountryKlashByRegion,
 } from "./countryklash";
-export {
-  powerklashContentSource,
-  getTrendingPowerCharacters,
-} from "./powerklash";
-export { characterKlashContentSource } from "./characterklash";
-export {
-  searchSuperheroes,
-  getSuperheroesByPublisher,
-  superheroToItem,
-  totalPower,
-  SUPERHERO_PUBLISHERS,
-  type Superhero,
-  type SuperheroPowerstats,
-} from "./superhero";
 export { searchWikidataPlaces } from "./wikidata";
 export {
   themealdbContentSource,

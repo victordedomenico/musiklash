@@ -306,40 +306,6 @@ export const KLASH_ENGINE_CATALOG: KlashEngineVertical[] = [
     nouns: { item: "lieu", items: "lieux", collection: "région", entity: "destination" },
   },
   {
-    slug: "fashionklash",
-    name: "FashionKlash",
-    emoji: "👗",
-    category: "lifestyle",
-    status: "active",
-    appPackage: "fashionklash",
-    entities: ["Marques", "Créateurs", "Styles", "Vêtements"],
-    apis: [
-      { name: "Open Fashion (Livostyle Open Data)", access: "open" },
-      { name: "Wikimedia API", access: "open" },
-    ],
-    source: "openfashion",
-    nouns: { item: "pièce", items: "pièces", entity: "marque" },
-    notes:
-      "Catalogue MIT (~2,6k pièces femme) via GitHub ; Wikimedia pour visuels marques. Pas d'API REST temps réel.",
-  },
-  {
-    slug: "sneakerklash",
-    name: "SneakerKlash",
-    emoji: "👟",
-    category: "lifestyle",
-    status: "active",
-    appPackage: "sneakerklash",
-    entities: ["Colorways", "Drops", "Modèles"],
-    apis: [
-      { name: "SneaksAPI", access: "scraping" },
-      { name: "Kicks On Fire", access: "scraping" },
-    ],
-    source: "sneaks",
-    nouns: { item: "colorway", items: "colorways", collection: "drop", entity: "modèle" },
-    notes:
-      "Scraping StockX/GOAT via sneaks-api — fragile, sans clé API. Proxy obligatoire (/api/content/*). Voir apps/sneakerklash/SNEAKS_API.md.",
-  },
-  {
     slug: "petklash",
     name: "PetKlash",
     emoji: "🐶",
@@ -537,45 +503,6 @@ export const KLASH_ENGINE_CATALOG: KlashEngineVertical[] = [
     ],
     source: "restcountries",
     nouns: { item: "lieu", items: "lieux", entity: "pays" },
-  },
-  {
-    slug: "characterklash",
-    name: "CharacterKlash",
-    emoji: "🧙",
-    category: "cross-universe",
-    status: "active",
-    appPackage: "characterklash",
-    entities: ["Cross-universe battles"],
-    apis: [
-      { name: "AniList", access: "open" },
-      { name: "TMDB", access: "free-key", envKey: "TMDB_API_KEY" },
-    ],
-    source: "characterklash",
-    nouns: { item: "personnage", items: "personnages", entity: "héros" },
-    notes:
-      "MVP : AniList (persos anime) + TMDB (stars cinéma). Marvel API / RAWG prévus roadmap.",
-  },
-  {
-    slug: "powerklash",
-    name: "PowerKlash",
-    emoji: "🐉",
-    category: "cross-universe",
-    status: "active",
-    appPackage: "powerklash",
-    entities: ["Power scaling", "Tier lists"],
-    apis: [
-      { name: "AniList", access: "open" },
-      { name: "Jikan", access: "open" },
-      { name: "Marvel API", access: "free-key", envKey: "MARVEL_API_KEY" },
-    ],
-    source: "anilist",
-    nouns: {
-      item: "personnage",
-      items: "personnages",
-      collection: "univers",
-      entity: "série",
-    },
-    notes: "Tier lists de puissance — MVP AniList personnages ; Jikan/Marvel en complément ultérieur.",
   },
 
   // ── Interne ───────────────────────────────────────────────────────────────

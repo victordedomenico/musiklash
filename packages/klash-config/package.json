@@ -27,10 +27,8 @@
     "./configs/legoklash": "./src/configs/legoklash.ts",
     "./configs/drinkklash": "./src/configs/drinkklash.ts",
     "./configs/travelklash": "./src/configs/travelklash.ts",
-    "./configs/sneakerklash": "./src/configs/sneakerklash.ts",
     "./configs/petklash": "./src/configs/petklash.ts",
     "./configs/foodklash": "./src/configs/foodklash.ts",
-    "./configs/fashionklash": "./src/configs/fashionklash.ts",
     "./configs/f1klash": "./src/configs/f1klash.ts",
     "./configs/footklash": "./src/configs/footklash.ts",
     "./configs/basketklash": "./src/configs/basketklash.ts",
@@ -40,9 +38,7 @@
     "./configs/sportklash": "./src/configs/sportklash.ts",
     "./configs/carklash": "./src/configs/carklash.ts",
     "./configs/countryklash": "./src/configs/countryklash.ts",
-    "./configs/rapklash": "./src/configs/rapklash.ts",
-    "./configs/powerklash": "./src/configs/powerklash.ts",
-    "./configs/characterklash": "./src/configs/characterklash.ts"
+    "./configs/rapklash": "./src/configs/rapklash.ts"
   },
   "peerDependencies": {
     "next": "*"

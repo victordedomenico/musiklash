@@ -16,7 +16,7 @@ type Props = {
   freeMode?: boolean;
 };
 
-type Tab = "track" | "album" | "artist" | "mb-track" | "mb-album" | "mb-artist";
+type Tab = "track" | "album" | "artist";
 
 function num(v: unknown): number | undefined {
   return typeof v === "number" ? v : undefined;
@@ -269,52 +269,6 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
   const [artistAlbums, setArtistAlbums] = useState<ContentCollection[]>([]);
   const [artistAlbumsLoading, setArtistAlbumsLoading] = useState(false);
 
-  // MusicBrainz tabs
-  const [mbTrackQuery, setMbTrackQuery] = useState("");
-  const [mbAlbumQuery, setMbAlbumQuery] = useState("");
-  const [mbArtistQuery, setMbArtistQuery] = useState("");
-  const { data: mbTrackResults, loading: mbTrackLoading } = useDebouncedSearch<ContentItem>(
-    "/api/musicbrainz/search?kind=track", mbTrackQuery, tab === "mb-track",
-  );
-  const { data: mbAlbumResults, loading: mbAlbumLoading } = useDebouncedSearch<ContentCollection>(
-    "/api/musicbrainz/search?kind=album", mbAlbumQuery, tab === "mb-album",
-  );
-  const { data: mbArtistResults, loading: mbArtistLoading } = useDebouncedSearch<ContentEntity>(
-    "/api/musicbrainz/search?kind=artist", mbArtistQuery, tab === "mb-artist",
-  );
-  const [openedMbAlbum, setOpenedMbAlbum] = useState<ContentCollection | null>(null);
-  const [mbAlbumTracks, setMbAlbumTracks] = useState<ContentItem[]>([]);
-  const [mbAlbumTracksLoading, setMbAlbumTracksLoading] = useState(false);
-  const [openedMbArtist, setOpenedMbArtist] = useState<ContentEntity | null>(null);
-  const [mbArtistAlbums, setMbArtistAlbums] = useState<ContentCollection[]>([]);
-  const [mbArtistAlbumsLoading, setMbArtistAlbumsLoading] = useState(false);
-
-  const openMbAlbum = async (col: ContentCollection) => {
-    const mbid = col.id.replace(/^mb-rel-/, "");
-    setOpenedMbAlbum(col);
-    setMbAlbumTracksLoading(true);
-    setMbAlbumTracks([]);
-    try {
-      const res = await fetch(`/api/musicbrainz/release/${mbid}/tracks`);
-      const json = await res.json();
-      setMbAlbumTracks(json.results ?? []);
-    } catch (e) { console.error(e); }
-    finally { setMbAlbumTracksLoading(false); }
-  };
-
-  const openMbArtist = async (entity: ContentEntity) => {
-    const mbid = entity.id.replace(/^mb-art-/, "");
-    setOpenedMbArtist(entity);
-    setMbArtistAlbumsLoading(true);
-    setMbArtistAlbums([]);
-    try {
-      const res = await fetch(`/api/musicbrainz/artist/${mbid}/releases`);
-      const json = await res.json();
-      setMbArtistAlbums(json.results ?? []);
-    } catch (e) { console.error(e); }
-    finally { setMbArtistAlbumsLoading(false); }
-  };
-
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   const maxTracks = freeMode ? 50 : size;
@@ -425,12 +379,9 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
   // ── Tab content ──────────────────────────────────────────────────────────
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "track",    label: "Morceaux",    icon: <Music size={14} /> },
-    { id: "album",    label: "Album",       icon: <Disc3 size={14} /> },
-    { id: "artist",   label: "Artiste",     icon: <User size={14} /> },
-    { id: "mb-track", label: "MB Titres",   icon: <Music size={14} /> },
-    { id: "mb-album", label: "MB Albums",   icon: <Disc3 size={14} /> },
-    { id: "mb-artist",label: "MB Artistes", icon: <User size={14} /> },
+    { id: "track",  label: "Morceaux", icon: <Music size={14} /> },
+    { id: "album",  label: "Album",    icon: <Disc3 size={14} /> },
+    { id: "artist", label: "Artiste",  icon: <User size={14} /> },
   ];
 
   const renderLeft = () => {
@@ -588,99 +539,6 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
       );
     }
 
-    // ── MusicBrainz tabs ──────────────────────────────────────────────────────
-
-    if (tab === "mb-track") {
-      return (
-        <MbSearchPanel
-          query={mbTrackQuery} onQuery={setMbTrackQuery}
-          placeholder="Titre, artiste…" loading={mbTrackLoading}
-          results={mbTrackResults as ContentItem[]}
-          renderRow={(item) => (
-            <MbItemRow key={item.id} item={item} selected={isSelected(item.id)}
-              onAdd={() => addTrack(item)} />
-          )}
-        />
-      );
-    }
-
-    if (tab === "mb-album") {
-      if (openedMbAlbum) {
-        return (
-          <div className="space-y-2">
-            <button type="button" className="btn-ghost text-sm flex items-center gap-1"
-              onClick={() => { setOpenedMbAlbum(null); setMbAlbumTracks([]); }}>
-              <ChevronLeft size={14} /> Retour
-            </button>
-            <p className="text-sm font-medium text-[color:var(--muted)]">{openedMbAlbum.title}</p>
-            {mbAlbumTracksLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
-            {mbAlbumTracks.map((item) => (
-              <MbItemRow key={item.id} item={item} selected={isSelected(item.id)} onAdd={() => addTrack(item)} />
-            ))}
-          </div>
-        );
-      }
-      return (
-        <MbSearchPanel
-          query={mbAlbumQuery} onQuery={setMbAlbumQuery}
-          placeholder="Nom d'album…" loading={mbAlbumLoading}
-          results={mbAlbumResults as ContentItem[]}
-          renderRow={(col) => (
-            <button key={col.id} type="button"
-              className="w-full flex items-center gap-3 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
-              onClick={() => void openMbAlbum(col as unknown as ContentCollection)}>
-              <div className="w-10 h-10 rounded bg-[color:var(--surface-2)] shrink-0 flex items-center justify-center"><Disc3 size={16} className="text-[color:var(--muted)]" /></div>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium truncate">{col.title}</p>
-                {col.subtitle && <p className="text-xs text-[color:var(--muted)] truncate">{col.subtitle}</p>}
-              </div>
-              <ChevronLeft size={14} className="rotate-180 shrink-0 text-[color:var(--muted)]" />
-            </button>
-          )}
-        />
-      );
-    }
-
-    if (tab === "mb-artist") {
-      if (openedMbArtist) {
-        return (
-          <div className="space-y-2">
-            <button type="button" className="btn-ghost text-sm flex items-center gap-1"
-              onClick={() => { setOpenedMbArtist(null); setMbArtistAlbums([]); }}>
-              <ChevronLeft size={14} /> Retour
-            </button>
-            <p className="text-sm font-medium text-[color:var(--muted)]">{openedMbArtist.name}</p>
-            {mbArtistAlbumsLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
-            {mbArtistAlbums.map((col) => (
-              <button key={col.id} type="button"
-                className="w-full flex items-center gap-3 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
-                onClick={() => void openMbAlbum(col)}>
-                <div className="w-10 h-10 rounded bg-[color:var(--surface-2)] shrink-0 flex items-center justify-center"><Disc3 size={16} className="text-[color:var(--muted)]" /></div>
-                <div className="min-w-0 flex-1"><p className="font-medium truncate">{col.title}</p></div>
-                <ChevronLeft size={14} className="rotate-180 shrink-0 text-[color:var(--muted)]" />
-              </button>
-            ))}
-          </div>
-        );
-      }
-      return (
-        <MbSearchPanel
-          query={mbArtistQuery} onQuery={setMbArtistQuery}
-          placeholder="Nom d'artiste…" loading={mbArtistLoading}
-          results={mbArtistResults}
-          renderRow={(entity) => (
-            <button key={entity.id} type="button"
-              className="w-full flex items-center gap-3 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
-              onClick={() => void openMbArtist(entity as unknown as ContentEntity)}>
-              <div className="w-10 h-10 rounded-full bg-[color:var(--surface-2)] shrink-0 flex items-center justify-center"><User size={16} className="text-[color:var(--muted)]" /></div>
-              <div className="min-w-0 flex-1"><p className="font-medium truncate">{entity.title}</p></div>
-              <ChevronLeft size={14} className="rotate-180 shrink-0 text-[color:var(--muted)]" />
-            </button>
-          )}
-        />
-      );
-    }
-
     return null;
   };
 
@@ -760,57 +618,6 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
             ))}
         </ul>
       </div>
-    </div>
-  );
-}
-
-// ─── MusicBrainz helpers ─────────────────────────────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function MbSearchPanel({
-  query, onQuery, placeholder, loading, results, renderRow,
-}: {
-  query: string;
-  onQuery: (v: string) => void;
-  placeholder: string;
-  loading: boolean;
-  results: any[];
-  renderRow: (item: any) => React.ReactNode;
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]" />
-        <input type="search" value={query} onChange={(e) => onQuery(e.target.value)}
-          placeholder={placeholder} className="input w-full pl-9 text-sm" />
-      </div>
-      {loading && <p className="text-sm text-[color:var(--muted)]">Recherche…</p>}
-      <div className="space-y-1">{results.map(renderRow)}</div>
-    </div>
-  );
-}
-
-function MbItemRow({
-  item, selected, onAdd,
-}: {
-  item: { id: string; title: string; subtitle?: string };
-  selected: boolean;
-  onAdd: () => void;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] p-2">
-      <div className="w-10 h-10 rounded bg-[color:var(--surface-2)] shrink-0 flex items-center justify-center">
-        <Music size={14} className="text-[color:var(--muted)]" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium truncate">{item.title}</p>
-        {item.subtitle && <p className="text-xs text-[color:var(--muted)] truncate">{item.subtitle}</p>}
-      </div>
-      <button type="button" disabled={selected} onClick={onAdd}
-        className="btn-ghost shrink-0 p-2"
-        aria-label={selected ? "Déjà sélectionné" : `Ajouter ${item.title}`}>
-        {selected ? <Check size={16} className="text-[color:var(--accent)]" /> : <Plus size={16} />}
-      </button>
     </div>
   );
 }
