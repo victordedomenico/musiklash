@@ -143,7 +143,7 @@ export default function PokemonPicker({ size, selected, onChange, freeMode = fal
     setDrillLoading(true);
     setTypePokemon([]);
     try {
-      const res = await fetch(`/api/content/entity/${entity.id}/items?limit=50`);
+      const res = await fetch(`/api/content/entity/${entity.id}/items?limit=300`);
       const json = await res.json();
       setTypePokemon(json.items ?? json.results ?? []);
     } catch (e) {
