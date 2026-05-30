@@ -306,7 +306,8 @@ export async function getTypePokemon(typeId: string | number, limit = 200): Prom
     );
     results.push(...fetched.filter((p): p is PokePokemon => p !== null));
   }
-  return results;
+  // Sort by Pokédex number
+  return results.sort((a, b) => a.id - b.id);
 }
 
 export async function getGenerationPokemon(
@@ -332,7 +333,8 @@ export async function getGenerationPokemon(
     );
     results.push(...fetched.filter((p): p is PokePokemon => p !== null));
   }
-  return results;
+  // Sort by Pokédex number
+  return results.sort((a, b) => a.id - b.id);
 }
 
 function flattenEvolutionChain(link: PokeEvolutionLink): string[] {
