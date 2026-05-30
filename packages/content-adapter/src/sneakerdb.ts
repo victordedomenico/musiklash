@@ -188,15 +188,19 @@ export const sneakerDbContentSource: ContentSource = {
   },
 
   async getEntityTopItems(entityId, { limit = 50 } = {}) {
+    // Sneaker Database API doesn't have a brand filter — use name search instead
     const brand = entityId
       .replace(/^brand-/, "")
-      .replace(/-/g, " ");
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase()); // capitalize: "new balance" → "New Balance"
     try {
       const json = await sdbGet<SneakerDbResponse>("/sneakers", {
-        brand,
+        name: brand,
         limit: String(Math.min(limit, 40)),
       });
-      return (json.results ?? []).map(sneakerToItem);
+      return (json.results ?? [])
+        .filter((s) => s.name)
+        .map(sneakerToItem);
     } catch {
       return [];
     }
