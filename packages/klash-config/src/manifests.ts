@@ -486,6 +486,7 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
       "cdn.shopify.com",
       "images.stockx.com",
       "stockx-assets.imgix.net",
+      "logo.clearbit.com",
     ],
     gameModes: ["bracket", "tierlist"],
   },

@@ -11,7 +11,27 @@ import {
   Footprints,
   Flame,
   Layers,
+  Store,
 } from "lucide-react";
+
+const SNEAKER_BRANDS = [
+  { slug: "Nike",         label: "Nike",         logo: "https://logo.clearbit.com/nike.com" },
+  { slug: "Jordan",       label: "Air Jordan",   logo: "https://logo.clearbit.com/jordan.com" },
+  { slug: "Adidas",       label: "Adidas",       logo: "https://logo.clearbit.com/adidas.com" },
+  { slug: "Yeezy",        label: "Yeezy",        logo: "https://logo.clearbit.com/adidas.com" },
+  { slug: "New Balance",  label: "New Balance",  logo: "https://logo.clearbit.com/newbalance.com" },
+  { slug: "Converse",     label: "Converse",     logo: "https://logo.clearbit.com/converse.com" },
+  { slug: "Vans",         label: "Vans",         logo: "https://logo.clearbit.com/vans.com" },
+  { slug: "Puma",         label: "Puma",         logo: "https://logo.clearbit.com/puma.com" },
+  { slug: "Reebok",       label: "Reebok",       logo: "https://logo.clearbit.com/reebok.com" },
+  { slug: "Asics",        label: "Asics",        logo: "https://logo.clearbit.com/asics.com" },
+  { slug: "Under Armour", label: "Under Armour", logo: "https://logo.clearbit.com/underarmour.com" },
+  { slug: "Saucony",      label: "Saucony",      logo: "https://logo.clearbit.com/saucony.com" },
+  { slug: "Hoka",         label: "Hoka",         logo: "https://logo.clearbit.com/hoka.com" },
+  { slug: "On",           label: "On Running",   logo: "https://logo.clearbit.com/on-running.com" },
+  { slug: "Salomon",      label: "Salomon",      logo: "https://logo.clearbit.com/salomon.com" },
+  { slug: "Balenciaga",   label: "Balenciaga",   logo: "https://logo.clearbit.com/balenciaga.com" },
+];
 import type { ContentCollection, ContentEntity, ContentItem } from "@klash/content-adapter";
 import { withSearchQuery } from "@/lib/api-url";
 
@@ -25,7 +45,7 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "colorway" | "drop" | "model";
+type Tab = "colorway" | "drop" | "model" | "brand";
 
 type Props = {
   size: number;
@@ -85,8 +105,10 @@ export default function SneakerPicker({ size, selected, onChange, freeMode = fal
   const [query, setQuery] = useState("");
   const [openedDrop, setOpenedDrop] = useState<ContentCollection | null>(null);
   const [openedModel, setOpenedModel] = useState<ContentEntity | null>(null);
+  const [openedBrand, setOpenedBrand] = useState<typeof SNEAKER_BRANDS[0] | null>(null);
   const [dropItems, setDropItems] = useState<ContentItem[]>([]);
   const [modelItems, setModelItems] = useState<ContentItem[]>([]);
+  const [brandItems, setBrandItems] = useState<ContentItem[]>([]);
   const [drillLoading, setDrillLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -152,8 +174,25 @@ export default function SneakerPicker({ size, selected, onChange, freeMode = fal
     }
   };
 
+  const openBrand = async (brand: typeof SNEAKER_BRANDS[0]) => {
+    setOpenedBrand(brand);
+    setDrillLoading(true);
+    setBrandItems([]);
+    const slug = brand.slug.toLowerCase().replace(/\s+/g, "-");
+    try {
+      const res = await fetch(`/api/content/entity/brand-${slug}/items?limit=40`);
+      const json = await res.json();
+      setBrandItems(json.items ?? json.results ?? []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDrillLoading(false);
+    }
+  };
+
   const tabs: { key: Tab; label: string; icon: typeof Footprints }[] = [
     { key: "colorway", label: "Colorways", icon: Footprints },
+    { key: "brand", label: "Marques", icon: Store },
     { key: "drop", label: "Drops", icon: Flame },
     { key: "model", label: "Modèles", icon: Layers },
   ];
@@ -175,8 +214,10 @@ export default function SneakerPicker({ size, selected, onChange, freeMode = fal
               setTab(key);
               setOpenedDrop(null);
               setOpenedModel(null);
+              setOpenedBrand(null);
               setDropItems([]);
               setModelItems([]);
+              setBrandItems([]);
               setQuery("");
             }}
           >
@@ -186,15 +227,17 @@ export default function SneakerPicker({ size, selected, onChange, freeMode = fal
         ))}
       </div>
 
-      {(openedDrop || openedModel) && (
+      {(openedDrop || openedModel || openedBrand) && (
         <button
           type="button"
           className="btn-ghost text-sm inline-flex items-center gap-1"
           onClick={() => {
             setOpenedDrop(null);
             setOpenedModel(null);
+            setOpenedBrand(null);
             setDropItems([]);
             setModelItems([]);
+            setBrandItems([]);
           }}
         >
           <ChevronLeft size={16} />
@@ -202,7 +245,7 @@ export default function SneakerPicker({ size, selected, onChange, freeMode = fal
         </button>
       )}
 
-      {!openedDrop && !openedModel && (
+      {!openedDrop && !openedModel && !openedBrand && (
         <div className="relative">
           <Search
             size={18}
@@ -218,7 +261,9 @@ export default function SneakerPicker({ size, selected, onChange, freeMode = fal
                 ? "Rechercher une colorway…"
                 : tab === "drop"
                   ? "Rechercher un drop…"
-                  : "Rechercher un modèle / marque…"
+                  : tab === "brand"
+                    ? "Rechercher une marque…"
+                    : "Rechercher un modèle…"
             }
             className="input w-full pl-10"
           />
@@ -237,6 +282,31 @@ export default function SneakerPicker({ size, selected, onChange, freeMode = fal
               onAdd={() => addItem(item)}
             />
           ))}
+
+        {tab === "brand" && !openedBrand && (
+          <div className="grid grid-cols-2 gap-2">
+            {SNEAKER_BRANDS.map((brand) => (
+              <BrandButton key={brand.slug} brand={brand} onClick={() => void openBrand(brand)} />
+            ))}
+          </div>
+        )}
+
+        {tab === "brand" && openedBrand && (
+          <>
+            <div className="flex items-center gap-2">
+              <BrandLogo brand={openedBrand} size={24} />
+              <p className="text-sm font-medium text-[color:var(--muted)]">{openedBrand.label}</p>
+            </div>
+            {drillLoading && <p className="text-sm text-[color:var(--muted)]">Chargement…</p>}
+            {!drillLoading && brandItems.length === 0 && (
+              <p className="text-sm text-[color:var(--muted)]">Aucun modèle trouvé.</p>
+            )}
+            {brandItems.map((item) => (
+              <ResultRow key={item.id} title={item.title} subtitle={item.subtitle}
+                coverUrl={item.coverUrl} selected={isSelected(item.id)} onAdd={() => addItem(item)} />
+            ))}
+          </>
+        )}
 
         {tab === "drop" &&
           !openedDrop &&
@@ -360,6 +430,40 @@ export default function SneakerPicker({ size, selected, onChange, freeMode = fal
         </div>
       )}
     </div>
+  );
+}
+
+function BrandLogo({ brand, size = 32 }: { brand: { label: string; logo: string }; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div
+      className="rounded bg-white flex items-center justify-center overflow-hidden border border-[color:var(--border)] shrink-0"
+      style={{ width: size, height: size }}
+    >
+      {!failed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={brand.logo} alt={brand.label} className="w-full h-full object-contain p-0.5"
+          onError={() => setFailed(true)} />
+      ) : (
+        <span className="text-[10px] font-bold text-[color:var(--muted)] leading-none text-center px-0.5">
+          {brand.label.slice(0, 2).toUpperCase()}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function BrandButton({ brand, onClick }: { brand: typeof SNEAKER_BRANDS[0]; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className="flex items-center gap-2 rounded-xl border border-[color:var(--border)] p-3 text-left hover:bg-[color:var(--surface-hover)]"
+      onClick={onClick}
+    >
+      <BrandLogo brand={brand} size={32} />
+      <span className="font-medium text-sm truncate flex-1">{brand.label}</span>
+      <ChevronLeft size={14} className="rotate-180 text-[color:var(--muted)] shrink-0" />
+    </button>
   );
 }
 
