@@ -1,3 +1,3 @@
 import { createKlashNextConfig } from "@klash/klash-config/next";
 
-export default createKlashNextConfig("bookklash");
+export default createKlashNextConfig("fashionklash");
