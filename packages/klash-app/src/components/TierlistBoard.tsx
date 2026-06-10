@@ -57,6 +57,8 @@ type TierState = Record<string, TierItem[]>;
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const POOL_ID = "__pool__";
+/** Les extraits d'opening/ending sont des thèmes complets ; on plafonne la lecture. */
+const PREVIEW_MAX_SECONDS = 30;
 const TIER_LABEL_COLORS = [
   "#f67f7f",
   "#ebb56f",
@@ -475,6 +477,14 @@ export default function TierlistBoard({
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.onended = () => setPlayingPosition(null);
+      audioRef.current.ontimeupdate = () => {
+        const el = audioRef.current;
+        if (el && el.currentTime >= PREVIEW_MAX_SECONDS) {
+          el.pause();
+          el.currentTime = 0;
+          setPlayingPosition(null);
+        }
+      };
       audioRef.current.volume = volume;
     }
     const a = audioRef.current;

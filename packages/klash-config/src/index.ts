@@ -18,14 +18,9 @@ import { legoklash } from "./configs/legoklash";
 import { tasteklash } from "./configs/tasteklash";
 import { worldklash } from "./configs/worldklash";
 import { petklash } from "./configs/petklash";
-import { f1klash } from "./configs/f1klash";
-import { basketklash } from "./configs/basketklash";
-import { fitnessklash } from "./configs/fitnessklash";
-import { fightklash } from "./configs/fightklash";
-import { tennisklash } from "./configs/tennisklash";
 import { sportklash } from "./configs/sportklash";
-import { footklash } from "./configs/footklash";
 import { rapklash } from "./configs/rapklash";
+import { islamklash } from "./configs/islamklash";
 
 export {
   musiklash,
@@ -44,14 +39,9 @@ export {
   tasteklash,
   worldklash,
   petklash,
-  f1klash,
-  basketklash,
-  fitnessklash,
-  fightklash,
-  tennisklash,
   sportklash,
-  footklash,
   rapklash,
+  islamklash,
 };
 export { VERTICAL_MANIFESTS, getVerticalManifest, type VerticalManifest } from "./manifests";
 export * from "./klash-engine";
@@ -73,14 +63,9 @@ const REGISTRY: Record<string, VerticalConfig> = {
   [tasteklash.slug]: tasteklash,
   [worldklash.slug]: worldklash,
   [petklash.slug]: petklash,
-  [f1klash.slug]: f1klash,
-  [basketklash.slug]: basketklash,
-  [fitnessklash.slug]: fitnessklash,
-  [fightklash.slug]: fightklash,
-  [tennisklash.slug]: tennisklash,
   [sportklash.slug]: sportklash,
-  [footklash.slug]: footklash,
   [rapklash.slug]: rapklash,
+  [islamklash.slug]: islamklash,
 };
 
 /** Look up a vertical config by slug. Throws if unknown. */

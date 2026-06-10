@@ -15,6 +15,9 @@ import { downloadNodeAsPng } from "@klash/klash-app/lib/download-png";
 import { usePreviewVolume } from "@klash/klash-app/lib/audio-volume";
 import { deleteTransientBracket, saveBracketGame } from "@klash/klash-app/app/bracket-game/[id]/actions";
 
+/** Les extraits d'opening/ending sont des thèmes complets ; on plafonne la lecture. */
+const PREVIEW_MAX_SECONDS = 30;
+
 function roundLabel(round: number, total: number) {
   const remaining = total - round + 1;
   if (round === total) return "Finale";
@@ -276,6 +279,13 @@ export default function BracketGame({
     const el = new Audio();
     el.preload = "auto";
     el.onended = () => setPlayingSeed(null);
+    el.ontimeupdate = () => {
+      if (el.currentTime >= PREVIEW_MAX_SECONDS) {
+        el.pause();
+        el.currentTime = 0;
+        setPlayingSeed(null);
+      }
+    };
     el.volume = volume;
     audioRef.current = el;
     return el;

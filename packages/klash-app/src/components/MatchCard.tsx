@@ -5,6 +5,9 @@ import { Pause, Play } from "lucide-react";
 import { fetchContentItemPreview } from "@klash/klash-app/lib/content-preview";
 import { usePreviewVolume } from "@klash/klash-app/lib/audio-volume";
 
+/** Les extraits d'opening/ending sont des thèmes complets (~90 s) ; on plafonne la lecture. */
+const PREVIEW_MAX_SECONDS = 30;
+
 export type BracketTrack = {
   seed: number;
   externalId: number;
@@ -61,10 +64,18 @@ export default function MatchCard({
         setCurrentTime(0);
       };
       audioRef.current.ontimeupdate = () => {
-        setCurrentTime(audioRef.current?.currentTime ?? 0);
+        const t = audioRef.current?.currentTime ?? 0;
+        if (t >= PREVIEW_MAX_SECONDS) {
+          audioRef.current?.pause();
+          setPlaying(null);
+          setCurrentTime(0);
+          if (audioRef.current) audioRef.current.currentTime = 0;
+          return;
+        }
+        setCurrentTime(t);
       };
       audioRef.current.onloadedmetadata = () => {
-        setDuration(audioRef.current?.duration ?? 30);
+        setDuration(Math.min(audioRef.current?.duration ?? PREVIEW_MAX_SECONDS, PREVIEW_MAX_SECONDS));
       };
       audioRef.current.volume = volume;
     }
@@ -88,8 +99,9 @@ export default function MatchCard({
 
   const handleSeek = (newTime: number) => {
     if (audioRef.current) {
-      audioRef.current.currentTime = newTime;
-      setCurrentTime(newTime);
+      const clamped = Math.min(newTime, PREVIEW_MAX_SECONDS);
+      audioRef.current.currentTime = clamped;
+      setCurrentTime(clamped);
     }
   };
 

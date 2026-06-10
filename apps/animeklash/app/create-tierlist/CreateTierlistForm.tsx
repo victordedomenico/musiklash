@@ -79,7 +79,7 @@ export default function CreateTierlistForm() {
         selected={items}
         onChange={setItems}
         freeMode
-        tabs={["anime", "character", "arc", "opening", "ending", "transformation", "power"]}
+        tabs={["anime", "character", "arc", "opening", "ending"]}
       />
 
       {error ? (

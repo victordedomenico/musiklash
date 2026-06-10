@@ -59,7 +59,10 @@ export interface ContentSource {
   searchEntities(query: string, options?: { limit?: number }): Promise<ContentEntity[]>;
 
   /** Get all items belonging to a collection. */
-  getCollectionItems(collectionId: string, options?: { requirePreview?: boolean }): Promise<ContentItem[]>;
+  getCollectionItems(
+    collectionId: string,
+    options?: { requirePreview?: boolean; themeKind?: "intro" | "outro" },
+  ): Promise<ContentItem[]>;
 
   /** Get top items for an entity (top tracks for artist, top OPs for anime). */
   getEntityTopItems(entityId: string, options?: { limit?: number; requirePreview?: boolean }): Promise<ContentItem[]>;

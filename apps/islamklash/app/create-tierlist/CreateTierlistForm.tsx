@@ -1,40 +1,33 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import ScreenPicker, { type SelectedItem } from "@/components/ScreenPicker";
-import { createBracket } from "@/app/create-bracket/actions";
+import IslamPicker, { type SelectedItem } from "@/components/IslamPicker";
+import { createTierlist } from "./actions";
 import Input from "@/components/ui/Input";
-import { effectiveBracketSize, VALID_BRACKET_SIZES } from "@/lib/bracket";
-
-const SIZES = VALID_BRACKET_SIZES;
 
 const VIS_HINTS = {
   public: "Visible dans Explorer. Accessible à tous par lien.",
   private: "Non visible dans Explorer. Accessible par lien direct ou depuis ta bibliothèque.",
-  none: "Éphémère : le bracket sera supprimé définitivement après la partie.",
+  none: "Éphémère : la tierlist sera supprimée définitivement après la partie.",
 } as const;
 
-export default function CreateBracketForm() {
+export default function CreateTierlistForm() {
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState("");
-  const [size, setSize] = useState<(typeof SIZES)[number]>(8);
   const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
-  const [selected, setSelected] = useState<SelectedItem[]>([]);
+  const [items, setItems] = useState<SelectedItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const effectiveSize = selected.length >= 3 ? effectiveBracketSize(selected.length) : null;
-  const byeCount = effectiveSize ? effectiveSize - selected.length : 0;
-
-  const onSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
+  const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (selected.length < 3) {
-      setError("Sélectionne au moins 3 entrées.");
+    if (items.length < 2) {
+      setError("Il faut au moins 2 livres.");
       return;
     }
     startTransition(async () => {
-      const res = await createBracket({ title, theme, size, visibility, tracks: selected });
+      const res = await createTierlist({ title, theme, visibility, tracks: items });
       if (res?.error) setError(res.error);
     });
   };
@@ -49,7 +42,7 @@ export default function CreateBracketForm() {
             className="mt-1"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex. Meilleurs films Marvel"
+            placeholder="Ex. Films sci-fi des années 80"
           />
         </div>
         <div>
@@ -58,35 +51,9 @@ export default function CreateBracketForm() {
             className="mt-1"
             value={theme}
             onChange={(e) => setTheme(e.target.value)}
-            placeholder="Ex. Super-héros"
+            placeholder="Ex. Science-fiction"
           />
         </div>
-      </div>
-
-      <div>
-        <label className="text-sm font-medium">Taille du tournoi</label>
-        <div className="mt-1 flex flex-wrap gap-2">
-          {SIZES.map((s) => (
-            <button
-              type="button"
-              key={s}
-              onClick={() => {
-                if (selected.length > s) setSelected(selected.slice(0, s));
-                setSize(s);
-              }}
-              className="btn-chip"
-              data-active={s === size}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-        {effectiveSize != null && selected.length >= 3 && (
-          <p className="mt-2 text-xs text-[color:var(--muted)]">
-            Tableau effectif : {effectiveSize} places
-            {byeCount > 0 ? ` (${byeCount} bye${byeCount > 1 ? "s" : ""})` : ""}.
-          </p>
-        )}
       </div>
 
       <div>
@@ -107,12 +74,12 @@ export default function CreateBracketForm() {
         <p className="mt-2 text-xs text-[color:var(--muted)]">{VIS_HINTS[visibility]}</p>
       </div>
 
-      <ScreenPicker size={size} selected={selected} onChange={setSelected} />
+      <IslamPicker size={64} selected={items} onChange={setItems} freeMode />
 
       {error && <p className="text-sm text-[color:var(--danger)]">{error}</p>}
 
       <button type="submit" className="btn-primary w-full sm:w-auto" disabled={pending}>
-        {pending ? "Création…" : "Créer le bracket"}
+        {pending ? "Création…" : "Créer la tierlist"}
       </button>
     </form>
   );

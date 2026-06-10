@@ -23,6 +23,7 @@ export async function GET(
         title: arcTitle(a),
         coverUrl: a.coverImage.large ?? a.coverImage.medium ?? null,
         parentTitle: a.parentTitle ?? null,
+        saga: a.saga ?? null,
         format: a.format ?? null,
         episodes: a.episodes ?? null,
       })),

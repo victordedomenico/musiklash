@@ -25,14 +25,9 @@
     "./configs/tasteklash": "./src/configs/tasteklash.ts",
     "./configs/worldklash": "./src/configs/worldklash.ts",
     "./configs/petklash": "./src/configs/petklash.ts",
-    "./configs/f1klash": "./src/configs/f1klash.ts",
-    "./configs/footklash": "./src/configs/footklash.ts",
-    "./configs/basketklash": "./src/configs/basketklash.ts",
-    "./configs/fitnessklash": "./src/configs/fitnessklash.ts",
-    "./configs/fightklash": "./src/configs/fightklash.ts",
-    "./configs/tennisklash": "./src/configs/tennisklash.ts",
     "./configs/sportklash": "./src/configs/sportklash.ts",
-    "./configs/rapklash": "./src/configs/rapklash.ts"
+    "./configs/rapklash": "./src/configs/rapklash.ts",
+    "./configs/islamklash": "./src/configs/islamklash.ts"
   },
   "peerDependencies": {
     "next": "*"

@@ -7,6 +7,9 @@ function safePreviewUrl(url: string) {
   return url.replace(/^http:\/\//i, "https://");
 }
 
+/** Certaines sources (AnimeThemes) renvoient le thème complet ; on plafonne l'extrait. */
+const PREVIEW_MAX_SECONDS = 30;
+
 export function useTrackPreview() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [nowPlaying, setNowPlaying] = useState<{ key: string; title: string } | null>(null);
@@ -52,6 +55,14 @@ export function useTrackPreview() {
         audio.onplay = () => setIsPlaying(true);
         audio.onpause = () => setIsPlaying(false);
         audio.onended = () => { setIsPlaying(false); setNowPlaying(null); };
+        audio.ontimeupdate = () => {
+          if (audio.currentTime >= PREVIEW_MAX_SECONDS) {
+            audio.pause();
+            audio.currentTime = 0;
+            setIsPlaying(false);
+            setNowPlaying(null);
+          }
+        };
         audioRef.current = audio;
       }
 

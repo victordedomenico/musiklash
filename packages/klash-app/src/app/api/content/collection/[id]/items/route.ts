@@ -10,11 +10,14 @@ export async function GET(
   const { id } = await params;
   const { searchParams } = new URL(req.url);
   const requirePreview = searchParams.get("requirePreview") !== "false";
+  const themeKindParam = searchParams.get("themeKind");
+  const themeKind =
+    themeKindParam === "intro" || themeKindParam === "outro" ? themeKindParam : undefined;
 
   const { contentSource } = getCurrentVertical();
 
   try {
-    const items = await contentSource.getCollectionItems(id, { requirePreview });
+    const items = await contentSource.getCollectionItems(id, { requirePreview, themeKind });
     return NextResponse.json({ items });
   } catch (err) {
     console.error(err);

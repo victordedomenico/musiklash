@@ -21,7 +21,7 @@ export function createKlashNextConfig(slug: string): NextConfig {
     blindtestItemNoun, blindtestItemsNoun,
     blindtestTitleLabel, blindtestArtistLabel,
     mediaIcon, smashPassTypeLabels,
-    contactEmail, apiCredit,
+    contactEmail, apiCredit, tmdbAttribution,
   } = getVerticalManifest(slug);
 
   return {
@@ -39,6 +39,7 @@ export function createKlashNextConfig(slug: string): NextConfig {
       NEXT_PUBLIC_KLASH_CONTACT_EMAIL: contactEmail,
       NEXT_PUBLIC_KLASH_API_CREDIT_LABEL: apiCredit.label,
       NEXT_PUBLIC_KLASH_API_CREDIT_URL: apiCredit.url,
+      NEXT_PUBLIC_KLASH_TMDB_ATTRIBUTION: tmdbAttribution ? "true" : "",
     },
     transpilePackages: [...KLASH_TRANSPILE_PACKAGES],
     reactCompiler: process.env.NODE_ENV === "production",

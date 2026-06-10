@@ -13,7 +13,9 @@ export type SelectedContentItem = {
 };
 
 export function inferSourceFromExternalId(externalId: string): string {
+  if (externalId.startsWith("deezer-theme-")) return "deezer";
   if (externalId.startsWith("theme-")) return "animethemes";
+  if (externalId.startsWith("screentheme-")) return "tmdb";
   if (externalId.startsWith("arc-free-")) return "manual";
   if (externalId.startsWith("arc-")) return "anilist";
   if (externalId.startsWith("char-")) return "anilist";

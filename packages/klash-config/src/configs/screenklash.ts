@@ -30,7 +30,15 @@ export const screenklash = defineVertical({
     collection: "saga",
     entity: "réalisateur",
   },
-  imageHosts: ["image.tmdb.org", "static.tvmaze.com"],
+  imageHosts: [
+    "image.tmdb.org",
+    "static.tvmaze.com",
+    "i.ytimg.com",
+    "img.youtube.com",
+    "e-cdns-images.dzcdn.net",
+    "cdns-images.dzcdn.net",
+    "cdn-images.dzcdn.net",
+  ],
   gameModes: ["bracket", "tierlist"],
   guestEmailDomain: "guest.screenklash.app",
   i18nOverrides: {

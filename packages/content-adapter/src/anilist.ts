@@ -1,8 +1,7 @@
 import type { ContentItem, ContentCollection, ContentEntity, ContentSource } from "./types";
-import { searchJikanCharacters, jikanCharToContentItem } from "./jikan";
-
+import { fetchTmdbArcs, type StoryArc } from "./tmdb-arcs";
 const ANILIST_URL = "https://graphql.anilist.co";
-const ANIMETHEMES_URL = "https://api.animethemes.moe";
+const ANIMETHEMES_GQL_URL = "https://graphql.animethemes.moe";
 
 // ─── AniList raw types ────────────────────────────────────────────────────────
 
@@ -36,9 +35,9 @@ export type AnimeThemeEntry = {
   slug: string;
   type: "OP" | "ED";
   sequence: number | null;
-  song: { title: string; artists: Array<{ name: string }> };
+  song: { title: string; performances: Array<{ artist: { name: string } }> };
   animethemeentries: Array<{
-    videos: Array<{ filename: string; link: string; audio: string | null }>;
+    videos: { nodes: Array<{ filename: string; link: string; audio: { link: string } | null }> };
   }>;
 };
 
@@ -201,18 +200,63 @@ query ValidateCoAppearance($charAId: Int!, $charBId: Int!) {
   }
 }`;
 
-// ─── AnimeThemes helper ───────────────────────────────────────────────────────
+// ─── AnimeThemes GraphQL helper ───────────────────────────────────────────────
+
+const ANIMETHEMES_BY_MAL_QUERY = `
+query GetThemesByMal($malId: Int!) {
+  findAnimeByExternalSite(site: MAL, id: [$malId]) {
+    animethemes {
+      id type sequence slug
+      song { title performances { artist { name } } }
+      animethemeentries { videos { nodes { link filename audio { link } } } }
+    }
+  }
+}`;
+
+const ANIMETHEMES_SEARCH_QUERY = `
+query SearchThemes($query: String!, $first: Int) {
+  search(search: $query, first: $first) {
+    animethemes {
+      id type sequence slug
+      song { title performances { artist { name } } }
+      animethemeentries { videos { nodes { link filename audio { link } } } }
+      anime { name images { nodes { facet link } } }
+    }
+  }
+}`;
+
+// AnimeThemes' GraphQL endpoint sits behind Cloudflare, which 403s the default
+// undici User-Agent. Spoof a browser UA so server-side fetches get through.
+const ANIMETHEMES_UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+async function animethemesQuery<T>(
+  query: string,
+  variables: Record<string, unknown>,
+): Promise<T> {
+  const res = await fetch(ANIMETHEMES_GQL_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "User-Agent": ANIMETHEMES_UA,
+    },
+    body: JSON.stringify({ query, variables }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...(({ next: { revalidate: 3600 } } as any)),
+  });
+  if (!res.ok) throw new Error(`AnimeThemes GraphQL failed: ${res.status}`);
+  const json = await res.json() as { data: T; errors?: unknown[] };
+  if (json.errors?.length) throw new Error(`AnimeThemes GraphQL error: ${JSON.stringify(json.errors[0])}`);
+  return json.data;
+}
 
 async function getAnimeThemes(malId: number): Promise<AnimeThemeEntry[]> {
   try {
-    const res = await fetch(
-      `${ANIMETHEMES_URL}/anime?filter[malid]=${malId}&include=animethemes.song.artists,animethemes.animethemeentries.videos`,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { next: { revalidate: 3600 } } as any,
-    );
-    if (!res.ok) return [];
-    const json = await res.json() as { anime?: Array<{ animethemes?: AnimeThemeEntry[] }> };
-    return json.anime?.[0]?.animethemes ?? [];
+    const data = await animethemesQuery<{
+      findAnimeByExternalSite: Array<{ animethemes: AnimeThemeEntry[] }> | null;
+    }>(ANIMETHEMES_BY_MAL_QUERY, { malId });
+    return data.findAnimeByExternalSite?.[0]?.animethemes ?? [];
   } catch {
     return [];
   }
@@ -261,16 +305,17 @@ function characterToItem(c: AniListCharacter): ContentItem {
 }
 
 function themeToItem(theme: AnimeThemeEntry, anime: AniListMedia): ContentItem {
-  const artist = theme.song.artists.map((a) => a.name).join(", ") || animeTitle(anime);
+  const artist = theme.song.performances.map((p) => p.artist.name).join(", ") || animeTitle(anime);
   const videoEntry = theme.animethemeentries[0];
-  const video = videoEntry?.videos[0];
+  const video = videoEntry?.videos.nodes[0];
   const label = `${theme.type}${theme.sequence ?? ""}`;
   return {
     id: `theme-${theme.id}`,
     title: theme.song.title,
     subtitle: `${label} — ${animeTitle(anime)} (${artist})`,
     coverUrl: anime.coverImage.large ?? anime.coverImage.medium ?? undefined,
-    previewUrl: video?.link ?? undefined,
+    // Prefer the .ogg audio track; the .webm is video and not always playable in <audio>.
+    previewUrl: video?.audio?.link ?? video?.link ?? undefined,
     source: "animethemes",
     metadata: {
       themeType: theme.type,
@@ -300,14 +345,17 @@ function mediaToCollection(m: AniListMedia): ContentCollection {
 function arcToCollection(a: AniListArc): ContentCollection {
   return {
     id: String(a.id),
-    title: a.title.english ?? a.title.romaji ?? a.title.native ?? String(a.id),
+    title: arcDisplayTitle(a),
     coverUrl: a.coverImage.large ?? a.coverImage.medium ?? undefined,
-    source: "anilist",
+    source: typeof a.id === "string" ? "story-arc" : "anilist",
     metadata: {
       episodes: a.episodes,
       format: a.format,
       popularity: a.popularity,
       parentTitle: a.parentTitle,
+      saga: a.saga,
+      animeEpisodes: a.animeEpisodes,
+      curated: typeof a.id === "string",
     },
   };
 }
@@ -334,19 +382,44 @@ export async function searchAnime(query: string, limit = 20): Promise<AniListMed
   return data.Page.media ?? [];
 }
 
-/** Arc/saga split listed as its own AniList media (e.g. « One Piece: Wano »). */
+/** Arc narratif — entrée AniList liée ou arc curaté (ex. « Wano »). */
 export type AniListArc = {
-  id: number;
+  id: number | string;
   title: { romaji: string; english: string | null; native: string | null };
   coverImage: { large: string | null; medium: string | null };
   popularity: number;
   format?: string | null;
   episodes?: number | null;
-  /** Série parente quand connue (relations AniList). */
+  /** Série parente quand connue. */
   parentTitle?: string;
+  /** Saga parente pour les arcs curatés (ex. « East Blue »). */
+  saga?: string;
+  /** Plage d'épisodes anime (ex. « 890 - 1085 »). */
+  animeEpisodes?: string | null;
 };
 
-const ARC_CHILD_RELATIONS = new Set(["SIDE_STORY", "SEQUEL", "SPIN_OFF", "PREQUEL"]);
+const NON_ARC_FORMATS = new Set(["MOVIE", "SPECIAL", "OVA", "MUSIC", "MANGA", "NOVEL"]);
+const ARC_RELATIONS = new Set(["SEQUEL", "PREQUEL", "SIDE_STORY", "SPIN_OFF"]);
+
+function arcDisplayTitle(a: AniListArc): string {
+  return a.title.english ?? a.title.romaji ?? a.title.native ?? String(a.id);
+}
+
+function curatedArcToAniListArc(
+  arc: StoryArc,
+  parentTitle: string,
+): AniListArc {
+  return {
+    id: arc.id,
+    title: { romaji: arc.title, english: arc.title, native: null },
+    coverImage: { large: null, medium: null },
+    popularity: 0,
+    episodes: arc.episodes,
+    parentTitle,
+    saga: arc.saga,
+    animeEpisodes: arc.animeEpisodes,
+  };
+}
 
 type AniListTitleFields = {
   title: { romaji: string; english: string | null; native?: string | null };
@@ -357,19 +430,47 @@ function displayTitle(m: AniListTitleFields): string {
 }
 
 function looksLikeArcTitle(title: string): boolean {
+  if (/\b(film|movie|3d2y|stampede)\b/i.test(title)) return false;
   return /\b(arc|saga)\b/i.test(title) || /:\s*\S/.test(title);
 }
 
+function isLikelyAnilistArcRelation(
+  relationType: string,
+  node: {
+    type: string;
+    format: string | null;
+    episodes: number | null;
+    title: { romaji: string; english: string | null; native: string | null };
+  },
+): boolean {
+  if (node.type !== "ANIME") return false;
+  const title = displayTitle(node);
+  if (node.format && NON_ARC_FORMATS.has(node.format)) return false;
+  if (looksLikeArcTitle(title)) return true;
+  if (!ARC_RELATIONS.has(relationType)) return false;
+  if ((node.episodes ?? 0) <= 1) return false;
+  return node.format === "TV" || node.format === "ONA";
+}
+
 function isLikelyStandaloneArc(
-  media: AniListTitleFields & { relations?: { edges: Array<{ relationType: string }> } },
+  media: AniListTitleFields & {
+    format?: string | null;
+    episodes?: number | null;
+    relations?: { edges: Array<{ relationType: string }> };
+  },
 ): boolean {
   const title = displayTitle(media);
+  if (media.format && NON_ARC_FORMATS.has(media.format)) return false;
+  if ((media.episodes ?? 0) <= 1 && !looksLikeArcTitle(title)) return false;
   if (looksLikeArcTitle(title)) return true;
   return (media.relations?.edges ?? []).some((e) => e.relationType === "PARENT");
 }
 
 export async function searchAnimeArcs(query: string, limit = 20): Promise<AniListArc[]> {
   if (!query.trim()) return [];
+
+  // Recherche d'arc par nom : TMDB n'expose pas d'index global, on s'appuie donc
+  // sur le fallback « média-arc » AniList (saisons/spin-offs ressemblant à un arc).
   const data = await anilistQuery<{
     Page: {
       media: Array<
@@ -395,6 +496,21 @@ export async function searchAnimeArcs(query: string, limit = 20): Promise<AniLis
 }
 
 export async function getAnimeArcs(animeId: number): Promise<AniListArc[]> {
+  // Source unique des arcs : saisons TMDB (souvent nommées par arc, en français).
+  // (AniList sert au mapping titre + au fallback relations ci-dessous.)
+  const anime = await getAnimeById(animeId);
+  if (anime) {
+    const tmdb = await fetchTmdbArcs(`anilist-${animeId}`, [
+      anime.title.english ?? "",
+      anime.title.romaji ?? "",
+      anime.title.native ?? "",
+    ]);
+    if (tmdb.length > 0) {
+      const parentTitle = animeTitle(anime);
+      return tmdb.map((arc) => curatedArcToAniListArc(arc, parentTitle));
+    }
+  }
+
   const data = await anilistQuery<{
     Media: {
       title: { romaji: string; english: string | null; native: string | null };
@@ -423,9 +539,7 @@ export async function getAnimeArcs(animeId: number): Promise<AniListArc[]> {
 
   for (const edge of parent.relations?.edges ?? []) {
     const node = edge.node;
-    if (!node || node.type !== "ANIME") continue;
-    const title = displayTitle(node);
-    if (!ARC_CHILD_RELATIONS.has(edge.relationType) && !looksLikeArcTitle(title)) continue;
+    if (!node || !isLikelyAnilistArcRelation(edge.relationType, node)) continue;
     arcs.push({
       id: node.id,
       title: node.title,
@@ -436,9 +550,6 @@ export async function getAnimeArcs(animeId: number): Promise<AniListArc[]> {
       parentTitle,
     });
   }
-
-  const rank = (r: string) =>
-    r === "SIDE_STORY" ? 0 : r === "SEQUEL" ? 1 : r === "SPIN_OFF" ? 2 : 3;
 
   return arcs.sort((a, b) => b.popularity - a.popularity);
 }
@@ -595,56 +706,45 @@ type AnimeThemeSearchEntry = {
   type: "OP" | "ED";
   sequence: number | null;
   slug: string;
-  song: { title: string; artists: Array<{ name: string }> };
-  animethemeentries: Array<{ videos: Array<{ link: string; filename: string }> }>;
+  song: { title: string; performances: Array<{ artist: { name: string } }> };
+  animethemeentries: Array<{ videos: { nodes: Array<{ link: string; filename: string; audio: { link: string } | null }> } }>;
   anime: {
-    id: number;
     name: string;
-    slug: string;
-    images: Array<{ facet: string | null; link: string }>;
+    images: { nodes: Array<{ facet: string | null; link: string }> };
   } | null;
 };
 
-async function searchAnimeThemesBySong(
+export async function searchAnimeThemesBySong(
   query: string,
   type?: "OP" | "ED",
   limit = 20,
 ): Promise<ContentItem[]> {
   if (!query.trim()) return [];
   try {
-    const params = new URLSearchParams({
-      q: query.trim(),
-      "fields[search]": "animethemes",
-      include: "animethemes.song.artists,animethemes.animethemeentries.videos,animethemes.anime.images",
-      "page[limit]": String(Math.min(limit * 2, 50)),
-    });
-    const res = await fetch(`${ANIMETHEMES_URL}/search?${params}`, {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ...(({ next: { revalidate: 3600 } } as any)),
-    });
-    if (!res.ok) return [];
-    const json = await res.json() as { search?: { animethemes?: AnimeThemeSearchEntry[] } };
-    const themes = (json.search?.animethemes ?? [])
+    const data = await animethemesQuery<{
+      search: { animethemes: AnimeThemeSearchEntry[] };
+    }>(ANIMETHEMES_SEARCH_QUERY, { query: query.trim(), first: Math.min(limit * 2, 50) });
+    const themes = (data.search?.animethemes ?? [])
       .filter((t) => !type || t.type === type)
       .slice(0, limit);
     return themes.map((t) => {
-      const artist = t.song.artists.map((a) => a.name).join(", ");
-      const video = t.animethemeentries[0]?.videos[0];
-      const cover = t.anime?.images?.find(
-        (i) => i.facet === "Small Cover" || i.facet === "Large Cover",
-      )?.link ?? t.anime?.images?.[0]?.link;
+      const artist = t.song.performances.map((p) => p.artist.name).join(", ");
+      const video = t.animethemeentries[0]?.videos.nodes[0];
+      const images = t.anime?.images.nodes ?? [];
+      const cover =
+        images.find((i) => i.facet === "LARGE_COVER" || i.facet === "SMALL_COVER")?.link ??
+        images[0]?.link;
       const label = `${t.type}${t.sequence ?? ""}`;
       return {
         id: `theme-${t.id}`,
         title: t.song.title,
         subtitle: `${label} — ${t.anime?.name ?? ""}${artist ? ` (${artist})` : ""}`,
         coverUrl: cover,
-        previewUrl: video?.link,
+        previewUrl: video?.audio?.link ?? video?.link,
         source: "animethemes",
         metadata: {
           themeType: t.type,
           sequence: t.sequence,
-          animeId: t.anime?.id,
           animeTitle: t.anime?.name,
           artist,
         },
@@ -722,11 +822,20 @@ export const anilistContentSource: ContentSource = {
   },
 
   async getEntityCollections(entityId, { limit = 100 } = {}) {
-    // For an anime entity: its arcs/sagas are the collections.
     const animeId = Number(entityId);
     if (isNaN(animeId)) return [];
-    const arcs = await getAnimeArcs(animeId);
-    return arcs.slice(0, limit).map(arcToCollection);
+    const [arcs, anime] = await Promise.all([
+      getAnimeArcs(animeId),
+      getAnimeById(animeId),
+    ]);
+    const parentCover = anime?.coverImage.large ?? anime?.coverImage.medium ?? undefined;
+    return arcs.slice(0, limit).map((a) => {
+      const collection = arcToCollection(a);
+      return {
+        ...collection,
+        coverUrl: collection.coverUrl ?? parentCover,
+      };
+    });
   },
 
   async searchItemsByKind(kind, query, { limit = 20 } = {}) {
@@ -743,15 +852,17 @@ export const anilistContentSource: ContentSource = {
         const arcs = await searchAnimeArcs(query, limit);
         return arcs.map((a) => ({
           id: String(a.id),
-          title: a.title.english ?? a.title.romaji ?? a.title.native ?? String(a.id),
+          title: arcDisplayTitle(a),
           coverUrl: a.coverImage.large ?? a.coverImage.medium ?? undefined,
-          source: "anilist" as const,
+          source: typeof a.id === "string" ? "story-arc" as const : "anilist" as const,
           metadata: {
             type: "arc",
             episodes: a.episodes,
             format: a.format,
             popularity: a.popularity,
             parentTitle: a.parentTitle,
+            saga: a.saga,
+            curated: typeof a.id === "string",
           },
         }));
       }
@@ -759,14 +870,6 @@ export const anilistContentSource: ContentSource = {
         return searchAnimeThemesBySong(query, "OP", limit);
       case "ending":
         return searchAnimeThemesBySong(query, "ED", limit);
-      case "transformation": {
-        const chars = await searchJikanCharacters(query, limit);
-        return chars.map((c) => jikanCharToContentItem(c, "transformation"));
-      }
-      case "power": {
-        const chars = await searchJikanCharacters(query, limit);
-        return chars.map((c) => jikanCharToContentItem(c, "power"));
-      }
       default: {
         // Fallback: merge anime + characters
         const [animes, chars] = await Promise.all([

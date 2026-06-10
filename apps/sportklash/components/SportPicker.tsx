@@ -11,6 +11,11 @@ import {
   Swords,
   Trophy,
   Users,
+  CircleDot,
+  Target,
+  Car,
+  Hand,
+  type LucideIcon,
 } from "lucide-react";
 import type { ContentCollection, ContentEntity, ContentItem } from "@klash/content-adapter";
 import { withSearchQuery } from "@/lib/api-url";
@@ -25,7 +30,19 @@ export type SelectedItem = {
   metadata?: Record<string, unknown>;
 };
 
-type Tab = "match" | "league" | "team";
+/** Discipline tabs whose `kind` is searched directly as items. */
+type DisciplineTab = "match" | "foot" | "basket" | "f1" | "mma" | "tennis";
+type Tab = DisciplineTab | "league" | "team";
+
+/** `kind=` query param fed to /api/content/search for each discipline tab. */
+const DISCIPLINE_KIND: Record<DisciplineTab, string> = {
+  match: "items",
+  foot: "foot",
+  basket: "basket",
+  f1: "f1",
+  mma: "mma",
+  tennis: "tennis",
+};
 
 type Props = {
   size: number;
@@ -75,7 +92,7 @@ function itemToSelected(item: ContentItem): SelectedItem {
     subtitle: item.subtitle,
     cover_url: item.coverUrl ?? null,
     preview_url: null,
-    source: "thesportsdb",
+    source: item.source ?? "thesportsdb",
     metadata: { itemKind: item.metadata?.itemKind ?? "match", ...item.metadata },
   };
 }
@@ -90,10 +107,12 @@ export default function SportPicker({ size, selected, onChange, freeMode = false
   const [drillLoading, setDrillLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { results: matchResults, loading: matchLoading } = useDebouncedSearch(
-    "/api/content/search?kind=items",
+  const isDiscipline = tab !== "league" && tab !== "team";
+
+  const { results: itemResults, loading: itemLoading } = useDebouncedSearch(
+    `/api/content/search?kind=${isDiscipline ? DISCIPLINE_KIND[tab] : "items"}`,
     query,
-    tab === "match",
+    isDiscipline,
   );
 
   const { results: tournamentResults, loading: tournamentLoading } = useDebouncedSearch(
@@ -152,11 +171,32 @@ export default function SportPicker({ size, selected, onChange, freeMode = false
     }
   };
 
-  const tabs: { key: Tab; label: string; icon: typeof Swords }[] = [
-    { key: "match", label: "Matchs", icon: Swords },
+  const tabs: { key: Tab; label: string; icon: LucideIcon }[] = [
+    { key: "match", label: "Tous sports", icon: Swords },
+    { key: "foot", label: "Football", icon: CircleDot },
+    { key: "basket", label: "Basket", icon: Target },
+    { key: "f1", label: "F1", icon: Car },
+    { key: "mma", label: "MMA", icon: Hand },
+    { key: "tennis", label: "Tennis", icon: CircleDot },
     { key: "league", label: "Ligues", icon: Trophy },
     { key: "team", label: "Équipes & joueurs", icon: Users },
   ];
+
+  const placeholder = isDiscipline
+    ? tab === "match"
+      ? "Rechercher un match (tous sports)…"
+      : tab === "foot"
+        ? "Rechercher un match de foot…"
+        : tab === "basket"
+          ? "Rechercher un match NBA…"
+          : tab === "f1"
+            ? "Rechercher une course F1…"
+            : tab === "mma"
+              ? "Rechercher un combat MMA…"
+              : "Rechercher un match de tennis…"
+    : tab === "league"
+      ? "Rechercher une ligue…"
+      : "Rechercher une équipe ou un joueur…";
 
   const teamEntities = teamResults as unknown as ContentEntity[];
 
@@ -211,21 +251,15 @@ export default function SportPicker({ size, selected, onChange, freeMode = false
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={
-              tab === "match"
-                ? "Rechercher un match…"
-                : tab === "league"
-                  ? "Rechercher une ligue…"
-                  : "Rechercher une équipe ou un joueur…"
-            }
+            placeholder={placeholder}
             className="input w-full pl-10"
           />
         </div>
       )}
 
       <div className="min-h-[200px] space-y-2">
-        {tab === "match" &&
-          matchResults.map((item) => (
+        {isDiscipline &&
+          itemResults.map((item) => (
             <ResultRow
               key={item.id}
               title={item.title}
@@ -297,7 +331,7 @@ export default function SportPicker({ size, selected, onChange, freeMode = false
               <div>
                 <p className="font-semibold">{entity.name}</p>
                 <p className="text-xs text-[color:var(--muted)]">
-                  {entity.id.startsWith("player-") ? "Matchs du joueur" : "Matchs de l'équipe"}
+                  {entity.id.includes("player-") ? "Matchs du joueur" : "Matchs de l'équipe"}
                 </p>
               </div>
             </button>
@@ -320,7 +354,7 @@ export default function SportPicker({ size, selected, onChange, freeMode = false
           </>
         )}
 
-        {(matchLoading || tournamentLoading || teamLoading) && (
+        {(itemLoading || tournamentLoading || teamLoading) && (
           <p className="text-sm text-[color:var(--muted)]">Recherche…</p>
         )}
       </div>

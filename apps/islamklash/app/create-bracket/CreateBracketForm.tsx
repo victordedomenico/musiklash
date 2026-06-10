@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import ScreenPicker, { type SelectedItem } from "@/components/ScreenPicker";
+import IslamPicker, { type SelectedItem } from "@/components/IslamPicker";
 import { createBracket } from "@/app/create-bracket/actions";
 import Input from "@/components/ui/Input";
 import { effectiveBracketSize, VALID_BRACKET_SIZES } from "@/lib/bracket";
@@ -49,7 +49,7 @@ export default function CreateBracketForm() {
             className="mt-1"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex. Meilleurs films Marvel"
+            placeholder="Ex. Meilleurs romans fantasy"
           />
         </div>
         <div>
@@ -107,7 +107,7 @@ export default function CreateBracketForm() {
         <p className="mt-2 text-xs text-[color:var(--muted)]">{VIS_HINTS[visibility]}</p>
       </div>
 
-      <ScreenPicker size={size} selected={selected} onChange={setSelected} />
+      <IslamPicker size={size} selected={selected} onChange={setSelected} />
 
       {error && <p className="text-sm text-[color:var(--danger)]">{error}</p>}
 

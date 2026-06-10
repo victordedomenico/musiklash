@@ -23,7 +23,7 @@ export default function CreateTierlistForm() {
     e.preventDefault();
     setError(null);
     if (items.length < 2) {
-      setError("Il faut au moins 2 films.");
+      setError("Il faut au moins 2 entrées.");
       return;
     }
     startTransition(async () => {

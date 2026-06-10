@@ -128,7 +128,7 @@ importers:
         version: 9.39.4(jiti@2.7.0)
       eslint-config-next:
         specifier: 16.2.4
-        version: 16.2.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
+        version: 16.2.4(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       prisma:
         specifier: ^7.7.0
         version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
@@ -147,103 +147,6 @@ importers:
       vitest:
         specifier: ^4.1.4
         version: 4.1.7(@types/node@20.19.41)(@vitest/ui@4.1.7)(vite@8.0.14(@types/node@20.19.41)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3))
-
-  apps/basketklash:
-    dependencies:
-      '@dnd-kit/core':
-        specifier: ^6.3.1
-        version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/sortable':
-        specifier: ^10.0.0
-        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@19.2.4)
-      '@hookform/resolvers':
-        specifier: ^5.2.2
-        version: 5.4.0(react-hook-form@7.76.1(react@19.2.4))
-      '@klash/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@klash/content-adapter':
-        specifier: workspace:*
-        version: link:../../packages/content-adapter
-      '@klash/game-engine':
-        specifier: workspace:*
-        version: link:../../packages/game-engine
-      '@klash/i18n':
-        specifier: workspace:*
-        version: link:../../packages/i18n
-      '@klash/klash-app':
-        specifier: workspace:*
-        version: link:../../packages/klash-app
-      '@klash/klash-config':
-        specifier: workspace:*
-        version: link:../../packages/klash-config
-      '@prisma/adapter-pg':
-        specifier: ^7.7.0
-        version: 7.8.0
-      '@prisma/client':
-        specifier: ^7.7.0
-        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
-      '@supabase/ssr':
-        specifier: ^0.10.2
-        version: 0.10.3(@supabase/supabase-js@2.106.2)
-      '@supabase/supabase-js':
-        specifier: ^2.103.3
-        version: 2.106.2
-      lucide-react:
-        specifier: ^1.8.0
-        version: 1.17.0(react@19.2.4)
-      next:
-        specifier: 16.2.4
-        version: 16.2.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      pg:
-        specifier: ^8.20.0
-        version: 8.21.0
-      react:
-        specifier: 19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: 19.2.4
-        version: 19.2.4(react@19.2.4)
-      tailwind-merge:
-        specifier: ^3.5.0
-        version: 3.6.0
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.3.0
-      '@types/node':
-        specifier: ^20
-        version: 20.19.41
-      '@types/pg':
-        specifier: ^8.20.0
-        version: 8.20.0
-      '@types/react':
-        specifier: ^19
-        version: 19.2.15
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.3(@types/react@19.2.15)
-      eslint:
-        specifier: ^9
-        version: 9.39.4(jiti@2.7.0)
-      eslint-config-next:
-        specifier: 16.2.4
-        version: 16.2.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
-      supabase:
-        specifier: ^2.92.1
-        version: 2.101.0
-      tailwindcss:
-        specifier: ^4
-        version: 4.3.0
-      typescript:
-        specifier: ^5
-        version: 5.9.3
 
   apps/boardklash:
     dependencies:
@@ -538,103 +441,6 @@ importers:
       supabase:
         specifier: ^2.92.1
         version: 2.101.0
-      tailwindcss:
-        specifier: ^4
-        version: 4.3.0
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-
-  apps/carklash:
-    dependencies:
-      '@dnd-kit/core':
-        specifier: ^6.3.1
-        version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/sortable':
-        specifier: ^10.0.0
-        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@19.2.4)
-      '@hookform/resolvers':
-        specifier: ^5.2.2
-        version: 5.4.0(react-hook-form@7.76.1(react@19.2.4))
-      '@klash/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@klash/content-adapter':
-        specifier: workspace:*
-        version: link:../../packages/content-adapter
-      '@klash/game-engine':
-        specifier: workspace:*
-        version: link:../../packages/game-engine
-      '@klash/i18n':
-        specifier: workspace:*
-        version: link:../../packages/i18n
-      '@klash/klash-app':
-        specifier: workspace:*
-        version: link:../../packages/klash-app
-      '@klash/klash-config':
-        specifier: workspace:*
-        version: link:../../packages/klash-config
-      '@prisma/adapter-pg':
-        specifier: ^7.7.0
-        version: 7.8.0
-      '@prisma/client':
-        specifier: ^7.7.0
-        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
-      '@supabase/ssr':
-        specifier: ^0.10.2
-        version: 0.10.3(@supabase/supabase-js@2.106.2)
-      '@supabase/supabase-js':
-        specifier: ^2.103.3
-        version: 2.106.2
-      lucide-react:
-        specifier: ^1.8.0
-        version: 1.17.0(react@19.2.4)
-      next:
-        specifier: 16.2.4
-        version: 16.2.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      pg:
-        specifier: ^8.20.0
-        version: 8.21.0
-      react:
-        specifier: 19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: 19.2.4
-        version: 19.2.4(react@19.2.4)
-      tailwind-merge:
-        specifier: ^3.5.0
-        version: 3.6.0
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.3.0
-      '@types/node':
-        specifier: ^20
-        version: 20.19.41
-      '@types/pg':
-        specifier: ^8.20.0
-        version: 8.20.0
-      '@types/react':
-        specifier: ^19
-        version: 19.2.15
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.3(@types/react@19.2.15)
-      eslint:
-        specifier: ^9
-        version: 9.39.4(jiti@2.7.0)
-      eslint-config-next:
-        specifier: 16.2.4
-        version: 16.2.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
-      prisma:
-        specifier: ^7.7.0
-        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       tailwindcss:
         specifier: ^4
         version: 4.3.0
@@ -939,394 +745,6 @@ importers:
         specifier: ^5
         version: 5.9.3
 
-  apps/f1klash:
-    dependencies:
-      '@dnd-kit/core':
-        specifier: ^6.3.1
-        version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/sortable':
-        specifier: ^10.0.0
-        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@19.2.4)
-      '@hookform/resolvers':
-        specifier: ^5.2.2
-        version: 5.4.0(react-hook-form@7.76.1(react@19.2.4))
-      '@klash/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@klash/content-adapter':
-        specifier: workspace:*
-        version: link:../../packages/content-adapter
-      '@klash/game-engine':
-        specifier: workspace:*
-        version: link:../../packages/game-engine
-      '@klash/i18n':
-        specifier: workspace:*
-        version: link:../../packages/i18n
-      '@klash/klash-app':
-        specifier: workspace:*
-        version: link:../../packages/klash-app
-      '@klash/klash-config':
-        specifier: workspace:*
-        version: link:../../packages/klash-config
-      '@prisma/adapter-pg':
-        specifier: ^7.7.0
-        version: 7.8.0
-      '@prisma/client':
-        specifier: ^7.7.0
-        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
-      '@supabase/ssr':
-        specifier: ^0.10.2
-        version: 0.10.3(@supabase/supabase-js@2.106.2)
-      '@supabase/supabase-js':
-        specifier: ^2.103.3
-        version: 2.106.2
-      lucide-react:
-        specifier: ^1.8.0
-        version: 1.17.0(react@19.2.4)
-      next:
-        specifier: 16.2.4
-        version: 16.2.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      pg:
-        specifier: ^8.20.0
-        version: 8.21.0
-      react:
-        specifier: 19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: 19.2.4
-        version: 19.2.4(react@19.2.4)
-      tailwind-merge:
-        specifier: ^3.5.0
-        version: 3.6.0
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.3.0
-      '@types/node':
-        specifier: ^20
-        version: 20.19.41
-      '@types/pg':
-        specifier: ^8.20.0
-        version: 8.20.0
-      '@types/react':
-        specifier: ^19
-        version: 19.2.15
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.3(@types/react@19.2.15)
-      eslint:
-        specifier: ^9
-        version: 9.39.4(jiti@2.7.0)
-      eslint-config-next:
-        specifier: 16.2.4
-        version: 16.2.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
-      prisma:
-        specifier: ^7.7.0
-        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
-      tailwindcss:
-        specifier: ^4
-        version: 4.3.0
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-
-  apps/fightklash:
-    dependencies:
-      '@dnd-kit/core':
-        specifier: ^6.3.1
-        version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/sortable':
-        specifier: ^10.0.0
-        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@19.2.4)
-      '@hookform/resolvers':
-        specifier: ^5.2.2
-        version: 5.4.0(react-hook-form@7.76.1(react@19.2.4))
-      '@klash/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@klash/content-adapter':
-        specifier: workspace:*
-        version: link:../../packages/content-adapter
-      '@klash/game-engine':
-        specifier: workspace:*
-        version: link:../../packages/game-engine
-      '@klash/i18n':
-        specifier: workspace:*
-        version: link:../../packages/i18n
-      '@klash/klash-app':
-        specifier: workspace:*
-        version: link:../../packages/klash-app
-      '@klash/klash-config':
-        specifier: workspace:*
-        version: link:../../packages/klash-config
-      '@prisma/adapter-pg':
-        specifier: ^7.7.0
-        version: 7.8.0
-      '@prisma/client':
-        specifier: ^7.7.0
-        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
-      '@supabase/ssr':
-        specifier: ^0.10.2
-        version: 0.10.3(@supabase/supabase-js@2.106.2)
-      '@supabase/supabase-js':
-        specifier: ^2.103.3
-        version: 2.106.2
-      lucide-react:
-        specifier: ^1.8.0
-        version: 1.17.0(react@19.2.4)
-      next:
-        specifier: 16.2.4
-        version: 16.2.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      pg:
-        specifier: ^8.20.0
-        version: 8.21.0
-      react:
-        specifier: 19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: 19.2.4
-        version: 19.2.4(react@19.2.4)
-      tailwind-merge:
-        specifier: ^3.5.0
-        version: 3.6.0
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.3.0
-      '@types/node':
-        specifier: ^20
-        version: 20.19.41
-      '@types/pg':
-        specifier: ^8.20.0
-        version: 8.20.0
-      '@types/react':
-        specifier: ^19
-        version: 19.2.15
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.3(@types/react@19.2.15)
-      eslint:
-        specifier: ^9
-        version: 9.39.4(jiti@2.7.0)
-      eslint-config-next:
-        specifier: 16.2.4
-        version: 16.2.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
-      prisma:
-        specifier: ^7.7.0
-        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
-      tailwindcss:
-        specifier: ^4
-        version: 4.3.0
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-
-  apps/fitnessklash:
-    dependencies:
-      '@dnd-kit/core':
-        specifier: ^6.3.1
-        version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/sortable':
-        specifier: ^10.0.0
-        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@19.2.4)
-      '@hookform/resolvers':
-        specifier: ^5.2.2
-        version: 5.4.0(react-hook-form@7.76.1(react@19.2.4))
-      '@klash/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@klash/content-adapter':
-        specifier: workspace:*
-        version: link:../../packages/content-adapter
-      '@klash/game-engine':
-        specifier: workspace:*
-        version: link:../../packages/game-engine
-      '@klash/i18n':
-        specifier: workspace:*
-        version: link:../../packages/i18n
-      '@klash/klash-app':
-        specifier: workspace:*
-        version: link:../../packages/klash-app
-      '@klash/klash-config':
-        specifier: workspace:*
-        version: link:../../packages/klash-config
-      '@prisma/adapter-pg':
-        specifier: ^7.7.0
-        version: 7.8.0
-      '@prisma/client':
-        specifier: ^7.7.0
-        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
-      '@supabase/ssr':
-        specifier: ^0.10.2
-        version: 0.10.3(@supabase/supabase-js@2.106.2)
-      '@supabase/supabase-js':
-        specifier: ^2.103.3
-        version: 2.106.2
-      lucide-react:
-        specifier: ^1.8.0
-        version: 1.17.0(react@19.2.4)
-      next:
-        specifier: 16.2.4
-        version: 16.2.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      pg:
-        specifier: ^8.20.0
-        version: 8.21.0
-      react:
-        specifier: 19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: 19.2.4
-        version: 19.2.4(react@19.2.4)
-      tailwind-merge:
-        specifier: ^3.5.0
-        version: 3.6.0
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.3.0
-      '@types/node':
-        specifier: ^20
-        version: 20.19.41
-      '@types/pg':
-        specifier: ^8.20.0
-        version: 8.20.0
-      '@types/react':
-        specifier: ^19
-        version: 19.2.15
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.3(@types/react@19.2.15)
-      eslint:
-        specifier: ^9
-        version: 9.39.4(jiti@2.7.0)
-      eslint-config-next:
-        specifier: 16.2.4
-        version: 16.2.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
-      prisma:
-        specifier: ^7.7.0
-        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
-      tailwindcss:
-        specifier: ^4
-        version: 4.3.0
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-
-  apps/footklash:
-    dependencies:
-      '@dnd-kit/core':
-        specifier: ^6.3.1
-        version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/sortable':
-        specifier: ^10.0.0
-        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@19.2.4)
-      '@hookform/resolvers':
-        specifier: ^5.2.2
-        version: 5.4.0(react-hook-form@7.76.1(react@19.2.4))
-      '@klash/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@klash/content-adapter':
-        specifier: workspace:*
-        version: link:../../packages/content-adapter
-      '@klash/game-engine':
-        specifier: workspace:*
-        version: link:../../packages/game-engine
-      '@klash/i18n':
-        specifier: workspace:*
-        version: link:../../packages/i18n
-      '@klash/klash-app':
-        specifier: workspace:*
-        version: link:../../packages/klash-app
-      '@klash/klash-config':
-        specifier: workspace:*
-        version: link:../../packages/klash-config
-      '@prisma/adapter-pg':
-        specifier: ^7.7.0
-        version: 7.8.0
-      '@prisma/client':
-        specifier: ^7.7.0
-        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
-      '@supabase/ssr':
-        specifier: ^0.10.2
-        version: 0.10.3(@supabase/supabase-js@2.106.2)
-      '@supabase/supabase-js':
-        specifier: ^2.103.3
-        version: 2.106.2
-      lucide-react:
-        specifier: ^1.8.0
-        version: 1.17.0(react@19.2.4)
-      next:
-        specifier: 16.2.4
-        version: 16.2.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      pg:
-        specifier: ^8.20.0
-        version: 8.21.0
-      react:
-        specifier: 19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: 19.2.4
-        version: 19.2.4(react@19.2.4)
-      tailwind-merge:
-        specifier: ^3.5.0
-        version: 3.6.0
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.3.0
-      '@types/node':
-        specifier: ^20
-        version: 20.19.41
-      '@types/pg':
-        specifier: ^8.20.0
-        version: 8.20.0
-      '@types/react':
-        specifier: ^19
-        version: 19.2.15
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.3(@types/react@19.2.15)
-      eslint:
-        specifier: ^9
-        version: 9.39.4(jiti@2.7.0)
-      eslint-config-next:
-        specifier: 16.2.4
-        version: 16.2.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
-      prisma:
-        specifier: ^7.7.0
-        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
-      tailwindcss:
-        specifier: ^4
-        version: 4.3.0
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-
   apps/gameklash:
     dependencies:
       '@dnd-kit/core':
@@ -1426,6 +844,136 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+
+  apps/islamklash:
+    dependencies:
+      '@dnd-kit/core':
+        specifier: ^6.3.1
+        version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@dnd-kit/sortable':
+        specifier: ^10.0.0
+        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@19.2.4)
+      '@hookform/resolvers':
+        specifier: ^5.2.2
+        version: 5.4.0(react-hook-form@7.76.1(react@19.2.4))
+      '@klash/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@klash/content-adapter':
+        specifier: workspace:*
+        version: link:../../packages/content-adapter
+      '@klash/game-engine':
+        specifier: workspace:*
+        version: link:../../packages/game-engine
+      '@klash/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
+      '@klash/klash-app':
+        specifier: workspace:*
+        version: link:../../packages/klash-app
+      '@klash/klash-config':
+        specifier: workspace:*
+        version: link:../../packages/klash-config
+      '@prisma/adapter-pg':
+        specifier: ^7.7.0
+        version: 7.8.0
+      '@prisma/client':
+        specifier: ^7.7.0
+        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
+      '@supabase/ssr':
+        specifier: ^0.10.2
+        version: 0.10.3(@supabase/supabase-js@2.106.2)
+      '@supabase/supabase-js':
+        specifier: ^2.103.3
+        version: 2.106.2
+      '@vercel/analytics':
+        specifier: ^2.0.1
+        version: 2.0.1(next@16.2.4(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      html-to-image:
+        specifier: ^1.11.13
+        version: 1.11.13
+      jspdf:
+        specifier: ^4.2.1
+        version: 4.2.1
+      lucide-react:
+        specifier: ^1.8.0
+        version: 1.17.0(react@19.2.4)
+      next:
+        specifier: 16.2.4
+        version: 16.2.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      pg:
+        specifier: ^8.20.0
+        version: 8.21.0
+      react:
+        specifier: 19.2.4
+        version: 19.2.4
+      react-dom:
+        specifier: 19.2.4
+        version: 19.2.4(react@19.2.4)
+      react-hook-form:
+        specifier: ^7.72.1
+        version: 7.76.1(react@19.2.4)
+      tailwind-merge:
+        specifier: ^3.5.0
+        version: 3.6.0
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
+    devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.3.0
+      '@types/node':
+        specifier: ^20
+        version: 20.19.41
+      '@types/pg':
+        specifier: ^8.20.0
+        version: 8.20.0
+      '@types/react':
+        specifier: ^19
+        version: 19.2.15
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.3(@types/react@19.2.15)
+      '@vitest/ui':
+        specifier: ^4.1.4
+        version: 4.1.7(vitest@4.1.7)
+      babel-plugin-react-compiler:
+        specifier: 1.0.0
+        version: 1.0.0
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+      eslint:
+        specifier: ^9
+        version: 9.39.4(jiti@2.7.0)
+      eslint-config-next:
+        specifier: 16.2.4
+        version: 16.2.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
+      prisma:
+        specifier: ^7.7.0
+        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+      supabase:
+        specifier: ^2.92.1
+        version: 2.101.0
+      tailwindcss:
+        specifier: ^4
+        version: 4.3.0
+      tsx:
+        specifier: ^4.21.0
+        version: 4.22.3
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.4
+        version: 4.1.7(@types/node@20.19.41)(@vitest/ui@4.1.7)(vite@8.0.14(@types/node@20.19.41)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3))
 
   apps/legoklash:
     dependencies:
@@ -2131,7 +1679,7 @@ importers:
         version: 9.39.4(jiti@2.7.0)
       eslint-config-next:
         specifier: 16.2.4
-        version: 16.2.4(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
+        version: 16.2.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       prisma:
         specifier: ^7.7.0
         version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
@@ -2332,106 +1880,6 @@ importers:
       prisma:
         specifier: ^7.7.0
         version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
-      tailwindcss:
-        specifier: ^4
-        version: 4.3.0
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-
-  apps/tennisklash:
-    dependencies:
-      '@dnd-kit/core':
-        specifier: ^6.3.1
-        version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/sortable':
-        specifier: ^10.0.0
-        version: 10.0.0(@dnd-kit/core@6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(react@19.2.4)
-      '@dnd-kit/utilities':
-        specifier: ^3.2.2
-        version: 3.2.2(react@19.2.4)
-      '@hookform/resolvers':
-        specifier: ^5.2.2
-        version: 5.4.0(react-hook-form@7.76.1(react@19.2.4))
-      '@klash/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@klash/content-adapter':
-        specifier: workspace:*
-        version: link:../../packages/content-adapter
-      '@klash/game-engine':
-        specifier: workspace:*
-        version: link:../../packages/game-engine
-      '@klash/i18n':
-        specifier: workspace:*
-        version: link:../../packages/i18n
-      '@klash/klash-app':
-        specifier: workspace:*
-        version: link:../../packages/klash-app
-      '@klash/klash-config':
-        specifier: workspace:*
-        version: link:../../packages/klash-config
-      '@prisma/adapter-pg':
-        specifier: ^7.7.0
-        version: 7.8.0
-      '@prisma/client':
-        specifier: ^7.7.0
-        version: 7.8.0(prisma@7.8.0(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
-      '@supabase/ssr':
-        specifier: ^0.10.2
-        version: 0.10.3(@supabase/supabase-js@2.106.2)
-      '@supabase/supabase-js':
-        specifier: ^2.103.3
-        version: 2.106.2
-      lucide-react:
-        specifier: ^1.8.0
-        version: 1.17.0(react@19.2.4)
-      next:
-        specifier: 16.2.4
-        version: 16.2.4(@babel/core@7.29.7)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      pg:
-        specifier: ^8.20.0
-        version: 8.21.0
-      react:
-        specifier: 19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: 19.2.4
-        version: 19.2.4(react@19.2.4)
-      tailwind-merge:
-        specifier: ^3.5.0
-        version: 3.6.0
-      zod:
-        specifier: ^4.3.6
-        version: 4.4.3
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.3.0
-      '@types/node':
-        specifier: ^20
-        version: 20.19.41
-      '@types/pg':
-        specifier: ^8.20.0
-        version: 8.20.0
-      '@types/react':
-        specifier: ^19
-        version: 19.2.15
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.3(@types/react@19.2.15)
-      eslint:
-        specifier: ^9
-        version: 9.39.4(jiti@2.7.0)
-      eslint-config-next:
-        specifier: 16.2.4
-        version: 16.2.4(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
-      prisma:
-        specifier: ^7.7.0
-        version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.15))(@types/react@19.2.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
-      supabase:
-        specifier: ^2.92.1
-        version: 2.101.0
       tailwindcss:
         specifier: ^4
         version: 4.3.0
@@ -8142,8 +7590,8 @@ snapshots:
       '@next/eslint-plugin-next': 16.2.4
       eslint: 9.39.4(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
+      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.39.4(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-react: 7.37.5(eslint@9.39.4(jiti@2.7.0))
       eslint-plugin-react-hooks: 7.1.1(eslint@9.39.4(jiti@2.7.0))
@@ -8185,21 +7633,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)):
-    dependencies:
-      '@nolyfill/is-core-module': 1.0.39
-      debug: 4.4.3
-      eslint: 9.39.4(jiti@2.7.0)
-      get-tsconfig: 4.14.0
-      is-bun-module: 2.0.0
-      stable-hash: 0.0.5
-      tinyglobby: 0.2.16
-      unrs-resolver: 1.12.2
-    optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
-    transitivePeerDependencies:
-      - supports-color
-
   eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.39.4(jiti@2.7.0)):
     dependencies:
       '@nolyfill/is-core-module': 1.0.39
@@ -8211,32 +7644,22 @@ snapshots:
       tinyglobby: 0.2.16
       unrs-resolver: 1.12.2
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
       '@typescript-eslint/parser': 8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       eslint: 9.39.4(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
-    transitivePeerDependencies:
-      - supports-color
-
-  eslint-module-utils@2.12.1(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0)):
-    dependencies:
-      debug: 3.2.7
-    optionalDependencies:
-      eslint: 9.39.4(jiti@2.7.0)
-      eslint-import-resolver-node: 0.3.10
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0)(eslint@9.39.4(jiti@2.7.0))
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -8247,7 +7670,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.39.4(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0)))(eslint@9.39.4(jiti@2.7.0))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
       hasown: 2.0.3
       is-core-module: 2.16.2
       is-glob: 4.0.3
@@ -8276,7 +7699,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.39.4(jiti@2.7.0)
       eslint-import-resolver-node: 0.3.10
-      eslint-module-utils: 2.12.1(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.60.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.7.0))
       hasown: 2.0.3
       is-core-module: 2.16.2
       is-glob: 4.0.3

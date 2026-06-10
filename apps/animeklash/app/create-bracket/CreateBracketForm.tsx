@@ -105,7 +105,7 @@ export default function CreateBracketForm() {
         size={size}
         selected={selected}
         onChange={setSelected}
-        tabs={["anime", "character", "arc", "opening", "ending", "transformation", "power"]}
+        tabs={["anime", "character", "arc", "opening", "ending"]}
       />
 
       {error ? (

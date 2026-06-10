@@ -39,6 +39,11 @@ export type VerticalManifest = {
   contactEmail: string;
   /** API credit displayed in the footer bottom bar. */
   apiCredit: { label: string; url: string };
+  /**
+   * Affiche l'attribution TMDB requise (logo + mention « not endorsed… ») dans le
+   * footer. À activer pour les verticaux qui consomment l'API TMDB.
+   */
+  tmdbAttribution?: boolean;
   imageHosts: string[];
   gameModes: GameMode[];
 };
@@ -87,7 +92,8 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
     },
     contactEmail: "contact@animeklash.app",
     apiCredit: { label: "AniList API", url: "https://anilist.gitbook.io/anilist-apiv2-docs/" },
-    imageHosts: ["s4.anilist.co", "media.kitsu.app", "v1.animethemes.moe", "cdn.myanimelist.net"],
+    tmdbAttribution: true,
+    imageHosts: ["s4.anilist.co", "media.kitsu.app", "v1.animethemes.moe", "pub-92474f7785774e91a790e086dfa6b2ef.r2.dev", "cdn.myanimelist.net"],
     gameModes: [
       "bracket",
       "tierlist",
@@ -149,7 +155,16 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
       label: "TMDB & TVMaze",
       url: "https://developer.themoviedb.org/docs/getting-started",
     },
-    imageHosts: ["image.tmdb.org", "static.tvmaze.com"],
+    tmdbAttribution: true,
+    imageHosts: [
+      "image.tmdb.org",
+      "static.tvmaze.com",
+      "i.ytimg.com",
+      "img.youtube.com",
+      "e-cdns-images.dzcdn.net",
+      "cdns-images.dzcdn.net",
+      "cdn-images.dzcdn.net",
+    ],
     gameModes: ["bracket", "tierlist"],
   },
   bookklash: {
@@ -524,6 +539,23 @@ export const VERTICAL_MANIFESTS: Record<string, VerticalManifest> = {
       "upload.wikimedia.org",
       "commons.wikimedia.org",
     ],
+    gameModes: ["bracket", "tierlist"],
+  },
+  islamklash: {
+    slug: "islamklash",
+    name: "IslamKlash",
+    itemNoun: "sourate",
+    itemsNoun: "sourates",
+    mediaIcon: "star",
+    smashPassTypeLabels: {
+      sourate: "Sourates",
+      prophete: "Prophètes",
+      savant: "Savants",
+      mosquee: "Mosquées",
+    },
+    contactEmail: "contact@islamklash.app",
+    apiCredit: { label: "Données statiques + Wikidata", url: "https://www.wikidata.org" },
+    imageHosts: ["upload.wikimedia.org", "commons.wikimedia.org"],
     gameModes: ["bracket", "tierlist"],
   },
   f1klash: {
