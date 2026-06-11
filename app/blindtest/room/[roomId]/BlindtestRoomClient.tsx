@@ -27,7 +27,7 @@ import type {
   BlindtestParticipant,
 } from "@/lib/blindtest-room";
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
-import { POINTS_TITLE, POINTS_ARTIST } from "@/components/BlindtestGame";
+import { POINTS_TITLE_MAX, POINTS_ARTIST_MAX } from "@/components/BlindtestGame";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
 import RoomChat from "@/components/RoomChat";
 import { downloadNodeAsPng } from "@/lib/download-png";
@@ -38,7 +38,9 @@ import {
   nextTrack,
   rematch,
   refreshRoomState,
+  fetchBlindtestLeaderboard,
 } from "./actions";
+import type { GlobalLeaderboard } from "@/lib/blindtest-leaderboard";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { isSingleArtistBlindtest } from "@/lib/blindtest-utils";
 
@@ -161,6 +163,7 @@ export default function BlindtestRoomClient({
   const [audioPlaying, setAudioPlaying] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<GlobalLeaderboard | null>(null);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -372,6 +375,21 @@ export default function BlindtestRoomClient({
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, [room.status, room.currentTrack]);
+
+  // ── Classement mondial (écran de fin) ──────────────────────────────────────
+  // Le panneau de fin ne s'affiche que si status === "finished", donc inutile de
+  // réinitialiser : on (re)charge simplement le classement à chaque entrée en fin.
+  useEffect(() => {
+    if (room.status !== "finished") return;
+    let cancelled = false;
+    void fetchBlindtestLeaderboard().then((res) => {
+      if (cancelled || !res.ok) return;
+      setLeaderboard(res.leaderboard);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [room.status, room.id]);
 
   // ── Server submit ──────────────────────────────────────────────────────────
   const doSubmit = useCallback(
@@ -734,6 +752,18 @@ export default function BlindtestRoomClient({
       ? room.participants.find((p) => p.playerId === room.winnerId)?.username ?? "—"
       : null;
 
+    // Temps de réponse moyen du joueur courant (pour l'affichage type "16.5s").
+    const myTimedAnswers = myAnswers.filter((a) => typeof a.timeMs === "number");
+    const myAvgTimeSec =
+      myTimedAnswers.length > 0
+        ? myTimedAnswers.reduce((s, a) => s + (a.timeMs ?? 0), 0) /
+          myTimedAnswers.length /
+          1000
+        : null;
+
+    const meEntry = leaderboard?.me ?? null;
+    const isNewRecord = meEntry !== null && myScore > 0 && myScore >= meEntry.bestScore;
+
     return (
       <div className="space-y-6">
         <ChallengeOutcomeFx outcome={outcome} />
@@ -774,6 +804,112 @@ export default function BlindtestRoomClient({
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Classement mondial */}
+          <div className="card p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 font-bold">
+                <Trophy size={16} className="text-yellow-400" /> Classement mondial
+              </h3>
+              {leaderboard ? (
+                <span className="text-xs text-[color:var(--muted)]">
+                  {leaderboard.totalPlayers} joueur
+                  {leaderboard.totalPlayers > 1 ? "s" : ""}
+                </span>
+              ) : null}
+            </div>
+
+            {/* Récap perso : score de la partie, record, rang */}
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-xl p-3" style={{ background: "var(--surface-2)" }}>
+                <p className="text-2xl font-black tabular-nums">{myScore}</p>
+                <p className="mt-1 text-[10px] uppercase tracking-wide text-[color:var(--muted)]">
+                  Cette partie
+                </p>
+              </div>
+              <div className="rounded-xl p-3" style={{ background: "var(--surface-2)" }}>
+                <p className="text-2xl font-black tabular-nums">
+                  {meEntry ? meEntry.bestScore : myScore}
+                </p>
+                <p className="mt-1 text-[10px] uppercase tracking-wide text-[color:var(--muted)]">
+                  Record
+                </p>
+              </div>
+              <div className="rounded-xl p-3" style={{ background: "var(--surface-2)" }}>
+                <p className="text-2xl font-black tabular-nums">
+                  {meEntry ? `#${meEntry.rank}` : "—"}
+                </p>
+                <p className="mt-1 text-[10px] uppercase tracking-wide text-[color:var(--muted)]">
+                  {myAvgTimeSec !== null
+                    ? `${myAvgTimeSec.toFixed(1)}s de moy.`
+                    : "Rang"}
+                </p>
+              </div>
+            </div>
+
+            {isNewRecord ? (
+              <p className="flex items-center justify-center gap-2 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm font-semibold text-yellow-300">
+                <Trophy size={14} /> Nouveau record personnel !
+              </p>
+            ) : null}
+
+            {/* Top joueurs */}
+            {leaderboard && leaderboard.top.length > 0 ? (
+              <div className="space-y-1">
+                {leaderboard.top.map((entry) => {
+                  const isMe = entry.playerId === userId;
+                  return (
+                    <div
+                      key={entry.playerId}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm"
+                      style={{
+                        background: isMe ? "var(--accent-dim)" : "var(--surface-2)",
+                        border: isMe
+                          ? "1px solid var(--accent)"
+                          : "1px solid transparent",
+                      }}
+                    >
+                      <span className="w-8 shrink-0 font-bold tabular-nums text-[color:var(--muted)]">
+                        #{entry.rank}
+                      </span>
+                      <span className={`flex-1 truncate ${isMe ? "font-bold" : "font-medium"}`}>
+                        {entry.username}
+                        {isMe ? " (vous)" : ""}
+                      </span>
+                      <span className="shrink-0 font-bold tabular-nums">
+                        {entry.bestScore}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {/* Ligne du joueur s'il est hors du top affiché */}
+                {meEntry && !leaderboard.top.some((e) => e.playerId === userId) ? (
+                  <div
+                    className="mt-2 flex items-center gap-3 rounded-lg px-3 py-2 text-sm"
+                    style={{
+                      background: "var(--accent-dim)",
+                      border: "1px solid var(--accent)",
+                    }}
+                  >
+                    <span className="w-8 shrink-0 font-bold tabular-nums text-[color:var(--muted)]">
+                      #{meEntry.rank}
+                    </span>
+                    <span className="flex-1 truncate font-bold">
+                      {meEntry.username} (vous)
+                    </span>
+                    <span className="shrink-0 font-bold tabular-nums">
+                      {meEntry.bestScore}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-center text-xs text-[color:var(--muted)]">
+                Chargement du classement…
+              </p>
+            )}
           </div>
 
           {/* Track-by-track recap */}
@@ -819,12 +955,16 @@ export default function BlindtestRoomClient({
                             >
                               {a.correctTitle ? <Check size={10} /> : <X size={10} />} Titre
                             </span>
-                            <span className="mx-1 text-[color:var(--muted)]">·</span>
-                            <span
-                              className={`inline-flex items-center gap-1 ${a.correctArtist ? "text-green-400" : "text-red-400"}`}
-                            >
-                              {a.correctArtist ? <Check size={10} /> : <X size={10} />} Artiste
-                            </span>
+                            {!singleArtistBlindtest && (
+                              <>
+                                <span className="mx-1 text-[color:var(--muted)]">·</span>
+                                <span
+                                  className={`inline-flex items-center gap-1 ${a.correctArtist ? "text-green-400" : "text-red-400"}`}
+                                >
+                                  {a.correctArtist ? <Check size={10} /> : <X size={10} />} Artiste
+                                </span>
+                              </>
+                            )}
                             <span className="ml-1 font-bold">+{a.points} pts</span>
                           </>
                         ) : (
@@ -996,14 +1136,13 @@ export default function BlindtestRoomClient({
                   style={{ borderColor: "#2a3242", background: "#131822" }}
                 >
                   Un seul artiste sur tout le blindtest : indique uniquement le{" "}
-                  <strong className="text-[color:var(--foreground)]">titre</strong>. Les{" "}
-                  <strong className="text-[color:var(--foreground)]">+{POINTS_ARTIST} pt</strong> artiste sont
-                  ajoutés automatiquement.
+                  <strong className="text-[color:var(--foreground)]">titre</strong>. L&apos;artiste
+                  ne rapporte pas de points. Plus tu réponds vite, plus tu marques !
                 </p>
               ) : null}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
-                  Titre du morceau (+{POINTS_TITLE} pts)
+                  Titre du morceau (jusqu&apos;à +{POINTS_TITLE_MAX} pts)
                 </label>
                 <input
                   ref={titleInputRef}
@@ -1019,7 +1158,7 @@ export default function BlindtestRoomClient({
               {!singleArtistBlindtest ? (
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
-                    Artiste (+{POINTS_ARTIST} pt)
+                    Artiste (jusqu&apos;à +{POINTS_ARTIST_MAX} pts)
                   </label>
                   <input
                     className="input mt-1"
@@ -1076,30 +1215,39 @@ export default function BlindtestRoomClient({
 
             <div className="flex-1 w-full space-y-3">
               <AnswerRow
-                label={`Titre (+${POINTS_TITLE} pts)`}
+                label="Titre"
                 truth={track.title}
                 guess={myLastAnswer.guessTitle}
                 correct={myLastAnswer.correctTitle}
-                points={POINTS_TITLE}
+                points={myLastAnswer.titlePoints ?? 0}
               />
-              <AnswerRow
-                label={
-                  singleArtistBlindtest
-                    ? `Artiste (+${POINTS_ARTIST} pt) · commun à tous les titres`
-                    : `Artiste (+${POINTS_ARTIST} pt)`
-                }
-                truth={track.artist}
-                guess={myLastAnswer.guessArtist}
-                correct={myLastAnswer.correctArtist}
-                points={POINTS_ARTIST}
-              />
+              {singleArtistBlindtest ? (
+                <p className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--muted)]">
+                  Artiste : <span className="font-semibold text-[color:var(--foreground)]">{track.artist}</span>{" "}
+                  · commun à tous les titres (ne rapporte pas de points)
+                </p>
+              ) : (
+                <AnswerRow
+                  label="Artiste"
+                  truth={track.artist}
+                  guess={myLastAnswer.guessArtist}
+                  correct={myLastAnswer.correctArtist}
+                  points={myLastAnswer.artistPoints ?? 0}
+                />
+              )}
 
               <div className="flex items-center justify-between pt-1">
                 <p className="font-bold text-lg">
                   +{myLastAnswer.points} pt{myLastAnswer.points !== 1 ? "s" : ""}
-                  <span className="ml-2 text-sm font-normal text-[color:var(--muted)]">
-                    Score: {myScore}
-                  </span>
+                  {myLastAnswer.timeMs ? (
+                    <span className="ml-2 text-sm font-normal text-[color:var(--muted)]">
+                      en {(myLastAnswer.timeMs / 1000).toFixed(1)}s · Score : {myScore}
+                    </span>
+                  ) : (
+                    <span className="ml-2 text-sm font-normal text-[color:var(--muted)]">
+                      Score : {myScore}
+                    </span>
+                  )}
                 </p>
                 {isHost && (
                   <button

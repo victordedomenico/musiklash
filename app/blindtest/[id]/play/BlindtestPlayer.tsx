@@ -5,11 +5,10 @@ import { useRouter } from "next/navigation";
 import BlindtestGame, {
   type BlindtrackData,
   type BlindtestAnswer,
-  POINTS_PER_TRACK,
 } from "@/components/BlindtestGame";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
 import { deleteTransientBlindtest, saveBlindtestSession } from "./actions";
-import { isSingleArtistBlindtest } from "@/lib/blindtest-utils";
+import { isSingleArtistBlindtest, maxTrackPoints } from "@/lib/blindtest-utils";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import { Trophy, RotateCcw, Share2, Check, X, Download } from "lucide-react";
 
@@ -50,7 +49,7 @@ export default function BlindtestPlayer({
       // persist them via "Sauvegarder et partager".
       return;
     }
-    const maxScore = tracks.length * POINTS_PER_TRACK;
+    const maxScore = tracks.length * maxTrackPoints(isSingleArtistBlindtest(tracks));
 
     startTransition(async () => {
       const res = await saveBlindtestSession(blindtestId, answers, score, maxScore);
@@ -108,7 +107,7 @@ export default function BlindtestPlayer({
       return;
     }
 
-    const maxScore = tracks.length * POINTS_PER_TRACK;
+    const maxScore = tracks.length * maxTrackPoints(isSingleArtistBlindtest(tracks));
     startTransition(async () => {
       const res = await saveBlindtestSession(
         blindtestId,
@@ -132,7 +131,7 @@ export default function BlindtestPlayer({
 
   // ── Results screen ────────────────────────────────────────────────────────
   if (finalAnswers) {
-    const maxScore = tracks.length * POINTS_PER_TRACK;
+    const maxScore = tracks.length * maxTrackPoints(isSingleArtistBlindtest(tracks));
     const pct = Math.round((finalScore / maxScore) * 100);
     const outcome = pct === 50 ? "draw" : pct > 50 ? "victory" : "defeat";
 
@@ -192,7 +191,7 @@ export default function BlindtestPlayer({
           <h2 className="font-bold text-lg">Récap morceau par morceau</h2>
           {isSingleArtistBlindtest(tracks) ? (
             <p className="text-sm text-[color:var(--muted)]">
-              Un seul artiste : les points « artiste » ont été attribués automatiquement à chaque morceau.
+              Un seul artiste sur tout le blindtest : seul le titre rapporte des points.
             </p>
           ) : null}
           {finalAnswers.map((a) => (
@@ -222,15 +221,17 @@ export default function BlindtestPlayer({
                       </span>
                     )}
                   </span>
-                  <span className={`flex items-center gap-1 ${a.correctArtist ? "text-green-400" : "text-red-400"}`}>
-                    {a.correctArtist ? <Check size={11} /> : <X size={11} />}
-                    Artiste
-                    {!a.correctArtist && a.guessArtist && (
-                      <span className="text-[color:var(--muted)] line-through ml-1">
-                        {a.guessArtist}
-                      </span>
-                    )}
-                  </span>
+                  {!isSingleArtistBlindtest(tracks) && (
+                    <span className={`flex items-center gap-1 ${a.correctArtist ? "text-green-400" : "text-red-400"}`}>
+                      {a.correctArtist ? <Check size={11} /> : <X size={11} />}
+                      Artiste
+                      {!a.correctArtist && a.guessArtist && (
+                        <span className="text-[color:var(--muted)] line-through ml-1">
+                          {a.guessArtist}
+                        </span>
+                      )}
+                    </span>
+                  )}
                 </div>
               </div>
               <p className="text-sm font-bold shrink-0 self-center">

@@ -9,10 +9,11 @@ import {
   isCorrect,
   isSingleArtistBlindtest,
   normalizeParticipants,
-  POINTS_ARTIST,
-  POINTS_TITLE,
+  scoreAnswer,
   toBlindtestRoomSnapshot,
 } from "@/lib/blindtest-room";
+import { getGlobalLeaderboard, recordGameScores } from "@/lib/blindtest-leaderboard";
+import type { GlobalLeaderboard } from "@/lib/blindtest-leaderboard";
 import type {
   BlindtestParticipant,
   BlindtestRoomEvent,
@@ -89,6 +90,19 @@ async function buildResponse(roomId: string, event: BlindtestRoomEvent) {
   const room = await getBlindtestRoomSnapshot(roomId);
   if (!room) return { ok: false as const, error: "Room introuvable" };
   return { ok: true as const, room, event };
+}
+
+/** Classement mondial multijoueur pour l'écran de fin de partie. */
+export async function fetchBlindtestLeaderboard(): Promise<
+  { ok: true; leaderboard: GlobalLeaderboard } | { ok: false }
+> {
+  const user = await requirePlayer();
+  try {
+    const leaderboard = await getGlobalLeaderboard(user?.id ?? null);
+    return { ok: true as const, leaderboard };
+  } catch {
+    return { ok: false as const };
+  }
 }
 
 /** Re-fetch room from DB — fallback when Realtime broadcast does not reach every client. */
@@ -275,7 +289,16 @@ export async function submitAnswer(
   const singleArtistMode = isSingleArtistBlindtest(room.blindtest.tracks);
   const correctTitle = isCorrect(guessTitle, track.title);
   const correctArtist = singleArtistMode ? true : isCorrect(guessArtist, track.artist);
-  const points = (correctTitle ? POINTS_TITLE : 0) + (correctArtist ? POINTS_ARTIST : 0);
+
+  // Rapidité mesurée côté serveur depuis le démarrage du morceau (autorité).
+  const startedAtMs = room.trackStartedAt ? room.trackStartedAt.getTime() : Date.now();
+  const timeMs = Math.max(0, Date.now() - startedAtMs);
+  // En mode artiste unique l'artiste ne rapporte aucun point : seul le titre est scoré.
+  const { points, titlePoints, artistPoints } = scoreAnswer(
+    correctTitle,
+    singleArtistMode ? false : correctArtist,
+    timeMs,
+  );
 
   const answer: BlindtestAnswer = {
     position,
@@ -284,6 +307,9 @@ export async function submitAnswer(
     correctTitle,
     correctArtist,
     points,
+    titlePoints,
+    artistPoints,
+    timeMs,
     trueTitle: track.title,
     trueArtist: track.artist,
     coverUrl: track.coverUrl ?? null,
@@ -337,6 +363,20 @@ export async function nextTrack(roomId: string) {
       where: { id: roomId },
       data: { status: "finished", winnerId, trackStartedAt: null },
     });
+
+    // Enregistre les scores au classement mondial (best effort : ne bloque pas
+    // la fin de partie si la table n'existe pas encore / erreur transitoire).
+    try {
+      await recordGameScores(
+        participants.map((p) => ({
+          playerId: p.playerId,
+          username: p.username,
+          score: p.score,
+        })),
+      );
+    } catch {
+      // ignoré volontairement
+    }
 
     return buildResponse(roomId, { type: "game-end", winnerId });
   }

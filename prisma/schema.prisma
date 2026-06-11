@@ -36,6 +36,7 @@ model Profile {
   smashPasses               SmashPass[]
   smashPassSessions         SmashPassSession[]
   hostedSmashPassRooms      SmashPassRoom[]         @relation("SmashPassRoomHost")
+  blindtestLeaderboard      BlindtestLeaderboard?
 
   @@map("profiles")
 }
@@ -178,6 +179,22 @@ model BlindtestSession {
   @@index([blindtestId])
   @@index([visibility, createdAt(sort: Desc)])
   @@map("blindtest_sessions")
+}
+
+// Classement mondial multijoueur, tous blindtests confondus (1 ligne par joueur).
+model BlindtestLeaderboard {
+  playerId    String    @id @map("player_id") @db.Uuid
+  username    String
+  bestScore   Int       @default(0) @map("best_score")
+  totalScore  BigInt    @default(0) @map("total_score")
+  gamesPlayed Int       @default(0) @map("games_played")
+  bestAt      DateTime? @map("best_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  player Profile @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([bestScore(sort: Desc)])
+  @@map("blindtest_leaderboard")
 }
 
 // ─── Tierlists ────────────────────────────────────────────────────────────────
