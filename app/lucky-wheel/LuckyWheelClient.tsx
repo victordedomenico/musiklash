@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Dice6,
   Disc3,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 import type { DeezerAlbum, DeezerArtist, DeezerTrack } from "@/lib/deezer";
 import { useTrackPreview } from "@/lib/use-track-preview";
+import { useSoundFx } from "@/lib/use-sound-fx";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -171,8 +173,10 @@ export default function LuckyWheelClient() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rotationRef = useRef(0);
   const winnerRef = useRef<WheelItem | null>(null);
+  const tickIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { playTrack, isPlayingKey, stop } = useTrackPreview();
+  const { play: playSound } = useSoundFx();
 
   const trackSearch = useSearch<DeezerTrack>(
     "/api/deezer/search",
@@ -198,9 +202,15 @@ export default function LuckyWheelClient() {
   }, [items]);
 
   const handleTransitionEnd = useCallback(() => {
+    if (tickIntervalRef.current) {
+      clearInterval(tickIntervalRef.current);
+      tickIntervalRef.current = null;
+    }
+    playSound("spin_end");
+    setTimeout(() => playSound("win"), 650);
     setIsSpinning(false);
     if (winnerRef.current) setWinner(winnerRef.current);
-  }, []);
+  }, [playSound]);
 
   const spin = useCallback(() => {
     if (isSpinning || items.length < 2) return;
@@ -221,7 +231,22 @@ export default function LuckyWheelClient() {
     rotationRef.current = newR;
     setRotation(newR);
     setIsSpinning(true);
-  }, [isSpinning, items]);
+
+    // Tick sounds: fast at start, slow at end (4s total spin)
+    let elapsed = 0;
+    const SPIN_MS = 4000;
+    const tick = () => {
+      elapsed += 50;
+      const progress = elapsed / SPIN_MS;
+      // Tick interval grows from 50ms to 400ms (easing out)
+      const nextInterval = 50 + Math.pow(progress, 2) * 350;
+      playSound("tick");
+      if (elapsed < SPIN_MS - 300) {
+        tickIntervalRef.current = setTimeout(tick, nextInterval);
+      }
+    };
+    tickIntervalRef.current = setTimeout(tick, 50);
+  }, [isSpinning, items, playSound]);
 
   const addTrack = useCallback((track: DeezerTrack) => {
     setItems((prev) => {
@@ -359,10 +384,13 @@ export default function LuckyWheelClient() {
             />
 
             {/* Center SPIN button */}
-            <button
+            <motion.button
               onClick={spin}
               disabled={!canSpin}
               aria-label="Tourner la roue"
+              animate={isSpinning ? { scale: [1, 1.12, 1] } : {}}
+              transition={isSpinning ? { repeat: Infinity, duration: 0.6 } : {}}
+              whileTap={canSpin ? { scale: 0.9 } : {}}
               style={{
                 position: "absolute",
                 width: 60,
@@ -377,24 +405,25 @@ export default function LuckyWheelClient() {
                 cursor: canSpin ? "pointer" : "not-allowed",
                 boxShadow: "0 2px 16px rgba(0,0,0,0.3)",
                 zIndex: 10,
-                transition: "transform 0.1s ease, background 0.2s ease",
                 userSelect: "none",
               }}
             >
               SPIN
-            </button>
+            </motion.button>
           </div>
 
           {/* Spin CTA */}
           <div className="flex flex-col items-center gap-2">
-            <button
+            <motion.button
               onClick={spin}
               disabled={!canSpin}
               className="btn-primary px-10 py-3 text-base"
+              whileTap={canSpin ? { scale: 0.94 } : {}}
+              whileHover={canSpin ? { scale: 1.04 } : {}}
             >
               <Dice6 size={18} />
               Tourner la roue
-            </button>
+            </motion.button>
             {items.length < 2 && (
               <p className="text-xs text-center" style={{ color: "var(--muted)" }}>
                 Ajoute au moins 2 éléments pour lancer
@@ -767,105 +796,155 @@ export default function LuckyWheelClient() {
       </div>
 
       {/* ── Winner modal ──────────────────────────────────────────────────────── */}
-      {winner && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{
-            background: "rgba(0,0,0,0.72)",
-            backdropFilter: "blur(10px)",
-          }}
-          onClick={closeWinner}
-        >
-          <div
-            className="relative w-full max-w-sm rounded-3xl p-8 text-center shadow-2xl"
-            style={{
-              background: "var(--surface)",
-              border: "1px solid var(--border-strong)",
-            }}
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {winner && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ backdropFilter: "blur(10px)" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={closeWinner}
           >
-            <button
-              onClick={closeWinner}
-              className="absolute right-4 top-4 rounded-xl p-2 transition"
-              style={{ color: "var(--muted)" }}
-              aria-label="Fermer"
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background =
-                  "var(--surface-2)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background =
-                  "transparent";
-              }}
-            >
-              <X size={18} />
-            </button>
-
-            <p
-              className="mb-5 text-xs font-bold uppercase tracking-[0.25em]"
-              style={{ color: "var(--muted)" }}
-            >
-              Le hasard a parlé !
-            </p>
-
-            {winner.coverUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={winner.coverUrl.replace("_small", "_medium")}
-                alt={winner.label}
-                className={`mx-auto mb-5 h-28 w-28 object-cover shadow-xl ${winner.type === "artist" ? "rounded-full" : "rounded-2xl"}`}
+            {/* Confetti particles */}
+            {Array.from({ length: 18 }).map((_, i) => (
+              <motion.div
+                key={i}
+                className="pointer-events-none fixed rounded-full"
+                style={{
+                  width: 8 + (i % 4) * 4,
+                  height: 8 + (i % 4) * 4,
+                  background: SEGMENT_COLORS[i % SEGMENT_COLORS.length],
+                  left: `${10 + (i * 5) % 80}%`,
+                  top: "-10px",
+                }}
+                initial={{ y: -20, opacity: 1, rotate: 0 }}
+                animate={{
+                  y: typeof window !== "undefined" ? window.innerHeight + 40 : 900,
+                  opacity: [1, 1, 0],
+                  rotate: 360 * (i % 2 === 0 ? 1 : -1),
+                  x: (i % 2 === 0 ? 1 : -1) * (20 + (i * 13) % 80),
+                }}
+                transition={{ duration: 1.8 + (i % 4) * 0.3, ease: "easeIn" }}
               />
-            )}
+            ))}
 
-            <h2
-              className="mb-1 text-2xl font-black leading-tight"
-              style={{ color: "var(--foreground)" }}
+            {/* Backdrop */}
+            <motion.div
+              className="fixed inset-0 -z-10"
+              style={{ background: "rgba(0,0,0,0.72)" }}
+            />
+
+            <motion.div
+              className="relative w-full max-w-sm rounded-3xl p-8 text-center shadow-2xl"
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border-strong)",
+              }}
+              initial={{ scale: 0.7, y: 40, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.85, y: 20, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 380, damping: 22 }}
+              onClick={(e) => e.stopPropagation()}
             >
-              {winner.label}
-            </h2>
-            {winner.sublabel && (
-              <p className="mb-6 text-sm" style={{ color: "var(--muted)" }}>
-                {winner.sublabel}
-              </p>
-            )}
+              <button
+                onClick={closeWinner}
+                className="absolute right-4 top-4 rounded-xl p-2 transition"
+                style={{ color: "var(--muted)" }}
+                aria-label="Fermer"
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "var(--surface-2)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background =
+                    "transparent";
+                }}
+              >
+                <X size={18} />
+              </button>
 
-            {winner.previewUrl && winner.deezerTrackId ? (
+              <motion.p
+                className="mb-5 text-xs font-bold uppercase tracking-[0.25em]"
+                style={{ color: "var(--muted)" }}
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+              >
+                Le hasard a parlé !
+              </motion.p>
+
+              {winner.coverUrl && (
+                <motion.img
+                  src={winner.coverUrl.replace("_small", "_medium")}
+                  alt={winner.label}
+                  className={`mx-auto mb-5 h-28 w-28 object-cover shadow-xl ${winner.type === "artist" ? "rounded-full" : "rounded-2xl"}`}
+                  initial={{ scale: 0.5, opacity: 0, rotate: -8 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.1 }}
+                />
+              )}
+
+              <motion.h2
+                className="mb-1 text-2xl font-black leading-tight"
+                style={{ color: "var(--foreground)" }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.22 }}
+              >
+                {winner.label}
+              </motion.h2>
+              {winner.sublabel && (
+                <motion.p
+                  className="mb-6 text-sm"
+                  style={{ color: "var(--muted)" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  {winner.sublabel}
+                </motion.p>
+              )}
+
+              {winner.previewUrl && winner.deezerTrackId ? (
+                <button
+                  onClick={() => {
+                    void playTrack(
+                      winner.id,
+                      winner.label,
+                      winner.previewUrl ?? "",
+                      winner.deezerTrackId!,
+                    );
+                  }}
+                  className="btn-primary mb-3 w-full"
+                >
+                  {isPlayingKey(winner.id) ? (
+                    <Pause size={16} />
+                  ) : (
+                    <Play size={16} />
+                  )}
+                  {isPlayingKey(winner.id) ? "Pause" : "Écouter l'extrait"}
+                </button>
+              ) : (
+                <div className="mb-3" />
+              )}
+
               <button
                 onClick={() => {
-                  void playTrack(
-                    winner.id,
-                    winner.label,
-                    winner.previewUrl ?? "",
-                    winner.deezerTrackId!,
-                  );
+                  const id = winner.id;
+                  closeWinner();
+                  removeItem(id);
                 }}
-                className="btn-primary mb-3 w-full"
+                className="btn-ghost w-full"
               >
-                {isPlayingKey(winner.id) ? (
-                  <Pause size={16} />
-                ) : (
-                  <Play size={16} />
-                )}
-                {isPlayingKey(winner.id) ? "Pause" : "Écouter l'extrait"}
+                <Trash2 size={14} />
+                Retirer et retourner
               </button>
-            ) : (
-              <div className="mb-3" />
-            )}
-
-            <button
-              onClick={() => {
-                const id = winner.id;
-                closeWinner();
-                removeItem(id);
-              }}
-              className="btn-ghost w-full"
-            >
-              <Trash2 size={14} />
-              Retirer et retourner
-            </button>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

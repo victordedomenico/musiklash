@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { motion } from "framer-motion";
 import { Play, Pause, Check, X, SkipForward } from "lucide-react";
 import { usePreviewVolume } from "@/lib/audio-volume";
+import { useSoundFx } from "@/lib/use-sound-fx";
 import {
   isCorrect,
   isSingleArtistBlindtest,
@@ -113,6 +115,7 @@ export default function BlindtestGame({
   // Horodatage du début du morceau courant — sert à mesurer la rapidité de réponse.
   const trackStartRef = useRef<number>(0);
   const { volume } = usePreviewVolume();
+  const { play: playSound } = useSoundFx();
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -206,6 +209,12 @@ export default function BlindtestGame({
       timeMs,
     );
 
+    if (correctTitle || correctArtist) {
+      playSound("correct");
+    } else {
+      playSound("wrong");
+    }
+
     setAnswers((prev) => [
       ...prev,
       {
@@ -224,7 +233,7 @@ export default function BlindtestGame({
       },
     ]);
     setPhase("revealed");
-  }, [tracks, singleArtistMode]);
+  }, [tracks, singleArtistMode, playSound]);
 
   // ── Timer ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -417,9 +426,19 @@ export default function BlindtestGame({
         )}
 
         {phase === "revealed" && lastAnswer && (
-          <div className="flex flex-col md:flex-row gap-8 items-start">
+          <motion.div
+            className="flex flex-col md:flex-row gap-8 items-start"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+          >
             {/* Revealed cover */}
-            <div className="h-44 w-44 shrink-0 rounded-xl overflow-hidden bg-[color:var(--surface-2)]">
+            <motion.div
+              className="h-44 w-44 shrink-0 rounded-xl overflow-hidden bg-[color:var(--surface-2)]"
+              initial={{ scale: 0.85 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
               {track.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -432,7 +451,7 @@ export default function BlindtestGame({
                   🎵
                 </div>
               )}
-            </div>
+            </motion.div>
 
             {/* Answer details */}
             <div className="flex-1 w-full space-y-3">
@@ -459,20 +478,32 @@ export default function BlindtestGame({
               )}
 
               <div className="flex items-center justify-between pt-1">
-                <p className="font-bold text-lg">
+                <motion.p
+                  className="font-bold text-lg"
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 18, delay: 0.08 }}
+                  style={{ color: lastAnswer.points > 0 ? "#4ade80" : "#f87171" }}
+                >
                   +{lastAnswer.points} pt{lastAnswer.points !== 1 ? "s" : ""}
                   {lastAnswer.timeMs ? (
                     <span className="text-sm font-normal text-[color:var(--muted)] ml-2">
                       en {(lastAnswer.timeMs / 1000).toFixed(1)}s
                     </span>
                   ) : null}
-                </p>
-                <button type="button" onClick={goNext} className="btn-primary">
+                </motion.p>
+                <motion.button
+                  type="button"
+                  onClick={goNext}
+                  className="btn-primary"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.93 }}
+                >
                   {idx + 1 >= tracks.length ? "Voir les résultats →" : "Suivant →"}
-                </button>
+                </motion.button>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

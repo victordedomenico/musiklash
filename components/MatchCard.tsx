@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Pause, Play } from "lucide-react";
 import { usePreviewVolume } from "@/lib/audio-volume";
+import { useSoundFx } from "@/lib/use-sound-fx";
 
 export type BracketTrack = {
   seed: number;
@@ -35,6 +37,7 @@ export default function MatchCard({
   const [duration, setDuration] = useState(30);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { volume } = usePreviewVolume();
+  const { play: playSound } = useSoundFx();
   // Fresh preview URLs fetched on mount (les URLs Deezer signées expirent)
   const [previewA, setPreviewA] = useState(a.preview_url);
   const [previewB, setPreviewB] = useState(b.preview_url);
@@ -99,6 +102,11 @@ export default function MatchCard({
     }
   };
 
+  const handlePick = (seed: number) => {
+    playSound("vote");
+    onPick(seed);
+  };
+
   return (
     <div className="card p-4 sm:p-6">
       <p className="text-center text-xs font-semibold uppercase tracking-wider text-[color:var(--muted)]">
@@ -112,7 +120,7 @@ export default function MatchCard({
           currentTime={currentTime}
           duration={duration}
           onToggle={toggle}
-          onPick={onPick}
+          onPick={handlePick}
           onSeek={handleSeek}
         />
         <div className="mx-auto text-lg font-black text-[color:var(--muted)] h-10 w-10 flex items-center justify-center rounded-full bg-[color:var(--surface-2)]">
@@ -125,7 +133,7 @@ export default function MatchCard({
           currentTime={currentTime}
           duration={duration}
           onToggle={toggle}
-          onPick={onPick}
+          onPick={handlePick}
           onSeek={handleSeek}
         />
       </div>
@@ -200,13 +208,15 @@ function Side({
               {playing ? <Pause size={14} className="shrink-0" /> : <Play size={14} className="shrink-0" />}
               {playing ? "Pause" : "Écouter"}
             </button>
-            <button
+            <motion.button
               type="button"
               onClick={() => onPick(track.seed)}
-            className="btn-primary w-full justify-center text-sm sm:flex-1"
+              className="btn-primary w-full justify-center text-sm sm:flex-1"
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
             >
               Voter
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
