@@ -53,10 +53,17 @@ export type BlindtestRoomBroadcastPayload = {
 
 // ─── Scoring helpers ──────────────────────────────────────────────────────────
 
-export { normalize, isCorrect, isSingleArtistBlindtest } from "./blindtest-utils";
-
-export const POINTS_TITLE = 2;
-export const POINTS_ARTIST = 1;
+export {
+  normalize,
+  isCorrect,
+  isSingleArtistBlindtest,
+  scoreAnswer,
+  speedFactor,
+  TIMER_SECONDS,
+  POINTS_TITLE_MAX,
+  POINTS_ARTIST_MAX,
+  POINTS_PER_TRACK_MAX,
+} from "./blindtest-utils";
 
 // ─── Participants helpers ────────────────────────────────────────────────────
 

@@ -3,7 +3,24 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Play, Pause, Check, X, SkipForward } from "lucide-react";
 import { usePreviewVolume } from "@/lib/audio-volume";
-import { isCorrect, isSingleArtistBlindtest } from "@/lib/blindtest-utils";
+import {
+  isCorrect,
+  isSingleArtistBlindtest,
+  scoreAnswer,
+  maxTrackPoints,
+  TIMER_SECONDS,
+  POINTS_TITLE_MAX,
+  POINTS_ARTIST_MAX,
+} from "@/lib/blindtest-utils";
+
+// Ré-exports pour les modules qui importaient ces constantes depuis ce composant.
+export {
+  TIMER_SECONDS,
+  POINTS_TITLE_MAX,
+  POINTS_ARTIST_MAX,
+  POINTS_PER_TRACK_MAX,
+  maxTrackPoints,
+} from "@/lib/blindtest-utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -22,19 +39,15 @@ export type BlindtestAnswer = {
   correctTitle: boolean;
   correctArtist: boolean;
   points: number;
+  titlePoints?: number;
+  artistPoints?: number;
+  timeMs?: number;
   trueTitle: string;
   trueArtist: string;
   coverUrl: string | null;
 };
 
 type Phase = "loading" | "playing" | "revealed";
-
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const TIMER_SECONDS = 30;
-export const POINTS_TITLE = 2;
-export const POINTS_ARTIST = 1;
-export const POINTS_PER_TRACK = POINTS_TITLE + POINTS_ARTIST;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -97,6 +110,8 @@ export default function BlindtestGame({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const freshUrlRef = useRef("");
   const titleInputRef = useRef<HTMLInputElement>(null);
+  // Horodatage du début du morceau courant — sert à mesurer la rapidité de réponse.
+  const trackStartRef = useRef<number>(0);
   const { volume } = usePreviewVolume();
 
   useEffect(() => {
@@ -141,10 +156,12 @@ export default function BlindtestGame({
       .then((r) => r.json())
       .then((d: { preview?: string }) => {
         freshUrlRef.current = d.preview ?? "";
+        trackStartRef.current = Date.now();
         setTimeLeft(TIMER_SECONDS);
         setPhase("playing");
       })
       .catch(() => {
+        trackStartRef.current = Date.now();
         setTimeLeft(TIMER_SECONDS);
         setPhase("playing");
       });
@@ -181,7 +198,13 @@ export default function BlindtestGame({
     const track = tracks[idxRef.current];
     const correctTitle = isCorrect(gt, track.title);
     const correctArtist = singleArtistMode ? true : isCorrect(ga, track.artist);
-    const points = (correctTitle ? POINTS_TITLE : 0) + (correctArtist ? POINTS_ARTIST : 0);
+    const timeMs = trackStartRef.current ? Date.now() - trackStartRef.current : 0;
+    // En mode artiste unique l'artiste ne rapporte aucun point : seul le titre est scoré.
+    const { points, titlePoints, artistPoints } = scoreAnswer(
+      correctTitle,
+      singleArtistMode ? false : correctArtist,
+      timeMs,
+    );
 
     setAnswers((prev) => [
       ...prev,
@@ -192,6 +215,9 @@ export default function BlindtestGame({
         correctTitle,
         correctArtist,
         points,
+        titlePoints,
+        artistPoints,
+        timeMs,
         trueTitle: track.title,
         trueArtist: track.artist,
         coverUrl: track.coverUrl,
@@ -252,7 +278,8 @@ export default function BlindtestGame({
   const track = tracks[idx];
   const lastAnswer = phase === "revealed" ? answers[answers.length - 1] : null;
   const currentScore = answers.reduce((s, a) => s + a.points, 0);
-  const maxSoFar = (phase === "revealed" ? idx + 1 : idx) * POINTS_PER_TRACK;
+  const maxSoFar =
+    (phase === "revealed" ? idx + 1 : idx) * maxTrackPoints(singleArtistMode);
   const timerProgress = ((TIMER_SECONDS - timeLeft) / TIMER_SECONDS) * 100;
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -325,14 +352,13 @@ export default function BlindtestGame({
               {singleArtistMode ? (
                 <p className="rounded-xl border px-3 py-2 text-sm text-[color:var(--muted)]" style={{ borderColor: "#2a3242", background: "#131822" }}>
                   Un seul artiste sur tout le blindtest : devine uniquement le{" "}
-                  <strong className="text-[color:var(--foreground)]">titre</strong>. Les{" "}
-                  <strong className="text-[color:var(--foreground)]">+{POINTS_ARTIST} pt</strong> artiste sont
-                  attribués automatiquement.
+                  <strong className="text-[color:var(--foreground)]">titre</strong>. L&apos;artiste
+                  ne rapporte pas de points. Plus tu réponds vite, plus tu marques !
                 </p>
               ) : null}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
-                  Titre du morceau (+{POINTS_TITLE} pts)
+                  Titre du morceau (jusqu&apos;à +{POINTS_TITLE_MAX} pts)
                 </label>
                 <input
                   ref={titleInputRef}
@@ -348,7 +374,7 @@ export default function BlindtestGame({
               {!singleArtistMode ? (
                 <div>
                   <label className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
-                    Artiste (+{POINTS_ARTIST} pt)
+                    Artiste (jusqu&apos;à +{POINTS_ARTIST_MAX} pts)
                   </label>
                   <input
                     className="input mt-1"
@@ -411,30 +437,35 @@ export default function BlindtestGame({
             {/* Answer details */}
             <div className="flex-1 w-full space-y-3">
               <AnswerRow
-                label={`Titre (+${POINTS_TITLE} pts)`}
+                label="Titre"
                 truth={track.title}
                 guess={lastAnswer.guessTitle}
                 correct={lastAnswer.correctTitle}
-                points={POINTS_TITLE}
+                points={lastAnswer.titlePoints ?? 0}
               />
-              <AnswerRow
-                label={
-                  singleArtistMode
-                    ? `Artiste (+${POINTS_ARTIST} pt) · commun à tous les titres`
-                    : `Artiste (+${POINTS_ARTIST} pt)`
-                }
-                truth={track.artist}
-                guess={lastAnswer.guessArtist}
-                correct={lastAnswer.correctArtist}
-                points={POINTS_ARTIST}
-              />
+              {singleArtistMode ? (
+                <p className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--muted)]">
+                  Artiste : <span className="font-semibold text-[color:var(--foreground)]">{track.artist}</span>{" "}
+                  · commun à tous les titres (ne rapporte pas de points)
+                </p>
+              ) : (
+                <AnswerRow
+                  label="Artiste"
+                  truth={track.artist}
+                  guess={lastAnswer.guessArtist}
+                  correct={lastAnswer.correctArtist}
+                  points={lastAnswer.artistPoints ?? 0}
+                />
+              )}
 
               <div className="flex items-center justify-between pt-1">
                 <p className="font-bold text-lg">
                   +{lastAnswer.points} pt{lastAnswer.points !== 1 ? "s" : ""}
-                  <span className="text-sm font-normal text-[color:var(--muted)] ml-2">
-                    sur {POINTS_PER_TRACK} possibles
-                  </span>
+                  {lastAnswer.timeMs ? (
+                    <span className="text-sm font-normal text-[color:var(--muted)] ml-2">
+                      en {(lastAnswer.timeMs / 1000).toFixed(1)}s
+                    </span>
+                  ) : null}
                 </p>
                 <button type="button" onClick={goNext} className="btn-primary">
                   {idx + 1 >= tracks.length ? "Voir les résultats →" : "Suivant →"}
