@@ -90,11 +90,12 @@ function ArtistChip({
           Écouter
         </button>
       )}
-      {isNew && (
-        isAi
-          ? <Bot size={15} className="text-blue-400 shrink-0" />
-          : <CheckCircle size={15} className="text-[color:var(--accent)] shrink-0" />
-      )}
+      {isNew &&
+        (isAi ? (
+          <Bot size={15} className="text-blue-400 shrink-0" />
+        ) : (
+          <CheckCircle size={15} className="text-[color:var(--accent)] shrink-0" />
+        ))}
     </div>
   );
 }
@@ -167,33 +168,36 @@ export default function BattleFeatSolo({
   const lastMove = moves.length > 0 ? moves[moves.length - 1] : null;
   const currentArtistId = lastMove?.artistId ?? startingArtist?.id ?? "";
   const currentArtistName = lastMove?.artistName ?? startingArtist?.name ?? "";
-  const usedIds = [
-    ...(startingArtist ? [startingArtist.id] : []),
-    ...moves.map((m) => m.artistId),
-  ];
+  const usedIds = [...(startingArtist ? [startingArtist.id] : []), ...moves.map((m) => m.artistId)];
   const usedIdsKey = usedIds.join(",");
 
   // ── Audio ─────────────────────────────────────────────────────────────────
-  const playPreview = useCallback((title: string | null, previewUrl: string | null) => {
-    if (!previewUrl) return;
-    const safePreviewUrl = previewUrl.replace(/^http:\/\//i, "https://");
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = safePreviewUrl;
-      audioRef.current.volume = volume;
-      setNowPlaying({ title: title ?? "Extrait", previewUrl: safePreviewUrl });
-      void audioRef.current.play().catch(() => null);
-    } else {
-      const audio = new Audio(safePreviewUrl);
-      audio.volume = volume;
-      audio.onplay = () => setIsPlaying(true);
-      audio.onpause = () => setIsPlaying(false);
-      audio.onended = () => { setIsPlaying(false); setNowPlaying(null); };
-      audioRef.current = audio;
-      setNowPlaying({ title: title ?? "Extrait", previewUrl: safePreviewUrl });
-      void audio.play().catch(() => null);
-    }
-  }, [volume]);
+  const playPreview = useCallback(
+    (title: string | null, previewUrl: string | null) => {
+      if (!previewUrl) return;
+      const safePreviewUrl = previewUrl.replace(/^http:\/\//i, "https://");
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = safePreviewUrl;
+        audioRef.current.volume = volume;
+        setNowPlaying({ title: title ?? "Extrait", previewUrl: safePreviewUrl });
+        void audioRef.current.play().catch(() => null);
+      } else {
+        const audio = new Audio(safePreviewUrl);
+        audio.volume = volume;
+        audio.onplay = () => setIsPlaying(true);
+        audio.onpause = () => setIsPlaying(false);
+        audio.onended = () => {
+          setIsPlaying(false);
+          setNowPlaying(null);
+        };
+        audioRef.current = audio;
+        setNowPlaying({ title: title ?? "Extrait", previewUrl: safePreviewUrl });
+        void audio.play().catch(() => null);
+      }
+    },
+    [volume],
+  );
 
   const togglePlayPause = () => {
     if (!audioRef.current) return;
@@ -282,9 +286,7 @@ export default function BattleFeatSolo({
         backgroundColor: "var(--surface)",
       });
     } catch {
-      alert(
-        "Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.",
-      );
+      alert("Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.");
     } finally {
       setIsDownloading(false);
     }
@@ -460,7 +462,11 @@ export default function BattleFeatSolo({
           nextArtistName: artist.name,
         }),
       });
-      const json = (await res.json()) as { valid: boolean; trackTitle?: string | null; previewUrl?: string | null };
+      const json = (await res.json()) as {
+        valid: boolean;
+        trackTitle?: string | null;
+        previewUrl?: string | null;
+      };
 
       if (!json.valid) {
         await endGame(
@@ -593,13 +599,28 @@ export default function BattleFeatSolo({
               Publication du résultat
             </p>
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => setPublishMode("private")} className="btn-chip" data-active={publishMode === "private"}>
+              <button
+                type="button"
+                onClick={() => setPublishMode("private")}
+                className="btn-chip"
+                data-active={publishMode === "private"}
+              >
                 Publié — Privé
               </button>
-              <button type="button" onClick={() => setPublishMode("public")} className="btn-chip" data-active={publishMode === "public"}>
+              <button
+                type="button"
+                onClick={() => setPublishMode("public")}
+                className="btn-chip"
+                data-active={publishMode === "public"}
+              >
                 Publié — Public
               </button>
-              <button type="button" onClick={() => setPublishMode("none")} className="btn-chip" data-active={publishMode === "none"}>
+              <button
+                type="button"
+                onClick={() => setPublishMode("none")}
+                className="btn-chip"
+                data-active={publishMode === "none"}
+              >
                 Non publié
               </button>
             </div>
@@ -607,8 +628,8 @@ export default function BattleFeatSolo({
               {publishMode === "public"
                 ? "Résultat accessible à tout le monde et par lien."
                 : publishMode === "private"
-                ? "Résultat accessible uniquement à toi ou par lien direct."
-                : "Résultat non sauvegardé : la partie sera supprimée définitivement après l'écran de résultats."}
+                  ? "Résultat accessible uniquement à toi ou par lien direct."
+                  : "Résultat non sauvegardé : la partie sera supprimée définitivement après l'écran de résultats."}
             </p>
           </div>
         </div>
@@ -651,11 +672,7 @@ export default function BattleFeatSolo({
   // ── GAME OVER ─────────────────────────────────────────────────────────────
   if (phase === "game-over") {
     const isDraw = playerScore === aiScore;
-    const outcome = isDraw
-      ? "draw"
-      : gameOverWinner === "player"
-        ? "victory"
-        : "defeat";
+    const outcome = isDraw ? "draw" : gameOverWinner === "player" ? "victory" : "defeat";
 
     return (
       <div className="space-y-6">
@@ -798,8 +815,8 @@ export default function BattleFeatSolo({
               ? timeLeft > Math.ceil(turnSeconds * 0.5)
                 ? "bg-green-400"
                 : timeLeft > Math.ceil(turnSeconds * 0.25)
-                ? "bg-yellow-400"
-                : "bg-red-400"
+                  ? "bg-yellow-400"
+                  : "bg-red-400"
               : "bg-[color:var(--surface-2)]"
           }`}
           style={{ width: isPlayerTurn ? `${100 - timerProgress}%` : "100%" }}
@@ -858,8 +875,7 @@ export default function BattleFeatSolo({
               </span>
             ) : (
               <>
-                Trouve un feat avec{" "}
-                <strong className="text-white">{currentArtistName}</strong>
+                Trouve un feat avec <strong className="text-white">{currentArtistName}</strong>
               </>
             )}
           </p>
@@ -909,7 +925,11 @@ export default function BattleFeatSolo({
                       >
                         {artist.pictureUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={artist.pictureUrl} alt="" className="h-7 w-7 rounded-full object-cover shrink-0" />
+                          <img
+                            src={artist.pictureUrl}
+                            alt=""
+                            className="h-7 w-7 rounded-full object-cover shrink-0"
+                          />
                         ) : (
                           <div className="h-7 w-7 rounded-full bg-[color:var(--surface-2)]" />
                         )}

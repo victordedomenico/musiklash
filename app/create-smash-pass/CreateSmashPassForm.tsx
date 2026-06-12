@@ -40,10 +40,10 @@ export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }
     mode === "multi"
       ? "En multijoueur, le deck doit rester publié (la room en dépend)."
       : visibility === "public"
-      ? "Visible dans Explorer. Accessible à tous par lien."
-      : visibility === "private"
-      ? "Non visible dans Explorer. Accessible par lien direct ou depuis ta bibliothèque."
-      : "Éphémère : le deck sera supprimé définitivement après la partie.";
+        ? "Visible dans Explorer. Accessible à tous par lien."
+        : visibility === "private"
+          ? "Non visible dans Explorer. Accessible par lien direct ou depuis ta bibliothèque."
+          : "Éphémère : le deck sera supprimé définitivement après la partie.";
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -66,7 +66,8 @@ export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }
       <div>
         <label className="text-sm font-medium">Type de contenu</label>
         <p className="mt-0.5 text-xs text-[color:var(--muted)]">
-          Choisir un type vide la sélection en cours. Le genre musical oriente les suggestions Deezer.
+          Choisir un type vide la sélection en cours. Le genre musical oriente les suggestions
+          Deezer.
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           {ITEM_TYPES.map((t) => (
@@ -99,7 +100,11 @@ export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }
               className="btn-chip disabled:opacity-40 disabled:cursor-not-allowed"
               data-active={visibility === v}
             >
-              {v === "private" ? "Publié — Privé" : v === "public" ? "Publié — Public" : "Non publié"}
+              {v === "private"
+                ? "Publié — Privé"
+                : v === "public"
+                  ? "Publié — Public"
+                  : "Non publié"}
             </button>
           ))}
         </div>
@@ -125,7 +130,11 @@ export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }
           disabled={pending || items.length < 5}
           className="btn-primary disabled:opacity-50"
         >
-          {pending ? "Création…" : mode === "multi" ? "Créer et lancer la room" : "Lancer Smash or Pass"}
+          {pending
+            ? "Création…"
+            : mode === "multi"
+              ? "Créer et lancer la room"
+              : "Lancer Smash or Pass"}
         </button>
       </div>
     </form>

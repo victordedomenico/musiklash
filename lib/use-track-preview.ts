@@ -37,7 +37,13 @@ export function useTrackPreview() {
         if (audioRef.current.paused) {
           void audioRef.current.play().catch(async () => {
             const fresh = await fetchTrackPreview(deezerTrackId);
-            if (fresh) playUrl(key, title, fresh, deezerTrackId);
+            if (fresh && audioRef.current) {
+              audioRef.current.src = fresh;
+              void audioRef.current.play().catch(() => {
+                setIsPlaying(false);
+                setNowPlaying(null);
+              });
+            }
           });
         } else {
           audioRef.current.pause();

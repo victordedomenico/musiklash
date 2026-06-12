@@ -38,9 +38,7 @@ export default async function SettingsPage({
     <div className="page-shell max-w-3xl py-10">
       <div className="mb-6">
         <h1 className="text-4xl font-black tracking-[-0.03em] sm:text-5xl">Paramètres</h1>
-        <p className="mt-2 text-[color:var(--muted)]">
-          Mets à jour tes informations personnelles.
-        </p>
+        <p className="mt-2 text-[color:var(--muted)]">Mets à jour tes informations personnelles.</p>
       </div>
 
       <div className="card space-y-6 p-6 sm:p-8">
@@ -96,12 +94,16 @@ export default async function SettingsPage({
         <div className="rounded-xl border p-4 text-sm" style={{ borderColor: "var(--border)" }}>
           <p className="font-semibold">Vie privee et donnees personnelles</p>
           <p className="mt-1 text-[color:var(--muted)]">
-            Vous pouvez modifier vos cookies, demander un export ou exercer vos droits RGPD depuis la
-            page dediee.
+            Vous pouvez modifier vos cookies, demander un export ou exercer vos droits RGPD depuis
+            la page dediee.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <a href="/cookies" className="btn-ghost">Gestion des cookies</a>
-            <a href="/privacy-rights" className="btn-ghost">Exercer mes droits RGPD</a>
+            <a href="/cookies" className="btn-ghost">
+              Gestion des cookies
+            </a>
+            <a href="/privacy-rights" className="btn-ghost">
+              Exercer mes droits RGPD
+            </a>
           </div>
         </div>
       </div>

@@ -19,15 +19,9 @@ export default function BattleFeatFreePage() {
           <User size={12} />
           Mode solo libre
         </p>
-        <h1 className="mt-3 text-7xl font-black tracking-[-0.04em]">
-          BattleFeat
-        </h1>
-        <p
-          className="mx-auto mt-2 max-w-3xl text-3xl"
-          style={{ color: "var(--muted-strong)" }}
-        >
-          Enchaîne les featurings sans limite de temps. Jusqu&apos;où peux-tu
-          aller ?
+        <h1 className="mt-3 text-7xl font-black tracking-[-0.04em]">BattleFeat</h1>
+        <p className="mx-auto mt-2 max-w-3xl text-3xl" style={{ color: "var(--muted-strong)" }}>
+          Enchaîne les featurings sans limite de temps. Jusqu&apos;où peux-tu aller ?
         </p>
       </div>
 
@@ -46,9 +40,8 @@ export default function BattleFeatFreePage() {
             Comment jouer ?
           </h2>
           <p className="text-lg" style={{ color: "var(--muted-strong)" }}>
-            Choisis un artiste de départ, puis enchaîne les artistes qui ont
-            collaboré ensemble. Pas de timer, pas de pression — juste la
-            musique.
+            Choisis un artiste de départ, puis enchaîne les artistes qui ont collaboré ensemble. Pas
+            de timer, pas de pression — juste la musique.
           </p>
         </article>
         <article
@@ -63,8 +56,8 @@ export default function BattleFeatFreePage() {
             Règle d&apos;or
           </h2>
           <p className="text-lg" style={{ color: "var(--muted-strong)" }}>
-            Chaque artiste doit avoir un featuring officiel avec le précédent.
-            Un artiste ne peut pas apparaître deux fois dans la même chaîne.
+            Chaque artiste doit avoir un featuring officiel avec le précédent. Un artiste ne peut
+            pas apparaître deux fois dans la même chaîne.
           </p>
         </article>
       </div>

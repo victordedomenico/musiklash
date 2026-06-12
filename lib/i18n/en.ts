@@ -108,8 +108,7 @@ export const en: Dictionary = {
     createBlindtest: "Create a blindtest",
     createBattleFeatChallenge: "Create a BattleFeat solo",
     battleFeatTitle: "BattleFeat",
-    battleFeatDesc:
-      "The featuring chain game! Link artists who collaborated together.",
+    battleFeatDesc: "The featuring chain game! Link artists who collaborated together.",
     playSolo: "Play solo",
     createRoom: "Create a room",
     tabAll: "All",
@@ -238,7 +237,8 @@ export const en: Dictionary = {
     newStreamClash: "New Stream Clash",
     newSmashPass: "New Smash or Pass",
     welcomeMsg: "Account created 🎉 you can now make your first bracket or tierlist.",
-    guestMsg: "You're in guest mode. Your games and creations stay linked to this username on this device.",
+    guestMsg:
+      "You're in guest mode. Your games and creations stay linked to this username on this device.",
     filterAll: "All",
     filterPrivate: "Published — Private",
     filterPublic: "Published — Public",

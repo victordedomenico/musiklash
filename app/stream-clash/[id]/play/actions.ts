@@ -67,7 +67,9 @@ export async function submitRound(
     chosenPosition,
   };
 
-  const existingRounds = Array.isArray(session.rounds) ? (session.rounds as StreamClashRound[]) : [];
+  const existingRounds = Array.isArray(session.rounds)
+    ? (session.rounds as StreamClashRound[])
+    : [];
   const updatedRounds = [...existingRounds, round];
   const newScore = session.score + points;
 

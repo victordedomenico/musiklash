@@ -19,12 +19,19 @@ export default async function Header() {
   const cookieStore = await cookies();
   const consent = await getCookieConsent();
   const canUsePreferenceCookies = hasPreferencesConsent(consent);
-  const theme = canUsePreferenceCookies && cookieStore.get("theme")?.value === "light" ? "light" : "dark";
+  const theme =
+    canUsePreferenceCookies && cookieStore.get("theme")?.value === "light" ? "light" : "dark";
 
   return (
-    <header className="sticky top-0 z-40 w-full" style={{ background: "color-mix(in srgb, var(--background) 88%, transparent)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)" }}>
+    <header
+      className="sticky top-0 z-40 w-full"
+      style={{
+        background: "color-mix(in srgb, var(--background) 88%, transparent)",
+        backdropFilter: "blur(20px)",
+        borderBottom: "1px solid var(--border)",
+      }}
+    >
       <div className="page-shell flex items-center gap-6 py-3.5">
-
         {/* Logo */}
         <Link
           href="/"
@@ -50,7 +57,10 @@ export default async function Header() {
             </Link>
           ))}
           {user && (
-            <Link href="/my-library" className="nav-link rounded-lg px-3 py-2 text-sm font-medium transition-colors">
+            <Link
+              href="/my-library"
+              className="nav-link rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+            >
               {t.nav.myLibrary}
             </Link>
           )}
@@ -84,9 +94,21 @@ export default async function Header() {
                   }}
                 >
                   {[
-                    { href: "/create-bracket", icon: <Swords size={14} />, label: t.nav.createBracket },
-                    { href: "/create-tierlist", icon: <Library size={14} />, label: t.nav.createTierlist },
-                    { href: "/create-blindtest", icon: <Music size={14} />, label: t.nav.createBlindtest },
+                    {
+                      href: "/create-bracket",
+                      icon: <Swords size={14} />,
+                      label: t.nav.createBracket,
+                    },
+                    {
+                      href: "/create-tierlist",
+                      icon: <Library size={14} />,
+                      label: t.nav.createTierlist,
+                    },
+                    {
+                      href: "/create-blindtest",
+                      icon: <Music size={14} />,
+                      label: t.nav.createBlindtest,
+                    },
                   ].map(({ href, icon, label }) => (
                     <Link
                       key={href}

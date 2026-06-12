@@ -113,9 +113,7 @@ export function buildBracketState(
         winners.push(p.seedA);
         continue;
       }
-      const v = votes.find(
-        (x) => x.round === r && x.matchIndex === p.matchIndex,
-      );
+      const v = votes.find((x) => x.round === r && x.matchIndex === p.matchIndex);
       if (!v) {
         return { rounds, winner: null };
       }

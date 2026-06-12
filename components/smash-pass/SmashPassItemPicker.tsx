@@ -57,16 +57,14 @@ export default function SmashPassItemPicker({ itemType, selected, onChange, genr
         ? albumSearch.browsing
         : artistSearch.browsing;
 
-  const isSelected = (deezerId: number) =>
-    selected.some((s) => s.deezer_id === deezerId);
+  const isSelected = (deezerId: number) => selected.some((s) => s.deezer_id === deezerId);
 
   const addItem = (item: SmashPassItemInput) => {
     if (!canAdd || isSelected(item.deezer_id)) return;
     onChange([...selected, item]);
   };
 
-  const remove = (deezerId: number) =>
-    onChange(selected.filter((s) => s.deezer_id !== deezerId));
+  const remove = (deezerId: number) => onChange(selected.filter((s) => s.deezer_id !== deezerId));
 
   const addTrack = (t: DeezerTrack) => {
     addItem({
@@ -110,11 +108,9 @@ export default function SmashPassItemPicker({ itemType, selected, onChange, genr
     });
   };
 
-  const typeLabel =
-    itemType === "track" ? "morceau" : itemType === "album" ? "album" : "artiste";
+  const typeLabel = itemType === "track" ? "morceau" : itemType === "album" ? "album" : "artiste";
 
-  const icon =
-    itemType === "track" ? Music : itemType === "album" ? Disc3 : User;
+  const icon = itemType === "track" ? Music : itemType === "album" ? Disc3 : User;
 
   const Icon = icon;
 
@@ -151,11 +147,10 @@ export default function SmashPassItemPicker({ itemType, selected, onChange, genr
 
         <ul className="mt-3 max-h-[400px] overflow-y-auto space-y-2">
           {loading && (
-            <li className="text-sm text-[color:var(--muted)] py-4 text-center">
-              Recherche…
-            </li>
+            <li className="text-sm text-[color:var(--muted)] py-4 text-center">Recherche…</li>
           )}
-          {!loading && itemType === "track" &&
+          {!loading &&
+            itemType === "track" &&
             trackSearch.data.map((t) => (
               <li key={t.id}>
                 <button
@@ -172,15 +167,14 @@ export default function SmashPassItemPicker({ itemType, selected, onChange, genr
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{t.title}</p>
-                    <p className="truncate text-xs text-[color:var(--muted)]">
-                      {t.artist.name}
-                    </p>
+                    <p className="truncate text-xs text-[color:var(--muted)]">{t.artist.name}</p>
                   </div>
                   <Plus size={18} className="shrink-0 text-[color:var(--accent)]" />
                 </button>
               </li>
             ))}
-          {!loading && itemType === "album" &&
+          {!loading &&
+            itemType === "album" &&
             albumSearch.data.map((a) => (
               <li key={a.id}>
                 <button
@@ -197,15 +191,14 @@ export default function SmashPassItemPicker({ itemType, selected, onChange, genr
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{a.title}</p>
-                    <p className="truncate text-xs text-[color:var(--muted)]">
-                      {a.artist?.name}
-                    </p>
+                    <p className="truncate text-xs text-[color:var(--muted)]">{a.artist?.name}</p>
                   </div>
                   <Plus size={18} className="shrink-0 text-[color:var(--accent)]" />
                 </button>
               </li>
             ))}
-          {!loading && itemType === "artist" &&
+          {!loading &&
+            itemType === "artist" &&
             artistSearch.data.map((a) => (
               <li key={a.id}>
                 <button
@@ -251,9 +244,7 @@ export default function SmashPassItemPicker({ itemType, selected, onChange, genr
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{item.title}</p>
                 {item.subtitle ? (
-                  <p className="truncate text-xs text-[color:var(--muted)]">
-                    {item.subtitle}
-                  </p>
+                  <p className="truncate text-xs text-[color:var(--muted)]">{item.subtitle}</p>
                 ) : null}
               </div>
               <button

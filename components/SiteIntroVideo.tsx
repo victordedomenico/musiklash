@@ -2,11 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX, X } from "lucide-react";
-import {
-  hasSeenIntroVideo,
-  INTRO_VIDEO_SRC,
-  markIntroVideoSeen,
-} from "@/lib/intro-video";
+import { hasSeenIntroVideo, INTRO_VIDEO_SRC, markIntroVideoSeen } from "@/lib/intro-video";
 
 type SiteIntroVideoLabels = {
   title: string;
@@ -16,11 +12,7 @@ type SiteIntroVideoLabels = {
   close: string;
 };
 
-export default function SiteIntroVideo({
-  labels,
-}: {
-  labels: SiteIntroVideoLabels;
-}) {
+export default function SiteIntroVideo({ labels }: { labels: SiteIntroVideoLabels }) {
   const [open, setOpen] = useState(false);
   const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -34,6 +26,9 @@ export default function SiteIntroVideo({
 
   useEffect(() => {
     if (hasSeenIntroVideo()) return;
+    // Opening is gated on a browser-only check (localStorage) that can't run
+    // during render without a hydration mismatch, so it must happen on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(true);
     document.body.style.overflow = "hidden";
     return () => {
@@ -76,9 +71,7 @@ export default function SiteIntroVideo({
             aria-label={muted ? labels.unmute : labels.mute}
           >
             {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            <span className="hidden sm:inline">
-              {muted ? labels.unmute : labels.mute}
-            </span>
+            <span className="hidden sm:inline">{muted ? labels.unmute : labels.mute}</span>
           </button>
           <button
             type="button"

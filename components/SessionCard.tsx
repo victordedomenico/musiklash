@@ -80,7 +80,9 @@ export default function SessionCard({
       <div className="p-4">
         <p className="font-semibold line-clamp-1">{session.title}</p>
         {session.subtitle ? (
-          <p className="mt-0.5 text-xs text-[color:var(--muted)] line-clamp-1">{session.subtitle}</p>
+          <p className="mt-0.5 text-xs text-[color:var(--muted)] line-clamp-1">
+            {session.subtitle}
+          </p>
         ) : null}
         <p className="mt-1 text-[11px] text-[color:var(--muted)] flex items-center gap-1">
           <Clock size={11} />

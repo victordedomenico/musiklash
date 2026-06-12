@@ -28,10 +28,7 @@ export async function setTheme(theme: "dark" | "light") {
   return { persisted: true };
 }
 
-export async function saveCookieConsent(input: {
-  preferences: boolean;
-  analytics: boolean;
-}) {
+export async function saveCookieConsent(input: { preferences: boolean; analytics: boolean }) {
   const consent = await setCookieConsent({
     preferences: Boolean(input.preferences),
     analytics: Boolean(input.analytics),

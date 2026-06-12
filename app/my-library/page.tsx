@@ -82,7 +82,9 @@ function modelHasField(modelName: string, fieldName: string): boolean {
       };
     }
   )._runtimeDataModel;
-  return Boolean(runtimeDataModel?.models?.[modelName]?.fields?.some((field) => field.name === fieldName));
+  return Boolean(
+    runtimeDataModel?.models?.[modelName]?.fields?.some((field) => field.name === fieldName),
+  );
 }
 
 export default async function MyBracketsPage({
@@ -95,12 +97,13 @@ export default async function MyBracketsPage({
   const ml = t.myLibrary;
 
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const guestIdentity = user ? null : await getGuestIdentityFromCookies();
   const activePlayerId = user?.id ?? guestIdentity?.id ?? null;
 
-  const visFilter =
-    filter === "private" || filter === "public" ? { visibility: filter } : {};
+  const visFilter = filter === "private" || filter === "public" ? { visibility: filter } : {};
   const hasBracketGameVisibility = modelHasField("BracketGame", "visibility");
   const hasTierlistSessionVisibility = modelHasField("TierlistSession", "visibility");
   const hasBlindtestSessionVisibility = modelHasField("BlindtestSession", "visibility");
@@ -135,238 +138,245 @@ export default async function MyBracketsPage({
     ? await (async () => {
         await ensureBattleFeatVisibilityColumns(prisma);
         return Promise.all([
-        prisma.bracket.findMany({
-          where: { ownerId: activePlayerId, ...visFilter },
-          select: { id: true, title: true, theme: true, size: true, visibility: true, coverUrl: true },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.tierlist.findMany({
-          where: { ownerId: activePlayerId, ...visFilter },
-          select: { id: true, title: true, theme: true, visibility: true, coverUrl: true },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.blindtest.findMany({
-          where: { ownerId: activePlayerId, ...visFilter },
-          select: {
-            id: true,
-            title: true,
-            visibility: true,
-            _count: { select: { tracks: true } },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.blindtestRoom.findMany({
-          where: {
-            hostId: activePlayerId,
-            ...(hasBlindtestRoomVisibility ? visFilter : {}),
-          },
-          select: {
-            id: true,
-            status: true,
-            ...(hasBlindtestRoomVisibility ? { visibility: true } : {}),
-            createdAt: true,
-            host: { select: { username: true } },
-            blindtest: {
-              select: {
-                title: true,
-                _count: { select: { tracks: true } },
-              },
+          prisma.bracket.findMany({
+            where: { ownerId: activePlayerId, ...visFilter },
+            select: {
+              id: true,
+              title: true,
+              theme: true,
+              size: true,
+              visibility: true,
+              coverUrl: true,
             },
-          },
-          orderBy: { updatedAt: "desc" },
-        }),
-        prisma.battleFeatSoloSession.findMany({
-          where: { playerId: activePlayerId, ...visFilter },
-          select: {
-            id: true,
-            difficulty: true,
-            score: true,
-            status: true,
-            visibility: true,
-            createdAt: true,
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        battleFeatSoloChallengeDelegate
-          ? battleFeatSoloChallengeDelegate.findMany({
-              where: { ownerId: activePlayerId, ...visFilter },
-              select: {
-                id: true,
-                title: true,
-                difficulty: true,
-                visibility: true,
-                startingArtistId: true,
-                startingArtistName: true,
-                startingArtistPic: true,
-                createdAt: true,
-              },
-              orderBy: { createdAt: "desc" },
-            })
-          : Promise.resolve([]),
-        prisma.battleFeatRoom.findMany({
-          where: {
-            hostId: activePlayerId,
-            ...(hasBattleFeatRoomVisibility ? visFilter : {}),
-          },
-          select: {
-            id: true,
-            hostId: true,
-            status: true,
-            ...(hasBattleFeatRoomParticipants ? { participants: true } : {}),
-            ...(hasBattleFeatRoomHostScore ? { hostScore: true } : {}),
-            ...(hasBattleFeatRoomGuestScore ? { guestScore: true } : {}),
-            ...(hasBattleFeatRoomVisibility ? { visibility: true } : {}),
-            createdAt: true,
-          },
-          orderBy: { updatedAt: "desc" },
-        }),
-        prisma.streamClash.findMany({
-          where: { ownerId: activePlayerId, ...visFilter },
-          select: {
-            id: true,
-            title: true,
-            visibility: true,
-            _count: { select: { tracks: true } },
-            tracks: {
-              take: 1,
-              orderBy: { position: "asc" },
-              select: { coverUrl: true },
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.tierlist.findMany({
+            where: { ownerId: activePlayerId, ...visFilter },
+            select: { id: true, title: true, theme: true, visibility: true, coverUrl: true },
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.blindtest.findMany({
+            where: { ownerId: activePlayerId, ...visFilter },
+            select: {
+              id: true,
+              title: true,
+              visibility: true,
+              _count: { select: { tracks: true } },
             },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.streamClashRoom.findMany({
-          where: { hostId: activePlayerId, ...visFilter },
-          select: {
-            id: true,
-            status: true,
-            visibility: true,
-            difficulty: true,
-            createdAt: true,
-            host: { select: { username: true } },
-            streamClash: {
-              select: {
-                title: true,
-                _count: { select: { tracks: true } },
-              },
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.blindtestRoom.findMany({
+            where: {
+              hostId: activePlayerId,
+              ...(hasBlindtestRoomVisibility ? visFilter : {}),
             },
-          },
-          orderBy: { updatedAt: "desc" },
-        }),
-        prisma.streamClashSession.findMany({
-          where: { playerId: activePlayerId, ...visFilter },
-          select: {
-            id: true,
-            streamClashId: true,
-            difficulty: true,
-            score: true,
-            totalRounds: true,
-            visibility: true,
-            createdAt: true,
-            streamClash: {
-              select: {
-                title: true,
-                tracks: {
-                  take: 1,
-                  orderBy: { position: "asc" },
-                  select: { coverUrl: true },
+            select: {
+              id: true,
+              status: true,
+              ...(hasBlindtestRoomVisibility ? { visibility: true } : {}),
+              createdAt: true,
+              host: { select: { username: true } },
+              blindtest: {
+                select: {
+                  title: true,
+                  _count: { select: { tracks: true } },
                 },
               },
             },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.smashPass.findMany({
-          where: { ownerId: activePlayerId, ...visFilter },
-          select: {
-            id: true,
-            title: true,
-            visibility: true,
-            itemType: true,
-            _count: { select: { items: true } },
-            items: {
-              take: 1,
-              orderBy: { position: "asc" },
-              select: { coverUrl: true },
+            orderBy: { updatedAt: "desc" },
+          }),
+          prisma.battleFeatSoloSession.findMany({
+            where: { playerId: activePlayerId, ...visFilter },
+            select: {
+              id: true,
+              difficulty: true,
+              score: true,
+              status: true,
+              visibility: true,
+              createdAt: true,
             },
-          },
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.smashPassRoom.findMany({
-          where: { hostId: activePlayerId, ...visFilter },
-          select: {
-            id: true,
-            status: true,
-            visibility: true,
-            createdAt: true,
-            host: { select: { username: true } },
-            smashPass: {
-              select: {
-                title: true,
-                itemType: true,
-                _count: { select: { items: true } },
+            orderBy: { createdAt: "desc" },
+          }),
+          battleFeatSoloChallengeDelegate
+            ? battleFeatSoloChallengeDelegate.findMany({
+                where: { ownerId: activePlayerId, ...visFilter },
+                select: {
+                  id: true,
+                  title: true,
+                  difficulty: true,
+                  visibility: true,
+                  startingArtistId: true,
+                  startingArtistName: true,
+                  startingArtistPic: true,
+                  createdAt: true,
+                },
+                orderBy: { createdAt: "desc" },
+              })
+            : Promise.resolve([]),
+          prisma.battleFeatRoom.findMany({
+            where: {
+              hostId: activePlayerId,
+              ...(hasBattleFeatRoomVisibility ? visFilter : {}),
+            },
+            select: {
+              id: true,
+              hostId: true,
+              status: true,
+              ...(hasBattleFeatRoomParticipants ? { participants: true } : {}),
+              ...(hasBattleFeatRoomHostScore ? { hostScore: true } : {}),
+              ...(hasBattleFeatRoomGuestScore ? { guestScore: true } : {}),
+              ...(hasBattleFeatRoomVisibility ? { visibility: true } : {}),
+              createdAt: true,
+            },
+            orderBy: { updatedAt: "desc" },
+          }),
+          prisma.streamClash.findMany({
+            where: { ownerId: activePlayerId, ...visFilter },
+            select: {
+              id: true,
+              title: true,
+              visibility: true,
+              _count: { select: { tracks: true } },
+              tracks: {
+                take: 1,
+                orderBy: { position: "asc" },
+                select: { coverUrl: true },
               },
             },
-          },
-          orderBy: { updatedAt: "desc" },
-        }),
-        prisma.bracketGame.findMany({
-          where: {
-            playerId: activePlayerId,
-            winnerSeed: { not: null },
-            ...(hasBracketGameVisibility ? visFilter : {}),
-          },
-          select: {
-            id: true,
-            winnerSeed: true,
-            ...(hasBracketGameVisibility ? { visibility: true } : {}),
-            createdAt: true,
-            bracket: {
-              select: {
-                id: true,
-                title: true,
-                theme: true,
-                tracks: {
-                  select: { seed: true, title: true, artist: true, coverUrl: true },
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.streamClashRoom.findMany({
+            where: { hostId: activePlayerId, ...visFilter },
+            select: {
+              id: true,
+              status: true,
+              visibility: true,
+              difficulty: true,
+              createdAt: true,
+              host: { select: { username: true } },
+              streamClash: {
+                select: {
+                  title: true,
+                  _count: { select: { tracks: true } },
                 },
               },
             },
-          } as Prisma.BracketGameSelect,
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.tierlistSession.findMany({
-          where: {
-            playerId: activePlayerId,
-            ...(hasTierlistSessionVisibility ? visFilter : {}),
-          },
-          select: {
-            id: true,
-            ...(hasTierlistSessionVisibility ? { visibility: true } : {}),
-            createdAt: true,
-            tierlist: {
-              select: { id: true, title: true, theme: true, coverUrl: true },
+            orderBy: { updatedAt: "desc" },
+          }),
+          prisma.streamClashSession.findMany({
+            where: { playerId: activePlayerId, ...visFilter },
+            select: {
+              id: true,
+              streamClashId: true,
+              difficulty: true,
+              score: true,
+              totalRounds: true,
+              visibility: true,
+              createdAt: true,
+              streamClash: {
+                select: {
+                  title: true,
+                  tracks: {
+                    take: 1,
+                    orderBy: { position: "asc" },
+                    select: { coverUrl: true },
+                  },
+                },
+              },
             },
-          } as Prisma.TierlistSessionSelect,
-          orderBy: { createdAt: "desc" },
-        }),
-        prisma.blindtestSession.findMany({
-          where: {
-            playerId: activePlayerId,
-            ...(hasBlindtestSessionVisibility ? visFilter : {}),
-          },
-          select: {
-            id: true,
-            score: true,
-            maxScore: true,
-            ...(hasBlindtestSessionVisibility ? { visibility: true } : {}),
-            createdAt: true,
-            blindtest: {
-              select: { id: true, title: true },
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.smashPass.findMany({
+            where: { ownerId: activePlayerId, ...visFilter },
+            select: {
+              id: true,
+              title: true,
+              visibility: true,
+              itemType: true,
+              _count: { select: { items: true } },
+              items: {
+                take: 1,
+                orderBy: { position: "asc" },
+                select: { coverUrl: true },
+              },
             },
-          } as Prisma.BlindtestSessionSelect,
-          orderBy: { createdAt: "desc" },
-        }),
-      ]);
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.smashPassRoom.findMany({
+            where: { hostId: activePlayerId, ...visFilter },
+            select: {
+              id: true,
+              status: true,
+              visibility: true,
+              createdAt: true,
+              host: { select: { username: true } },
+              smashPass: {
+                select: {
+                  title: true,
+                  itemType: true,
+                  _count: { select: { items: true } },
+                },
+              },
+            },
+            orderBy: { updatedAt: "desc" },
+          }),
+          prisma.bracketGame.findMany({
+            where: {
+              playerId: activePlayerId,
+              winnerSeed: { not: null },
+              ...(hasBracketGameVisibility ? visFilter : {}),
+            },
+            select: {
+              id: true,
+              winnerSeed: true,
+              ...(hasBracketGameVisibility ? { visibility: true } : {}),
+              createdAt: true,
+              bracket: {
+                select: {
+                  id: true,
+                  title: true,
+                  theme: true,
+                  tracks: {
+                    select: { seed: true, title: true, artist: true, coverUrl: true },
+                  },
+                },
+              },
+            } as Prisma.BracketGameSelect,
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.tierlistSession.findMany({
+            where: {
+              playerId: activePlayerId,
+              ...(hasTierlistSessionVisibility ? visFilter : {}),
+            },
+            select: {
+              id: true,
+              ...(hasTierlistSessionVisibility ? { visibility: true } : {}),
+              createdAt: true,
+              tierlist: {
+                select: { id: true, title: true, theme: true, coverUrl: true },
+              },
+            } as Prisma.TierlistSessionSelect,
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.blindtestSession.findMany({
+            where: {
+              playerId: activePlayerId,
+              ...(hasBlindtestSessionVisibility ? visFilter : {}),
+            },
+            select: {
+              id: true,
+              score: true,
+              maxScore: true,
+              ...(hasBlindtestSessionVisibility ? { visibility: true } : {}),
+              createdAt: true,
+              blindtest: {
+                select: { id: true, title: true },
+              },
+            } as Prisma.BlindtestSessionSelect,
+            orderBy: { createdAt: "desc" },
+          }),
+        ]);
       })()
     : [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []];
 
@@ -385,9 +395,7 @@ export default async function MyBracketsPage({
     trackCount: room.blindtest._count.tracks,
     hostName: room.host.username,
     visibility:
-      "visibility" in room && typeof room.visibility === "string"
-        ? room.visibility
-        : "public",
+      "visibility" in room && typeof room.visibility === "string" ? room.visibility : "public",
     createdAt: room.createdAt.toISOString(),
     canEditVisibility: true,
   })) as BlindtestRoomSummary[];
@@ -412,22 +420,24 @@ export default async function MyBracketsPage({
     },
   })) as BattleFeatChallengeSummary[];
   const battleFeatRoomList = battleFeatRooms.map((room) => {
-    const parts = "participants" in room && Array.isArray(room.participants)
-      ? (room.participants as Array<{ score?: number }>)
-      : [];
+    const parts =
+      "participants" in room && Array.isArray(room.participants)
+        ? (room.participants as Array<{ score?: number }>)
+        : [];
     const scoresFromParticipants = parts.map((p) => (typeof p?.score === "number" ? p.score : 0));
-    const hostScore = "hostScore" in room && typeof room.hostScore === "number" ? room.hostScore : 0;
-    const guestScore = "guestScore" in room && typeof room.guestScore === "number" ? room.guestScore : 0;
-    const scores = scoresFromParticipants.length > 0 ? scoresFromParticipants : [hostScore, guestScore];
+    const hostScore =
+      "hostScore" in room && typeof room.hostScore === "number" ? room.hostScore : 0;
+    const guestScore =
+      "guestScore" in room && typeof room.guestScore === "number" ? room.guestScore : 0;
+    const scores =
+      scoresFromParticipants.length > 0 ? scoresFromParticipants : [hostScore, guestScore];
     return {
       id: room.id,
       status: room.status,
       playerCount: parts.length > 0 ? parts.length : scores.length,
       scores,
       visibility:
-        "visibility" in room && typeof room.visibility === "string"
-          ? room.visibility
-          : "public",
+        "visibility" in room && typeof room.visibility === "string" ? room.visibility : "public",
       createdAt: room.createdAt.toISOString(),
       canEditVisibility: room.hostId === activePlayerId,
     };
@@ -513,19 +523,17 @@ export default async function MyBracketsPage({
   }>;
 
   const bracketSessions: SessionSummary[] = bracketGames.map((g) => {
-    const winner = g.winnerSeed
-      ? g.bracket.tracks.find((t) => t.seed === g.winnerSeed)
-      : null;
+    const winner = g.winnerSeed ? g.bracket.tracks.find((t) => t.seed === g.winnerSeed) : null;
     return {
       id: g.id,
       kind: "bracket" as const,
       parentId: g.bracket.id,
       title: g.bracket.title,
-      subtitle: winner ? `${winner.title} — ${winner.artist}` : g.bracket.theme ?? null,
+      subtitle: winner ? `${winner.title} — ${winner.artist}` : (g.bracket.theme ?? null),
       createdAt: g.createdAt.toISOString(),
       coverUrl: winner?.coverUrl ?? null,
       badge: "Champion",
-      visibility: ("visibility" in g && g.visibility === "public") ? "public" : "private",
+      visibility: "visibility" in g && g.visibility === "public" ? "public" : "private",
     };
   });
 
@@ -537,7 +545,7 @@ export default async function MyBracketsPage({
     subtitle: s.tierlist.theme ?? null,
     createdAt: s.createdAt.toISOString(),
     coverUrl: s.tierlist.coverUrl,
-    visibility: ("visibility" in s && s.visibility === "public") ? "public" : "private",
+    visibility: "visibility" in s && s.visibility === "public" ? "public" : "private",
   }));
 
   const blindtestSessions: SessionSummary[] = blindtestSessionsData.map((s) => ({
@@ -548,7 +556,7 @@ export default async function MyBracketsPage({
     subtitle: `${s.score} / ${s.maxScore} pts`,
     createdAt: s.createdAt.toISOString(),
     coverUrl: null,
-    visibility: ("visibility" in s && s.visibility === "public") ? "public" : "private",
+    visibility: "visibility" in s && s.visibility === "public" ? "public" : "private",
   }));
 
   const libraryEditor = Boolean(activePlayerId);
@@ -573,26 +581,26 @@ export default async function MyBracketsPage({
     tab === "tierlists"
       ? "/create-tierlist"
       : tab === "blindtests"
-      ? "/create-blindtest"
-      : tab === "battlefeat"
-      ? "/create-battlefeat"
-      : tab === "streamclash"
-      ? "/create-stream-clash"
-      : tab === "smashpass"
-      ? "/create-smash-pass"
-      : "/create-bracket";
+        ? "/create-blindtest"
+        : tab === "battlefeat"
+          ? "/create-battlefeat"
+          : tab === "streamclash"
+            ? "/create-stream-clash"
+            : tab === "smashpass"
+              ? "/create-smash-pass"
+              : "/create-bracket";
   const createLabel =
     tab === "tierlists"
       ? ml.newTierlist
       : tab === "blindtests"
-      ? ml.newBlindtest
-      : tab === "battlefeat"
-      ? ml.newBattleFeat
-      : tab === "streamclash"
-      ? ml.newStreamClash
-      : tab === "smashpass"
-      ? ml.newSmashPass
-      : ml.newBracket;
+        ? ml.newBlindtest
+        : tab === "battlefeat"
+          ? ml.newBattleFeat
+          : tab === "streamclash"
+            ? ml.newStreamClash
+            : tab === "smashpass"
+              ? ml.newSmashPass
+              : ml.newBracket;
 
   return (
     <div className="mx-auto w-full max-w-[1500px] px-1 py-5 sm:px-2 sm:py-6">
@@ -615,13 +623,20 @@ export default async function MyBracketsPage({
       </div>
 
       {welcome ? (
-        <p className="mt-4 rounded-2xl border p-3 text-sm text-[color:var(--muted)]" style={{ borderColor: "#2a3242", background: "#131822" }}>
+        <p
+          className="mt-4 rounded-2xl border p-3 text-sm text-[color:var(--muted)]"
+          style={{ borderColor: "#2a3242", background: "#131822" }}
+        >
           {ml.welcomeMsg}
         </p>
       ) : null}
       {!user ? (
-        <p className="mt-4 rounded-2xl border p-3 text-sm text-[color:var(--muted)]" style={{ borderColor: "#2a3242", background: "#131822" }}>
-          {ml.guestMsg}{guestIdentity?.username ? ` (${guestIdentity.username})` : ""}
+        <p
+          className="mt-4 rounded-2xl border p-3 text-sm text-[color:var(--muted)]"
+          style={{ borderColor: "#2a3242", background: "#131822" }}
+        >
+          {ml.guestMsg}
+          {guestIdentity?.username ? ` (${guestIdentity.username})` : ""}
         </p>
       ) : null}
 
@@ -630,24 +645,40 @@ export default async function MyBracketsPage({
           className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
           style={{ borderColor: "#283041", background: "#181b24" }}
         >
-        <TabItem current={tab} value="all" label={`${ml.filterAll} (${totalCount})`} />
-        <TabItem current={tab} value="brackets" label={`Brackets (${brackets.length})`} />
-        <TabItem current={tab} value="tierlists" label={`Tierlists (${tierlists.length})`} />
-        <TabItem current={tab} value="blindtests" label={`Blindtests (${blindtests.length + blindtestRoomList.length})`} />
-        <TabItem current={tab} value="battlefeat" label={`BattleFeat (${battleFeatList.length + battleFeatChallengeList.length + battleFeatRoomList.length})`} />
-        <TabItem current={tab} value="streamclash" label={`Stream Clash (${streamClashList.length + streamClashRoomList.length + streamClashSessionList.length})`} />
-        <TabItem current={tab} value="smashpass" label={`Smash or Pass (${smashPassList.length + smashPassRoomList.length})`} />
+          <TabItem current={tab} value="all" label={`${ml.filterAll} (${totalCount})`} />
+          <TabItem current={tab} value="brackets" label={`Brackets (${brackets.length})`} />
+          <TabItem current={tab} value="tierlists" label={`Tierlists (${tierlists.length})`} />
+          <TabItem
+            current={tab}
+            value="blindtests"
+            label={`Blindtests (${blindtests.length + blindtestRoomList.length})`}
+          />
+          <TabItem
+            current={tab}
+            value="battlefeat"
+            label={`BattleFeat (${battleFeatList.length + battleFeatChallengeList.length + battleFeatRoomList.length})`}
+          />
+          <TabItem
+            current={tab}
+            value="streamclash"
+            label={`Stream Clash (${streamClashList.length + streamClashRoomList.length + streamClashSessionList.length})`}
+          />
+          <TabItem
+            current={tab}
+            value="smashpass"
+            label={`Smash or Pass (${smashPassList.length + smashPassRoomList.length})`}
+          />
         </div>
 
-      {/* Visibility filter */}
-      <div
-        className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
-        style={{ borderColor: "#283041", background: "#181b24" }}
-      >
-        <FilterLink current={filter} value="all" label={ml.filterAll} tab={tab} />
-        <FilterLink current={filter} value="private" label={ml.filterPrivate} tab={tab} />
-        <FilterLink current={filter} value="public" label={ml.filterPublic} tab={tab} />
-      </div>
+        {/* Visibility filter */}
+        <div
+          className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
+          style={{ borderColor: "#283041", background: "#181b24" }}
+        >
+          <FilterLink current={filter} value="all" label={ml.filterAll} tab={tab} />
+          <FilterLink current={filter} value="private" label={ml.filterPrivate} tab={tab} />
+          <FilterLink current={filter} value="public" label={ml.filterPublic} tab={tab} />
+        </div>
       </div>
 
       {tab === "all" ? (
@@ -655,11 +686,7 @@ export default async function MyBracketsPage({
         bracketSessions.length === 0 &&
         tierlistSessions.length === 0 &&
         blindtestSessions.length === 0 ? (
-          <EmptyState
-            label={ml.emptyAll}
-            cta={ml.createBracketCta}
-            href="/create-bracket"
-          />
+          <EmptyState label={ml.emptyAll} cta={ml.createBracketCta} href="/create-bracket" />
         ) : (
           <div className="mt-8 space-y-10">
             {bracketList.length > 0 || bracketSessions.length > 0 ? (
@@ -718,7 +745,9 @@ export default async function MyBracketsPage({
               </section>
             ) : null}
 
-            {blindtestList.length > 0 || blindtestRoomList.length > 0 || blindtestSessions.length > 0 ? (
+            {blindtestList.length > 0 ||
+            blindtestRoomList.length > 0 ||
+            blindtestSessions.length > 0 ? (
               <section className="space-y-6">
                 <h2 className="text-2xl font-bold">Blindtests</h2>
                 <SubSection label={ml.myCreations}>
@@ -738,7 +767,11 @@ export default async function MyBracketsPage({
                   ) : (
                     <CardsGrid>
                       {blindtestRoomList.map((room) => (
-                        <BlindtestRoomCard key={room.id} room={room} libraryEditor={libraryEditor} />
+                        <BlindtestRoomCard
+                          key={room.id}
+                          room={room}
+                          libraryEditor={libraryEditor}
+                        />
                       ))}
                     </CardsGrid>
                   )}
@@ -757,7 +790,9 @@ export default async function MyBracketsPage({
               </section>
             ) : null}
 
-            {battleFeatList.length > 0 || battleFeatChallengeList.length > 0 || battleFeatRoomList.length > 0 ? (
+            {battleFeatList.length > 0 ||
+            battleFeatChallengeList.length > 0 ||
+            battleFeatRoomList.length > 0 ? (
               <section className="space-y-4">
                 <h2 className="text-2xl font-bold">BattleFeat</h2>
                 {battleFeatChallengeList.length > 0 ? (
@@ -772,7 +807,9 @@ export default async function MyBracketsPage({
                 ) : null}
                 {battleFeatList.length > 0 ? (
                   <div className="space-y-3">
-                    <p className="text-sm text-[color:var(--muted)]">{ml.battleFeatMySoloResultsLabel}</p>
+                    <p className="text-sm text-[color:var(--muted)]">
+                      {ml.battleFeatMySoloResultsLabel}
+                    </p>
                     <CardsGrid>
                       {battleFeatList.map((s) => (
                         <BattleFeatSoloCard key={s.id} s={s} libraryEditor={libraryEditor} />
@@ -815,7 +852,11 @@ export default async function MyBracketsPage({
                   ) : (
                     <CardsGrid>
                       {streamClashRoomList.map((room) => (
-                        <StreamClashRoomCard key={room.id} room={room} libraryEditor={libraryEditor} />
+                        <StreamClashRoomCard
+                          key={room.id}
+                          room={room}
+                          libraryEditor={libraryEditor}
+                        />
                       ))}
                     </CardsGrid>
                   )}
@@ -826,7 +867,11 @@ export default async function MyBracketsPage({
                   ) : (
                     <CardsGrid>
                       {streamClashSessionList.map((s) => (
-                        <StreamClashSessionCard key={s.id} session={s} libraryEditor={libraryEditor} />
+                        <StreamClashSessionCard
+                          key={s.id}
+                          session={s}
+                          libraryEditor={libraryEditor}
+                        />
                       ))}
                     </CardsGrid>
                   )}
@@ -854,7 +899,11 @@ export default async function MyBracketsPage({
                   ) : (
                     <CardsGrid>
                       {smashPassRoomList.map((room) => (
-                        <SmashPassRoomCard key={room.id} room={room} libraryEditor={libraryEditor} />
+                        <SmashPassRoomCard
+                          key={room.id}
+                          room={room}
+                          libraryEditor={libraryEditor}
+                        />
                       ))}
                     </CardsGrid>
                   )}
@@ -865,11 +914,7 @@ export default async function MyBracketsPage({
         )
       ) : tab === "brackets" ? (
         bracketList.length === 0 && bracketSessions.length === 0 ? (
-          <EmptyState
-            label={ml.emptyBrackets}
-            cta={ml.createBracketCta}
-            href="/create-bracket"
-          />
+          <EmptyState label={ml.emptyBrackets} cta={ml.createBracketCta} href="/create-bracket" />
         ) : (
           <div className="mt-8 space-y-8">
             <SubSection label={ml.myCreations}>
@@ -930,7 +975,9 @@ export default async function MyBracketsPage({
           </div>
         )
       ) : tab === "blindtests" ? (
-        blindtestList.length === 0 && blindtestRoomList.length === 0 && blindtestSessions.length === 0 ? (
+        blindtestList.length === 0 &&
+        blindtestRoomList.length === 0 &&
+        blindtestSessions.length === 0 ? (
           <EmptyState
             label={ml.emptyBlindtests}
             cta={ml.createBlindtestCta}
@@ -1053,7 +1100,9 @@ export default async function MyBracketsPage({
           </div>
         )
       ) : tab === "battlefeat" ? (
-        battleFeatList.length === 0 && battleFeatChallengeList.length === 0 && battleFeatRoomList.length === 0 ? (
+        battleFeatList.length === 0 &&
+        battleFeatChallengeList.length === 0 &&
+        battleFeatRoomList.length === 0 ? (
           <EmptyState
             label={ml.emptyBattleFeat}
             cta={ml.createBattleFeatCta}
@@ -1136,9 +1185,7 @@ function EmptySub({ label }: { label: string }) {
 }
 
 function CardsGrid({ children }: { children: ReactNode }) {
-  return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">{children}</div>
-  );
+  return <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">{children}</div>;
 }
 
 function TabItem({ current, value, label }: { current: Tab; value: Tab; label: string }) {
@@ -1169,9 +1216,7 @@ function FilterLink({
   tab: Tab;
 }) {
   const href =
-    value === "all"
-      ? `/my-library?tab=${tab}`
-      : `/my-library?tab=${tab}&filter=${value}`;
+    value === "all" ? `/my-library?tab=${tab}` : `/my-library?tab=${tab}&filter=${value}`;
   return (
     <Link
       href={href}

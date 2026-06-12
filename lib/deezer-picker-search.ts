@@ -1,9 +1,4 @@
-import {
-  GENRE_BROWSE_QUERY,
-  getDeezerGenreId,
-  isMusicGenre,
-  type MusicGenre,
-} from "@/lib/genres";
+import { GENRE_BROWSE_QUERY, getDeezerGenreId, isMusicGenre, type MusicGenre } from "@/lib/genres";
 import {
   pickAlbumsForGenre,
   pickArtistsForGenre,
@@ -52,11 +47,7 @@ async function searchArtistsWithGenreFilter(
   return pickArtistsForGenre(batch, genre, limit);
 }
 
-export async function searchTracksForPicker(
-  query: string,
-  genre: MusicGenre | null,
-  limit = 25,
-) {
+export async function searchTracksForPicker(query: string, genre: MusicGenre | null, limit = 25) {
   const trimmed = query.trim();
   const deezerId = getDeezerGenreId(genre);
 
@@ -74,11 +65,7 @@ export async function searchTracksForPicker(
   return searchTracks(trimmed, limit);
 }
 
-export async function searchAlbumsForPicker(
-  query: string,
-  genre: MusicGenre | null,
-  limit = 20,
-) {
+export async function searchAlbumsForPicker(query: string, genre: MusicGenre | null, limit = 20) {
   const trimmed = query.trim();
   const deezerId = getDeezerGenreId(genre);
 
@@ -96,11 +83,7 @@ export async function searchAlbumsForPicker(
   return searchAlbums(trimmed, limit);
 }
 
-export async function searchArtistsForPicker(
-  query: string,
-  genre: MusicGenre | null,
-  limit = 20,
-) {
+export async function searchArtistsForPicker(query: string, genre: MusicGenre | null, limit = 20) {
   const trimmed = query.trim();
   const deezerId = getDeezerGenreId(genre);
 

@@ -129,11 +129,7 @@ function PlayerChip({
       </span>
       <span className="text-[color:var(--muted)]">· {p.score}</span>
       {!p.eliminated ? (
-        <span
-          className={`h-1.5 w-1.5 rounded-full ${
-            online ? "bg-emerald-400" : "bg-rose-400"
-          }`}
-        />
+        <span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-400" : "bg-rose-400"}`} />
       ) : null}
     </div>
   );
@@ -373,9 +369,7 @@ export default function BattleFeatRoom({
         backgroundColor: "var(--surface)",
       });
     } catch {
-      alert(
-        "Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.",
-      );
+      alert("Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.");
     } finally {
       setIsDownloading(false);
     }
@@ -526,11 +520,7 @@ export default function BattleFeatRoom({
             </button>
 
             {canJoin ? (
-              <button
-                onClick={handleJoin}
-                disabled={submitting}
-                className="btn-primary"
-              >
+              <button onClick={handleJoin} disabled={submitting} className="btn-primary">
                 {submitting ? <Loader2 size={14} className="animate-spin" /> : null}
                 Rejoindre la partie
               </button>
@@ -595,9 +585,7 @@ export default function BattleFeatRoom({
                   <span className="font-medium">{p.username}</span>
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                      online
-                        ? "bg-emerald-500/15 text-emerald-300"
-                        : "bg-rose-500/15 text-rose-300"
+                      online ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
                     }`}
                   >
                     {online ? "Connecté" : "Déconnecté"}
@@ -613,12 +601,7 @@ export default function BattleFeatRoom({
 
         {error ? <p className="text-center text-sm text-red-400">{error}</p> : null}
 
-        <RoomChat
-          channelKey="battlefeat"
-          roomId={room.id}
-          userId={userId}
-          username={username}
-        />
+        <RoomChat channelKey="battlefeat" roomId={room.id} userId={userId} username={username} />
       </div>
     );
   }
@@ -634,7 +617,7 @@ export default function BattleFeatRoom({
       return b.score - a.score;
     });
     const winnerName = room.winnerId
-      ? room.participants.find((p) => p.playerId === room.winnerId)?.username ?? "—"
+      ? (room.participants.find((p) => p.playerId === room.winnerId)?.username ?? "—")
       : null;
 
     return (
@@ -645,19 +628,11 @@ export default function BattleFeatRoom({
             <Trophy
               size={48}
               className={`mx-auto mb-4 ${
-                isDraw
-                  ? "text-sky-400"
-                  : iWon
-                    ? "text-yellow-400"
-                    : "text-[color:var(--muted)]"
+                isDraw ? "text-sky-400" : iWon ? "text-yellow-400" : "text-[color:var(--muted)]"
               }`}
             />
             <h2 className="text-2xl font-black">
-              {isDraw
-                ? "Égalité !"
-                : iWon
-                  ? "Victoire !"
-                  : `${winnerName} l'emporte`}
+              {isDraw ? "Égalité !" : iWon ? "Victoire !" : `${winnerName} l'emporte`}
             </h2>
             <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {ranked.map((p, idx) => (
@@ -665,19 +640,14 @@ export default function BattleFeatRoom({
                   key={p.playerId}
                   className="rounded-xl p-4 text-center"
                   style={{
-                    background:
-                      idx === 0 && !isDraw ? "var(--accent-dim)" : "var(--surface-2)",
+                    background: idx === 0 && !isDraw ? "var(--accent-dim)" : "var(--surface-2)",
                     border:
-                      idx === 0 && !isDraw
-                        ? "1px solid var(--accent)"
-                        : "1px solid var(--border)",
+                      idx === 0 && !isDraw ? "1px solid var(--accent)" : "1px solid var(--border)",
                     opacity: p.eliminated ? 0.7 : 1,
                   }}
                 >
                   <p className="text-3xl font-black">{p.score}</p>
-                  <p className="mt-1 text-xs text-[color:var(--muted)] truncate">
-                    {p.username}
-                  </p>
+                  <p className="mt-1 text-xs text-[color:var(--muted)] truncate">{p.username}</p>
                   <p className="mt-1 text-[10px] uppercase tracking-wide text-[color:var(--muted)]">
                     {p.eliminated ? "Éliminé" : `#${idx + 1}`}
                   </p>
@@ -756,7 +726,9 @@ export default function BattleFeatRoom({
               type="button"
               onClick={() => setWaitingRematch((v) => !v)}
               className={
-                waitingRematch ? "btn-primary flex-1 justify-center" : "btn-ghost flex-1 justify-center"
+                waitingRematch
+                  ? "btn-primary flex-1 justify-center"
+                  : "btn-ghost flex-1 justify-center"
               }
             >
               {waitingRematch ? (
@@ -777,12 +749,7 @@ export default function BattleFeatRoom({
           </Link>
         </div>
 
-        <RoomChat
-          channelKey="battlefeat"
-          roomId={room.id}
-          userId={userId}
-          username={username}
-        />
+        <RoomChat channelKey="battlefeat" roomId={room.id} userId={userId} username={username} />
       </div>
     );
   }
@@ -913,8 +880,7 @@ export default function BattleFeatRoom({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="flex items-center gap-2 font-bold">
-                <User size={16} className="text-[color:var(--accent)]" />
-                À ton tour !
+                <User size={16} className="text-[color:var(--accent)]" />À ton tour !
               </h3>
               <span
                 className={`text-xl font-black tabular-nums ${
@@ -964,14 +930,9 @@ export default function BattleFeatRoom({
           <div className="flex flex-col items-center gap-3 py-6">
             <Clock size={32} className="animate-pulse text-[color:var(--muted)]" />
             <p className="text-sm text-[color:var(--muted)]">
-              {isSpectator
-                ? "Mode spectateur · "
-                : null}
+              {isSpectator ? "Mode spectateur · " : null}
               En attente de{" "}
-              <strong className="text-white">
-                {currentTurnParticipant?.username ?? "…"}
-              </strong>
-              …
+              <strong className="text-white">{currentTurnParticipant?.username ?? "…"}</strong>…
             </p>
             {room.currentArtistName ? (
               <ArtistBadge
@@ -985,12 +946,7 @@ export default function BattleFeatRoom({
         )}
       </div>
 
-      <RoomChat
-        channelKey="battlefeat"
-        roomId={room.id}
-        userId={userId}
-        username={username}
-      />
+      <RoomChat channelKey="battlefeat" roomId={room.id} userId={userId} username={username} />
     </div>
   );
 }

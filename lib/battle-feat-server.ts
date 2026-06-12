@@ -21,19 +21,19 @@ const SOLO_AI_POOL_BY_DIFFICULTY: Record<number, number> = {
 const SOLO_AI_POOL_MAX = SOLO_AI_POOL_BY_DIFFICULTY[3];
 const SOLO_AI_POOL_CACHE_TTL_MS = 5 * 60 * 1000;
 
-let soloAiPoolCache:
-  | {
-      updatedAt: number;
-      idsByDifficulty: Record<number, Set<string>>;
-    }
-  | null = null;
+let soloAiPoolCache: {
+  updatedAt: number;
+  idsByDifficulty: Record<number, Set<string>>;
+} | null = null;
 
 function normalizeMoves(moves: unknown): FeatMove[] {
   return Array.isArray(moves) ? (moves as FeatMove[]) : [];
 }
 
 function normalizeUsedArtistIds(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : [];
 }
 
 function difficultyMaxTier(difficulty: number): number {
@@ -126,8 +126,7 @@ export async function pickAiMove(
   const candidates = await getConnectedArtists(currentArtistId);
   const available = candidates.filter(
     (artist) =>
-      !usedIds.includes(artist.id) &&
-      artist.popularityTier <= difficultyMaxTier(difficulty),
+      !usedIds.includes(artist.id) && artist.popularityTier <= difficultyMaxTier(difficulty),
   );
 
   if (available.length === 0) return null;
@@ -447,10 +446,7 @@ export async function validateFeatLinkDeezerBidirectional(
   if (revHit) return { trackTitle: revHit.trackTitle, previewUrl: revHit.previewUrl };
 
   // 3) Fallback: direct Deezer track search (catches hits outside top 50)
-  const queries = [
-    `${prevArtistName} ${nextArtistName}`,
-    `${nextArtistName} ${prevArtistName}`,
-  ];
+  const queries = [`${prevArtistName} ${nextArtistName}`, `${nextArtistName} ${prevArtistName}`];
   for (const q of queries) {
     try {
       const tracks = await searchTracks(q, 20, { requirePreview: false });

@@ -8,17 +8,11 @@ import SmashPassRoomClient from "./SmashPassRoomClient";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ roomId: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = await params;
   const room = await getSmashPassRoomSnapshot(roomId);
   return {
-    title: room
-      ? `Smash or Pass · ${room.smashPass.title}`
-      : "Room Smash or Pass",
+    title: room ? `Smash or Pass · ${room.smashPass.title}` : "Room Smash or Pass",
   };
 }
 
@@ -42,17 +36,13 @@ export default async function SmashPassRoomPage({
   }
 
   if (!playerId) {
-    redirect(
-      `/api/guest/ensure?redirect=${encodeURIComponent(`/smash-pass/room/${roomId}`)}`,
-    );
+    redirect(`/api/guest/ensure?redirect=${encodeURIComponent(`/smash-pass/room/${roomId}`)}`);
   }
 
   const room = await getSmashPassRoomSnapshot(roomId);
   if (!room) notFound();
 
-  const participantUsername = room.participants.find(
-    (p) => p.playerId === playerId,
-  )?.username;
+  const participantUsername = room.participants.find((p) => p.playerId === playerId)?.username;
   let username = participantUsername ?? null;
   if (!username) {
     const profile = await prisma.profile.findUnique({
@@ -69,11 +59,7 @@ export default async function SmashPassRoomPage({
         {room.smashPass.items.length} élément
         {room.smashPass.items.length > 1 ? "s" : ""} · Smash or Pass multijoueur
       </p>
-      <SmashPassRoomClient
-        initialRoom={room}
-        userId={playerId}
-        username={username}
-      />
+      <SmashPassRoomClient initialRoom={room} userId={playerId} username={username} />
     </div>
   );
 }

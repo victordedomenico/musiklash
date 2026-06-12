@@ -59,15 +59,16 @@ export default async function BlindtestResultsPage({
         <p className="mt-4 text-4xl font-black">
           {session.score}
           <span className="text-xl font-normal text-[color:var(--muted)]">
-            {" "}/ {session.maxScore} pts
+            {" "}
+            / {session.maxScore} pts
           </span>
         </p>
         <p className="mt-1 text-[color:var(--muted)]">
           {pct >= 80
             ? "Excellent ! 🔥"
             : pct >= 50
-            ? "Pas mal du tout 👌"
-            : "Continue de t'entraîner 💪"}
+              ? "Pas mal du tout 👌"
+              : "Continue de t'entraîner 💪"}
         </p>
         <p className="mt-2 text-xs text-[color:var(--muted)]">
           {session.createdAt.toLocaleDateString("fr-FR", {
@@ -101,11 +102,7 @@ export default async function BlindtestResultsPage({
           <div key={a.position} className="card flex gap-4 p-3 items-start">
             {a.coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={a.coverUrl}
-                alt=""
-                className="h-14 w-14 rounded-lg object-cover shrink-0"
-              />
+              <img src={a.coverUrl} alt="" className="h-14 w-14 rounded-lg object-cover shrink-0" />
             ) : (
               <div className="h-14 w-14 rounded-lg bg-[color:var(--surface-2)] shrink-0 flex items-center justify-center text-2xl">
                 🎵

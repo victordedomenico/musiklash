@@ -6,7 +6,11 @@ import type { Metadata } from "next";
 import { Trophy, ArrowLeft, User, Bot, Swords, Clock, Zap } from "lucide-react";
 import type { FeatMove } from "@/lib/battle-feat";
 
-export async function generateMetadata({ params }: { params: Promise<{ sessionId: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ sessionId: string }>;
+}): Promise<Metadata> {
   const { sessionId } = await params;
   const s = await prisma.battleFeatSoloSession.findUnique({
     where: { id: sessionId },
@@ -62,16 +66,17 @@ export default async function BattleFeatResultsPage({
         <ArrowLeft size={14} /> BattleFeat
       </Link>
 
-      <div className="mb-6 rounded-[28px] border p-8 text-center" style={{ borderColor: "#2a3242", background: "#10141d" }}>
+      <div
+        className="mb-6 rounded-[28px] border p-8 text-center"
+        style={{ borderColor: "#2a3242", background: "#10141d" }}
+      >
         <Trophy size={48} className="mx-auto text-yellow-400 mb-4" />
         <h1 className="text-5xl font-black tracking-[-0.03em]">
           {session.score} point{session.score !== 1 ? "s" : ""}
         </h1>
         <p className="mt-2 text-lg" style={{ color: "#8f93a0" }}>
           {session.player?.username ?? "Anonyme"} ·{" "}
-          <span className={diffColor[session.difficulty]}>
-            {diffLabel[session.difficulty]}
-          </span>
+          <span className={diffColor[session.difficulty]}>{diffLabel[session.difficulty]}</span>
         </p>
 
         <div className="mt-6 flex items-center justify-center gap-6 text-sm">
@@ -84,7 +89,9 @@ export default async function BattleFeatResultsPage({
               <Zap size={14} className="text-yellow-400" />
               {session.jokersUsed}
             </p>
-            <p className="text-xs text-[color:var(--muted)]">joker{session.jokersUsed !== 1 ? "s" : ""}</p>
+            <p className="text-xs text-[color:var(--muted)]">
+              joker{session.jokersUsed !== 1 ? "s" : ""}
+            </p>
           </div>
           <div className="text-center">
             <p className="text-xl font-bold flex items-center gap-1 justify-center">
@@ -96,7 +103,10 @@ export default async function BattleFeatResultsPage({
         </div>
       </div>
 
-      <div className="rounded-[28px] border p-6" style={{ borderColor: "#2a3242", background: "#10141d" }}>
+      <div
+        className="rounded-[28px] border p-6"
+        style={{ borderColor: "#2a3242", background: "#10141d" }}
+      >
         <h2 className="mb-4 flex items-center gap-2 text-2xl font-black">
           <Swords size={16} className="text-[color:var(--accent)]" />
           Chaîne de featurings
@@ -144,9 +154,7 @@ export default async function BattleFeatResultsPage({
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold truncate">{m.artistName}</p>
                   {m.trackTitle && (
-                    <p className="text-xs text-[color:var(--muted)] truncate">
-                      🎵 {m.trackTitle}
-                    </p>
+                    <p className="text-xs text-[color:var(--muted)] truncate">🎵 {m.trackTitle}</p>
                   )}
                 </div>
                 {isAI ? (
@@ -164,10 +172,7 @@ export default async function BattleFeatResultsPage({
         <Link href="/battle-feat/solo" className="btn-primary flex-1 justify-center">
           <Swords size={16} /> Recommencer
         </Link>
-        <Link
-          href="/battle-feat/leaderboard"
-          className="btn-ghost flex-1 justify-center"
-        >
+        <Link href="/battle-feat/leaderboard" className="btn-ghost flex-1 justify-center">
           <Trophy size={16} /> Classement
         </Link>
       </div>

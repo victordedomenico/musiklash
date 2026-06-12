@@ -170,9 +170,7 @@ describe("buildBracketState", () => {
       const state = buildBracketState(4, votes, 3);
       // Round 2: (1 vs 2)
       expect(state.rounds).toHaveLength(2);
-      expect(state.rounds[1]).toEqual([
-        { matchIndex: 0, seedA: 1, seedB: 2 },
-      ]);
+      expect(state.rounds[1]).toEqual([{ matchIndex: 0, seedA: 1, seedB: 2 }]);
     });
 
     it("size-4 with 3 tracks: resolves to winner", () => {

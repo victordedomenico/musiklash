@@ -46,7 +46,10 @@ export function formatStatCount(n: number): string {
   return String(n);
 }
 
-export function computePercentages(smashCount: number, passCount: number): {
+export function computePercentages(
+  smashCount: number,
+  passCount: number,
+): {
   smashPercent: number;
   passPercent: number;
 } {
@@ -79,9 +82,7 @@ export function normalizeSessionChoices(value: unknown): SmashPassSessionChoice[
     .filter((c): c is Record<string, unknown> => typeof c === "object" && c !== null)
     .map((c) => ({
       position: typeof c.position === "number" ? c.position : -1,
-      choice: (c.choice === "smash" || c.choice === "pass"
-        ? c.choice
-        : "pass") as SmashPassChoice,
+      choice: (c.choice === "smash" || c.choice === "pass" ? c.choice : "pass") as SmashPassChoice,
     }))
     .filter((c) => c.position >= 0);
 }
@@ -143,18 +144,16 @@ export function computeRoomVoteTotals(
   return { smash, pass };
 }
 
-export function mapPrismaItem(
-  item: {
-    position: number;
-    deezerId: bigint;
-    title: string;
-    subtitle: string | null;
-    coverUrl: string | null;
-    previewUrl: string | null;
-    tags: unknown;
-    description: string | null;
-  },
-): SmashPassItemData {
+export function mapPrismaItem(item: {
+  position: number;
+  deezerId: bigint;
+  title: string;
+  subtitle: string | null;
+  coverUrl: string | null;
+  previewUrl: string | null;
+  tags: unknown;
+  description: string | null;
+}): SmashPassItemData {
   const tags = Array.isArray(item.tags)
     ? item.tags.filter((t): t is string => typeof t === "string")
     : [];

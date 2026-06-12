@@ -103,7 +103,11 @@ export default function CreateBracketForm() {
               className="btn-chip"
               data-active={visibility === v}
             >
-              {v === "private" ? "Publié — Privé" : v === "public" ? "Publié — Public" : "Non publié"}
+              {v === "private"
+                ? "Publié — Privé"
+                : v === "public"
+                  ? "Publié — Public"
+                  : "Non publié"}
             </button>
           ))}
         </div>
@@ -128,7 +132,8 @@ export default function CreateBracketForm() {
               → bracket de {effectiveSize}
               {byeCount > 0 && (
                 <span className="text-[color:var(--accent)]">
-                  {" "}({byeCount} passe{byeCount > 1 ? "s" : ""} directe{byeCount > 1 ? "s" : ""})
+                  {" "}
+                  ({byeCount} passe{byeCount > 1 ? "s" : ""} directe{byeCount > 1 ? "s" : ""})
                 </span>
               )}
             </span>

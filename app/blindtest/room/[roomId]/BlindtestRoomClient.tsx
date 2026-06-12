@@ -532,9 +532,7 @@ export default function BlindtestRoomClient({
         backgroundColor: "var(--surface)",
       });
     } catch {
-      alert(
-        "Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.",
-      );
+      alert("Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.");
     } finally {
       setIsDownloading(false);
     }
@@ -626,16 +624,8 @@ export default function BlindtestRoomClient({
             </button>
 
             {canJoin && (
-              <button
-                onClick={handleJoin}
-                disabled={submitting}
-                className="btn-primary"
-              >
-                {submitting ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Swords size={14} />
-                )}
+              <button onClick={handleJoin} disabled={submitting} className="btn-primary">
+                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Swords size={14} />}
                 Rejoindre la partie
               </button>
             )}
@@ -647,11 +637,7 @@ export default function BlindtestRoomClient({
                 className="btn-primary"
                 title={!enoughPlayers ? "Au moins 2 joueurs requis" : undefined}
               >
-                {submitting ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Play size={14} />
-                )}
+                {submitting ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
                 Lancer la partie
               </button>
             )}
@@ -701,9 +687,7 @@ export default function BlindtestRoomClient({
                   <span className="font-medium">{p.username}</span>
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                      online
-                        ? "bg-emerald-500/15 text-emerald-300"
-                        : "bg-rose-500/15 text-rose-300"
+                      online ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"
                     }`}
                   >
                     {online ? "Connecté" : "Déconnecté"}
@@ -722,9 +706,7 @@ export default function BlindtestRoomClient({
                 >
                   ?
                 </div>
-                <span className="text-[color:var(--muted)]">
-                  En attente d&apos;autres joueurs…
-                </span>
+                <span className="text-[color:var(--muted)]">En attente d&apos;autres joueurs…</span>
               </div>
             ) : null}
           </div>
@@ -732,12 +714,7 @@ export default function BlindtestRoomClient({
 
         {error && <p className="text-center text-sm text-red-400">{error}</p>}
 
-        <RoomChat
-          channelKey="blindtest"
-          roomId={room.id}
-          userId={userId}
-          username={username}
-        />
+        <RoomChat channelKey="blindtest" roomId={room.id} userId={userId} username={username} />
       </div>
     );
   }
@@ -750,16 +727,14 @@ export default function BlindtestRoomClient({
 
     const ranked = [...room.participants].sort((a, b) => b.score - a.score);
     const winnerName = room.winnerId
-      ? room.participants.find((p) => p.playerId === room.winnerId)?.username ?? "—"
+      ? (room.participants.find((p) => p.playerId === room.winnerId)?.username ?? "—")
       : null;
 
     // Temps de réponse moyen du joueur courant (pour l'affichage type "16.5s").
     const myTimedAnswers = myAnswers.filter((a) => typeof a.timeMs === "number");
     const myAvgTimeSec =
       myTimedAnswers.length > 0
-        ? myTimedAnswers.reduce((s, a) => s + (a.timeMs ?? 0), 0) /
-          myTimedAnswers.length /
-          1000
+        ? myTimedAnswers.reduce((s, a) => s + (a.timeMs ?? 0), 0) / myTimedAnswers.length / 1000
         : null;
 
     const meEntry = leaderboard?.me ?? null;
@@ -775,11 +750,7 @@ export default function BlindtestRoomClient({
               className={`mx-auto mb-4 ${iWon ? "text-yellow-400" : isDraw ? "text-blue-400" : "text-[color:var(--muted)]"}`}
             />
             <h2 className="text-2xl font-black">
-              {isDraw
-                ? "Égalité !"
-                : iWon
-                  ? "Victoire ! 🔥"
-                  : `${winnerName} l'emporte`}
+              {isDraw ? "Égalité !" : iWon ? "Victoire ! 🔥" : `${winnerName} l'emporte`}
             </h2>
             <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
               {ranked.map((p, idx) => (
@@ -787,18 +758,13 @@ export default function BlindtestRoomClient({
                   key={p.playerId}
                   className="rounded-xl p-4 text-center"
                   style={{
-                    background:
-                      idx === 0 && !isDraw ? "var(--accent-dim)" : "var(--surface-2)",
+                    background: idx === 0 && !isDraw ? "var(--accent-dim)" : "var(--surface-2)",
                     border:
-                      idx === 0 && !isDraw
-                        ? "1px solid var(--accent)"
-                        : "1px solid var(--border)",
+                      idx === 0 && !isDraw ? "1px solid var(--accent)" : "1px solid var(--border)",
                   }}
                 >
                   <p className="text-3xl font-black">{p.score}</p>
-                  <p className="mt-1 text-xs text-[color:var(--muted)] truncate">
-                    {p.username}
-                  </p>
+                  <p className="mt-1 text-xs text-[color:var(--muted)] truncate">{p.username}</p>
                   <p className="mt-1 text-[10px] uppercase tracking-wide text-[color:var(--muted)]">
                     #{idx + 1}
                   </p>
@@ -842,9 +808,7 @@ export default function BlindtestRoomClient({
                   {meEntry ? `#${meEntry.rank}` : "—"}
                 </p>
                 <p className="mt-1 text-[10px] uppercase tracking-wide text-[color:var(--muted)]">
-                  {myAvgTimeSec !== null
-                    ? `${myAvgTimeSec.toFixed(1)}s de moy.`
-                    : "Rang"}
+                  {myAvgTimeSec !== null ? `${myAvgTimeSec.toFixed(1)}s de moy.` : "Rang"}
                 </p>
               </div>
             </div>
@@ -866,9 +830,7 @@ export default function BlindtestRoomClient({
                       className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm"
                       style={{
                         background: isMe ? "var(--accent-dim)" : "var(--surface-2)",
-                        border: isMe
-                          ? "1px solid var(--accent)"
-                          : "1px solid transparent",
+                        border: isMe ? "1px solid var(--accent)" : "1px solid transparent",
                       }}
                     >
                       <span className="w-8 shrink-0 font-bold tabular-nums text-[color:var(--muted)]">
@@ -878,9 +840,7 @@ export default function BlindtestRoomClient({
                         {entry.username}
                         {isMe ? " (vous)" : ""}
                       </span>
-                      <span className="shrink-0 font-bold tabular-nums">
-                        {entry.bestScore}
-                      </span>
+                      <span className="shrink-0 font-bold tabular-nums">{entry.bestScore}</span>
                     </div>
                   );
                 })}
@@ -897,12 +857,8 @@ export default function BlindtestRoomClient({
                     <span className="w-8 shrink-0 font-bold tabular-nums text-[color:var(--muted)]">
                       #{meEntry.rank}
                     </span>
-                    <span className="flex-1 truncate font-bold">
-                      {meEntry.username} (vous)
-                    </span>
-                    <span className="shrink-0 font-bold tabular-nums">
-                      {meEntry.bestScore}
-                    </span>
+                    <span className="flex-1 truncate font-bold">{meEntry.username} (vous)</span>
+                    <span className="shrink-0 font-bold tabular-nums">{meEntry.bestScore}</span>
                   </div>
                 ) : null}
               </div>
@@ -1013,7 +969,11 @@ export default function BlindtestRoomClient({
             <button
               type="button"
               onClick={() => setWaitingRematch((v) => !v)}
-              className={waitingRematch ? "btn-primary flex-1 justify-center" : "btn-ghost flex-1 justify-center"}
+              className={
+                waitingRematch
+                  ? "btn-primary flex-1 justify-center"
+                  : "btn-ghost flex-1 justify-center"
+              }
             >
               {waitingRematch ? (
                 <>
@@ -1028,22 +988,14 @@ export default function BlindtestRoomClient({
               )}
             </button>
           )}
-          <Link
-            href={`/blindtest/${room.blindtestId}`}
-            className="btn-ghost flex-1 justify-center"
-          >
+          <Link href={`/blindtest/${room.blindtestId}`} className="btn-ghost flex-1 justify-center">
             <ArrowRight size={16} /> Mode solo
           </Link>
         </div>
 
         {error && <p className="text-center text-sm text-red-400">{error}</p>}
 
-        <RoomChat
-          channelKey="blindtest"
-          roomId={room.id}
-          userId={userId}
-          username={username}
-        />
+        <RoomChat channelKey="blindtest" roomId={room.id} userId={userId} username={username} />
       </div>
     );
   }
@@ -1184,12 +1136,7 @@ export default function BlindtestRoomClient({
                 <button type="button" onClick={handleSubmit} className="btn-primary flex-1">
                   Valider
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  className="btn-ghost"
-                  title="Passer"
-                >
+                <button type="button" onClick={handleSubmit} className="btn-ghost" title="Passer">
                   <SkipForward size={16} />
                 </button>
               </div>
@@ -1204,11 +1151,7 @@ export default function BlindtestRoomClient({
             <div className="h-44 w-44 shrink-0 rounded-xl overflow-hidden bg-[color:var(--surface-2)]">
               {track.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={track.coverUrl}
-                  alt=""
-                  className="h-full w-full object-cover shadow-lg"
-                />
+                <img src={track.coverUrl} alt="" className="h-full w-full object-cover shadow-lg" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-4xl">🎵</div>
               )}
@@ -1224,7 +1167,10 @@ export default function BlindtestRoomClient({
               />
               {singleArtistBlindtest ? (
                 <p className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--muted)]">
-                  Artiste : <span className="font-semibold text-[color:var(--foreground)]">{track.artist}</span>{" "}
+                  Artiste :{" "}
+                  <span className="font-semibold text-[color:var(--foreground)]">
+                    {track.artist}
+                  </span>{" "}
                   · commun à tous les titres (ne rapporte pas de points)
                 </p>
               ) : (
@@ -1256,11 +1202,7 @@ export default function BlindtestRoomClient({
                     onClick={handleNextTrack}
                     disabled={submitting || (!everyoneAnsweredThisTrack && timeLeft > 0)}
                     className="btn-primary"
-                    title={
-                      !everyoneAnsweredThisTrack && timeLeft > 0
-                        ? `Encore ${timeLeft}s…`
-                        : ""
-                    }
+                    title={!everyoneAnsweredThisTrack && timeLeft > 0 ? `Encore ${timeLeft}s…` : ""}
                   >
                     {submitting ? (
                       <Loader2 size={14} className="animate-spin" />
@@ -1311,8 +1253,7 @@ export default function BlindtestRoomClient({
                 Mode spectateur
               </p>
               <p className="text-sm text-[color:var(--muted)]">
-                Tu observes la partie en cours. Tu pourras rejoindre lors de la prochaine
-                revanche.
+                Tu observes la partie en cours. Tu pourras rejoindre lors de la prochaine revanche.
               </p>
               <p className="text-xs text-[color:var(--muted)]">
                 Morceau {room.currentTrack + 1}/{trackCount}
@@ -1352,9 +1293,7 @@ export default function BlindtestRoomClient({
             <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--accent)]">
               Mode spectateur
             </p>
-            <p className="text-sm text-[color:var(--muted)]">
-              En attente du prochain morceau…
-            </p>
+            <p className="text-sm text-[color:var(--muted)]">En attente du prochain morceau…</p>
           </div>
         )}
       </div>
@@ -1394,12 +1333,7 @@ export default function BlindtestRoomClient({
 
       {error && <p className="text-center text-sm text-red-400">{error}</p>}
 
-      <RoomChat
-        channelKey="blindtest"
-        roomId={room.id}
-        userId={userId}
-        username={username}
-      />
+      <RoomChat channelKey="blindtest" roomId={room.id} userId={userId} username={username} />
     </div>
   );
 }

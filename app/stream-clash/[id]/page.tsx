@@ -28,11 +28,7 @@ export async function generateMetadata({
   });
 }
 
-export default async function StreamClashPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function StreamClashPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   const sc = await prisma.streamClash.findUnique({
@@ -76,11 +72,7 @@ export default async function StreamClashPage({
           >
             {t.coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={t.coverUrl}
-                alt=""
-                className="h-9 w-9 shrink-0 rounded-lg object-cover"
-              />
+              <img src={t.coverUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover" />
             ) : (
               <div
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg"

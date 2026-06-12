@@ -63,7 +63,9 @@ export default function ResourcesPage() {
                 </span>
                 <div>
                   <p className="font-semibold text-sm">{r.title}</p>
-                  <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>{r.desc}</p>
+                  <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>
+                    {r.desc}
+                  </p>
                 </div>
               </Link>
             ))}
@@ -102,7 +104,9 @@ export default function ResourcesPage() {
                 </span>
                 <div>
                   <p className="font-semibold text-sm">{r.title}</p>
-                  <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>{r.desc}</p>
+                  <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "var(--muted)" }}>
+                    {r.desc}
+                  </p>
                 </div>
               </a>
             ))}

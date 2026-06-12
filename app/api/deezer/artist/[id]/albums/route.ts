@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { getArtistAlbums } from "@/lib/deezer";
 import { sanitizeAlbumForClient } from "@/lib/deezer-sanitize";
 
-export async function GET(
-  _req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   try {

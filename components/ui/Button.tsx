@@ -9,12 +9,7 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: Size;
 };
 
-export default function Button({
-  className,
-  variant = "ghost",
-  size = "md",
-  ...props
-}: Props) {
+export default function Button({ className, variant = "ghost", size = "md", ...props }: Props) {
   return (
     <button
       className={cn(

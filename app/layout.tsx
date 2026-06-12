@@ -5,11 +5,7 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import SiteIntroVideo from "@/components/SiteIntroVideo";
 import Footer from "@/components/Footer";
 import JsonLd from "@/components/JsonLd";
-import {
-  getCookieConsent,
-  hasAnalyticsConsent,
-  hasPreferencesConsent,
-} from "@/lib/cookie-consent";
+import { getCookieConsent, hasAnalyticsConsent, hasPreferencesConsent } from "@/lib/cookie-consent";
 import { Analytics } from "@vercel/analytics/next";
 import { getI18n } from "@/lib/i18n";
 import { absoluteUrl, rootMetadata, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
@@ -25,7 +21,8 @@ export default async function RootLayout({
   const cookieConsent = await getCookieConsent();
   const canUsePreferenceCookies = hasPreferencesConsent(cookieConsent);
   const canUseAnalyticsCookies = hasAnalyticsConsent(cookieConsent);
-  const theme = canUsePreferenceCookies && cookieStore.get("theme")?.value === "light" ? "light" : "dark";
+  const theme =
+    canUsePreferenceCookies && cookieStore.get("theme")?.value === "light" ? "light" : "dark";
   const { locale, t } = await getI18n();
 
   return (

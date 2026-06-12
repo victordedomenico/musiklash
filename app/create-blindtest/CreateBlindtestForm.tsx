@@ -32,10 +32,10 @@ export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }
     mode === "multi"
       ? "En multijoueur, le blindtest doit rester publié (la room en dépend)."
       : visibility === "public"
-      ? "Visible dans Explorer. Accessible à tous par lien."
-      : visibility === "private"
-      ? "Non visible dans Explorer. Accessible par lien direct ou depuis ta bibliothèque."
-      : "Éphémère : le blindtest sera supprimé définitivement après la partie.";
+        ? "Visible dans Explorer. Accessible à tous par lien."
+        : visibility === "private"
+          ? "Non visible dans Explorer. Accessible par lien direct ou depuis ta bibliothèque."
+          : "Éphémère : le blindtest sera supprimé définitivement après la partie.";
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -67,7 +67,11 @@ export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }
               className="btn-chip disabled:opacity-40 disabled:cursor-not-allowed"
               data-active={visibility === v}
             >
-              {v === "private" ? "Publié — Privé" : v === "public" ? "Publié — Public" : "Non publié"}
+              {v === "private"
+                ? "Publié — Privé"
+                : v === "public"
+                  ? "Publié — Public"
+                  : "Non publié"}
             </button>
           ))}
         </div>
@@ -94,7 +98,11 @@ export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }
           disabled={pending || tracks.length < 3}
           className="btn-primary disabled:opacity-50"
         >
-          {pending ? "Création…" : mode === "multi" ? "Créer et lancer la room" : "Créer le blindtest"}
+          {pending
+            ? "Création…"
+            : mode === "multi"
+              ? "Créer et lancer la room"
+              : "Créer le blindtest"}
         </button>
       </div>
     </form>

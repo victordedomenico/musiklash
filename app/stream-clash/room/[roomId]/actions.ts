@@ -183,7 +183,8 @@ export async function startGame(roomId: string) {
     include: { streamClash: { include: { tracks: true } } },
   });
   if (!room) return { ok: false as const, error: "Room introuvable" };
-  if (room.hostId !== user.id) return { ok: false as const, error: "Seul l'hôte peut lancer la partie" };
+  if (room.hostId !== user.id)
+    return { ok: false as const, error: "Seul l'hôte peut lancer la partie" };
   if (room.status !== "waiting") return { ok: false as const, error: "Partie déjà en cours" };
 
   const participants = normalizeParticipants(room.participants);
@@ -203,7 +204,10 @@ export async function startGame(roomId: string) {
   const usedIndices = new Set<string>();
   const firstPair = pickPair(tracks, room.difficulty as StreamClashDifficulty, usedIndices);
   if (!firstPair) {
-    return { ok: false as const, error: "Pas assez de morceaux compatibles avec cette difficulté." };
+    return {
+      ok: false as const,
+      error: "Pas assez de morceaux compatibles avec cette difficulté.",
+    };
   }
 
   const nowIso = new Date().toISOString();
@@ -240,7 +244,10 @@ export async function submitAnswer(roomId: string, chosenPosition: number) {
   if (!room) return { ok: false as const, error: "Room introuvable" };
   if (room.status !== "playing") return { ok: false as const, error: "Partie non en cours" };
 
-  const pair = room.currentPair as unknown as { trackA: StreamClashTrackData; trackB: StreamClashTrackData } | null;
+  const pair = room.currentPair as unknown as {
+    trackA: StreamClashTrackData;
+    trackB: StreamClashTrackData;
+  } | null;
   if (!pair) return { ok: false as const, error: "Pas de paire active" };
 
   const participants = normalizeParticipants(room.participants);
@@ -302,12 +309,12 @@ export async function nextRound(roomId: string) {
 
     await prisma.streamClashRoom.update({
       where: { id: roomId },
-    data: {
-      status: "finished",
-      winnerId,
-      pairStartedAt: null,
-      currentPair: Prisma.JsonNull,
-    },
+      data: {
+        status: "finished",
+        winnerId,
+        pairStartedAt: null,
+        currentPair: Prisma.JsonNull,
+      },
     });
 
     return buildResponse(roomId, { type: "game-end", winnerId });
@@ -376,7 +383,9 @@ export async function rematch(roomId: string) {
   }));
 
   const usedIndices = new Set<string>();
-  const firstPair = pickPair(tracks, room.difficulty as StreamClashDifficulty, usedIndices);
+  // Advance the RNG/usedIndices state; the result is intentionally discarded
+  // (the host will call startGame again to deal the real first pair).
+  pickPair(tracks, room.difficulty as StreamClashDifficulty, usedIndices);
 
   const nowIso = new Date().toISOString();
   const reset = participants.map((p) => ({

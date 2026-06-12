@@ -18,10 +18,9 @@ export async function filterTracksByDeezerGenre(
 ): Promise<DeezerTrack[]> {
   const uniqueAlbumIds = [...new Set(tracks.map((t) => t.album.id))];
   const matches = await Promise.all(
-    uniqueAlbumIds.map(async (albumId) => [
-      albumId,
-      await albumGenreMatches(albumId, deezerGenreId),
-    ] as const),
+    uniqueAlbumIds.map(
+      async (albumId) => [albumId, await albumGenreMatches(albumId, deezerGenreId)] as const,
+    ),
   );
   const allowed = new Set(matches.filter(([, ok]) => ok).map(([id]) => id));
   return tracks.filter((t) => allowed.has(t.album.id));

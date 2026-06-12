@@ -28,31 +28,34 @@ export default function ArtistSearchInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const search = useCallback(async (q: string) => {
-    abortRef.current?.abort();
-    if (q.length < 2) {
-      setResults([]);
-      setOpen(false);
-      return;
-    }
-    const controller = new AbortController();
-    abortRef.current = controller;
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/battle-feat/artists?q=${encodeURIComponent(q)}`, {
-        signal: controller.signal,
-      });
-      const json = (await res.json()) as { data: ArtistResult[] };
-      const filtered = json.data.filter((a) => !excludeIds.includes(a.id));
-      setResults(filtered);
-      setOpen(filtered.length > 0);
-      setHighlightIdx(-1);
-    } catch {
-      // Aborted or error
-    } finally {
-      setLoading(false);
-    }
-  }, [excludeIds]);
+  const search = useCallback(
+    async (q: string) => {
+      abortRef.current?.abort();
+      if (q.length < 2) {
+        setResults([]);
+        setOpen(false);
+        return;
+      }
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/battle-feat/artists?q=${encodeURIComponent(q)}`, {
+          signal: controller.signal,
+        });
+        const json = (await res.json()) as { data: ArtistResult[] };
+        const filtered = json.data.filter((a) => !excludeIds.includes(a.id));
+        setResults(filtered);
+        setOpen(filtered.length > 0);
+        setHighlightIdx(-1);
+      } catch {
+        // Aborted or error
+      } finally {
+        setLoading(false);
+      }
+    },
+    [excludeIds],
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => search(query), 300);

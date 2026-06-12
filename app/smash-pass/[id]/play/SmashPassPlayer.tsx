@@ -48,14 +48,12 @@ export default function SmashPassPlayer({
   const [smashCount, setSmashCount] = useState(0);
   const [passCount, setPassCount] = useState(0);
   const [previousItem, setPreviousItem] = useState<SmashPassItemData | null>(null);
-  const [previousStats, setPreviousStats] =
-    useState<SmashPassItemStatsSnapshot | null>(null);
+  const [previousStats, setPreviousStats] = useState<SmashPassItemStatsSnapshot | null>(null);
   const [voting, setVoting] = useState(false);
   const [finished, setFinished] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const [pending] = useTransition();
   const initRef = useRef(false);
-  const { nowPlaying, isPlaying, playTrack, toggle, stop, isPlayingKey } =
-    useTrackPreview();
+  const { nowPlaying, isPlaying, playTrack, toggle, stop, isPlayingKey } = useTrackPreview();
 
   const currentItem = items[position] ?? null;
   const itemLabel = ITEM_LABELS[itemType];
@@ -91,29 +89,25 @@ export default function SmashPassPlayer({
       setVoting(true);
       stop();
 
-      void submitSmashPassChoice(
-        sessionId,
-        itemType,
-        currentItem.deezerId,
-        position,
-        choice,
-      ).then((res) => {
-        setVoting(false);
-        if ("error" in res && res.error) return;
+      void submitSmashPassChoice(sessionId, itemType, currentItem.deezerId, position, choice).then(
+        (res) => {
+          setVoting(false);
+          if ("error" in res && res.error) return;
 
-        setSmashCount(res.smashCount ?? smashCount);
-        setPassCount(res.passCount ?? passCount);
-        setPreviousItem(currentItem);
-        setPreviousStats(res.stats ?? null);
+          setSmashCount(res.smashCount ?? smashCount);
+          setPassCount(res.passCount ?? passCount);
+          setPreviousItem(currentItem);
+          setPreviousStats(res.stats ?? null);
 
-        const next = position + 1;
-        if (next >= items.length) {
-          setFinished(true);
-          void finishSmashPassSession(sessionId);
-        } else {
-          setPosition(next);
-        }
-      });
+          const next = position + 1;
+          if (next >= items.length) {
+            setFinished(true);
+            void finishSmashPassSession(sessionId);
+          } else {
+            setPosition(next);
+          }
+        },
+      );
     },
     [
       sessionId,
@@ -163,9 +157,7 @@ export default function SmashPassPlayer({
   return (
     <div className="space-y-8 pb-16">
       <div className="text-center">
-        <p className="text-xs font-bold uppercase tracking-widest text-blue-400">
-          MusiKlash Smash
-        </p>
+        <p className="text-xs font-bold uppercase tracking-widest text-blue-400">MusiKlash Smash</p>
         <h1 className="mt-1 text-lg font-bold text-[color:var(--muted)]">{title}</h1>
       </div>
 
@@ -173,18 +165,10 @@ export default function SmashPassPlayer({
         item={currentItem}
         itemType={itemType}
         onPreview={currentItem.deezerId ? handlePreview : undefined}
-        isPreviewPlaying={
-          currentItem.deezerId
-            ? isPlayingKey(`sp-${currentItem.deezerId}`)
-            : false
-        }
+        isPreviewPlaying={currentItem.deezerId ? isPlayingKey(`sp-${currentItem.deezerId}`) : false}
       />
 
-      <SmashPassProgress
-        current={position + 1}
-        total={items.length}
-        itemLabel={itemLabel}
-      />
+      <SmashPassProgress current={position + 1} total={items.length} itemLabel={itemLabel} />
 
       <SmashPassControls
         smashCount={smashCount}
@@ -196,11 +180,7 @@ export default function SmashPassPlayer({
       <SmashPassCommunityStats item={previousItem} stats={previousStats} />
 
       {nowPlaying ? (
-        <TrackPreviewBar
-          title={nowPlaying.title}
-          isPlaying={isPlaying}
-          onToggle={toggle}
-        />
+        <TrackPreviewBar title={nowPlaying.title} isPlaying={isPlaying} onToggle={toggle} />
       ) : null}
     </div>
   );

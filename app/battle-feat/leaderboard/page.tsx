@@ -51,7 +51,10 @@ export default async function LeaderboardPage({
         Top scores en mode solo
       </p>
 
-      <div className="mt-6 inline-flex gap-2 rounded-2xl border p-1 text-sm" style={{ borderColor: "#283041", background: "#181b24" }}>
+      <div
+        className="mt-6 inline-flex gap-2 rounded-2xl border p-1 text-sm"
+        style={{ borderColor: "#283041", background: "#181b24" }}
+      >
         {diffConfig.map((dc) => (
           <Link
             key={dc.value}
@@ -68,7 +71,10 @@ export default async function LeaderboardPage({
       </div>
 
       {sessions.length === 0 ? (
-        <div className="mt-10 rounded-[28px] border p-10 text-center" style={{ borderColor: "#2a3242", background: "#10141d" }}>
+        <div
+          className="mt-10 rounded-[28px] border p-10 text-center"
+          style={{ borderColor: "#2a3242", background: "#10141d" }}
+        >
           <p className="text-lg font-semibold">Aucun score pour le moment.</p>
           <p className="mt-1 text-sm text-[color:var(--muted)]">Sois le premier à jouer !</p>
           <Link href="/battle-feat/solo" className="btn-primary mt-6 inline-flex">

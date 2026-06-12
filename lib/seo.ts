@@ -21,18 +21,12 @@ export const SITE_KEYWORDS = [
 ];
 
 export function getSiteUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") ??
-    "https://musiklash.fun"
-  );
+  return process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") ?? "https://musiklash.fun";
 }
 
 /** URL canonique pour sitemap / robots — jamais l’URL de preview Vercel. */
 export function getSitemapBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") ??
-    "https://musiklash.fun"
-  );
+  return process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") ?? "https://musiklash.fun";
 }
 
 export function absoluteUrl(path = ""): string {
@@ -142,9 +136,7 @@ export const rootMetadata: Metadata = {
     canonical: getSiteUrl(),
   },
   verification: {
-    google:
-      process.env.GOOGLE_SITE_VERIFICATION ??
-      "vcwmKj3fUxcWm0jVR6SS4nxqLYgO5kNVxOff8jw2HlI",
+    google: process.env.GOOGLE_SITE_VERIFICATION ?? "vcwmKj3fUxcWm0jVR6SS4nxqLYgO5kNVxOff8jw2HlI",
   },
 };
 

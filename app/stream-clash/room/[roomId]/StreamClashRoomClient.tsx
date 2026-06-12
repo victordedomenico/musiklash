@@ -14,7 +14,6 @@ import {
   Play,
   Swords,
   ArrowRight,
-  Zap,
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -23,21 +22,13 @@ import type {
   StreamClashRoomBroadcastPayload,
   StreamClashParticipant,
 } from "@/lib/stream-clash-room";
-import { checkAnswer, POINTS_PER_CORRECT } from "@/lib/stream-clash";
+import { POINTS_PER_CORRECT } from "@/lib/stream-clash";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
 import StreamClashTrackCard from "@/components/StreamClashTrackCard";
 import TrackPreviewBar from "@/components/TrackPreviewBar";
 import RoomChat from "@/components/RoomChat";
 import { useTrackPreview } from "@/lib/use-track-preview";
-import {
-  joinRoom,
-  leaveRoom,
-  startGame,
-  submitAnswer,
-  nextRound,
-  rematch,
-  refreshRoomState,
-} from "./actions";
+import { joinRoom, startGame, submitAnswer, nextRound, rematch, refreshRoomState } from "./actions";
 
 const TIMER_SECONDS = 15;
 const PRESENCE_GRACE_SECONDS = 45;
@@ -81,8 +72,12 @@ export default function StreamClashRoomClient({
   const phaseRef = useRef<Phase>("picking");
   const { nowPlaying, isPlaying, playTrack, toggle, stop, isPlayingKey } = useTrackPreview();
 
-  useEffect(() => { roomRef.current = room; }, [room]);
-  useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => {
+    roomRef.current = room;
+  }, [room]);
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   const isHost = userId === room.hostId;
   const me = useMemo(
@@ -205,22 +200,6 @@ export default function StreamClashRoomClient({
     stop();
   }, [room.currentRound, stop]);
 
-  // ── Auto-submit when timer hits 0 ─────────────────────────────────────────
-  const autoSubmittedRef = useRef(-1);
-  useEffect(() => {
-    if (
-      phase !== "picking" ||
-      timeLeft > 0 ||
-      hasAnsweredThisRound ||
-      autoSubmittedRef.current === room.currentRound ||
-      isSpectator
-    )
-      return;
-    autoSubmittedRef.current = room.currentRound;
-    void handlePick(-1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft, phase, hasAnsweredThisRound, room.currentRound]);
-
   // ── Actions ────────────────────────────────────────────────────────────────
 
   const handlePick = useCallback(
@@ -237,6 +216,22 @@ export default function StreamClashRoomClient({
     },
     [isSpectator, broadcastSync],
   );
+
+  // ── Auto-submit when timer hits 0 ─────────────────────────────────────────
+  const autoSubmittedRef = useRef(-1);
+  useEffect(() => {
+    if (
+      phase !== "picking" ||
+      timeLeft > 0 ||
+      hasAnsweredThisRound ||
+      autoSubmittedRef.current === room.currentRound ||
+      isSpectator
+    )
+      return;
+    autoSubmittedRef.current = room.currentRound;
+    void handlePick(-1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, phase, hasAnsweredThisRound, room.currentRound]);
 
   const handleNextRound = async () => {
     if (!isHost || submitting) return;
@@ -317,7 +312,9 @@ export default function StreamClashRoomClient({
         setWaitingRematch(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [waitingRematch, room.status, room.id, isParticipant, broadcastSync]);
 
   const copyLink = async () => {
@@ -340,16 +337,24 @@ export default function StreamClashRoomClient({
           <h2 className="text-xl font-bold">Stream Clash multijoueur</h2>
           <p className="mt-1 text-sm text-[color:var(--muted)]">
             {room.streamClash.tracks.length} morceaux ·{" "}
-            {room.difficulty === "easy" ? "Facile" : room.difficulty === "normal" ? "Normal" : "Difficile"}{" "}
+            {room.difficulty === "easy"
+              ? "Facile"
+              : room.difficulty === "normal"
+                ? "Normal"
+                : "Difficile"}{" "}
             · {room.totalRounds} manches
           </p>
 
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <button onClick={copyLink} className="btn-ghost">
               {copied ? (
-                <><Check size={14} className="text-green-400" /> Lien copié !</>
+                <>
+                  <Check size={14} className="text-green-400" /> Lien copié !
+                </>
               ) : (
-                <><Copy size={14} /> Copier le lien d&apos;invitation</>
+                <>
+                  <Copy size={14} /> Copier le lien d&apos;invitation
+                </>
               )}
             </button>
 
@@ -399,7 +404,8 @@ export default function StreamClashRoomClient({
                 <div
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold"
                   style={{
-                    background: p.playerId === room.hostId ? "var(--accent-dim)" : "var(--surface-2)",
+                    background:
+                      p.playerId === room.hostId ? "var(--accent-dim)" : "var(--surface-2)",
                     color: p.playerId === room.hostId ? "var(--accent)" : "var(--muted-strong)",
                   }}
                 >
@@ -447,7 +453,7 @@ export default function StreamClashRoomClient({
     const isDraw = !room.winnerId;
     const outcome = isDraw ? "draw" : iWon ? "victory" : "defeat";
     const winnerName = room.winnerId
-      ? room.participants.find((p) => p.playerId === room.winnerId)?.username ?? "—"
+      ? (room.participants.find((p) => p.playerId === room.winnerId)?.username ?? "—")
       : null;
 
     return (
@@ -483,7 +489,11 @@ export default function StreamClashRoomClient({
 
         <div className="flex flex-wrap gap-3">
           {isParticipant && (
-            <button onClick={handleRematch} disabled={submitting} className="btn-primary flex-1 justify-center">
+            <button
+              onClick={handleRematch}
+              disabled={submitting}
+              className="btn-primary flex-1 justify-center"
+            >
               {submitting ? <Loader2 size={16} className="animate-spin" /> : <Swords size={16} />}
               Rejouer
             </button>
@@ -492,12 +502,20 @@ export default function StreamClashRoomClient({
             <button
               type="button"
               onClick={() => setWaitingRematch((v) => !v)}
-              className={waitingRematch ? "btn-primary flex-1 justify-center" : "btn-ghost flex-1 justify-center"}
+              className={
+                waitingRematch
+                  ? "btn-primary flex-1 justify-center"
+                  : "btn-ghost flex-1 justify-center"
+              }
             >
               {waitingRematch ? (
-                <><Loader2 size={16} className="animate-spin" /> En attente de la revanche…</>
+                <>
+                  <Loader2 size={16} className="animate-spin" /> En attente de la revanche…
+                </>
               ) : (
-                <><Swords size={16} /> Attendre la revanche</>
+                <>
+                  <Swords size={16} /> Attendre la revanche
+                </>
               )}
             </button>
           )}
@@ -552,7 +570,11 @@ export default function StreamClashRoomClient({
         {phase === "picking" ? (
           <div
             className={`h-full rounded-full transition-all duration-1000 ${
-              timeLeft > 8 ? "bg-[color:var(--accent)]" : timeLeft > 4 ? "bg-yellow-400" : "bg-red-400"
+              timeLeft > 8
+                ? "bg-[color:var(--accent)]"
+                : timeLeft > 4
+                  ? "bg-yellow-400"
+                  : "bg-red-400"
             }`}
             style={{ width: `${100 - timerProgress}%` }}
           />
@@ -578,20 +600,22 @@ export default function StreamClashRoomClient({
         {phase === "revealed" && myLastRound && (
           <div className="mt-2 flex items-center justify-center gap-2">
             {myLastRound.correct ? (
-              <><Check size={18} className="text-green-400" /><span className="font-bold text-green-400">+{POINTS_PER_CORRECT} pts !</span></>
+              <>
+                <Check size={18} className="text-green-400" />
+                <span className="font-bold text-green-400">+{POINTS_PER_CORRECT} pts !</span>
+              </>
             ) : (
-              <><X size={18} className="text-red-400" /><span className="font-bold text-red-400">Raté !</span></>
+              <>
+                <X size={18} className="text-red-400" />
+                <span className="font-bold text-red-400">Raté !</span>
+              </>
             )}
           </div>
         )}
       </div>
 
       {nowPlaying && (
-        <TrackPreviewBar
-          title={nowPlaying.title}
-          isPlaying={isPlaying}
-          onToggle={toggle}
-        />
+        <TrackPreviewBar title={nowPlaying.title} isPlaying={isPlaying} onToggle={toggle} />
       )}
 
       {/* Tracks */}
@@ -648,9 +672,13 @@ export default function StreamClashRoomClient({
             className={`mt-3 ${waitingRematch ? "btn-primary" : "btn-ghost"}`}
           >
             {waitingRematch ? (
-              <><Check size={14} className="text-green-400" /> Prêt pour la revanche</>
+              <>
+                <Check size={14} className="text-green-400" /> Prêt pour la revanche
+              </>
             ) : (
-              <><Swords size={14} /> Prêt pour la revanche ?</>
+              <>
+                <Swords size={14} /> Prêt pour la revanche ?
+              </>
             )}
           </button>
         </div>
@@ -676,7 +704,11 @@ export default function StreamClashRoomClient({
                   {p.username}
                 </span>
                 <span className="ml-auto text-xs text-[color:var(--muted)]">
-                  {hasAnsweredRound(p, room.currentRound) ? "a répondu" : isOnline(p.lastSeenAt, now) ? "en cours…" : "déconnecté"}
+                  {hasAnsweredRound(p, room.currentRound)
+                    ? "a répondu"
+                    : isOnline(p.lastSeenAt, now)
+                      ? "en cours…"
+                      : "déconnecté"}
                 </span>
               </div>
             ))}
@@ -686,7 +718,8 @@ export default function StreamClashRoomClient({
       {disconnectedParticipants.length > 0 && (
         <p className="flex items-center justify-center gap-2 rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
           <AlertTriangle size={14} />
-          {disconnectedParticipants.length} joueur{disconnectedParticipants.length > 1 ? "s" : ""} déconnecté
+          {disconnectedParticipants.length} joueur{disconnectedParticipants.length > 1 ? "s" : ""}{" "}
+          déconnecté
           {disconnectedParticipants.length > 1 ? "s" : ""}.
         </p>
       )}
@@ -704,9 +737,13 @@ export default function StreamClashRoomClient({
             {submitting ? (
               <Loader2 size={14} className="animate-spin" />
             ) : isLastRound ? (
-              <>Voir les résultats <Trophy size={14} /></>
+              <>
+                Voir les résultats <Trophy size={14} />
+              </>
             ) : (
-              <>Suivant <ChevronRight size={14} /></>
+              <>
+                Suivant <ChevronRight size={14} />
+              </>
             )}
           </button>
         </div>

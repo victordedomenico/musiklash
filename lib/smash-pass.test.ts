@@ -36,7 +36,10 @@ describe("normalizeSessionChoices", () => {
         { position: 1, choice: "invalid" },
         { foo: "bar" },
       ]),
-    ).toEqual([{ position: 0, choice: "smash" }, { position: 1, choice: "pass" }]);
+    ).toEqual([
+      { position: 0, choice: "smash" },
+      { position: 1, choice: "pass" },
+    ]);
   });
 });
 

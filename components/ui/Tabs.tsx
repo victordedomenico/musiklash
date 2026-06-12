@@ -15,10 +15,7 @@ export function TabLink({
   className?: string;
 }) {
   return (
-    <span
-      data-active={active}
-      className={cn("btn-chip", className)}
-    >
+    <span data-active={active} className={cn("btn-chip", className)}>
       {children}
     </span>
   );

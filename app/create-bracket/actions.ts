@@ -84,8 +84,7 @@ export async function createBracket(input: {
 
     bracketId = bracket.id;
   } catch (err: unknown) {
-    const msg =
-      err instanceof Error ? err.message : "Erreur à la création du bracket.";
+    const msg = err instanceof Error ? err.message : "Erreur à la création du bracket.";
     return { error: msg };
   }
 

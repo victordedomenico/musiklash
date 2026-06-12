@@ -13,45 +13,28 @@ type Props = {
   roomPass?: number;
 };
 
-export default function SmashPassCommunityStats({
-  item,
-  stats,
-  roomSmash,
-  roomPass,
-}: Props) {
+export default function SmashPassCommunityStats({ item, stats, roomSmash, roomPass }: Props) {
   if (!item || !stats) return null;
 
-  const showRoom =
-    roomSmash !== undefined &&
-    roomPass !== undefined &&
-    roomSmash + roomPass > 0;
+  const showRoom = roomSmash !== undefined && roomPass !== undefined && roomSmash + roomPass > 0;
   const roomTotal = showRoom ? roomSmash! + roomPass! : 0;
-  const roomSmashPct = showRoom
-    ? Math.round((roomSmash! / roomTotal) * 100)
-    : 0;
+  const roomSmashPct = showRoom ? Math.round((roomSmash! / roomTotal) * 100) : 0;
   const roomPassPct = showRoom ? 100 - roomSmashPct : 0;
 
   return (
     <section className="mx-auto mt-10 max-w-lg text-center">
       <h3 className="text-sm font-medium text-[color:var(--muted)]">
         Ce que les autres ont choisi pour{" "}
-        <span className="text-[color:var(--foreground)]">{item.title}</span>
-        …
+        <span className="text-[color:var(--foreground)]">{item.title}</span>…
       </h3>
       {item.coverUrl ? (
         <div className="mt-4 flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.coverUrl}
-            alt=""
-            className="h-16 w-16 rounded-lg object-cover shadow-lg"
-          />
+          <img src={item.coverUrl} alt="" className="h-16 w-16 rounded-lg object-cover shadow-lg" />
         </div>
       ) : null}
 
-      {showRoom ? (
-        <p className="mt-3 text-xs text-[color:var(--muted)]">Dans cette room</p>
-      ) : null}
+      {showRoom ? <p className="mt-3 text-xs text-[color:var(--muted)]">Dans cette room</p> : null}
       {showRoom ? (
         <div className="mt-2 grid grid-cols-2 gap-4">
           <div>

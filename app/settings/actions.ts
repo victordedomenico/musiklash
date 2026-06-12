@@ -6,7 +6,11 @@ import prisma from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
 function normalizeUsername(value: string): string {
-  return value.trim().replace(/\s+/g, "_").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24);
+  return value
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^A-Za-z0-9_-]/g, "")
+    .slice(0, 24);
 }
 
 export async function updateProfileSettings(formData: FormData) {

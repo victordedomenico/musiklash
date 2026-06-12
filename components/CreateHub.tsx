@@ -2,17 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Bot,
-  Heart,
-  Library,
-  Music,
-  Swords,
-  Users,
-  User,
-  Zap,
-} from "lucide-react";
+import { ArrowLeft, Bot, Heart, Library, Music, Swords, Users, User, Zap } from "lucide-react";
 
 export type CreateHubLabels = {
   chooseMode: string;
@@ -259,10 +249,10 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
     step === "blindtest"
       ? labels.blindtest
       : step === "streamclash"
-      ? labels.streamClash
-      : step === "smashpass"
-      ? labels.smashPass
-      : labels.battleFeat;
+        ? labels.streamClash
+        : step === "smashpass"
+          ? labels.smashPass
+          : labels.battleFeat;
 
   return (
     <div

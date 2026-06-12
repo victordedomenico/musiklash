@@ -13,11 +13,7 @@ const ITEM_TYPE_LABELS: Record<SmashPassItemType, string> = {
   artist: "Artistes",
 };
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const sp = await prisma.smashPass.findUnique({
     where: { id },
@@ -26,11 +22,7 @@ export async function generateMetadata({
   return { title: sp ? `${sp.title} — Smash or Pass` : "Smash or Pass" };
 }
 
-export default async function SmashPassDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function SmashPassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   const smashPass = await prisma.smashPass.findUnique({
@@ -94,8 +86,7 @@ export default async function SmashPassDetailPage({
             </h1>
             <p className="mt-1 text-sm text-white/70">
               {items.length} {itemLabel.toLowerCase()}
-              {items.length > 1 ? "s" : ""} ·{" "}
-              {smashPass._count.sessions} session
+              {items.length > 1 ? "s" : ""} · {smashPass._count.sessions} session
               {smashPass._count.sessions > 1 ? "s" : ""}
             </p>
           </div>
@@ -105,7 +96,10 @@ export default async function SmashPassDetailPage({
         {previewItems.length > 0 ? (
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
             {previewItems.map((item) => (
-              <div key={item.deezerId} className="relative aspect-square overflow-hidden rounded-xl">
+              <div
+                key={item.deezerId}
+                className="relative aspect-square overflow-hidden rounded-xl"
+              >
                 {item.coverUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -164,7 +158,8 @@ export default async function SmashPassDetailPage({
         </div>
 
         <p className="text-center text-xs text-[color:var(--muted)]">
-          Smash ou Pass sur chaque {itemLabel.slice(0, -1).toLowerCase()} — aucune mauvaise réponse !
+          Smash ou Pass sur chaque {itemLabel.slice(0, -1).toLowerCase()} — aucune mauvaise réponse
+          !
         </p>
       </div>
     </div>

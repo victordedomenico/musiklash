@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { getArtistById } from "@/lib/deezer";
 import { sanitizeArtistForClient } from "@/lib/deezer-sanitize";
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!id) return NextResponse.json({ data: null }, { status: 400 });
 

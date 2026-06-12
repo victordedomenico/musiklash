@@ -22,10 +22,8 @@ export async function createTierlist(input: {
   tracks: TierlistTrackInput[];
 }) {
   if (!input.title.trim()) return { error: "Le titre est requis." };
-  if (input.tracks.length < 2)
-    return { error: "Il faut au moins 2 morceaux." };
-  if (input.tracks.length > 50)
-    return { error: "50 morceaux maximum." };
+  if (input.tracks.length < 2) return { error: "Il faut au moins 2 morceaux." };
+  if (input.tracks.length > 50) return { error: "50 morceaux maximum." };
 
   let identity: { playerId: string };
   try {

@@ -64,7 +64,10 @@ export default function MobileNavDrawer({
           <Link href="/" className="flex min-w-0 items-center gap-3">
             <BrandMark size={36} />
             <div className="min-w-0">
-              <p className="truncate text-base font-black leading-none" style={{ color: "var(--foreground)" }}>
+              <p
+                className="truncate text-base font-black leading-none"
+                style={{ color: "var(--foreground)" }}
+              >
                 MusiKlash
               </p>
               <p
@@ -124,7 +127,10 @@ export default function MobileNavDrawer({
             <div className="flex min-w-0 items-center gap-3">
               <BrandMark size={40} />
               <div className="min-w-0">
-                <p className="truncate text-lg font-black leading-none" style={{ color: "var(--foreground)" }}>
+                <p
+                  className="truncate text-lg font-black leading-none"
+                  style={{ color: "var(--foreground)" }}
+                >
                   MusiKlash
                 </p>
                 <p

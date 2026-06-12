@@ -31,12 +31,7 @@ export async function recordGlobalVote(
     },
   });
 
-  return toStatsSnapshot(
-    itemType,
-    deezerId,
-    Number(row.smashCount),
-    Number(row.passCount),
-  );
+  return toStatsSnapshot(itemType, deezerId, Number(row.smashCount), Number(row.passCount));
 }
 
 export async function getGlobalStats(
@@ -53,12 +48,7 @@ export async function getGlobalStats(
     return toStatsSnapshot(itemType, deezerId, 0, 0);
   }
 
-  return toStatsSnapshot(
-    itemType,
-    deezerId,
-    Number(row.smashCount),
-    Number(row.passCount),
-  );
+  return toStatsSnapshot(itemType, deezerId, Number(row.smashCount), Number(row.passCount));
 }
 
 export async function getGlobalStatsBatch(
@@ -80,10 +70,7 @@ export async function getGlobalStatsBatch(
   }
   for (const row of rows) {
     const id = Number(row.deezerId);
-    map.set(
-      id,
-      toStatsSnapshot(itemType, id, Number(row.smashCount), Number(row.passCount)),
-    );
+    map.set(id, toStatsSnapshot(itemType, id, Number(row.smashCount), Number(row.passCount)));
   }
   return map;
 }

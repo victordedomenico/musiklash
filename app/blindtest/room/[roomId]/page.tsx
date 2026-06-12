@@ -8,11 +8,7 @@ import SectionHeader from "@/components/ui/SectionHeader";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ roomId: string }>;
-}) {
+export async function generateMetadata({ params }: { params: Promise<{ roomId: string }> }) {
   const { roomId } = await params;
   const room = await getBlindtestRoomSnapshot(roomId);
   return {
@@ -48,9 +44,7 @@ export default async function BlindtestRoomPage({
   const room = await getBlindtestRoomSnapshot(roomId);
   if (!room) notFound();
 
-  const participantUsername = room.participants.find(
-    (p) => p.playerId === playerId,
-  )?.username;
+  const participantUsername = room.participants.find((p) => p.playerId === playerId)?.username;
   let username = participantUsername ?? null;
   if (!username) {
     const profile = await prisma.profile.findUnique({
@@ -69,11 +63,7 @@ export default async function BlindtestRoomPage({
           Blindtest multijoueur
         </p>
       </div>
-      <BlindtestRoomClient
-        initialRoom={room}
-        userId={playerId}
-        username={username}
-      />
+      <BlindtestRoomClient initialRoom={room} userId={playerId} username={username} />
     </div>
   );
 }

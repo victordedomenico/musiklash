@@ -46,9 +46,7 @@ export default async function SignupPage({
             <p className="mt-1 text-xs text-[color:var(--muted)]">{a.passwordHint}</p>
           </div>
 
-          {error ? (
-            <p className="text-sm text-red-400">{decodeURIComponent(error)}</p>
-          ) : null}
+          {error ? <p className="text-sm text-red-400">{decodeURIComponent(error)}</p> : null}
 
           <button type="submit" className="btn-primary w-full">
             {a.signupBtn}

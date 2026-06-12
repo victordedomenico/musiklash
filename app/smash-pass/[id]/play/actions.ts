@@ -15,8 +15,7 @@ export async function startSmashPassSession(smashPassId: string) {
   try {
     identity = await resolvePlayerIdentity();
   } catch (err: unknown) {
-    const msg =
-      err instanceof Error ? err.message : "Impossible de démarrer la session.";
+    const msg = err instanceof Error ? err.message : "Impossible de démarrer la session.";
     return { error: msg };
   }
 
@@ -92,10 +91,7 @@ export async function finishSmashPassSession(
   return { ok: true as const };
 }
 
-export async function fetchItemStats(
-  itemType: SmashPassItemType,
-  deezerId: number,
-) {
+export async function fetchItemStats(itemType: SmashPassItemType, deezerId: number) {
   const stats = await getGlobalStats(itemType, deezerId);
   return { stats };
 }

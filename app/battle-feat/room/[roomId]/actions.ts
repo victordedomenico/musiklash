@@ -277,7 +277,8 @@ export async function startGame(
 
   const room = await prisma.battleFeatRoom.findUnique({ where: { id: roomId } });
   if (!room) return { ok: false, error: "Room introuvable" } as const;
-  if (room.hostId !== user.id) return { ok: false, error: "Seul l'hôte peut lancer la partie" } as const;
+  if (room.hostId !== user.id)
+    return { ok: false, error: "Seul l'hôte peut lancer la partie" } as const;
 
   const participants = normalizeBattleFeatParticipants(room.participants);
   if (participants.length < 2) return { ok: false, error: "Au moins 2 joueurs requis" } as const;
@@ -329,8 +330,10 @@ export async function submitMove(roomId: string, artist: MoveArtistInput) {
 
   const room = await prisma.battleFeatRoom.findUnique({ where: { id: roomId } });
   if (!room) return { ok: false, valid: false, error: "Room introuvable" } as const;
-  if (room.status !== "playing") return { ok: false, valid: false, error: "Partie non en cours" } as const;
-  if (room.currentTurnId !== user.id) return { ok: false, valid: false, error: "Pas ton tour" } as const;
+  if (room.status !== "playing")
+    return { ok: false, valid: false, error: "Partie non en cours" } as const;
+  if (room.currentTurnId !== user.id)
+    return { ok: false, valid: false, error: "Pas ton tour" } as const;
   if (!room.currentArtistId || !room.currentArtistName) {
     return { ok: false, valid: false, error: "Pas d'artiste courant" } as const;
   }

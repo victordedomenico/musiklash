@@ -2,8 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Search, Plus, X, Play, Pause, ChevronLeft, Check,
-  Music, Disc3, User, ListMusic,
+  Search,
+  Plus,
+  X,
+  Play,
+  Pause,
+  ChevronLeft,
+  Check,
+  Music,
+  Disc3,
+  User,
+  ListMusic,
 } from "lucide-react";
 import type { DeezerTrack, DeezerAlbum, DeezerArtist, DeezerAlbumTrack } from "@/lib/deezer";
 import type { SelectedTrack } from "@/app/create-bracket/actions";
@@ -35,7 +44,10 @@ function SearchInput({
 }) {
   return (
     <div className="relative">
-      <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]" />
+      <Search
+        size={16}
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]"
+      />
       <input
         className="input pl-9"
         placeholder={placeholder ?? "Rechercher…"}
@@ -80,7 +92,10 @@ function AlbumCard({
   action?: React.ReactNode;
 }) {
   return (
-    <li className="card flex items-center gap-3 p-2 cursor-pointer hover:bg-[color:var(--surface-2)] transition-colors" onClick={onClick}>
+    <li
+      className="card flex items-center gap-3 p-2 cursor-pointer hover:bg-[color:var(--surface-2)] transition-colors"
+      onClick={onClick}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={album.cover_small ?? album.cover_medium ?? ""}
@@ -133,11 +148,7 @@ function AlbumTracksView({
           <ChevronLeft size={16} />
         </button>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={album.cover_small ?? ""}
-          alt=""
-          className="h-8 w-8 rounded object-cover"
-        />
+        <img src={album.cover_small ?? ""} alt="" className="h-8 w-8 rounded object-cover" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">{album.title}</p>
           <p className="truncate text-xs text-[color:var(--muted)]">{album.artist?.name}</p>
@@ -196,7 +207,13 @@ function AlbumTracksView({
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
-export default function TrackPicker({ size, selected, onChange, freeMode = false, genre = null }: Props) {
+export default function TrackPicker({
+  size,
+  selected,
+  onChange,
+  freeMode = false,
+  genre = null,
+}: Props) {
   const [tab, setTab] = useState<Tab>("track");
   const [playingId, setPlayingId] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -221,20 +238,31 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
 
   // Track tab
   const [trackQuery, setTrackQuery] = useState("");
-  const { data: trackResults, loading: trackLoading, browsing: trackBrowsing } = useDeezerSearch<DeezerTrack>(
-    "/api/deezer/search", trackQuery, tab === "track", genre,
-  );
+  const {
+    data: trackResults,
+    loading: trackLoading,
+    browsing: trackBrowsing,
+  } = useDeezerSearch<DeezerTrack>("/api/deezer/search", trackQuery, tab === "track", genre);
 
   // Album tab
   const [albumQuery, setAlbumQuery] = useState("");
-  const { data: albumResults, loading: albumLoading, browsing: albumBrowsing } = useDeezerSearch<DeezerAlbum>(
-    "/api/deezer/search/album", albumQuery, tab === "album", genre,
-  );
+  const {
+    data: albumResults,
+    loading: albumLoading,
+    browsing: albumBrowsing,
+  } = useDeezerSearch<DeezerAlbum>("/api/deezer/search/album", albumQuery, tab === "album", genre);
 
   // Artist tab
   const [artistQuery, setArtistQuery] = useState("");
-  const { data: artistResults, loading: artistLoading, browsing: artistBrowsing } = useDeezerSearch<DeezerArtist>(
-    "/api/deezer/search/artist", artistQuery, tab === "artist", genre,
+  const {
+    data: artistResults,
+    loading: artistLoading,
+    browsing: artistBrowsing,
+  } = useDeezerSearch<DeezerArtist>(
+    "/api/deezer/search/artist",
+    artistQuery,
+    tab === "artist",
+    genre,
   );
 
   // Shared album-tracks view (used by both album & artist tabs)
@@ -260,7 +288,11 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
       audioRef.current.volume = volume;
     }
     const a = audioRef.current;
-    if (playingId === id) { a.pause(); setPlayingId(null); return; }
+    if (playingId === id) {
+      a.pause();
+      setPlayingId(null);
+      return;
+    }
     a.pause();
     a.volume = volume;
     a.src = url;
@@ -274,26 +306,32 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
 
   const addTrack = (t: DeezerTrack) => {
     if (isSelected(t.id) || !canAdd) return;
-    onChange([...selected, {
-      deezer_track_id: t.id,
-      title: t.title,
-      artist: t.artist.name,
-      preview_url: t.preview,
-      cover_url: t.album.cover_medium ?? t.album.cover_small ?? null,
-      rank: t.rank ?? 0,
-    }]);
+    onChange([
+      ...selected,
+      {
+        deezer_track_id: t.id,
+        title: t.title,
+        artist: t.artist.name,
+        preview_url: t.preview,
+        cover_url: t.album.cover_medium ?? t.album.cover_small ?? null,
+        rank: t.rank ?? 0,
+      },
+    ]);
   };
 
   const addAlbumTrack = (t: DeezerAlbumTrack) => {
     if (!openedAlbum || isSelected(t.id) || !canAdd || !t.preview) return;
-    onChange([...selected, {
-      deezer_track_id: t.id,
-      title: t.title,
-      artist: openedAlbum.artist?.name ?? t.artist.name,
-      preview_url: t.preview,
-      cover_url: openedAlbum.cover_medium ?? openedAlbum.cover_small ?? null,
-      rank: 0,
-    }]);
+    onChange([
+      ...selected,
+      {
+        deezer_track_id: t.id,
+        title: t.title,
+        artist: openedAlbum.artist?.name ?? t.artist.name,
+        preview_url: t.preview,
+        cover_url: openedAlbum.cover_medium ?? openedAlbum.cover_small ?? null,
+        rank: 0,
+      },
+    ]);
   };
 
   const addAllAlbumTracks = () => {
@@ -361,9 +399,9 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
   // ── Tab content ──────────────────────────────────────────────────────────
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: "track",  label: "Morceaux", icon: <Music size={14} /> },
-    { id: "album",  label: "Album",    icon: <Disc3 size={14} /> },
-    { id: "artist", label: "Artiste",  icon: <User size={14} /> },
+    { id: "track", label: "Morceaux", icon: <Music size={14} /> },
+    { id: "album", label: "Album", icon: <Disc3 size={14} /> },
+    { id: "artist", label: "Artiste", icon: <User size={14} /> },
   ];
 
   const renderLeft = () => {
@@ -391,7 +429,9 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
           <SearchInput
             value={trackQuery}
             onChange={(v) => setTrackQuery(v)}
-            placeholder={genreHint ? `Artiste, titre… (top ${genreHint} sans recherche)` : "Artiste, titre…"}
+            placeholder={
+              genreHint ? `Artiste, titre… (top ${genreHint} sans recherche)` : "Artiste, titre…"
+            }
           />
           <StatusLine
             loading={trackLoading}
@@ -415,7 +455,11 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
                     <p className="truncate font-medium">{t.title}</p>
                     <p className="truncate text-xs text-[color:var(--muted)]">{t.artist.name}</p>
                   </div>
-                  <button type="button" onClick={() => togglePlay(t.id, t.preview)} className="btn-ghost btn-xs px-2">
+                  <button
+                    type="button"
+                    onClick={() => togglePlay(t.id, t.preview)}
+                    className="btn-ghost btn-xs px-2"
+                  >
                     {playing ? <Pause size={14} /> : <Play size={14} />}
                   </button>
                   <button
@@ -440,7 +484,11 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
           <SearchInput
             value={albumQuery}
             onChange={(v) => setAlbumQuery(v)}
-            placeholder={genreHint ? `Nom d'album, artiste… (top ${genreHint} sans recherche)` : "Nom d'album, artiste…"}
+            placeholder={
+              genreHint
+                ? `Nom d'album, artiste… (top ${genreHint} sans recherche)`
+                : "Nom d'album, artiste…"
+            }
           />
           <StatusLine
             loading={albumLoading}
@@ -463,7 +511,11 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
         return (
           <div>
             <div className="mb-3 flex items-center gap-2">
-              <button type="button" onClick={backFromArtistAlbums} className="btn-ghost btn-xs px-2">
+              <button
+                type="button"
+                onClick={backFromArtistAlbums}
+                className="btn-ghost btn-xs px-2"
+              >
                 <ChevronLeft size={16} />
               </button>
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -479,11 +531,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
             ) : (
               <ul className="max-h-[420px] overflow-y-auto space-y-2 pr-1">
                 {artistAlbums.map((album) => (
-                  <AlbumCard
-                    key={album.id}
-                    album={album}
-                    onClick={() => openAlbum(album)}
-                  />
+                  <AlbumCard key={album.id} album={album} onClick={() => openAlbum(album)} />
                 ))}
               </ul>
             )}
@@ -497,7 +545,9 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
           <SearchInput
             value={artistQuery}
             onChange={(v) => setArtistQuery(v)}
-            placeholder={genreHint ? `Nom d'artiste… (top ${genreHint} sans recherche)` : "Nom d'artiste…"}
+            placeholder={
+              genreHint ? `Nom d'artiste… (top ${genreHint} sans recherche)` : "Nom d'artiste…"
+            }
           />
           <StatusLine
             loading={artistLoading}
@@ -569,9 +619,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
       <div>
         <div className="flex items-baseline justify-between">
           <label className="text-sm font-medium">
-            {freeMode
-              ? `Sélection (${selected.length})`
-              : `Sélection (${selected.length}/${size})`}
+            {freeMode ? `Sélection (${selected.length})` : `Sélection (${selected.length}/${size})`}
           </label>
         </div>
 

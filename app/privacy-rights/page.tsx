@@ -32,8 +32,8 @@ export default function PrivacyRightsPage() {
       <div className="mx-auto max-w-3xl px-4 py-12">
         <h1 className="text-4xl font-black mb-2">Exercer mes droits RGPD</h1>
         <p style={{ color: "var(--muted)" }}>
-          Cette page vous permet de demander l&apos;acces, la correction, l&apos;effacement ou l&apos;export de
-          vos donnees personnelles.
+          Cette page vous permet de demander l&apos;acces, la correction, l&apos;effacement ou
+          l&apos;export de vos donnees personnelles.
         </p>
 
         <div className="mt-10 space-y-8" style={{ color: "var(--muted-strong)", lineHeight: 1.8 }}>
@@ -56,7 +56,11 @@ export default function PrivacyRightsPage() {
             </h2>
             <p>
               Vous pouvez envoyer votre demande a{" "}
-              <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "var(--accent)" }} className="hover:underline">
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                style={{ color: "var(--accent)" }}
+                className="hover:underline"
+              >
                 {CONTACT_EMAIL}
               </a>
               . Pour accelerer le traitement, utilisez le modele pre-rempli ci-dessous.
@@ -77,9 +81,9 @@ export default function PrivacyRightsPage() {
               Delais de traitement
             </h2>
             <p>
-              Nous accusons reception de votre demande et repondons dans un delai maximum d&apos;un mois,
-              conformement au RGPD. Une verification d&apos;identite peut etre demandee pour proteger vos
-              donnees.
+              Nous accusons reception de votre demande et repondons dans un delai maximum d&apos;un
+              mois, conformement au RGPD. Une verification d&apos;identite peut etre demandee pour
+              proteger vos donnees.
             </p>
           </section>
 

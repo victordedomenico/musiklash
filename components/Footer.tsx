@@ -148,9 +148,7 @@ export default async function Footer() {
                 >
                   {link.label}
                 </Link>
-                {i < arr.length - 1 && (
-                  <span style={{ color: "var(--border-strong)" }}>·</span>
-                )}
+                {i < arr.length - 1 && <span style={{ color: "var(--border-strong)" }}>·</span>}
               </span>
             ))}
           </div>

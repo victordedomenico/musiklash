@@ -9,17 +9,9 @@ type Props = {
   isPreviewPlaying?: boolean;
 };
 
-export default function SmashPassGameCard({
-  item,
-  itemType,
-  onPreview,
-  isPreviewPlaying,
-}: Props) {
+export default function SmashPassGameCard({ item, itemType, onPreview, isPreviewPlaying }: Props) {
   return (
-    <div
-      className="relative mx-auto w-full max-w-sm"
-      style={{ perspective: "1000px" }}
-    >
+    <div className="relative mx-auto w-full max-w-sm" style={{ perspective: "1000px" }}>
       <div
         className="relative overflow-hidden rounded-2xl border border-[color:var(--border)] shadow-[0_0_40px_rgba(59,130,246,0.25)]"
         style={{ transform: "rotateY(-4deg) rotateX(2deg)" }}
@@ -37,12 +29,8 @@ export default function SmashPassGameCard({
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-5">
-            <h2 className="text-2xl font-black text-white drop-shadow-lg">
-              {item.title}
-            </h2>
-            {item.subtitle ? (
-              <p className="mt-1 text-sm text-white/80">{item.subtitle}</p>
-            ) : null}
+            <h2 className="text-2xl font-black text-white drop-shadow-lg">{item.title}</h2>
+            {item.subtitle ? <p className="mt-1 text-sm text-white/80">{item.subtitle}</p> : null}
             {item.tags.length > 0 ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 {item.tags.slice(0, 4).map((tag) => (
@@ -56,9 +44,7 @@ export default function SmashPassGameCard({
               </div>
             ) : null}
             {item.description ? (
-              <p className="mt-3 line-clamp-3 text-sm text-white/70">
-                {item.description}
-              </p>
+              <p className="mt-3 line-clamp-3 text-sm text-white/70">{item.description}</p>
             ) : null}
           </div>
         </div>

@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import prisma from "@/lib/prisma";
-import {
-  slugifyName,
-  parseFeatArtists,
-  popularityTier,
-  SEED_ARTIST_IDS,
-} from "@/lib/battle-feat";
+import { slugifyName, parseFeatArtists, popularityTier, SEED_ARTIST_IDS } from "@/lib/battle-feat";
 import {
   getAlbumTracks,
   getArtistAlbums,

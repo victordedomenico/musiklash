@@ -77,9 +77,7 @@ export default async function TierlistPage({
     <div className="page-shell max-w-5xl py-10">
       <div className="mb-6">
         <SectionHeader title={tl.title} subtitle={tl.theme ?? undefined} />
-        <p className="mt-1 text-xs text-[color:var(--muted)]">
-          {t.tierlistPage.helper}
-        </p>
+        <p className="mt-1 text-xs text-[color:var(--muted)]">{t.tierlistPage.helper}</p>
       </div>
 
       <TierlistPlayer

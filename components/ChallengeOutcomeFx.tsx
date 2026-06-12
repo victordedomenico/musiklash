@@ -26,8 +26,7 @@ export default function ChallengeOutcomeFx({ outcome }: ChallengeOutcomeFxProps)
     () =>
       Array.from(
         {
-          length:
-            outcome === "victory" ? 70 : outcome === "draw" ? 45 : 48,
+          length: outcome === "victory" ? 70 : outcome === "draw" ? 45 : 48,
         },
         (_, index) => ({
           id: index,
@@ -47,11 +46,8 @@ export default function ChallengeOutcomeFx({ outcome }: ChallengeOutcomeFxProps)
           rotate: (index * 29) % 360,
           delay: (index * 61) % 1100,
           duration:
-            (outcome === "victory"
-              ? 2200
-              : outcome === "draw"
-                ? 2000
-                : 2100) + ((index * 83) % 1600),
+            (outcome === "victory" ? 2200 : outcome === "draw" ? 2000 : 2100) +
+            ((index * 83) % 1600),
           color:
             outcome === "victory"
               ? VICTORY_COLORS[index % VICTORY_COLORS.length]
@@ -66,10 +62,7 @@ export default function ChallengeOutcomeFx({ outcome }: ChallengeOutcomeFxProps)
   if (!outcome) return null;
 
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none fixed inset-0 z-30 overflow-hidden"
-    >
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-30 overflow-hidden">
       {outcome === "victory" ? (
         <>
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(250,204,21,0.28),rgba(251,146,60,0.12)_40%,transparent_70%)]" />

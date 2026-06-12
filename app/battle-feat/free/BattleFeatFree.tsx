@@ -53,11 +53,7 @@ function ArtistChip({
     >
       {pictureUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={pictureUrl}
-          alt=""
-          className="h-10 w-10 shrink-0 rounded-full object-cover"
-        />
+        <img src={pictureUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
       ) : (
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--surface-2)]">
           <User size={16} className="text-[color:var(--muted)]" />
@@ -66,9 +62,7 @@ function ArtistChip({
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold">{name}</p>
         {trackTitle && (
-          <p className="truncate text-xs text-[color:var(--muted)]">
-            🎵 {trackTitle}
-          </p>
+          <p className="truncate text-xs text-[color:var(--muted)]">🎵 {trackTitle}</p>
         )}
       </div>
       {trackTitle && previewUrl && onPlayPreview && (
@@ -81,12 +75,7 @@ function ArtistChip({
           Écouter
         </button>
       )}
-      {isNew && (
-        <CheckCircle
-          size={15}
-          className="shrink-0 text-[color:var(--accent)]"
-        />
-      )}
+      {isNew && <CheckCircle size={15} className="shrink-0 text-[color:var(--accent)]" />}
     </div>
   );
 }
@@ -96,9 +85,7 @@ function ArtistChip({
 export default function BattleFeatFree() {
   const router = useRouter();
 
-  const [startingArtist, setStartingArtist] = useState<ArtistResult | null>(
-    null,
-  );
+  const [startingArtist, setStartingArtist] = useState<ArtistResult | null>(null);
   const [phase, setPhase] = useState<Phase>("setup");
   const [moves, setMoves] = useState<FeatMove[]>([]);
   const [score, setScore] = useState(0);
@@ -124,12 +111,8 @@ export default function BattleFeatFree() {
 
   const lastMove = moves.length > 0 ? moves[moves.length - 1] : null;
   const currentArtistId = lastMove?.artistId ?? startingArtist?.id ?? "";
-  const currentArtistName =
-    lastMove?.artistName ?? startingArtist?.name ?? "";
-  const usedIds = [
-    ...(startingArtist ? [startingArtist.id] : []),
-    ...moves.map((m) => m.artistId),
-  ];
+  const currentArtistName = lastMove?.artistName ?? startingArtist?.name ?? "";
+  const usedIds = [...(startingArtist ? [startingArtist.id] : []), ...moves.map((m) => m.artistId)];
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -194,7 +177,12 @@ export default function BattleFeatFree() {
 
   // ── End ───────────────────────────────────────────────────────────────────
   const endGame = useCallback(
-    async (reason: string, finalMoves: FeatMove[], finalScore: number, finalJokersUsed = jokersUsed) => {
+    async (
+      reason: string,
+      finalMoves: FeatMove[],
+      finalScore: number,
+      finalJokersUsed = jokersUsed,
+    ) => {
       if (!startingArtist) return;
       audioRef.current?.pause();
       setNowPlaying(null);
@@ -232,9 +220,7 @@ export default function BattleFeatFree() {
         backgroundColor: "var(--surface)",
       });
     } catch {
-      alert(
-        "Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.",
-      );
+      alert("Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.");
     } finally {
       setIsDownloading(false);
     }
@@ -282,10 +268,7 @@ export default function BattleFeatFree() {
   };
 
   // ── Submit move ───────────────────────────────────────────────────────────
-  async function submitMove(
-    artist: ArtistResult,
-    options?: { consumeJoker?: boolean },
-  ) {
+  async function submitMove(artist: ArtistResult, options?: { consumeJoker?: boolean }) {
     if (phase !== "playing" && phase !== "joker") return;
     setPhase("validating");
 
@@ -395,10 +378,7 @@ export default function BattleFeatFree() {
           </h2>
           {startingArtist ? (
             <div className="flex items-center gap-3">
-              <ArtistChip
-                name={startingArtist.name}
-                pictureUrl={startingArtist.pictureUrl}
-              />
+              <ArtistChip name={startingArtist.name} pictureUrl={startingArtist.pictureUrl} />
               <button
                 onClick={() => setStartingArtist(null)}
                 className="btn-ghost !px-3 !py-1.5 text-sm"
@@ -418,13 +398,28 @@ export default function BattleFeatFree() {
               Publication du résultat
             </p>
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={() => setPublishMode("private")} className="btn-chip" data-active={publishMode === "private"}>
+              <button
+                type="button"
+                onClick={() => setPublishMode("private")}
+                className="btn-chip"
+                data-active={publishMode === "private"}
+              >
                 Publié — Privé
               </button>
-              <button type="button" onClick={() => setPublishMode("public")} className="btn-chip" data-active={publishMode === "public"}>
+              <button
+                type="button"
+                onClick={() => setPublishMode("public")}
+                className="btn-chip"
+                data-active={publishMode === "public"}
+              >
                 Publié — Public
               </button>
-              <button type="button" onClick={() => setPublishMode("none")} className="btn-chip" data-active={publishMode === "none"}>
+              <button
+                type="button"
+                onClick={() => setPublishMode("none")}
+                className="btn-chip"
+                data-active={publishMode === "none"}
+              >
                 Non publié
               </button>
             </div>
@@ -432,8 +427,8 @@ export default function BattleFeatFree() {
               {publishMode === "public"
                 ? "Résultat accessible à tout le monde et par lien."
                 : publishMode === "private"
-                ? "Résultat accessible uniquement à toi ou par lien direct."
-                : "Résultat non sauvegardé : la partie sera supprimée définitivement après l'écran de résultats."}
+                  ? "Résultat accessible uniquement à toi ou par lien direct."
+                  : "Résultat non sauvegardé : la partie sera supprimée définitivement après l'écran de résultats."}
             </p>
           </div>
         </div>
@@ -466,9 +461,7 @@ export default function BattleFeatFree() {
             <h2 className="text-2xl font-black">Partie terminée !</h2>
             <p className="mt-2 text-[color:var(--muted)]">{gameOverReason}</p>
             <div className="mt-6">
-              <p className="text-5xl font-black text-[color:var(--accent)]">
-                {score}
-              </p>
+              <p className="text-5xl font-black text-[color:var(--accent)]">{score}</p>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
                 feat{score !== 1 ? "s" : ""} enchaîné{score !== 1 ? "s" : ""}
               </p>
@@ -485,10 +478,7 @@ export default function BattleFeatFree() {
             <h3 className="mb-3 font-bold">La chaîne complète</h3>
             <div className="space-y-2">
               {startingArtist && (
-                <ArtistChip
-                  name={startingArtist.name}
-                  pictureUrl={startingArtist.pictureUrl}
-                />
+                <ArtistChip name={startingArtist.name} pictureUrl={startingArtist.pictureUrl} />
               )}
               {moves.map((m, i) => (
                 <ArtistChip
@@ -522,9 +512,7 @@ export default function BattleFeatFree() {
           </button>
           {sessionId && (
             <button
-              onClick={() =>
-                router.push(`/battle-feat/results/${sessionId}`)
-              }
+              onClick={() => router.push(`/battle-feat/results/${sessionId}`)}
               className="btn-ghost flex-1"
             >
               Voir les résultats <ArrowRight size={16} />
@@ -562,9 +550,7 @@ export default function BattleFeatFree() {
           <Link2 size={14} />
           Chaîne
         </span>
-        <span className="text-2xl font-black text-[color:var(--accent)]">
-          {score}
-        </span>
+        <span className="text-2xl font-black text-[color:var(--accent)]">{score}</span>
         <button
           onClick={() => endGame("Partie abandonnée.", moves, score)}
           className="text-xs text-[color:var(--muted)] hover:text-[color:var(--foreground)] transition"
@@ -598,10 +584,7 @@ export default function BattleFeatFree() {
           Chaîne en cours
         </p>
         {moves.length === 0 && startingArtist && (
-          <ArtistChip
-            name={startingArtist.name}
-            pictureUrl={startingArtist.pictureUrl}
-          />
+          <ArtistChip name={startingArtist.name} pictureUrl={startingArtist.pictureUrl} />
         )}
         {moves.slice(-5).map((m, i, arr) => (
           <ArtistChip
@@ -620,9 +603,7 @@ export default function BattleFeatFree() {
       <div className="card space-y-4 p-6">
         <p className="text-sm text-[color:var(--muted)]">
           Trouve un feat avec{" "}
-          <strong className="text-[color:var(--foreground)]">
-            {currentArtistName}
-          </strong>
+          <strong className="text-[color:var(--foreground)]">{currentArtistName}</strong>
         </p>
 
         {isBlocked ? (
@@ -641,10 +622,7 @@ export default function BattleFeatFree() {
               autoFocus
             />
             {jokers > 0 && (
-              <button
-                onClick={handleJoker}
-                className="btn-ghost w-full text-sm"
-              >
+              <button onClick={handleJoker} className="btn-ghost w-full text-sm">
                 <Zap size={14} className="text-yellow-400" />
                 Utiliser le joker — il te trouve un feat
               </button>

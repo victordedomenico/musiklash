@@ -74,10 +74,7 @@ export default function LibraryVisibilityToggle({
     if (next === visibility || pending) return;
     setError(null);
     startTransition(async () => {
-      let res:
-        | { ok: true }
-        | { error: string }
-        | undefined;
+      let res: { ok: true } | { error: string } | undefined;
       switch (entity) {
         case "bracket":
           res = await updateBracketVisibility(id, next);
@@ -139,10 +136,7 @@ export default function LibraryVisibilityToggle({
     if (!confirmed) return;
     setError(null);
     startTransition(async () => {
-      let res:
-        | { ok: true }
-        | { error: string }
-        | undefined;
+      let res: { ok: true } | { error: string } | undefined;
       switch (entity) {
         case "bracket":
           res = await deleteBracket(id);

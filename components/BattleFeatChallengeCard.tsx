@@ -62,7 +62,9 @@ export default function BattleFeatChallengeCard({
             </>
           )}
         </span>
-        <span className={`media-pill absolute bottom-2 left-2 ${difficultyColor[c.difficulty] ?? ""}`}>
+        <span
+          className={`media-pill absolute bottom-2 left-2 ${difficultyColor[c.difficulty] ?? ""}`}
+        >
           {difficultyLabel[c.difficulty] ?? "?"}
         </span>
       </div>

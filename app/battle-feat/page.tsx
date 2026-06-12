@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
-import {
-  Swords,
-  Bot,
-  Users,
-  Trophy,
-  ArrowRight,
-  Zap,
-} from "lucide-react";
+import { Swords, Bot, Users, Trophy, ArrowRight, Zap } from "lucide-react";
 
 import { buildPageMetadata } from "@/lib/seo";
 
@@ -43,7 +36,11 @@ export default async function BattleFeatLandingPage() {
       <div className="mb-8 text-center sm:mb-10">
         <div
           className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black uppercase tracking-[0.2em]"
-          style={{ color: "#ff4b7d", borderColor: "rgba(255,75,125,0.35)", background: "rgba(114,18,47,0.35)" }}
+          style={{
+            color: "#ff4b7d",
+            borderColor: "rgba(255,75,125,0.35)",
+            background: "rgba(114,18,47,0.35)",
+          }}
         >
           <Zap size={12} />
           Mode BattleFeat
@@ -51,7 +48,10 @@ export default async function BattleFeatLandingPage() {
         <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-5xl md:text-6xl lg:text-7xl">
           BattleFeat
         </h1>
-        <p className="mx-auto mt-3 max-w-3xl text-base sm:text-lg md:text-xl lg:text-2xl" style={{ color: "#8f93a0" }}>
+        <p
+          className="mx-auto mt-3 max-w-3xl text-base sm:text-lg md:text-xl lg:text-2xl"
+          style={{ color: "#8f93a0" }}
+        >
           Enchaînez les artistes qui ont collaboré ensemble. Solo contre IA ou duel multijoueur,
           jusqu&apos;au blocage final.
         </p>
@@ -64,17 +64,22 @@ export default async function BattleFeatLandingPage() {
           style={{ borderColor: "#2a3242", background: "#10141d" }}
         >
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl" style={{ background: "rgba(255,75,125,0.12)" }}>
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-xl"
+              style={{ background: "rgba(255,75,125,0.12)" }}
+            >
               <Bot size={24} style={{ color: "#ff4b7d" }} />
             </div>
             <div>
               <h2 className="text-xl font-black sm:text-2xl">Solo vs IA</h2>
-              <p className="text-sm" style={{ color: "#8f93a0" }}>3 niveaux de difficulté</p>
+              <p className="text-sm" style={{ color: "#8f93a0" }}>
+                3 niveaux de difficulté
+              </p>
             </div>
           </div>
           <p className="flex-1 text-base" style={{ color: "#a8adbb" }}>
-            Affronte l&apos;IA dans un duel de featurings. Choisis ton artiste de départ et
-            enchaîne le plus de coups possibles.
+            Affronte l&apos;IA dans un duel de featurings. Choisis ton artiste de départ et enchaîne
+            le plus de coups possibles.
           </p>
           <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-[#ff4b7d] transition-all group-hover:gap-3">
             Jouer <ArrowRight size={16} />
@@ -87,17 +92,22 @@ export default async function BattleFeatLandingPage() {
           style={{ borderColor: "#2a3242", background: "#10141d" }}
         >
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl" style={{ background: "rgba(59,130,246,0.12)" }}>
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-xl"
+              style={{ background: "rgba(59,130,246,0.12)" }}
+            >
               <Users size={24} className="text-blue-400" />
             </div>
             <div>
               <h2 className="text-xl font-black sm:text-2xl">Multijoueur</h2>
-              <p className="text-sm" style={{ color: "#8f93a0" }}>En temps réel</p>
+              <p className="text-sm" style={{ color: "#8f93a0" }}>
+                En temps réel
+              </p>
             </div>
           </div>
           <p className="flex-1 text-base" style={{ color: "#a8adbb" }}>
-            Crée une room et partage le lien. Défiez-vous en temps réel sur la chaîne de
-            featurings !
+            Crée une room et partage le lien. Défiez-vous en temps réel sur la chaîne de featurings
+            !
           </p>
           <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-blue-400 group-hover:gap-3 transition-all">
             Créer une room <ArrowRight size={16} />
@@ -107,19 +117,32 @@ export default async function BattleFeatLandingPage() {
 
       {(artistCount > 0 || featCount > 0) && (
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border p-5 text-center" style={{ borderColor: "#2a3242", background: "#10141d" }}>
+          <div
+            className="rounded-2xl border p-5 text-center"
+            style={{ borderColor: "#2a3242", background: "#10141d" }}
+          >
             <p className="text-3xl font-black text-[#ff4b7d]">{artistCount}</p>
-            <p className="text-xs uppercase tracking-[0.12em]" style={{ color: "#8f93a0" }}>artistes graphe</p>
+            <p className="text-xs uppercase tracking-[0.12em]" style={{ color: "#8f93a0" }}>
+              artistes graphe
+            </p>
           </div>
-          <div className="rounded-2xl border p-5 text-center" style={{ borderColor: "#2a3242", background: "#10141d" }}>
+          <div
+            className="rounded-2xl border p-5 text-center"
+            style={{ borderColor: "#2a3242", background: "#10141d" }}
+          >
             <p className="text-3xl font-black text-[#ff4b7d]">{featCount}</p>
-            <p className="text-xs uppercase tracking-[0.12em]" style={{ color: "#8f93a0" }}>liens feats</p>
+            <p className="text-xs uppercase tracking-[0.12em]" style={{ color: "#8f93a0" }}>
+              liens feats
+            </p>
           </div>
         </div>
       )}
 
       {topScores.length > 0 && (
-        <div className="rounded-[30px] border p-6" style={{ borderColor: "#2a3242", background: "#10141d" }}>
+        <div
+          className="rounded-[30px] border p-6"
+          style={{ borderColor: "#2a3242", background: "#10141d" }}
+        >
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 className="flex items-center gap-2 text-xl font-black sm:text-2xl">
               <Trophy size={18} className="text-yellow-400" />
@@ -144,12 +167,8 @@ export default async function BattleFeatLandingPage() {
                   {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}
                 </span>
                 <Swords size={14} className="text-[color:var(--muted)]" />
-                <span className="font-medium flex-1">
-                  {s.player?.username ?? "Anonyme"}
-                </span>
-                <span className="text-xs text-[color:var(--muted)]">
-                  {diffLabel[s.difficulty]}
-                </span>
+                <span className="font-medium flex-1">{s.player?.username ?? "Anonyme"}</span>
+                <span className="text-xs text-[color:var(--muted)]">{diffLabel[s.difficulty]}</span>
                 <span className="font-bold tabular-nums text-[color:var(--accent)]">
                   {s.score} pts
                 </span>

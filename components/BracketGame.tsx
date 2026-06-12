@@ -4,12 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Download, Pause, Play, Share2 } from "lucide-react";
 import MatchCard, { type BracketTrack } from "./MatchCard";
-import {
-  buildBracketState,
-  totalRounds,
-  type BracketSize,
-  type Vote,
-} from "@/lib/bracket";
+import { buildBracketState, totalRounds, type BracketSize, type Vote } from "@/lib/bracket";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { deleteTransientBracket, saveBracketGame } from "@/app/bracket-game/[id]/actions";
@@ -48,9 +43,7 @@ export default function BracketGame({
   const [playingSeed, setPlayingSeed] = useState<number | null>(null);
   const [loadingSeed, setLoadingSeed] = useState<number | null>(null);
   const [treeWindowStart, setTreeWindowStart] = useState<number | null>(null);
-  const [refreshedPreviewBySeed, setRefreshedPreviewBySeed] = useState<
-    Map<number, string>
-  >(
+  const [refreshedPreviewBySeed, setRefreshedPreviewBySeed] = useState<Map<number, string>>(
     () => new Map(),
   );
   const exportRef = useRef<HTMLDivElement | null>(null);
@@ -92,9 +85,7 @@ export default function BracketGame({
           map.set(`${roundNumber}-${pairing.matchIndex}`, pairing.seedA);
           return;
         }
-        const winnerSeed = votesByRound
-          .get(roundNumber)
-          ?.get(pairing.matchIndex);
+        const winnerSeed = votesByRound.get(roundNumber)?.get(pairing.matchIndex);
         if (winnerSeed !== undefined) {
           map.set(`${roundNumber}-${pairing.matchIndex}`, winnerSeed);
         }
@@ -108,10 +99,7 @@ export default function BracketGame({
   const maxWindowStart = Math.max(0, roundsForTree.length - maxVisibleRounds);
   const defaultWindowStart = Math.max(0, roundsForTree.length - maxVisibleRounds);
   const requestedWindowStart = treeWindowStart ?? defaultWindowStart;
-  const clampedWindowStart = Math.min(
-    Math.max(0, requestedWindowStart),
-    maxWindowStart,
-  );
+  const clampedWindowStart = Math.min(Math.max(0, requestedWindowStart), maxWindowStart);
   const visibleRounds = roundsForTree.slice(
     clampedWindowStart,
     clampedWindowStart + maxVisibleRounds,
@@ -184,9 +172,7 @@ export default function BracketGame({
           }),
         );
         if (cancelled) return;
-        const valid = results.filter(
-          (pair): pair is readonly [number, string] => pair !== null,
-        );
+        const valid = results.filter((pair): pair is readonly [number, string] => pair !== null);
         if (valid.length === 0) continue;
         setRefreshedPreviewBySeed((prev) => {
           const next = new Map(prev);
@@ -204,21 +190,13 @@ export default function BracketGame({
 
   // Bye pairings (seedB > trackCount) are auto-resolved — skip them when
   // looking for the next match to display and when counting progress.
-  const realPairings = currentRoundPairings.filter((p) =>
-    tracksBySeed.has(p.seedB),
-  );
+  const realPairings = currentRoundPairings.filter((p) => tracksBySeed.has(p.seedB));
   const nextMatch = realPairings.find(
-    (p) =>
-      !votes.some(
-        (v) => v.round === currentRound && v.matchIndex === p.matchIndex,
-      ),
+    (p) => !votes.some((v) => v.round === currentRound && v.matchIndex === p.matchIndex),
   );
 
   const handlePick = (matchIndex: number, winnerSeed: number) => {
-    setVotes((prev) => [
-      ...prev,
-      { round: currentRound, matchIndex, winnerSeed },
-    ]);
+    setVotes((prev) => [...prev, { round: currentRound, matchIndex, winnerSeed }]);
   };
 
   const saveAndShare = async () => {
@@ -263,9 +241,7 @@ export default function BracketGame({
         backgroundColor: "var(--surface)",
       });
     } catch {
-      alert(
-        "Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.",
-      );
+      alert("Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.");
     } finally {
       setIsDownloading(false);
     }
@@ -281,9 +257,7 @@ export default function BracketGame({
     return el;
   };
 
-  const fetchAndCachePreview = async (
-    track: BracketTrack,
-  ): Promise<string | null> => {
+  const fetchAndCachePreview = async (track: BracketTrack): Promise<string | null> => {
     setLoadingSeed(track.seed);
     try {
       const fresh = await fetchTrackPreview(track.deezerTrackId);
@@ -388,14 +362,8 @@ export default function BracketGame({
     const exportCoverStep = 5;
     const visibleRowHeight = 184;
     const exportRowHeight = 170;
-    const visibleTreeMinHeight = Math.max(
-      260,
-      firstVisibleRoundSideMatches * visibleRowHeight,
-    );
-    const exportTreeMinHeight = Math.max(
-      420,
-      firstExportRoundSideMatches * exportRowHeight,
-    );
+    const visibleTreeMinHeight = Math.max(260, firstVisibleRoundSideMatches * visibleRowHeight);
+    const exportTreeMinHeight = Math.max(420, firstExportRoundSideMatches * exportRowHeight);
 
     const coverSizeFor = (roundNumber: number, forExport: boolean) => {
       const base = forExport ? exportBaseCover : visibleBaseCover;
@@ -412,18 +380,12 @@ export default function BracketGame({
     ) => {
       if (!track) {
         return (
-          <div
-            key={key}
-            className="flex w-full flex-col items-center gap-1"
-            title="Bye"
-          >
+          <div key={key} className="flex w-full flex-col items-center gap-1" title="Bye">
             <div
               style={{ width: size, height: size }}
               className="rounded-md border border-dashed border-[color:var(--border)] bg-[color:var(--surface-2)]"
             />
-            <p className="text-[9px] uppercase tracking-wider text-[color:var(--muted)]">
-              Bye
-            </p>
+            <p className="text-[9px] uppercase tracking-wider text-[color:var(--muted)]">Bye</p>
           </div>
         );
       }
@@ -439,10 +401,7 @@ export default function BracketGame({
           className="flex w-full min-w-0 flex-col items-center gap-1"
           title={`${track.title} — ${track.artist}`}
         >
-          <div
-            className="relative"
-            style={{ width: size, height: size }}
-          >
+          <div className="relative" style={{ width: size, height: size }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={track.cover_url ?? ""}
@@ -486,9 +445,7 @@ export default function BracketGame({
             >
               {track.title}
             </p>
-            <p className="truncate text-[9px] text-[color:var(--muted)]">
-              {track.artist}
-            </p>
+            <p className="truncate text-[9px] text-[color:var(--muted)]">{track.artist}</p>
           </div>
         </div>
       );
@@ -506,10 +463,7 @@ export default function BracketGame({
         side === "left"
           ? round.filter((pairing) => pairing.matchIndex < half)
           : round.filter((pairing) => pairing.matchIndex >= half);
-      const slotsPerMatch = Math.max(
-        1,
-        Math.floor(sideBaseMatches / Math.max(1, matches.length)),
-      );
+      const slotsPerMatch = Math.max(1, Math.floor(sideBaseMatches / Math.max(1, matches.length)));
       const size = coverSizeFor(roundNumber, forExport);
 
       const label = roundLabel(roundNumber, total);
@@ -542,9 +496,7 @@ export default function BracketGame({
             {matches.map((pairing, localIndex) => {
               const trackA = tracksBySeed.get(pairing.seedA);
               const trackB = tracksBySeed.get(pairing.seedB);
-              const winnerSeed = winnerByPairing.get(
-                `${roundNumber}-${pairing.matchIndex}`,
-              );
+              const winnerSeed = winnerByPairing.get(`${roundNumber}-${pairing.matchIndex}`);
               if (!trackA) return null;
 
               return (
@@ -584,15 +536,10 @@ export default function BracketGame({
       );
     };
 
-    const renderTree = (
-      rounds: (typeof roundsForTree),
-      startRound: number,
-      forExport: boolean,
-    ) => {
+    const renderTree = (rounds: typeof roundsForTree, startRound: number, forExport: boolean) => {
       const sideBaseMatches = Math.max(1, (rounds[0]?.length ?? 2) / 2);
       const finalRoundNumber = startRound + rounds.length;
-      const finalCoverSize =
-        coverSizeFor(finalRoundNumber, forExport) + (forExport ? 6 : 8);
+      const finalCoverSize = coverSizeFor(finalRoundNumber, forExport) + (forExport ? 6 : 8);
       const championSize = forExport ? 180 : 168;
       const columnMin = forExport ? 96 : 108;
       const columnMax = forExport ? 150 : 170;
@@ -659,9 +606,7 @@ export default function BracketGame({
                         disabled={loadingSeed === champ.seed}
                         className="no-export absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 disabled:opacity-50"
                         aria-label={
-                          playingSeed === champ.seed
-                            ? "Mettre en pause"
-                            : "Écouter l'extrait"
+                          playingSeed === champ.seed ? "Mettre en pause" : "Écouter l'extrait"
                         }
                       >
                         {loadingSeed === champ.seed ? (
@@ -676,23 +621,23 @@ export default function BracketGame({
                   </div>
                   <div className="max-w-[220px]">
                     <p className="truncate text-sm font-extrabold">{champ.title}</p>
-                    <p className="truncate text-xs text-[color:var(--muted)]">
-                      {champ.artist}
-                    </p>
+                    <p className="truncate text-xs text-[color:var(--muted)]">{champ.artist}</p>
                   </div>
                 </div>
               ) : null}
             </div>
 
-            {[...rounds].reverse().map((round, reverseOffset) =>
-              renderRoundColumn(
-                round,
-                startRound + rounds.length - reverseOffset - 1,
-                "right",
-                forExport,
-                sideBaseMatches,
-              ),
-            )}
+            {[...rounds]
+              .reverse()
+              .map((round, reverseOffset) =>
+                renderRoundColumn(
+                  round,
+                  startRound + rounds.length - reverseOffset - 1,
+                  "right",
+                  forExport,
+                  sideBaseMatches,
+                ),
+              )}
           </div>
         </div>
       );
@@ -717,10 +662,7 @@ export default function BracketGame({
         </div>
 
         <div className="pointer-events-none fixed -left-[20000px] top-0 opacity-100">
-          <div
-            ref={exportRef}
-            className="card w-max space-y-4 bg-[color:var(--surface)] p-5"
-          >
+          <div ref={exportRef} className="card w-max space-y-4 bg-[color:var(--surface)] p-5">
             <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-5">
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[color:var(--muted)]">
                 Arbre des résultats
@@ -826,8 +768,7 @@ export default function BracketGame({
     <div className="space-y-6">
       <div className="flex items-center justify-between text-sm">
         <span className="text-[color:var(--muted)]">
-          {roundLabel(currentRound, total)} — Duel {votedThisRound + 1} /{" "}
-          {realPairings.length}
+          {roundLabel(currentRound, total)} — Duel {votedThisRound + 1} / {realPairings.length}
         </span>
         <div className="h-2 w-40 rounded-full bg-[color:var(--surface-2)]">
           <div

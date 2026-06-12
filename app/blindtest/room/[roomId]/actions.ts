@@ -14,10 +14,7 @@ import {
 } from "@/lib/blindtest-room";
 import { getGlobalLeaderboard, recordGameScores } from "@/lib/blindtest-leaderboard";
 import type { GlobalLeaderboard } from "@/lib/blindtest-leaderboard";
-import type {
-  BlindtestParticipant,
-  BlindtestRoomEvent,
-} from "@/lib/blindtest-room";
+import type { BlindtestParticipant, BlindtestRoomEvent } from "@/lib/blindtest-room";
 import type { BlindtestAnswer } from "@/components/BlindtestGame";
 import type { Prisma } from "@prisma/client";
 
@@ -222,7 +219,8 @@ export async function startGame(roomId: string) {
 
   const room = await prisma.blindtestRoom.findUnique({ where: { id: roomId } });
   if (!room) return { ok: false as const, error: "Room introuvable" };
-  if (room.hostId !== user.id) return { ok: false as const, error: "Seul l'hôte peut lancer la partie" };
+  if (room.hostId !== user.id)
+    return { ok: false as const, error: "Seul l'hôte peut lancer la partie" };
   if (room.status !== "waiting") return { ok: false as const, error: "Partie déjà en cours" };
 
   const participants = normalizeParticipants(room.participants);

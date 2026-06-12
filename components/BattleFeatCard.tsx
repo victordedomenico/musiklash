@@ -127,12 +127,16 @@ export function BattleFeatRoomCard({
             </>
           )}
         </span>
-        <span className="media-pill absolute bottom-2 left-2">{statusLabel[r.status] ?? r.status}</span>
+        <span className="media-pill absolute bottom-2 left-2">
+          {statusLabel[r.status] ?? r.status}
+        </span>
       </div>
       <div className="p-4">
         <div className="flex items-center justify-between">
           <p className="font-semibold">
-            {r.scores.length > 0 ? r.scores.join(" – ") : `${r.playerCount} joueur${r.playerCount > 1 ? "s" : ""}`}
+            {r.scores.length > 0
+              ? r.scores.join(" – ")
+              : `${r.playerCount} joueur${r.playerCount > 1 ? "s" : ""}`}
           </p>
           <span className="text-xs text-[color:var(--muted)] flex items-center gap-1">
             <Clock size={12} />
@@ -161,7 +165,10 @@ export function BattleFeatRoomCard({
       {showToggle ? (
         <LibraryVisibilityToggle entity="battlefeat_room" id={r.id} visibility={vis} />
       ) : (
-        <p className="rounded-xl border px-3 py-2 text-xs text-[color:var(--muted)]" style={{ borderColor: "#283041", background: "#131822" }}>
+        <p
+          className="rounded-xl border px-3 py-2 text-xs text-[color:var(--muted)]"
+          style={{ borderColor: "#283041", background: "#131822" }}
+        >
           Visibilité définie par l&apos;hôte ({vis === "public" ? "public" : "privé"}).
         </p>
       )}

@@ -150,17 +150,27 @@ export default function GuidePage() {
     <div className="mx-auto w-full max-w-[1120px] py-8 lg:py-10">
       <div
         className="rounded-3xl border px-6 py-6 md:px-8 md:py-7"
-        style={{ borderColor: "#222a38", background: "linear-gradient(180deg, rgba(13,16,24,0.9) 0%, rgba(13,16,24,0.72) 100%)" }}
+        style={{
+          borderColor: "#222a38",
+          background: "linear-gradient(180deg, rgba(13,16,24,0.9) 0%, rgba(13,16,24,0.72) 100%)",
+        }}
       >
-        <p className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ borderColor: "#2a3242", color: "#aab1c3" }}>
+        <p
+          className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em]"
+          style={{ borderColor: "#2a3242", color: "#aab1c3" }}
+        >
           <Sparkles size={13} />
           Guide rapide
         </p>
         <h1 className="mt-3 text-3xl font-black tracking-[-0.02em] sm:text-4xl lg:text-5xl">
           Règles des modes MusiKlash
         </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed sm:text-base" style={{ color: "#9aa1b4" }}>
-          Version lisible et concise des règles: création, déroulé de partie, scoring et fin de session.
+        <p
+          className="mt-2 max-w-3xl text-sm leading-relaxed sm:text-base"
+          style={{ color: "#9aa1b4" }}
+        >
+          Version lisible et concise des règles: création, déroulé de partie, scoring et fin de
+          session.
         </p>
       </div>
 
@@ -174,7 +184,11 @@ export default function GuidePage() {
             <div className="mb-4 flex items-center gap-3">
               <span
                 className="flex h-11 w-11 items-center justify-center rounded-xl border"
-                style={{ borderColor: "#2a3242", color: block.tone, background: "rgba(255,255,255,0.01)" }}
+                style={{
+                  borderColor: "#2a3242",
+                  color: block.tone,
+                  background: "rgba(255,255,255,0.01)",
+                }}
               >
                 {block.icon}
               </span>
@@ -183,14 +197,21 @@ export default function GuidePage() {
 
             <ol className="space-y-2.5">
               {block.steps.map((step, index) => (
-                <li key={step} className="flex items-start gap-3 rounded-xl border px-3 py-2.5" style={{ borderColor: "#2a3242", background: "#121723" }}>
+                <li
+                  key={step}
+                  className="flex items-start gap-3 rounded-xl border px-3 py-2.5"
+                  style={{ borderColor: "#2a3242", background: "#121723" }}
+                >
                   <span
                     className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold"
                     style={{ borderColor: "#353c48", color: "#9ca3af", background: "#1a1f2a" }}
                   >
                     {index + 1}
                   </span>
-                  <span className="text-sm leading-relaxed sm:text-[15px]" style={{ color: "#b2b6c3" }}>
+                  <span
+                    className="text-sm leading-relaxed sm:text-[15px]"
+                    style={{ color: "#b2b6c3" }}
+                  >
                     {step}
                   </span>
                 </li>
@@ -200,7 +221,11 @@ export default function GuidePage() {
         ))}
 
         <div className="pt-2">
-          <Link href="/create" className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold sm:text-base" style={{ background: "#ff2f6d", color: "#fff" }}>
+          <Link
+            href="/create"
+            className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold sm:text-base"
+            style={{ background: "#ff2f6d", color: "#fff" }}
+          >
             <Play size={18} />
             Choisir un mode
           </Link>

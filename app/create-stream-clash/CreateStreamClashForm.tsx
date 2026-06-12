@@ -44,7 +44,15 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
       rank: (t as unknown as { rank?: number }).rank ?? 0,
     }));
     startTransition(async () => {
-      const res = await createStreamClash({ title, genre, visibility, tracks: tracksWithRank, mode, difficulty, totalRounds });
+      const res = await createStreamClash({
+        title,
+        genre,
+        visibility,
+        tracks: tracksWithRank,
+        mode,
+        difficulty,
+        totalRounds,
+      });
       if (res?.error) setError(res.error);
     });
   };
@@ -53,10 +61,10 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
     mode === "multi"
       ? "En multijoueur, le contenu doit rester publié (la room en dépend)."
       : visibility === "public"
-      ? "Visible dans Explorer. Accessible à tous par lien."
-      : visibility === "private"
-      ? "Non visible dans Explorer. Accessible par lien direct ou depuis ta bibliothèque."
-      : "Éphémère : le Stream Clash sera supprimé définitivement après la partie.";
+        ? "Visible dans Explorer. Accessible à tous par lien."
+        : visibility === "private"
+          ? "Non visible dans Explorer. Accessible par lien direct ou depuis ta bibliothèque."
+          : "Éphémère : le Stream Clash sera supprimé définitivement après la partie.";
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
@@ -128,7 +136,11 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
               className="btn-chip disabled:opacity-40 disabled:cursor-not-allowed"
               data-active={visibility === v}
             >
-              {v === "private" ? "Publié — Privé" : v === "public" ? "Publié — Public" : "Non publié"}
+              {v === "private"
+                ? "Publié — Privé"
+                : v === "public"
+                  ? "Publié — Public"
+                  : "Non publié"}
             </button>
           ))}
         </div>
@@ -155,7 +167,11 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
           disabled={pending || tracks.length < 4}
           className="btn-primary disabled:opacity-50"
         >
-          {pending ? "Création…" : mode === "multi" ? "Créer et lancer la room" : "Créer le Stream Clash"}
+          {pending
+            ? "Création…"
+            : mode === "multi"
+              ? "Créer et lancer la room"
+              : "Créer le Stream Clash"}
         </button>
       </div>
     </form>

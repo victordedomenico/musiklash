@@ -130,11 +130,7 @@ function TrackChip({
           className="pointer-events-auto rounded-full bg-black/65 p-2 text-white transition hover:bg-black/80"
           aria-label={isPlaying ? "Pause" : texts.listen}
         >
-          {isPlaying ? (
-            <Pause size={20} />
-          ) : (
-            <Play size={20} />
-          )}
+          {isPlaying ? <Pause size={20} /> : <Play size={20} />}
         </button>
       </div>
       <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5 text-[9px] leading-tight truncate text-white">
@@ -156,8 +152,9 @@ function SortableTrack({
   texts: TierlistBoardTexts;
 }) {
   const id = String(item.position);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
 
   return (
     <div
@@ -218,9 +215,7 @@ function TierRow({
         <div
           ref={setNodeRef}
           className={`flex min-h-[72px] flex-1 flex-wrap gap-2 bg-[#141414] p-2 transition-colors ${
-            isOver
-              ? "bg-[color:var(--accent)]/10"
-              : ""
+            isOver ? "bg-[color:var(--accent)]/10" : ""
           }`}
         >
           {items.map((item) => (
@@ -317,9 +312,7 @@ function TierRowEditorModal({
                 type="button"
                 onClick={() => onColorChange(tier.id, color)}
                 className={`h-9 w-9 rounded-full border-2 transition ${
-                  isSelected
-                    ? "scale-110 border-white"
-                    : "border-white/30 hover:border-white/80"
+                  isSelected ? "scale-110 border-white" : "border-white/30 hover:border-white/80"
                 }`}
                 style={{ backgroundColor: color }}
                 aria-label={`Choisir la couleur ${color}`}
@@ -327,7 +320,9 @@ function TierRowEditorModal({
             );
           })}
         </div>
-        <p className="mb-2 text-center text-[2rem] font-bold leading-none">{texts.modalEditLabel}</p>
+        <p className="mb-2 text-center text-[2rem] font-bold leading-none">
+          {texts.modalEditLabel}
+        </p>
         <textarea
           value={tier.label}
           onChange={(e) => onLabelChange(tier.id, e.target.value)}
@@ -402,9 +397,7 @@ function PoolZone({
           }`}
         >
           {poolItems.length === 0 ? (
-            <p className="text-xs text-[color:var(--muted)] self-center">
-              {texts.allPlaced}
-            </p>
+            <p className="text-xs text-[color:var(--muted)] self-center">{texts.allPlaced}</p>
           ) : (
             poolItems.map((item) => (
               <SortableTrack
@@ -439,9 +432,7 @@ export default function TierlistBoard({
   const [tiers, setTiers] = useState<TierConfig[]>(() =>
     DEFAULT_TIERS.map((tier) => ({ ...tier })),
   );
-  const [state, setState] = useState<TierState>(() =>
-    buildInitialState(tracks, DEFAULT_TIERS),
-  );
+  const [state, setState] = useState<TierState>(() => buildInitialState(tracks, DEFAULT_TIERS));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [playingPosition, setPlayingPosition] = useState<number | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -468,40 +459,41 @@ export default function TierlistBoard({
     audioRef.current.volume = volume;
   }, [volume]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const handlePreview = useCallback(async (pos: number, deezerTrackId: number) => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-      audioRef.current.onended = () => setPlayingPosition(null);
-      audioRef.current.volume = volume;
-    }
-    const a = audioRef.current;
-    if (playingPosition === pos) {
+  const handlePreview = useCallback(
+    async (pos: number, deezerTrackId: number) => {
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+        audioRef.current.onended = () => setPlayingPosition(null);
+        audioRef.current.volume = volume;
+      }
+      const a = audioRef.current;
+      if (playingPosition === pos) {
+        a.pause();
+        setPlayingPosition(null);
+        return;
+      }
+
+      let url = freshUrlCache.current.get(deezerTrackId);
+      if (!url) {
+        url = (await fetchTrackPreview(deezerTrackId)) ?? undefined;
+        if (url) freshUrlCache.current.set(deezerTrackId, url);
+      }
+      if (!url) return;
+
       a.pause();
-      setPlayingPosition(null);
-      return;
-    }
-
-    let url = freshUrlCache.current.get(deezerTrackId);
-    if (!url) {
-      url = (await fetchTrackPreview(deezerTrackId)) ?? undefined;
-      if (url) freshUrlCache.current.set(deezerTrackId, url);
-    }
-    if (!url) return;
-
-    a.pause();
-    a.volume = volume;
-    a.src = url;
-    a.load();
-    setPlayingPosition(pos);
-    a.play().catch((err: unknown) => {
-      console.warn("Audio playback failed:", err);
-      setPlayingPosition(null);
-    });
-  }, [playingPosition, volume]);
+      a.volume = volume;
+      a.src = url;
+      a.load();
+      setPlayingPosition(pos);
+      a.play().catch((err: unknown) => {
+        console.warn("Audio playback failed:", err);
+        setPlayingPosition(null);
+      });
+    },
+    [playingPosition, volume],
+  );
 
   const findContainer = (id: string) => {
     for (const [key, items] of Object.entries(state)) {
@@ -555,7 +547,9 @@ export default function TierlistBoard({
   };
 
   const activeItem = activeId
-    ? Object.values(state).flat().find((i) => String(i.position) === activeId)
+    ? Object.values(state)
+        .flat()
+        .find((i) => String(i.position) === activeId)
     : null;
 
   const handleSave = () => {
@@ -619,21 +613,13 @@ export default function TierlistBoard({
 
   const handleTierLabelChange = (tierId: string, nextLabel: string) => {
     setTiers((prev) =>
-      prev.map((tier) =>
-        tier.id === tierId
-          ? { ...tier, label: nextLabel }
-          : tier,
-      ),
+      prev.map((tier) => (tier.id === tierId ? { ...tier, label: nextLabel } : tier)),
     );
   };
 
   const handleTierColorChange = (tierId: string, nextColor: string) => {
     setTiers((prev) =>
-      prev.map((tier) =>
-        tier.id === tierId
-          ? { ...tier, color: nextColor }
-          : tier,
-      ),
+      prev.map((tier) => (tier.id === tierId ? { ...tier, color: nextColor } : tier)),
     );
   };
 
@@ -668,9 +654,7 @@ export default function TierlistBoard({
         backgroundColor: "var(--surface)",
       });
     } catch {
-      alert(
-        texts.pngError,
-      );
+      alert(texts.pngError);
     } finally {
       setIsDownloading(false);
     }
@@ -755,7 +739,11 @@ export default function TierlistBoard({
             <Download size={14} />
             {isDownloading ? texts.downloadGenerating : texts.downloadPng}
           </button>
-          <button type="button" onClick={handleReset} className="btn-ghost w-full justify-center text-sm sm:w-auto">
+          <button
+            type="button"
+            onClick={handleReset}
+            className="btn-ghost w-full justify-center text-sm sm:w-auto"
+          >
             <RotateCcw size={14} /> {texts.reset}
           </button>
           <button
@@ -773,12 +761,7 @@ export default function TierlistBoard({
       {/* Drag overlay */}
       <DragOverlay>
         {activeItem ? (
-          <TrackChip
-            item={activeItem}
-            onPreview={() => {}}
-            playingPosition={null}
-            texts={texts}
-          />
+          <TrackChip item={activeItem} onPreview={() => {}} playingPosition={null} texts={texts} />
         ) : null}
       </DragOverlay>
       {editingTier ? (

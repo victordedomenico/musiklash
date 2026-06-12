@@ -3,8 +3,7 @@ import { sanitizePreviewUrl } from "./deezer-sanitize";
 
 describe("sanitizePreviewUrl", () => {
   it("accepts legacy Deezer CDN preview URLs", () => {
-    const url =
-      "https://cdns-preview-4.dzcdn.net/stream/c-4a9b8c7d6e5f.mp3";
+    const url = "https://cdns-preview-4.dzcdn.net/stream/c-4a9b8c7d6e5f.mp3";
     expect(sanitizePreviewUrl(url)).toBe(url);
   });
 
@@ -15,18 +14,13 @@ describe("sanitizePreviewUrl", () => {
   });
 
   it("normalizes http to https", () => {
-    const url =
-      "http://cdns-preview-0.dzcdn.net/stream/c-abc.mp3";
-    expect(sanitizePreviewUrl(url)).toBe(
-      "https://cdns-preview-0.dzcdn.net/stream/c-abc.mp3",
-    );
+    const url = "http://cdns-preview-0.dzcdn.net/stream/c-abc.mp3";
+    expect(sanitizePreviewUrl(url)).toBe("https://cdns-preview-0.dzcdn.net/stream/c-abc.mp3");
   });
 
   it("rejects full-track or third-party URLs", () => {
     expect(sanitizePreviewUrl("https://evil.com/stream/track.mp3")).toBeNull();
-    expect(
-      sanitizePreviewUrl("https://e-cdns-proxy-1.dzcdn.net/mobile/1/abc"),
-    ).toBeNull();
+    expect(sanitizePreviewUrl("https://e-cdns-proxy-1.dzcdn.net/mobile/1/abc")).toBeNull();
     expect(sanitizePreviewUrl("https://api.deezer.com/track/1")).toBeNull();
     expect(sanitizePreviewUrl("")).toBeNull();
     expect(sanitizePreviewUrl(null)).toBeNull();

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { absoluteUrl, getSitemapBaseUrl } from "@/lib/seo";
+import { getSitemapBaseUrl } from "@/lib/seo";
 
 export default function robots(): MetadataRoute.Robots {
   return {

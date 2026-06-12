@@ -94,10 +94,7 @@ export default function StreamClashPlayer({
     setChosenPosition(-1);
     setPhase("revealed");
     setSubmitting(true);
-    setResults((prev) => [
-      ...prev,
-      { pair, chosenPosition: -1, correct: false },
-    ]);
+    setResults((prev) => [...prev, { pair, chosenPosition: -1, correct: false }]);
     const res = await submitRound(sessionId, pair, -1);
     if (res.ok) setScore(res.score);
     setSubmitting(false);
@@ -106,6 +103,8 @@ export default function StreamClashPlayer({
   // Reset timer on new round
   useEffect(() => {
     if (phase !== "picking") return;
+    // Reset the countdown when a new picking round starts.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTimeLeft(ANSWER_TIMEOUT_MS / 1000);
     autoSubmittedRef.current = false;
 
@@ -156,7 +155,12 @@ export default function StreamClashPlayer({
   if (phase === "finished") {
     const correctCount = results.filter((r) => r.correct).length;
     const perfect = correctCount === pairs.length;
-    const outcome = correctCount >= pairs.length * 0.7 ? "victory" : correctCount >= pairs.length * 0.4 ? "draw" : "defeat";
+    const outcome =
+      correctCount >= pairs.length * 0.7
+        ? "victory"
+        : correctCount >= pairs.length * 0.4
+          ? "draw"
+          : "defeat";
 
     return (
       <div className="space-y-6">
@@ -175,10 +179,10 @@ export default function StreamClashPlayer({
             {perfect
               ? "Parfait ! Tu as tout bon."
               : outcome === "victory"
-              ? "Excellent score !"
-              : outcome === "draw"
-              ? "Pas mal, continue !"
-              : "Tu peux faire mieux !"}
+                ? "Excellent score !"
+                : outcome === "draw"
+                  ? "Pas mal, continue !"
+                  : "Tu peux faire mieux !"}
           </p>
         </div>
 
@@ -220,10 +224,7 @@ export default function StreamClashPlayer({
           >
             <Zap size={14} /> Rejouer
           </Link>
-          <Link
-            href={`/stream-clash/${streamClashId}`}
-            className="btn-ghost flex-1 justify-center"
-          >
+          <Link href={`/stream-clash/${streamClashId}`} className="btn-ghost flex-1 justify-center">
             <ArrowRight size={14} /> Voir le contenu
           </Link>
         </div>
@@ -242,9 +243,7 @@ export default function StreamClashPlayer({
         <span className="text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
           Manche {roundIndex + 1}/{pairs.length}
         </span>
-        <span className="text-sm font-bold">
-          {score} pts
-        </span>
+        <span className="text-sm font-bold">{score} pts</span>
       </div>
 
       {/* Timer bar */}
@@ -252,7 +251,11 @@ export default function StreamClashPlayer({
         {phase === "picking" ? (
           <div
             className={`h-full rounded-full transition-all duration-1000 ${
-              timeLeft > 6 ? "bg-[color:var(--accent)]" : timeLeft > 3 ? "bg-yellow-400" : "bg-red-400"
+              timeLeft > 6
+                ? "bg-[color:var(--accent)]"
+                : timeLeft > 3
+                  ? "bg-yellow-400"
+                  : "bg-red-400"
             }`}
             style={{ width: `${100 - timerProgress}%` }}
           />
@@ -280,9 +283,7 @@ export default function StreamClashPlayer({
             {checkAnswer(pair, chosenPosition) ? (
               <>
                 <Check size={20} className="text-green-400" />
-                <span className="font-bold text-green-400">
-                  +{POINTS_PER_CORRECT} pts !
-                </span>
+                <span className="font-bold text-green-400">+{POINTS_PER_CORRECT} pts !</span>
               </>
             ) : (
               <>
@@ -297,11 +298,7 @@ export default function StreamClashPlayer({
       </div>
 
       {nowPlaying && (
-        <TrackPreviewBar
-          title={nowPlaying.title}
-          isPlaying={isPlaying}
-          onToggle={toggle}
-        />
+        <TrackPreviewBar title={nowPlaying.title} isPlaying={isPlaying} onToggle={toggle} />
       )}
 
       {/* Tracks */}
@@ -343,18 +340,17 @@ export default function StreamClashPlayer({
       {/* Next button */}
       {phase === "revealed" && (
         <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={submitting}
-            className="btn-primary"
-          >
+          <button type="button" onClick={handleNext} disabled={submitting} className="btn-primary">
             {submitting ? (
               <Loader2 size={14} className="animate-spin" />
             ) : isLastRound ? (
-              <>Voir les résultats <Trophy size={14} /></>
+              <>
+                Voir les résultats <Trophy size={14} />
+              </>
             ) : (
-              <>Suivant <ChevronRight size={14} /></>
+              <>
+                Suivant <ChevronRight size={14} />
+              </>
             )}
           </button>
         </div>

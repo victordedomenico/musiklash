@@ -519,8 +519,10 @@ export const fr: Dictionary = {
     newBattleFeat: "Nouveau BattleFeat solo",
     newStreamClash: "Nouveau Stream Clash",
     newSmashPass: "Nouveau Smash or Pass",
-    welcomeMsg: "Compte créé 🎉 tu peux maintenant créer ton premier bracket ou ta première tierlist.",
-    guestMsg: "Tu es en mode invité. Tes parties et créations restent liées à ce pseudo sur cet appareil.",
+    welcomeMsg:
+      "Compte créé 🎉 tu peux maintenant créer ton premier bracket ou ta première tierlist.",
+    guestMsg:
+      "Tu es en mode invité. Tes parties et créations restent liées à ce pseudo sur cet appareil.",
     filterAll: "Tous",
     filterPrivate: "Publié — Privé",
     filterPublic: "Publié — Public",

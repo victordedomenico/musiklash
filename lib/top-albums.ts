@@ -66,7 +66,8 @@ export async function getTopAlbumsByCountry(countryCode: string, limit = 20): Pr
     const items = (playlistTracks?.data ?? [])
       .filter((track) => {
         const title = track.title;
-        const coverUrl = track.album?.cover_xl ?? track.album?.cover_big ?? track.album?.cover_medium;
+        const coverUrl =
+          track.album?.cover_xl ?? track.album?.cover_big ?? track.album?.cover_medium;
         return Boolean(track.id && title && track.link && coverUrl);
       })
       .slice(0, safeLimit)
@@ -74,7 +75,9 @@ export async function getTopAlbumsByCountry(countryCode: string, limit = 20): Pr
         id: String(track.id),
         title: track.title as string,
         artist: track.artist?.name ?? "",
-        coverUrl: (track.album?.cover_xl ?? track.album?.cover_big ?? track.album?.cover_medium) as string,
+        coverUrl: (track.album?.cover_xl ??
+          track.album?.cover_big ??
+          track.album?.cover_medium) as string,
         url: track.link as string,
       }));
 
@@ -121,7 +124,9 @@ export async function getTopAlbumsByCountry(countryCode: string, limit = 20): Pr
       id: String(track.id),
       title: track.title as string,
       artist: track.artist?.name ?? "",
-      coverUrl: (track.album?.cover_xl ?? track.album?.cover_big ?? track.album?.cover_medium) as string,
+      coverUrl: (track.album?.cover_xl ??
+        track.album?.cover_big ??
+        track.album?.cover_medium) as string,
       url: track.link as string,
     }));
 }

@@ -2,19 +2,14 @@
 
 import { useCallback, useRef } from "react";
 
-type SoundName =
-  | "tick"
-  | "spin_end"
-  | "win"
-  | "correct"
-  | "wrong"
-  | "smash"
-  | "pass"
-  | "vote";
+type SoundName = "tick" | "spin_end" | "win" | "correct" | "wrong" | "smash" | "pass" | "vote";
 
 function getCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
-  return new (window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+  return new (
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+  )();
 }
 
 function playTick(ctx: AudioContext, vol = 0.25) {
@@ -32,7 +27,7 @@ function playTick(ctx: AudioContext, vol = 0.25) {
 
 function playSpinEnd(ctx: AudioContext) {
   // Descending ratchet clicks then silence
-  const times = [0, 0.07, 0.16, 0.27, 0.40, 0.55];
+  const times = [0, 0.07, 0.16, 0.27, 0.4, 0.55];
   times.forEach((t, i) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -160,14 +155,30 @@ export function useSoundFx() {
       if (!ctx) return;
       if (ctx.state === "suspended") void ctx.resume();
       switch (name) {
-        case "tick": playTick(ctx); break;
-        case "spin_end": playSpinEnd(ctx); break;
-        case "win": playWin(ctx); break;
-        case "correct": playCorrect(ctx); break;
-        case "wrong": playWrong(ctx); break;
-        case "smash": playSmash(ctx); break;
-        case "pass": playPass(ctx); break;
-        case "vote": playVote(ctx); break;
+        case "tick":
+          playTick(ctx);
+          break;
+        case "spin_end":
+          playSpinEnd(ctx);
+          break;
+        case "win":
+          playWin(ctx);
+          break;
+        case "correct":
+          playCorrect(ctx);
+          break;
+        case "wrong":
+          playWrong(ctx);
+          break;
+        case "smash":
+          playSmash(ctx);
+          break;
+        case "pass":
+          playPass(ctx);
+          break;
+        case "vote":
+          playVote(ctx);
+          break;
       }
     },
     [ensureCtx],

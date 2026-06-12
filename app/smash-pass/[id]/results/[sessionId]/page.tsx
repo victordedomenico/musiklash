@@ -46,17 +46,11 @@ export default async function SmashPassResultsPage({
           return (
             <li key={item.position} className="card flex items-center gap-3 p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={item.coverUrl ?? ""}
-                alt=""
-                className="h-12 w-12 rounded-md object-cover"
-              />
+              <img src={item.coverUrl ?? ""} alt="" className="h-12 w-12 rounded-md object-cover" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{item.title}</p>
                 {item.subtitle ? (
-                  <p className="truncate text-xs text-[color:var(--muted)]">
-                    {item.subtitle}
-                  </p>
+                  <p className="truncate text-xs text-[color:var(--muted)]">{item.subtitle}</p>
                 ) : null}
               </div>
               <span

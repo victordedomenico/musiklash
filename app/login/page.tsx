@@ -35,12 +35,16 @@ export default async function LoginPage({
           </div>
           <div>
             <label className="text-sm font-medium">{a.password}</label>
-            <Input required type="password" name="password" autoComplete="current-password" className="mt-1" />
+            <Input
+              required
+              type="password"
+              name="password"
+              autoComplete="current-password"
+              className="mt-1"
+            />
           </div>
 
-          {error ? (
-            <p className="text-sm text-red-400">{decodeURIComponent(error)}</p>
-          ) : null}
+          {error ? <p className="text-sm text-red-400">{decodeURIComponent(error)}</p> : null}
 
           <button type="submit" className="btn-primary w-full">
             {a.loginBtn}

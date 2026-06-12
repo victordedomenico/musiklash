@@ -85,9 +85,7 @@ function AnswerRow({
       </div>
       <p className="font-semibold">{truth}</p>
       {!correct && guess && (
-        <p className="text-sm text-[color:var(--muted)] line-through mt-0.5">
-          {guess}
-        </p>
+        <p className="text-sm text-[color:var(--muted)] line-through mt-0.5">{guess}</p>
       )}
     </div>
   );
@@ -189,7 +187,9 @@ export default function BlindtestGame({
     setAudioPlaying(true);
     a.play().catch(() => setAudioPlaying(false));
 
-    return () => { a.pause(); };
+    return () => {
+      a.pause();
+    };
   }, [phase, volume]);
 
   // ── Stable submit (uses refs to avoid stale closures in timer) ────────────
@@ -288,8 +288,7 @@ export default function BlindtestGame({
   const track = tracks[idx];
   const lastAnswer = phase === "revealed" ? answers[answers.length - 1] : null;
   const currentScore = answers.reduce((s, a) => s + a.points, 0);
-  const maxSoFar =
-    (phase === "revealed" ? idx + 1 : idx) * maxTrackPoints(singleArtistMode);
+  const maxSoFar = (phase === "revealed" ? idx + 1 : idx) * maxTrackPoints(singleArtistMode);
   const timerProgress = ((TIMER_SECONDS - timeLeft) / TIMER_SECONDS) * 100;
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -310,11 +309,7 @@ export default function BlindtestGame({
         {phase === "playing" ? (
           <div
             className={`h-full rounded-full transition-all duration-1000 ${
-              timeLeft > 15
-                ? "bg-green-400"
-                : timeLeft > 7
-                ? "bg-yellow-400"
-                : "bg-red-400"
+              timeLeft > 15 ? "bg-green-400" : timeLeft > 7 ? "bg-yellow-400" : "bg-red-400"
             }`}
             style={{ width: `${100 - timerProgress}%` }}
           />
@@ -360,7 +355,10 @@ export default function BlindtestGame({
             {/* Inputs */}
             <div className="flex-1 w-full space-y-4">
               {singleArtistMode ? (
-                <p className="rounded-xl border px-3 py-2 text-sm text-[color:var(--muted)]" style={{ borderColor: "#2a3242", background: "#131822" }}>
+                <p
+                  className="rounded-xl border px-3 py-2 text-sm text-[color:var(--muted)]"
+                  style={{ borderColor: "#2a3242", background: "#131822" }}
+                >
                   Un seul artiste sur tout le blindtest : devine uniquement le{" "}
                   <strong className="text-[color:var(--foreground)]">titre</strong>. L&apos;artiste
                   ne rapporte pas de points. Plus tu réponds vite, plus tu marques !
@@ -406,11 +404,7 @@ export default function BlindtestGame({
                 >
                   {audioPlaying ? <Pause size={16} /> : <Play size={16} />}
                 </button>
-                <button
-                  type="button"
-                  onClick={submit}
-                  className="btn-primary flex-1"
-                >
+                <button type="button" onClick={submit} className="btn-primary flex-1">
                   Valider
                 </button>
                 <button
@@ -442,15 +436,9 @@ export default function BlindtestGame({
             >
               {track.coverUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={track.coverUrl}
-                  alt=""
-                  className="h-full w-full object-cover shadow-lg"
-                />
+                <img src={track.coverUrl} alt="" className="h-full w-full object-cover shadow-lg" />
               ) : (
-                <div className="h-full w-full flex items-center justify-center text-4xl">
-                  🎵
-                </div>
+                <div className="h-full w-full flex items-center justify-center text-4xl">🎵</div>
               )}
             </motion.div>
 
@@ -465,7 +453,10 @@ export default function BlindtestGame({
               />
               {singleArtistMode ? (
                 <p className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--muted)]">
-                  Artiste : <span className="font-semibold text-[color:var(--foreground)]">{track.artist}</span>{" "}
+                  Artiste :{" "}
+                  <span className="font-semibold text-[color:var(--foreground)]">
+                    {track.artist}
+                  </span>{" "}
                   · commun à tous les titres (ne rapporte pas de points)
                 </p>
               ) : (

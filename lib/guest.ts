@@ -43,9 +43,7 @@ const COOKIE_OPTIONS = {
 
 function isUuid(value: string | undefined | null): value is string {
   if (!value) return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
-  );
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 function randomInt(min: number, max: number): number {
@@ -61,7 +59,10 @@ function generateReadableGuestUsername(): string {
 
 function normalizePreferredUsername(value: string | undefined | null): string | null {
   if (!value) return null;
-  const cleaned = value.trim().replace(/\s+/g, "_").replace(/[^A-Za-z0-9_-]/g, "");
+  const cleaned = value
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^A-Za-z0-9_-]/g, "");
   if (cleaned.length < 3) return null;
   return cleaned.slice(0, 24);
 }
@@ -195,9 +196,7 @@ export async function resolvePlayerIdentity() {
     throw new Error("Profil utilisateur introuvable après création de session.");
   }
   const cookieStore = await cookies();
-  const preferredGuestUsername = isGuest
-    ? cookieStore.get(GUEST_USERNAME_COOKIE)?.value
-    : null;
+  const preferredGuestUsername = isGuest ? cookieStore.get(GUEST_USERNAME_COOKIE)?.value : null;
   const normalizedPreferred = normalizePreferredUsername(preferredGuestUsername);
 
   let finalUsername = profile.username;
@@ -343,7 +342,10 @@ export async function migrateGuestDataToUser(userId: string) {
     prisma.blindtest.updateMany({ where: { ownerId: guestId }, data: { ownerId: userId } }),
     prisma.bracketGame.updateMany({ where: { playerId: guestId }, data: { playerId: userId } }),
     prisma.tierlistSession.updateMany({ where: { playerId: guestId }, data: { playerId: userId } }),
-    prisma.blindtestSession.updateMany({ where: { playerId: guestId }, data: { playerId: userId } }),
+    prisma.blindtestSession.updateMany({
+      where: { playerId: guestId },
+      data: { playerId: userId },
+    }),
     prisma.battleFeatSoloSession.updateMany({
       where: { playerId: guestId },
       data: { playerId: userId },

@@ -1,0 +1,24 @@
+# Build output & dependencies
+node_modules
+.next
+out
+build
+coverage
+
+# Generated
+prisma/generated
+next-env.d.ts
+*.tsbuildoff
+
+# Has its own Prettier config / Remotion subproject
+musiklash-promo
+
+# Supabase local artifacts
+supabase/.branches
+supabase/.temp
+
+# Assets & data
+public
+*.md
+*.lock
+package-lock.json

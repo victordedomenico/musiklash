@@ -24,8 +24,20 @@ const BASE_MODES: Omit<GameModeItem, "description">[] = [
   { id: "tierlist", label: "Tierlist", emoji: "📊", color: "#f59e0b", href: "/create-tierlist" },
   { id: "blindtest", label: "Blindtest", emoji: "🎧", color: "#8b5cf6", href: "/create-blindtest" },
   { id: "battle-feat", label: "Battle Feat", emoji: "🎤", color: "#06b6d4", href: "/battle-feat" },
-  { id: "smash-pass", label: "Smash or Pass", emoji: "💘", color: "#ec4899", href: "/create-smash-pass" },
-  { id: "stream-clash", label: "Stream Clash", emoji: "⚡", color: "#1db954", href: "/create-stream-clash" },
+  {
+    id: "smash-pass",
+    label: "Smash or Pass",
+    emoji: "💘",
+    color: "#ec4899",
+    href: "/create-smash-pass",
+  },
+  {
+    id: "stream-clash",
+    label: "Stream Clash",
+    emoji: "⚡",
+    color: "#1db954",
+    href: "/create-stream-clash",
+  },
 ];
 
 // ─── Canvas drawing ───────────────────────────────────────────────────────────
@@ -191,9 +203,7 @@ export default function LuckyWheelClient({ t }: { t: LuckyWheelTranslations }) {
   const wheelStyle = useMemo(
     () => ({
       transform: `rotate(${rotation}deg)`,
-      transition: isSpinning
-        ? "transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)"
-        : "none",
+      transition: isSpinning ? "transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)" : "none",
     }),
     [rotation, isSpinning],
   );
@@ -203,11 +213,7 @@ export default function LuckyWheelClient({ t }: { t: LuckyWheelTranslations }) {
       {/* Header */}
       <div className="mb-8 lg:mb-10">
         <div className="mb-2 flex items-center gap-3">
-          <Dice6
-            size={28}
-            strokeWidth={1.8}
-            style={{ color: "var(--accent)" }}
-          />
+          <Dice6 size={28} strokeWidth={1.8} style={{ color: "var(--accent)" }} />
           <h1 className="section-title">{t.title}</h1>
         </div>
         <p className="text-sm" style={{ color: "var(--muted)" }}>
@@ -303,10 +309,7 @@ export default function LuckyWheelClient({ t }: { t: LuckyWheelTranslations }) {
               className="inline-flex items-center gap-1.5 text-xs"
               style={{ color: "var(--muted)" }}
             >
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ background: mode.color }}
-              />
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: mode.color }} />
               {mode.label}
             </span>
           ))}
@@ -334,7 +337,7 @@ export default function LuckyWheelClient({ t }: { t: LuckyWheelTranslations }) {
                   width: 8 + (i % 4) * 4,
                   height: 8 + (i % 4) * 4,
                   background: GAME_MODES[i % GAME_MODES.length].color,
-                  left: `${10 + (i * 5) % 80}%`,
+                  left: `${10 + ((i * 5) % 80)}%`,
                   top: "-10px",
                 }}
                 initial={{ y: -20, opacity: 1, rotate: 0 }}
@@ -342,7 +345,7 @@ export default function LuckyWheelClient({ t }: { t: LuckyWheelTranslations }) {
                   y: typeof window !== "undefined" ? window.innerHeight + 40 : 900,
                   opacity: [1, 1, 0],
                   rotate: 360 * (i % 2 === 0 ? 1 : -1),
-                  x: (i % 2 === 0 ? 1 : -1) * (20 + (i * 13) % 80),
+                  x: (i % 2 === 0 ? 1 : -1) * (20 + ((i * 13) % 80)),
                 }}
                 transition={{ duration: 1.8 + (i % 4) * 0.3, ease: "easeIn" }}
               />
@@ -372,12 +375,10 @@ export default function LuckyWheelClient({ t }: { t: LuckyWheelTranslations }) {
                 style={{ color: "var(--muted)" }}
                 aria-label={t.closeAriaLabel}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    "var(--surface-2)";
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-2)";
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.background =
-                    "transparent";
+                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
                 }}
               >
                 <X size={18} />
@@ -422,10 +423,7 @@ export default function LuckyWheelClient({ t }: { t: LuckyWheelTranslations }) {
                 {winner.description}
               </motion.p>
 
-              <button
-                onClick={() => router.push(winner.href)}
-                className="btn-primary mb-3 w-full"
-              >
+              <button onClick={() => router.push(winner.href)} className="btn-primary mb-3 w-full">
                 <Play size={16} />
                 {t.playMode.replace("{label}", winner.label)}
               </button>

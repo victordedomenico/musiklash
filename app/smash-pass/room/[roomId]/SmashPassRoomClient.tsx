@@ -3,19 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import {
-  Users,
-  Copy,
-  Check,
-  Loader2,
-  Play,
-  ArrowRight,
-} from "lucide-react";
+import { Users, Copy, Check, Loader2, Play, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import type {
-  SmashPassRoomSnapshot,
-  SmashPassRoomBroadcastPayload,
-} from "@/lib/smash-pass-room";
+import type { SmashPassRoomSnapshot, SmashPassRoomBroadcastPayload } from "@/lib/smash-pass-room";
 import {
   allParticipantsVoted,
   computeRoomVoteTotals,
@@ -52,12 +42,8 @@ export default function SmashPassRoomClient({
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [lastStats, setLastStats] = useState<SmashPassItemStatsSnapshot | null>(
-    null,
-  );
-  const [revealItem, setRevealItem] = useState<
-    (typeof room.smashPass.items)[0] | null
-  >(null);
+  const [lastStats, setLastStats] = useState<SmashPassItemStatsSnapshot | null>(null);
+  const [revealItem, setRevealItem] = useState<(typeof room.smashPass.items)[0] | null>(null);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const roomRef = useRef(room);
@@ -73,9 +59,7 @@ export default function SmashPassRoomClient({
   );
   const isParticipant = me !== null;
 
-  const currentItem =
-    room.smashPass.items.find((i) => i.position === room.currentPosition) ??
-    null;
+  const currentItem = room.smashPass.items.find((i) => i.position === room.currentPosition) ?? null;
   const itemLabel = ITEM_LABELS[room.itemType];
 
   const hasVoted = me
@@ -93,17 +77,14 @@ export default function SmashPassRoomClient({
     [room.participants, room.currentPosition],
   );
 
-  const broadcastSync = useCallback(
-    async (payload: SmashPassRoomBroadcastPayload) => {
-      if (!channelRef.current) return;
-      await channelRef.current.send({
-        type: "broadcast",
-        event: "room-sync",
-        payload,
-      });
-    },
-    [],
-  );
+  const broadcastSync = useCallback(async (payload: SmashPassRoomBroadcastPayload) => {
+    if (!channelRef.current) return;
+    await channelRef.current.send({
+      type: "broadcast",
+      event: "room-sync",
+      payload,
+    });
+  }, []);
 
   const runAction = useCallback(
     async <T extends { ok: boolean; room?: SmashPassRoomSnapshot; error?: string }>(
@@ -177,6 +158,8 @@ export default function SmashPassRoomClient({
       room.currentPosition > 0
         ? room.smashPass.items.find((i) => i.position === room.currentPosition - 1)
         : currentItem;
+    // Sync the revealed item once every player has voted on the round.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRevealItem(prev ?? currentItem);
   }, [everyoneVoted, currentItem, room.currentPosition, room.smashPass.items]);
 
@@ -211,15 +194,11 @@ export default function SmashPassRoomClient({
   };
 
   const shareUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/smash-pass/room/${room.id}`
-      : "";
+    typeof window !== "undefined" ? `${window.location.origin}/smash-pass/room/${room.id}` : "";
 
   return (
     <div className="space-y-8">
-      {error ? (
-        <p className="text-center text-sm text-red-400">{error}</p>
-      ) : null}
+      {error ? <p className="text-center text-sm text-red-400">{error}</p> : null}
 
       {room.status === "waiting" ? (
         <div className="card p-6 space-y-4">
@@ -378,12 +357,7 @@ export default function SmashPassRoomClient({
         </div>
       ) : null}
 
-      <RoomChat
-        channelKey="smash-pass"
-        roomId={room.id}
-        userId={userId}
-        username={username}
-      />
+      <RoomChat channelKey="smash-pass" roomId={room.id} userId={userId} username={username} />
     </div>
   );
 }

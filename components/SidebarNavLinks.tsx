@@ -57,9 +57,7 @@ export default function SidebarNavLinks({ links }: Readonly<SidebarNavLinksProps
             style={{
               color: active ? "var(--foreground)" : "var(--muted-strong)",
               background: active ? "var(--surface-2)" : "transparent",
-              border: active
-                ? "1px solid var(--border-strong)"
-                : "1px solid transparent",
+              border: active ? "1px solid var(--border-strong)" : "1px solid transparent",
             }}
           >
             <Icon size={18} strokeWidth={1.9} />
@@ -70,5 +68,3 @@ export default function SidebarNavLinks({ links }: Readonly<SidebarNavLinksProps
     </div>
   );
 }
-
-

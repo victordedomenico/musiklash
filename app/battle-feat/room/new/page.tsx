@@ -25,9 +25,7 @@ export default async function NewRoomPage() {
           </div>
           <div>
             <h1 className="text-2xl font-black">Créer une room BattleFeat</h1>
-            <p className="text-sm text-[color:var(--muted)]">
-              Choisis la visibilité de la room.
-            </p>
+            <p className="text-sm text-[color:var(--muted)]">Choisis la visibilité de la room.</p>
           </div>
         </div>
 

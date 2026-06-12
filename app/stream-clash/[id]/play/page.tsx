@@ -31,10 +31,7 @@ export default async function StreamClashPlayPage({
     ? (rawDiff as StreamClashDifficulty)
     : "easy";
 
-  const totalRounds = Math.min(
-    20,
-    Math.max(5, rawRounds ? parseInt(rawRounds, 10) : 10),
-  );
+  const totalRounds = Math.min(20, Math.max(5, rawRounds ? parseInt(rawRounds, 10) : 10));
 
   const sc = await prisma.streamClash.findUnique({
     where: { id },
@@ -80,12 +77,8 @@ export default async function StreamClashPlayPage({
       <div className="mb-6">
         <SectionHeader title={sc.title} />
         <p className="mt-1 text-sm text-[color:var(--muted)]">
-          {difficulty === "easy"
-            ? "Facile"
-            : difficulty === "normal"
-            ? "Normal"
-            : "Difficile"}{" "}
-          · {totalRounds} manches · Stream Clash
+          {difficulty === "easy" ? "Facile" : difficulty === "normal" ? "Normal" : "Difficile"} ·{" "}
+          {totalRounds} manches · Stream Clash
         </p>
       </div>
       <StreamClashPlayer

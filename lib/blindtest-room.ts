@@ -151,7 +151,9 @@ export function toBlindtestRoomSnapshot(room: NonNullable<RoomRaw>): BlindtestRo
   };
 }
 
-export async function getBlindtestRoomSnapshot(roomId: string): Promise<BlindtestRoomSnapshot | null> {
+export async function getBlindtestRoomSnapshot(
+  roomId: string,
+): Promise<BlindtestRoomSnapshot | null> {
   const room = await fetchRoomRaw(roomId);
   if (!room) return null;
   return toBlindtestRoomSnapshot(room);

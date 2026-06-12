@@ -31,9 +31,7 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
     { href: "/lucky-wheel", label: t.nav.luckyWheel, icon: "lucky" as const },
   ];
 
-  const bottomLinks = [
-    { href: "/my-library", label: t.nav.myLibrary, icon: "library" as const },
-  ];
+  const bottomLinks = [{ href: "/my-library", label: t.nav.myLibrary, icon: "library" as const }];
 
   const helperLinks = [
     { href: "/guide", label: t.nav.guide, icon: "guide" as const },
@@ -163,7 +161,10 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
         </div>
         <SidebarVolumeControl label={t.sidebar.previewVolume} />
 
-        <div className="mt-7 border-t pt-6 lg:mt-10 lg:pt-8" style={{ borderColor: "var(--border)" }}>
+        <div
+          className="mt-7 border-t pt-6 lg:mt-10 lg:pt-8"
+          style={{ borderColor: "var(--border)" }}
+        >
           <p
             className="mb-4 px-2 text-[0.72rem] font-bold uppercase tracking-[0.35em]"
             style={{ color: "var(--muted)" }}

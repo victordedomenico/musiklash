@@ -48,7 +48,11 @@ export default async function BattleFeatSoloPage({
       <div className="mb-7 text-center">
         <p
           className="mx-auto inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black uppercase tracking-[0.2em]"
-          style={{ color: "#ff4b7d", borderColor: "rgba(255,75,125,0.35)", background: "rgba(114,18,47,0.35)" }}
+          style={{
+            color: "#ff4b7d",
+            borderColor: "rgba(255,75,125,0.35)",
+            background: "rgba(114,18,47,0.35)",
+          }}
         >
           <Bot size={12} />
           Mode solo vs IA
@@ -62,7 +66,10 @@ export default async function BattleFeatSoloPage({
       <BattleFeatSolo challenge={challengePreset} />
 
       <div className="mt-7 grid gap-4 md:grid-cols-2">
-        <article className="rounded-[26px] border p-5" style={{ borderColor: "#2a3242", background: "#10141d" }}>
+        <article
+          className="rounded-[26px] border p-5"
+          style={{ borderColor: "#2a3242", background: "#10141d" }}
+        >
           <h2 className="mb-2 flex items-center gap-2 text-2xl font-bold">
             <UserRound size={18} />
             Comment jouer ?
@@ -72,13 +79,17 @@ export default async function BattleFeatSoloPage({
             Chaque featuring valide vous rapporte 100 points.
           </p>
         </article>
-        <article className="rounded-[26px] border p-5" style={{ borderColor: "#2a3242", background: "#10141d" }}>
+        <article
+          className="rounded-[26px] border p-5"
+          style={{ borderColor: "#2a3242", background: "#10141d" }}
+        >
           <h2 className="mb-2 flex items-center gap-2 text-2xl font-bold">
             <ShieldCheck size={18} />
             Validation par IA
           </h2>
           <p className="text-lg" style={{ color: "#8f93a0" }}>
-            Notre IA vérifie en temps réel les featurings officiels pour garantir l&apos;intégrité du défi.
+            Notre IA vérifie en temps réel les featurings officiels pour garantir l&apos;intégrité
+            du défi.
           </p>
         </article>
       </div>

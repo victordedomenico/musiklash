@@ -78,9 +78,7 @@ export default function BlindtestPlayer({
         backgroundColor: "var(--surface)",
       });
     } catch {
-      alert(
-        "Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.",
-      );
+      alert("Impossible de générer le PNG pour le moment. Réessaie dans quelques secondes.");
     } finally {
       setIsDownloading(false);
     }
@@ -109,12 +107,7 @@ export default function BlindtestPlayer({
 
     const maxScore = tracks.length * maxTrackPoints(isSingleArtistBlindtest(tracks));
     startTransition(async () => {
-      const res = await saveBlindtestSession(
-        blindtestId,
-        finalAnswers,
-        finalScore,
-        maxScore,
-      );
+      const res = await saveBlindtestSession(blindtestId, finalAnswers, finalScore, maxScore);
       if ("error" in res) {
         setSaveError(res.error ?? "Erreur inconnue.");
         return;
@@ -149,16 +142,14 @@ export default function BlindtestPlayer({
           <Trophy className="mx-auto text-yellow-400" size={48} />
           <p className="mt-4 text-4xl font-black">
             {finalScore}
-            <span className="text-xl font-normal text-[color:var(--muted)]">
-              {" "}/ {maxScore} pts
-            </span>
+            <span className="text-xl font-normal text-[color:var(--muted)]"> / {maxScore} pts</span>
           </p>
           <p className="mt-1 text-[color:var(--muted)]">
             {pct >= 80
               ? "Excellent ! 🔥"
               : pct >= 50
-              ? "Pas mal du tout 👌"
-              : "Continue de t'entraîner 💪"}
+                ? "Pas mal du tout 👌"
+                : "Continue de t'entraîner 💪"}
           </p>
         </div>
 
@@ -182,9 +173,7 @@ export default function BlindtestPlayer({
             <RotateCcw size={14} /> Recommencer
           </button>
         </div>
-        {saveError && (
-          <p className="no-export text-center text-xs text-red-400">{saveError}</p>
-        )}
+        {saveError && <p className="no-export text-center text-xs text-red-400">{saveError}</p>}
 
         {/* Track-by-track recap */}
         <div className="space-y-3">
@@ -212,7 +201,9 @@ export default function BlindtestPlayer({
                 <p className="font-semibold truncate">{a.trueTitle}</p>
                 <p className="text-xs text-[color:var(--muted)] truncate">{a.trueArtist}</p>
                 <div className="mt-1 flex gap-3 text-xs">
-                  <span className={`flex items-center gap-1 ${a.correctTitle ? "text-green-400" : "text-red-400"}`}>
+                  <span
+                    className={`flex items-center gap-1 ${a.correctTitle ? "text-green-400" : "text-red-400"}`}
+                  >
                     {a.correctTitle ? <Check size={11} /> : <X size={11} />}
                     Titre
                     {!a.correctTitle && a.guessTitle && (
@@ -222,7 +213,9 @@ export default function BlindtestPlayer({
                     )}
                   </span>
                   {!isSingleArtistBlindtest(tracks) && (
-                    <span className={`flex items-center gap-1 ${a.correctArtist ? "text-green-400" : "text-red-400"}`}>
+                    <span
+                      className={`flex items-center gap-1 ${a.correctArtist ? "text-green-400" : "text-red-400"}`}
+                    >
                       {a.correctArtist ? <Check size={11} /> : <X size={11} />}
                       Artiste
                       {!a.correctArtist && a.guessArtist && (
@@ -234,9 +227,7 @@ export default function BlindtestPlayer({
                   )}
                 </div>
               </div>
-              <p className="text-sm font-bold shrink-0 self-center">
-                +{a.points} pts
-              </p>
+              <p className="text-sm font-bold shrink-0 self-center">+{a.points} pts</p>
             </div>
           ))}
         </div>

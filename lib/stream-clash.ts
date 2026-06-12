@@ -3,9 +3,9 @@
 // Each difficulty level caps the allowed rank difference between the two tracks.
 
 export const DIFFICULTY_THRESHOLDS: Record<StreamClashDifficulty, number | null> = {
-  easy: null,       // any difference
-  normal: 500_000,  // within 500 000 rank points
-  hard: 100_000,    // within 100 000 rank points
+  easy: null, // any difference
+  normal: 500_000, // within 500 000 rank points
+  hard: 100_000, // within 100 000 rank points
 };
 
 export type StreamClashDifficulty = "easy" | "normal" | "hard";

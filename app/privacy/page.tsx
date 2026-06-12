@@ -17,7 +17,11 @@ export default function PrivacyPage() {
             <p>
               Le responsable du traitement est MusiKlash. Pour toute question relative aux donnees
               personnelles :{" "}
-              <a href="mailto:contact@musiklash.com" style={{ color: "var(--accent)" }} className="hover:underline">
+              <a
+                href="mailto:contact@musiklash.com"
+                style={{ color: "var(--accent)" }}
+                className="hover:underline"
+              >
                 contact@musiklash.com
               </a>
               .
@@ -29,10 +33,11 @@ export default function PrivacyPage() {
               Donnees traitees
             </h2>
             <p>
-              Selon votre utilisation, nous traitons notamment : e-mail de compte, identifiant utilisateur,
-              pseudo, donnees de session/authentification, contenus crees (brackets, tierlists, blindtests,
-              scores), preferences (theme/langue), journal de consentement cookies (choix + date), et
-              donnees techniques strictement necessaires au fonctionnement du service.
+              Selon votre utilisation, nous traitons notamment : e-mail de compte, identifiant
+              utilisateur, pseudo, donnees de session/authentification, contenus crees (brackets,
+              tierlists, blindtests, scores), preferences (theme/langue), journal de consentement
+              cookies (choix + date), et donnees techniques strictement necessaires au
+              fonctionnement du service.
             </p>
           </section>
 
@@ -40,7 +45,10 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>
               Finalites et bases legales
             </h2>
-            <div className="overflow-x-auto rounded-xl border" style={{ borderColor: "var(--border)" }}>
+            <div
+              className="overflow-x-auto rounded-xl border"
+              style={{ borderColor: "var(--border)" }}
+            >
               <table className="min-w-full text-sm">
                 <thead style={{ background: "var(--surface-2)" }}>
                   <tr className="text-left">
@@ -58,7 +66,9 @@ export default function PrivacyPage() {
                     <td className="px-4 py-3">Execution du contrat</td>
                   </tr>
                   <tr className="border-t" style={{ borderColor: "var(--border)" }}>
-                    <td className="px-4 py-3">Securite, prevention de fraude, integrite technique</td>
+                    <td className="px-4 py-3">
+                      Securite, prevention de fraude, integrite technique
+                    </td>
                     <td className="px-4 py-3">Interet legitime</td>
                   </tr>
                   <tr className="border-t" style={{ borderColor: "var(--border)" }}>
@@ -75,11 +85,13 @@ export default function PrivacyPage() {
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Cookies</h2>
+            <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>
+              Cookies
+            </h2>
             <p>
-              MusiKlash utilise des cookies essentiels (authentification, session, consentement, mode
-              invite), des cookies de preferences (theme, langue) et, uniquement avec votre consentement,
-              des cookies analytiques via Vercel Analytics.
+              MusiKlash utilise des cookies essentiels (authentification, session, consentement,
+              mode invite), des cookies de preferences (theme, langue) et, uniquement avec votre
+              consentement, des cookies analytiques via Vercel Analytics.
             </p>
             <p>
               Vous pouvez modifier votre choix a tout moment depuis{" "}
@@ -95,7 +107,8 @@ export default function PrivacyPage() {
               Destinataires et sous-traitants
             </h2>
             <p>
-              Vos donnees peuvent etre traitees par des sous-traitants techniques strictement necessaires :
+              Vos donnees peuvent etre traitees par des sous-traitants techniques strictement
+              necessaires :
             </p>
             <ul className="list-disc pl-6 space-y-1">
               <li>Supabase (authentification et base de donnees).</li>
@@ -113,9 +126,10 @@ export default function PrivacyPage() {
               Transferts hors Union europeenne
             </h2>
             <p>
-              Certains prestataires peuvent traiter des donnees hors UE. Dans ce cas, les transferts sont
-              encadres par des garanties appropriees, notamment des clauses contractuelles types de la
-              Commission europeenne (SCC) et les mecanismes contractuels proposes par nos sous-traitants.
+              Certains prestataires peuvent traiter des donnees hors UE. Dans ce cas, les transferts
+              sont encadres par des garanties appropriees, notamment des clauses contractuelles
+              types de la Commission europeenne (SCC) et les mecanismes contractuels proposes par
+              nos sous-traitants.
             </p>
           </section>
 
@@ -124,9 +138,14 @@ export default function PrivacyPage() {
               Durees de conservation
             </h2>
             <ul className="list-disc pl-6 space-y-1">
-              <li>Compte et contenus : jusqu&apos;a suppression du compte ou demande d&apos;effacement.</li>
+              <li>
+                Compte et contenus : jusqu&apos;a suppression du compte ou demande
+                d&apos;effacement.
+              </li>
               <li>Cookies de consentement/preferences/invite : 12 mois maximum.</li>
-              <li>Donnees analytiques : selon la configuration de retention de Vercel Analytics.</li>
+              <li>
+                Donnees analytiques : selon la configuration de retention de Vercel Analytics.
+              </li>
             </ul>
           </section>
 
@@ -146,11 +165,19 @@ export default function PrivacyPage() {
             </ul>
             <p>
               Pour exercer vos droits, utilisez{" "}
-              <a href="/privacy-rights" style={{ color: "var(--accent)" }} className="hover:underline">
+              <a
+                href="/privacy-rights"
+                style={{ color: "var(--accent)" }}
+                className="hover:underline"
+              >
                 notre page dediee
-              </a>
-              {" "}ou ecrivez a{" "}
-              <a href="mailto:contact@musiklash.com" style={{ color: "var(--accent)" }} className="hover:underline">
+              </a>{" "}
+              ou ecrivez a{" "}
+              <a
+                href="mailto:contact@musiklash.com"
+                style={{ color: "var(--accent)" }}
+                className="hover:underline"
+              >
                 contact@musiklash.com
               </a>
               .
@@ -162,8 +189,8 @@ export default function PrivacyPage() {
               Reclamation aupres de la CNIL
             </h2>
             <p>
-              Si vous estimez, apres nous avoir contactes, que vos droits ne sont pas respectes, vous
-              pouvez adresser une reclamation a la{" "}
+              Si vous estimez, apres nous avoir contactes, que vos droits ne sont pas respectes,
+              vous pouvez adresser une reclamation a la{" "}
               <a
                 href="https://www.cnil.fr"
                 target="_blank"
@@ -182,9 +209,9 @@ export default function PrivacyPage() {
               Services tiers
             </h2>
             <p>
-              Les extraits musicaux proviennent de <strong>l&apos;API Deezer</strong>. Lors de la lecture
-              d&apos;un extrait, votre navigateur peut etablir une connexion directe avec les serveurs Deezer.
-              Consultez leur{" "}
+              Les extraits musicaux proviennent de <strong>l&apos;API Deezer</strong>. Lors de la
+              lecture d&apos;un extrait, votre navigateur peut etablir une connexion directe avec
+              les serveurs Deezer. Consultez leur{" "}
               <a
                 href="https://www.deezer.com/legal/personal-datas"
                 target="_blank"

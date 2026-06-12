@@ -84,9 +84,7 @@ export function SmashPassCard({
         ) : null}
         <p className="mt-0.5 text-xs text-[color:var(--muted)]">
           {itemTypeLabel[sp.itemType] ?? sp.itemType}
-          {sp.itemCount != null
-            ? ` · ${sp.itemCount} élément${sp.itemCount > 1 ? "s" : ""}`
-            : ""}
+          {sp.itemCount != null ? ` · ${sp.itemCount} élément${sp.itemCount > 1 ? "s" : ""}` : ""}
         </p>
       </div>
     </>

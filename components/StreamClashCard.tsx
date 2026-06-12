@@ -267,11 +267,7 @@ export function StreamClashSessionCard({
       <Link href={`/stream-clash/${session.streamClashId}/play`} className="group media-card">
         {inner}
       </Link>
-      <LibraryVisibilityToggle
-        entity="stream_clash_session"
-        id={session.id}
-        visibility={vis}
-      />
+      <LibraryVisibilityToggle entity="stream_clash_session" id={session.id} visibility={vis} />
     </div>
   );
 }

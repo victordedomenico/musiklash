@@ -37,8 +37,12 @@ export default function MatchCard({
   const [previewB, setPreviewB] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchTrackPreview(a.deezerTrackId).then((url) => setPreviewA(url)).catch(() => {});
-    fetchTrackPreview(b.deezerTrackId).then((url) => setPreviewB(url)).catch(() => {});
+    fetchTrackPreview(a.deezerTrackId)
+      .then((url) => setPreviewA(url))
+      .catch(() => {});
+    fetchTrackPreview(b.deezerTrackId)
+      .then((url) => setPreviewB(url))
+      .catch(() => {});
   }, [a.deezerTrackId, b.deezerTrackId]);
 
   useEffect(() => {
@@ -200,9 +204,13 @@ function Side({
               type="button"
               disabled={!previewUrl}
               onClick={() => onToggle(track.seed, previewUrl)}
-            className="btn-ghost w-full justify-center text-sm sm:flex-1 disabled:opacity-50"
+              className="btn-ghost w-full justify-center text-sm sm:flex-1 disabled:opacity-50"
             >
-              {playing ? <Pause size={14} className="shrink-0" /> : <Play size={14} className="shrink-0" />}
+              {playing ? (
+                <Pause size={14} className="shrink-0" />
+              ) : (
+                <Play size={14} className="shrink-0" />
+              )}
               {playing ? "Pause" : "Écouter"}
             </button>
             <motion.button

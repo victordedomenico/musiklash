@@ -75,7 +75,11 @@ export default function CreateTierlistForm() {
               className="btn-chip"
               data-active={visibility === v}
             >
-              {v === "private" ? "Publié — Privé" : v === "public" ? "Publié — Public" : "Non publié"}
+              {v === "private"
+                ? "Publié — Privé"
+                : v === "public"
+                  ? "Publié — Public"
+                  : "Non publié"}
             </button>
           ))}
         </div>

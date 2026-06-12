@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { ensureBattleFeatVisibilityColumns } from "@/lib/ensure-battle-feat-visibility-columns";
@@ -8,10 +7,7 @@ import BracketCard, { type BracketSummary } from "@/components/BracketCard";
 import TierlistCard, { type TierlistSummary } from "@/components/TierlistCard";
 import BlindtestCard, { type BlindtestSummary } from "@/components/BlindtestCard";
 import BlindtestRoomCard, { type BlindtestRoomSummary } from "@/components/BlindtestRoomCard";
-import {
-  BattleFeatRoomCard,
-  type BattleFeatRoomSummary,
-} from "@/components/BattleFeatCard";
+import { BattleFeatRoomCard, type BattleFeatRoomSummary } from "@/components/BattleFeatCard";
 import BattleFeatChallengeCard, {
   type BattleFeatChallengeSummary,
 } from "@/components/BattleFeatChallengeCard";
@@ -102,14 +98,13 @@ export default async function ExplorePage({
   const { q, tab: rawTab, genre: rawGenre } = await searchParams;
   const tab = parseTab(rawTab);
   const term = q?.trim();
-  const genre: MusicGenre | null =
-    rawGenre && isMusicGenre(rawGenre) ? rawGenre : null;
+  const genre: MusicGenre | null = rawGenre && isMusicGenre(rawGenre) ? rawGenre : null;
   const { t, locale } = await getI18n();
   const e = t.explore;
 
   const exploreUrl = (overrides: { tab?: Tab; genre?: MusicGenre | null }) => {
     const nextTab = "tab" in overrides && overrides.tab ? overrides.tab : tab;
-    const nextGenre = "genre" in overrides ? overrides.genre ?? null : genre;
+    const nextGenre = "genre" in overrides ? (overrides.genre ?? null) : genre;
     const params = new URLSearchParams({ tab: nextTab });
     if (term) params.set("q", term);
     if (nextGenre) params.set("genre", nextGenre);
@@ -138,8 +133,7 @@ export default async function ExplorePage({
 
   // Only filter on genre when the Prisma client knows the field; the DB column
   // itself is guaranteed by ensureGenreColumns below.
-  const genreFilter =
-    genre && modelHasField("Bracket", "genre") ? { genre } : {};
+  const genreFilter = genre && modelHasField("Bracket", "genre") ? { genre } : {};
   const hasContentGenre = modelHasField("Bracket", "genre");
   const genreSelect = hasContentGenre ? ({ genre: true } as const) : {};
 
@@ -151,8 +145,7 @@ export default async function ExplorePage({
   const loadTierlists = tab === "all" || tab === "tierlists";
   const loadBlindtests = tab === "all" || tab === "blindtests";
   // BattleFeat est un jeu 100 % rap : on ne le montre pas quand un autre genre est filtré.
-  const loadBattlefeat =
-    (tab === "all" || tab === "battlefeat") && (!genre || genre === "rap");
+  const loadBattlefeat = (tab === "all" || tab === "battlefeat") && (!genre || genre === "rap");
   const loadStreamClash = tab === "all" || tab === "streamclash";
   const loadSmashPass = tab === "all" || tab === "smashpass";
   const hasBlindtestRoomVisibility = modelHasField("BlindtestRoom", "visibility");
@@ -189,7 +182,15 @@ export default async function ExplorePage({
     loadBrackets
       ? prisma.bracket.findMany({
           where: { visibility: "public", ...textFilter, ...genreFilter },
-          select: { id: true, title: true, theme: true, size: true, visibility: true, coverUrl: true, ...genreSelect },
+          select: {
+            id: true,
+            title: true,
+            theme: true,
+            size: true,
+            visibility: true,
+            coverUrl: true,
+            ...genreSelect,
+          },
           orderBy: { createdAt: "desc" },
           take: takeGrid,
         })
@@ -197,7 +198,14 @@ export default async function ExplorePage({
     loadTierlists
       ? prisma.tierlist.findMany({
           where: { visibility: "public", ...textFilter, ...genreFilter },
-          select: { id: true, title: true, theme: true, visibility: true, coverUrl: true, ...genreSelect },
+          select: {
+            id: true,
+            title: true,
+            theme: true,
+            visibility: true,
+            coverUrl: true,
+            ...genreSelect,
+          },
           orderBy: { createdAt: "desc" },
           take: takeGrid,
         })
@@ -456,29 +464,27 @@ export default async function ExplorePage({
         : true,
     )
     .map((room) => {
-    const parts = "participants" in room && Array.isArray(room.participants)
-      ? (room.participants as Array<{ score?: number }>)
-      : [];
-    const scoresFromParticipants = parts.map((p) =>
-      typeof p?.score === "number" ? p.score : 0,
-    );
-    const hostScore =
-      "hostScore" in room && typeof room.hostScore === "number" ? room.hostScore : 0;
-    const guestScore =
-      "guestScore" in room && typeof room.guestScore === "number" ? room.guestScore : 0;
-    const scores = scoresFromParticipants.length > 0 ? scoresFromParticipants : [hostScore, guestScore];
-    return {
-      id: room.id,
-      status: room.status,
-      playerCount: parts.length > 0 ? parts.length : scores.length,
-      scores,
-      visibility:
-        "visibility" in room && typeof room.visibility === "string"
-          ? room.visibility
-          : "public",
-      createdAt: room.createdAt.toISOString(),
-    };
-  }) as BattleFeatRoomSummary[];
+      const parts =
+        "participants" in room && Array.isArray(room.participants)
+          ? (room.participants as Array<{ score?: number }>)
+          : [];
+      const scoresFromParticipants = parts.map((p) => (typeof p?.score === "number" ? p.score : 0));
+      const hostScore =
+        "hostScore" in room && typeof room.hostScore === "number" ? room.hostScore : 0;
+      const guestScore =
+        "guestScore" in room && typeof room.guestScore === "number" ? room.guestScore : 0;
+      const scores =
+        scoresFromParticipants.length > 0 ? scoresFromParticipants : [hostScore, guestScore];
+      return {
+        id: room.id,
+        status: room.status,
+        playerCount: parts.length > 0 ? parts.length : scores.length,
+        scores,
+        visibility:
+          "visibility" in room && typeof room.visibility === "string" ? room.visibility : "public",
+        createdAt: room.createdAt.toISOString(),
+      };
+    }) as BattleFeatRoomSummary[];
 
   const streamClashList = streamClashes.map((sc) => ({
     id: sc.id,
@@ -538,13 +544,13 @@ export default async function ExplorePage({
         ? !hasAnyBattlefeat
         : tab === "streamclash"
           ? !hasAnyStreamClash
-        : tab === "smashpass"
-          ? !hasAnySmashPass
-        : tab === "brackets"
-          ? bracketList.length === 0
-          : tab === "tierlists"
-            ? tierlistList.length === 0
-            : blindtestList.length === 0 && blindtestRoomList.length === 0;
+          : tab === "smashpass"
+            ? !hasAnySmashPass
+            : tab === "brackets"
+              ? bracketList.length === 0
+              : tab === "tierlists"
+                ? tierlistList.length === 0
+                : blindtestList.length === 0 && blindtestRoomList.length === 0;
 
   const tabItems = [
     { key: "all" as const, label: e.tabAll },
@@ -556,16 +562,16 @@ export default async function ExplorePage({
     { key: "smashpass" as const, label: e.tabSmashPass },
   ];
 
-  const gridClass =
-    "mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
-  const gridBfClass =
-    "mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
+  const gridClass = "mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4";
+  const gridBfClass = "mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3";
 
   return (
     <div className="mx-auto w-full max-w-[1500px] px-1 py-5 sm:px-2 sm:py-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl lg:text-7xl">{e.title}</h1>
+          <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl lg:text-7xl">
+            {e.title}
+          </h1>
           <p className="mt-2 text-base sm:text-xl lg:text-3xl" style={{ color: "#8f93a0" }}>
             {e.subtitle}
           </p>
@@ -594,7 +600,10 @@ export default async function ExplorePage({
       </div>
 
       <form action="/explore" method="get" className="mt-8 relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]" />
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]"
+        />
         <input
           defaultValue={term ?? ""}
           name="q"
@@ -753,7 +762,9 @@ export default async function ExplorePage({
               ) : null}
               {blindtestRoomList.length > 0 ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-[color:var(--muted)]">Rooms publiques (disponibles / en cours)</p>
+                  <p className="text-sm text-[color:var(--muted)]">
+                    Rooms publiques (disponibles / en cours)
+                  </p>
                   <div className={gridClass}>
                     {blindtestRoomList.map((room) => (
                       <BlindtestRoomCard key={room.id} room={room} />
@@ -776,7 +787,9 @@ export default async function ExplorePage({
             <section className="space-y-10">
               {battleFeatChallengeList.length > 0 ? (
                 <div className="space-y-4">
-                  <h2 className="text-2xl font-bold tracking-tight">{e.sectionBattleFeatChallenges}</h2>
+                  <h2 className="text-2xl font-bold tracking-tight">
+                    {e.sectionBattleFeatChallenges}
+                  </h2>
                   <div className={gridBfClass}>
                     {battleFeatChallengeList.map((c) => (
                       <BattleFeatChallengeCard key={c.id} c={c} />
@@ -844,7 +857,9 @@ export default async function ExplorePage({
               <h2 className="text-2xl font-bold tracking-tight">{e.sectionStreamClash}</h2>
               {streamClashList.length > 0 ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-[color:var(--muted)]">{e.sectionStreamClashCreations}</p>
+                  <p className="text-sm text-[color:var(--muted)]">
+                    {e.sectionStreamClashCreations}
+                  </p>
                   <div className={gridClass}>
                     {streamClashList.map((sc) => (
                       <StreamClashCard key={sc.id} sc={sc} />
@@ -899,7 +914,9 @@ export default async function ExplorePage({
           ) : null}
           {blindtestRoomList.length > 0 ? (
             <section className="space-y-3">
-              <p className="text-sm text-[color:var(--muted)]">Rooms publiques (disponibles / en cours)</p>
+              <p className="text-sm text-[color:var(--muted)]">
+                Rooms publiques (disponibles / en cours)
+              </p>
               <div className={gridClass}>
                 {blindtestRoomList.map((room) => (
                   <BlindtestRoomCard key={room.id} room={room} />
@@ -958,7 +975,9 @@ export default async function ExplorePage({
         <div className="mt-10 space-y-14">
           {battleFeatChallengeList.length > 0 ? (
             <section className="space-y-4">
-              <h2 className="text-xl font-semibold text-[color:var(--muted)]">{e.sectionBattleFeatChallenges}</h2>
+              <h2 className="text-xl font-semibold text-[color:var(--muted)]">
+                {e.sectionBattleFeatChallenges}
+              </h2>
               <div className={gridClass}>
                 {battleFeatChallengeList.map((c) => (
                   <BattleFeatChallengeCard key={c.id} c={c} />
@@ -968,7 +987,9 @@ export default async function ExplorePage({
           ) : null}
           {battleFeatRoomList.length > 0 ? (
             <section className="space-y-4">
-              <h2 className="text-xl font-semibold text-[color:var(--muted)]">{e.sectionBattleFeatRooms}</h2>
+              <h2 className="text-xl font-semibold text-[color:var(--muted)]">
+                {e.sectionBattleFeatRooms}
+              </h2>
               <div className={gridClass}>
                 {battleFeatRoomList.map((room) => (
                   <BattleFeatRoomCard key={room.id} r={room} />

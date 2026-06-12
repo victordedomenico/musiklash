@@ -11,12 +11,7 @@ type Props = {
   onVote: (choice: SmashPassChoice) => void;
 };
 
-export default function SmashPassControls({
-  smashCount,
-  passCount,
-  disabled,
-  onVote,
-}: Props) {
+export default function SmashPassControls({ smashCount, passCount, disabled, onVote }: Props) {
   const { play } = useSoundFx();
 
   const handlePass = () => {

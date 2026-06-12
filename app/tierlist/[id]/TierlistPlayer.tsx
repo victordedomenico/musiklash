@@ -59,13 +59,9 @@ export default function TierlistPlayer({
     return (
       <div className="card p-8 text-center mt-6">
         <p className="text-xl font-bold">{playerTexts.savedTitle}</p>
-        <p className="mt-1 text-sm text-[color:var(--muted)]">
-          {playerTexts.savedSubtitle}
-        </p>
+        <p className="mt-1 text-sm text-[color:var(--muted)]">{playerTexts.savedSubtitle}</p>
         {transient ? (
-          <p className="mt-2 text-xs text-amber-300">
-            Résultat sauvegardé en Publié — Privé.
-          </p>
+          <p className="mt-2 text-xs text-amber-300">Résultat sauvegardé en Publié — Privé.</p>
         ) : null}
         <div className="mt-4 flex gap-2 justify-center flex-wrap">
           <input
@@ -81,10 +77,7 @@ export default function TierlistPlayer({
             {playerTexts.copy}
           </button>
         </div>
-        <button
-          onClick={() => setSavedSessionId(null)}
-          className="btn-ghost mt-4 text-sm"
-        >
+        <button onClick={() => setSavedSessionId(null)} className="btn-ghost mt-4 text-sm">
           {playerTexts.continueEditing}
         </button>
       </div>
@@ -95,7 +88,8 @@ export default function TierlistPlayer({
     <>
       {transient ? (
         <p className="mb-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-          Mode non publié : cette tierlist sera supprimée en quittant. Clique sur « Sauvegarder et partager » pour la conserver en Publié — Privé.
+          Mode non publié : cette tierlist sera supprimée en quittant. Clique sur « Sauvegarder et
+          partager » pour la conserver en Publié — Privé.
         </p>
       ) : null}
       <TierlistBoard
