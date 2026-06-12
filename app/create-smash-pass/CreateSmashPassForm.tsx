@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import SmashPassItemPicker from "@/components/smash-pass/SmashPassItemPicker";
+import GenrePicker from "@/components/GenrePicker";
 import Input from "@/components/ui/Input";
+import type { MusicGenre } from "@/lib/genres";
 import type { SmashPassItemType } from "@/lib/smash-pass";
 import { createSmashPass, type SmashPassItemInput } from "./actions";
 
@@ -15,6 +17,7 @@ const ITEM_TYPES: { value: SmashPassItemType; label: string }[] = [
 export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }) {
   const [title, setTitle] = useState("");
   const [itemType, setItemType] = useState<SmashPassItemType>("track");
+  const [genre, setGenre] = useState<MusicGenre | null>(null);
   const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
   const [items, setItems] = useState<SmashPassItemInput[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +31,7 @@ export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }
       return;
     }
     startTransition(async () => {
-      const res = await createSmashPass({ title, itemType, visibility, items, mode });
+      const res = await createSmashPass({ title, genre, itemType, visibility, items, mode });
       if (res?.error) setError(res.error);
     });
   };
@@ -56,11 +59,14 @@ export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }
         />
       </div>
 
-      {/* Ligne 2 — Type de contenu */}
+      {/* Ligne 2 — Genre musical */}
+      <GenrePicker value={genre} onChange={setGenre} />
+
+      {/* Ligne 3 — Type de contenu */}
       <div>
         <label className="text-sm font-medium">Type de contenu</label>
         <p className="mt-0.5 text-xs text-[color:var(--muted)]">
-          Choisir un type vide la sélection en cours.
+          Choisir un type vide la sélection en cours. Le genre musical oriente les suggestions Deezer.
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           {ITEM_TYPES.map((t) => (
@@ -80,7 +86,7 @@ export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }
         </div>
       </div>
 
-      {/* Ligne 3 — Publication */}
+      {/* Ligne 4 — Publication */}
       <div>
         <label className="text-sm font-medium">Publication</label>
         <div className="mt-1 flex flex-wrap gap-2">
@@ -101,7 +107,7 @@ export default function CreateSmashPassForm({ mode }: { mode: "solo" | "multi" }
       </div>
 
       {/* Picker */}
-      <SmashPassItemPicker itemType={itemType} selected={items} onChange={setItems} />
+      <SmashPassItemPicker itemType={itemType} selected={items} onChange={setItems} genre={genre} />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">

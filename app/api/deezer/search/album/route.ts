@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
-import { searchAlbums } from "@/lib/deezer";
 import { sanitizeAlbumForClient } from "@/lib/deezer-sanitize";
+import { parsePickerGenre, searchAlbumsForPicker } from "@/lib/deezer-picker-search";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q") ?? "";
+  const genre = parsePickerGenre(searchParams.get("genre"));
 
-  if (!q.trim()) return NextResponse.json({ data: [] });
+  if (!q.trim() && !genre) {
+    return NextResponse.json({ data: [] });
+  }
 
   try {
-    const albums = await searchAlbums(q, 20);
+    const albums = await searchAlbumsForPicker(q, genre, 20);
     return NextResponse.json({
       data: albums.map((album) => sanitizeAlbumForClient(album)),
     });

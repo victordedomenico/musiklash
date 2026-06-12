@@ -8,6 +8,8 @@ import {
 import type { DeezerTrack, DeezerAlbum, DeezerArtist, DeezerAlbumTrack } from "@/lib/deezer";
 import type { SelectedTrack } from "@/app/create-bracket/actions";
 import DeezerAttribution from "@/components/DeezerAttribution";
+import { useDeezerSearch } from "@/components/deezer/useDeezerSearch";
+import { genreLabel, type MusicGenre } from "@/lib/genres";
 import { usePreviewVolume } from "@/lib/audio-volume";
 
 type Props = {
@@ -15,42 +17,10 @@ type Props = {
   selected: SelectedTrack[];
   onChange: (next: SelectedTrack[]) => void;
   freeMode?: boolean;
+  genre?: MusicGenre | null;
 };
 
 type Tab = "track" | "album" | "artist";
-
-function useDebouncedSearch<T>(
-  endpoint: string,
-  query: string,
-  enabled: boolean,
-): { data: T[]; loading: boolean } {
-  const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const trimmed = query.trim();
-    if (!trimmed || !enabled) return;
-    const ctrl = new AbortController();
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `${endpoint}?q=${encodeURIComponent(trimmed)}`,
-          { signal: ctrl.signal },
-        );
-        const json = await res.json();
-        setData(json.data ?? []);
-      } catch (e) {
-        if ((e as { name?: string }).name !== "AbortError") console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }, 400);
-    return () => { ctrl.abort(); clearTimeout(timer); };
-  }, [query, endpoint, enabled]);
-
-  return { data: query.trim() ? data : [], loading };
-}
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
@@ -76,10 +46,26 @@ function SearchInput({
   );
 }
 
-function StatusLine({ loading, count }: { loading: boolean; count: number }) {
+function StatusLine({
+  loading,
+  count,
+  browsing,
+  genreLabelText,
+}: {
+  loading: boolean;
+  count: number;
+  browsing?: boolean;
+  genreLabelText?: string;
+}) {
   return (
     <p className="mt-2 text-xs text-[color:var(--muted)]">
-      {loading ? "Recherche…" : count > 0 ? `${count} résultats` : ""}
+      {loading
+        ? "Recherche…"
+        : browsing && genreLabelText
+          ? `Top ${genreLabelText} — tape pour affiner`
+          : count > 0
+            ? `${count} résultats`
+            : ""}
     </p>
   );
 }
@@ -210,7 +196,7 @@ function AlbumTracksView({
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
-export default function TrackPicker({ size, selected, onChange, freeMode = false }: Props) {
+export default function TrackPicker({ size, selected, onChange, freeMode = false, genre = null }: Props) {
   const [tab, setTab] = useState<Tab>("track");
   const [playingId, setPlayingId] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -231,22 +217,24 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
     };
   }, []);
 
+  const genreHint = genre ? genreLabel(genre, "fr") : null;
+
   // Track tab
   const [trackQuery, setTrackQuery] = useState("");
-  const { data: trackResults, loading: trackLoading } = useDebouncedSearch<DeezerTrack>(
-    "/api/deezer/search", trackQuery, tab === "track",
+  const { data: trackResults, loading: trackLoading, browsing: trackBrowsing } = useDeezerSearch<DeezerTrack>(
+    "/api/deezer/search", trackQuery, tab === "track", genre,
   );
 
   // Album tab
   const [albumQuery, setAlbumQuery] = useState("");
-  const { data: albumResults, loading: albumLoading } = useDebouncedSearch<DeezerAlbum>(
-    "/api/deezer/search/album", albumQuery, tab === "album",
+  const { data: albumResults, loading: albumLoading, browsing: albumBrowsing } = useDeezerSearch<DeezerAlbum>(
+    "/api/deezer/search/album", albumQuery, tab === "album", genre,
   );
 
   // Artist tab
   const [artistQuery, setArtistQuery] = useState("");
-  const { data: artistResults, loading: artistLoading } = useDebouncedSearch<DeezerArtist>(
-    "/api/deezer/search/artist", artistQuery, tab === "artist",
+  const { data: artistResults, loading: artistLoading, browsing: artistBrowsing } = useDeezerSearch<DeezerArtist>(
+    "/api/deezer/search/artist", artistQuery, tab === "artist", genre,
   );
 
   // Shared album-tracks view (used by both album & artist tabs)
@@ -403,9 +391,14 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
           <SearchInput
             value={trackQuery}
             onChange={(v) => setTrackQuery(v)}
-            placeholder="Artiste, titre…"
+            placeholder={genreHint ? `Artiste, titre… (top ${genreHint} sans recherche)` : "Artiste, titre…"}
           />
-          <StatusLine loading={trackLoading} count={trackResults.length} />
+          <StatusLine
+            loading={trackLoading}
+            count={trackResults.length}
+            browsing={trackBrowsing}
+            genreLabelText={genreHint ?? undefined}
+          />
           <ul className="mt-2 max-h-[440px] overflow-y-auto space-y-2 pr-1">
             {trackResults.map((t) => {
               const picked = isSelected(t.id);
@@ -447,9 +440,14 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
           <SearchInput
             value={albumQuery}
             onChange={(v) => setAlbumQuery(v)}
-            placeholder="Nom d'album, artiste…"
+            placeholder={genreHint ? `Nom d'album, artiste… (top ${genreHint} sans recherche)` : "Nom d'album, artiste…"}
           />
-          <StatusLine loading={albumLoading} count={albumResults.length} />
+          <StatusLine
+            loading={albumLoading}
+            count={albumResults.length}
+            browsing={albumBrowsing}
+            genreLabelText={genreHint ?? undefined}
+          />
           <ul className="mt-2 max-h-[440px] overflow-y-auto space-y-2 pr-1">
             {albumResults.map((album) => (
               <AlbumCard key={album.id} album={album} onClick={() => openAlbum(album)} />
@@ -499,9 +497,14 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
           <SearchInput
             value={artistQuery}
             onChange={(v) => setArtistQuery(v)}
-            placeholder="Nom d'artiste…"
+            placeholder={genreHint ? `Nom d'artiste… (top ${genreHint} sans recherche)` : "Nom d'artiste…"}
           />
-          <StatusLine loading={artistLoading} count={artistResults.length} />
+          <StatusLine
+            loading={artistLoading}
+            count={artistResults.length}
+            browsing={artistBrowsing}
+            genreLabelText={genreHint ?? undefined}
+          />
           <ul className="mt-2 max-h-[440px] overflow-y-auto space-y-2 pr-1">
             {artistResults.map((artist) => (
               <li

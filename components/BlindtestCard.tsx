@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Eye, EyeOff, Music } from "lucide-react";
+import GenreBadge from "@/components/GenreBadge";
 import LibraryVisibilityToggle from "@/components/LibraryVisibilityToggle";
 
 export type BlindtestSummary = {
@@ -7,6 +8,7 @@ export type BlindtestSummary = {
   title: string;
   visibility: string;
   trackCount?: number;
+  genre?: string | null;
 };
 
 export default function BlindtestCard({
@@ -36,6 +38,11 @@ export default function BlindtestCard({
       </div>
       <div className="p-4">
         <p className="font-semibold line-clamp-1">{b.title}</p>
+        {b.genre ? (
+          <div className="mt-1">
+            <GenreBadge genre={b.genre} />
+          </div>
+        ) : null}
         {b.trackCount != null ? (
           <p className="mt-0.5 text-xs text-[color:var(--muted)]">
             {b.trackCount} morceau{b.trackCount > 1 ? "x" : ""}

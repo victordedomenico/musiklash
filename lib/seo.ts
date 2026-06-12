@@ -21,18 +21,17 @@ export const SITE_KEYWORDS = [
 ];
 
 export function getSiteUrl(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
-  if (fromEnv) return fromEnv;
-  const vercel = process.env.VERCEL_URL?.trim();
-  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "")}`;
-  return "https://musiklash.vercel.app";
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") ??
+    "https://musiklash.fun"
+  );
 }
 
 /** URL canonique pour sitemap / robots — jamais l’URL de preview Vercel. */
 export function getSitemapBaseUrl(): string {
   return (
     process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") ??
-    "https://musiklash.vercel.app"
+    "https://musiklash.fun"
   );
 }
 

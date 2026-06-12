@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Clock, Eye, EyeOff, Trophy, Users, Zap } from "lucide-react";
+import GenreBadge from "@/components/GenreBadge";
 import LibraryVisibilityToggle from "@/components/LibraryVisibilityToggle";
 
 export type StreamClashSummary = {
@@ -8,6 +9,7 @@ export type StreamClashSummary = {
   visibility: string;
   trackCount?: number;
   coverUrl?: string | null;
+  genre?: string | null;
 };
 
 export type StreamClashRoomSummary = {
@@ -87,6 +89,11 @@ export function StreamClashCard({
       </div>
       <div className="p-4">
         <p className="line-clamp-1 font-semibold">{sc.title}</p>
+        {sc.genre ? (
+          <div className="mt-1">
+            <GenreBadge genre={sc.genre} />
+          </div>
+        ) : null}
         {sc.trackCount != null ? (
           <p className="mt-0.5 text-xs text-[color:var(--muted)]">
             {sc.trackCount} morceau{sc.trackCount > 1 ? "x" : ""}

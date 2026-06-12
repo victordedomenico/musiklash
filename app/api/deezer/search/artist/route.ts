@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
-import { searchArtists } from "@/lib/deezer";
 import { sanitizeArtistForClient } from "@/lib/deezer-sanitize";
+import { parsePickerGenre, searchArtistsForPicker } from "@/lib/deezer-picker-search";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q") ?? "";
+  const genre = parsePickerGenre(searchParams.get("genre"));
 
-  if (!q.trim()) return NextResponse.json({ data: [] });
+  if (!q.trim() && !genre) {
+    return NextResponse.json({ data: [] });
+  }
 
   try {
-    const artists = await searchArtists(q, 20);
+    const artists = await searchArtistsForPicker(q, genre, 20);
     return NextResponse.json({
       data: artists.map((artist) => sanitizeArtistForClient(artist)),
     });

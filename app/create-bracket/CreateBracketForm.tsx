@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from "react";
 import TrackPicker from "@/components/TrackPicker";
+import GenrePicker from "@/components/GenrePicker";
 import { createBracket, type SelectedTrack } from "@/app/create-bracket/actions";
 import Input from "@/components/ui/Input";
 import { effectiveBracketSize, VALID_BRACKET_SIZES } from "@/lib/bracket";
+import type { MusicGenre } from "@/lib/genres";
 
 const SIZES = VALID_BRACKET_SIZES;
 
@@ -17,6 +19,7 @@ const VIS_HINTS = {
 export default function CreateBracketForm() {
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState("");
+  const [genre, setGenre] = useState<MusicGenre | null>(null);
   const [size, setSize] = useState<(typeof SIZES)[number]>(8);
   const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
   const [selected, setSelected] = useState<SelectedTrack[]>([]);
@@ -34,7 +37,7 @@ export default function CreateBracketForm() {
       return;
     }
     startTransition(async () => {
-      const res = await createBracket({ title, theme, size, visibility, tracks: selected });
+      const res = await createBracket({ title, theme, genre, size, visibility, tracks: selected });
       if (res?.error) setError(res.error);
     });
   };
@@ -64,7 +67,10 @@ export default function CreateBracketForm() {
         </div>
       </div>
 
-      {/* Ligne 2 — Options supplémentaires */}
+      {/* Ligne 2 — Genre musical */}
+      <GenrePicker value={genre} onChange={setGenre} />
+
+      {/* Ligne 3 — Options supplémentaires */}
       <div>
         <label className="text-sm font-medium">Taille du tournoi</label>
         <div className="mt-1 flex flex-wrap gap-2">
@@ -105,7 +111,7 @@ export default function CreateBracketForm() {
       </div>
 
       {/* Picker */}
-      <TrackPicker size={size} selected={selected} onChange={setSelected} />
+      <TrackPicker size={size} selected={selected} onChange={setSelected} genre={genre} />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">

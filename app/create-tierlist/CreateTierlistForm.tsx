@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from "react";
 import TrackPicker from "@/components/TrackPicker";
+import GenrePicker from "@/components/GenrePicker";
 import { createTierlist, type TierlistTrackInput } from "./actions";
 import Input from "@/components/ui/Input";
+import type { MusicGenre } from "@/lib/genres";
 
 const VIS_HINTS = {
   public: "Visible dans Explorer. Accessible à tous par lien.",
@@ -14,6 +16,7 @@ const VIS_HINTS = {
 export default function CreateTierlistForm() {
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState("");
+  const [genre, setGenre] = useState<MusicGenre | null>(null);
   const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
   const [tracks, setTracks] = useState<TierlistTrackInput[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +30,7 @@ export default function CreateTierlistForm() {
       return;
     }
     startTransition(async () => {
-      const res = await createTierlist({ title, theme, visibility, tracks });
+      const res = await createTierlist({ title, theme, genre, visibility, tracks });
       if (res?.error) setError(res.error);
     });
   };
@@ -57,7 +60,10 @@ export default function CreateTierlistForm() {
         </div>
       </div>
 
-      {/* Ligne 2 — Publication */}
+      {/* Ligne 2 — Genre musical */}
+      <GenrePicker value={genre} onChange={setGenre} />
+
+      {/* Ligne 3 — Publication */}
       <div>
         <label className="text-sm font-medium">Publication</label>
         <div className="mt-1 flex flex-wrap gap-2">
@@ -77,7 +83,7 @@ export default function CreateTierlistForm() {
       </div>
 
       {/* Picker */}
-      <TrackPicker size={50} selected={tracks} onChange={setTracks} freeMode />
+      <TrackPicker size={50} selected={tracks} onChange={setTracks} freeMode genre={genre} />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">

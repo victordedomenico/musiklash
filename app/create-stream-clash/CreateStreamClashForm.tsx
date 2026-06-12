@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from "react";
 import TrackPicker from "@/components/TrackPicker";
+import GenrePicker from "@/components/GenrePicker";
 import Input from "@/components/ui/Input";
 import { createStreamClash, type StreamClashTrackInput } from "./actions";
+import type { MusicGenre } from "@/lib/genres";
 import type { SelectedTrack } from "@/app/create-bracket/actions";
 
 type Difficulty = "easy" | "normal" | "hard";
@@ -18,6 +20,7 @@ const ROUNDS_OPTIONS = [5, 10, 15, 20];
 
 export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi" }) {
   const [title, setTitle] = useState("");
+  const [genre, setGenre] = useState<MusicGenre | null>(null);
   const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
   const [difficulty, setDifficulty] = useState<Difficulty>("easy");
   const [totalRounds, setTotalRounds] = useState(10);
@@ -41,7 +44,7 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
       rank: (t as unknown as { rank?: number }).rank ?? 0,
     }));
     startTransition(async () => {
-      const res = await createStreamClash({ title, visibility, tracks: tracksWithRank, mode, difficulty, totalRounds });
+      const res = await createStreamClash({ title, genre, visibility, tracks: tracksWithRank, mode, difficulty, totalRounds });
       if (res?.error) setError(res.error);
     });
   };
@@ -109,7 +112,10 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
         </div>
       </div>
 
-      {/* Ligne 4 — Publication */}
+      {/* Ligne 4 — Genre musical */}
+      <GenrePicker value={genre} onChange={setGenre} />
+
+      {/* Ligne 5 — Publication */}
       <div>
         <label className="text-sm font-medium">Publication</label>
         <div className="mt-1 flex flex-wrap gap-2">
@@ -130,7 +136,7 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
       </div>
 
       {/* Picker */}
-      <TrackPicker size={50} selected={tracks} onChange={setTracks} freeMode />
+      <TrackPicker size={50} selected={tracks} onChange={setTracks} freeMode genre={genre} />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">

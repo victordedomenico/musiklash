@@ -36,6 +36,7 @@ import {
 } from "@/components/SmashPassExploreCard";
 import { Plus, Play } from "lucide-react";
 import { buildPageMetadata } from "@/lib/seo";
+import { getI18n } from "@/lib/i18n";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Ma bibliothèque",
@@ -90,6 +91,8 @@ export default async function MyBracketsPage({
   searchParams: Promise<{ filter?: Visibility; tab?: Tab; welcome?: string }>;
 }) {
   const { filter = "all", tab = "brackets", welcome } = await searchParams;
+  const { t } = await getI18n();
+  const ml = t.myLibrary;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -580,26 +583,26 @@ export default async function MyBracketsPage({
       : "/create-bracket";
   const createLabel =
     tab === "tierlists"
-      ? "Nouvelle tierlist"
+      ? ml.newTierlist
       : tab === "blindtests"
-      ? "Nouveau blindtest"
+      ? ml.newBlindtest
       : tab === "battlefeat"
-      ? "Nouveau BattleFeat solo"
+      ? ml.newBattleFeat
       : tab === "streamclash"
-      ? "Nouveau Stream Clash"
+      ? ml.newStreamClash
       : tab === "smashpass"
-      ? "Nouveau Smash or Pass"
-      : "Nouveau bracket";
+      ? ml.newSmashPass
+      : ml.newBracket;
 
   return (
     <div className="mx-auto w-full max-w-[1500px] px-1 py-5 sm:px-2 sm:py-6">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl lg:text-7xl">
-            Ma Bibliothèque
+            {ml.title}
           </h1>
           <p className="mt-2 text-base sm:text-xl lg:text-3xl" style={{ color: "#8f93a0" }}>
-            Retrouve toutes tes créations et tes résultats, en public ou en privé.
+            {ml.subtitle}
           </p>
         </div>
         <Link
@@ -607,18 +610,18 @@ export default async function MyBracketsPage({
           className="inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-base font-bold sm:w-auto sm:px-6 sm:py-4 sm:text-xl lg:text-2xl"
           style={{ background: "#ff2f6d", color: "#fff" }}
         >
-          <Play size={18} /> {createLabel.replace("Nouveau ", "Nouveau ")}
+          <Play size={18} /> {createLabel}
         </Link>
       </div>
 
       {welcome ? (
         <p className="mt-4 rounded-2xl border p-3 text-sm text-[color:var(--muted)]" style={{ borderColor: "#2a3242", background: "#131822" }}>
-          Compte créé 🎉 tu peux maintenant créer ton premier bracket ou ta première tierlist.
+          {ml.welcomeMsg}
         </p>
       ) : null}
       {!user ? (
         <p className="mt-4 rounded-2xl border p-3 text-sm text-[color:var(--muted)]" style={{ borderColor: "#2a3242", background: "#131822" }}>
-          Tu es en mode invité{guestIdentity?.username ? ` (${guestIdentity.username})` : ""}. Tes parties et créations restent liées à ce pseudo sur cet appareil.
+          {ml.guestMsg}{guestIdentity?.username ? ` (${guestIdentity.username})` : ""}
         </p>
       ) : null}
 
@@ -627,7 +630,7 @@ export default async function MyBracketsPage({
           className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
           style={{ borderColor: "#283041", background: "#181b24" }}
         >
-        <TabItem current={tab} value="all" label={`Tous (${totalCount})`} />
+        <TabItem current={tab} value="all" label={`${ml.filterAll} (${totalCount})`} />
         <TabItem current={tab} value="brackets" label={`Brackets (${brackets.length})`} />
         <TabItem current={tab} value="tierlists" label={`Tierlists (${tierlists.length})`} />
         <TabItem current={tab} value="blindtests" label={`Blindtests (${blindtests.length + blindtestRoomList.length})`} />
@@ -641,9 +644,9 @@ export default async function MyBracketsPage({
         className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
         style={{ borderColor: "#283041", background: "#181b24" }}
       >
-        <FilterLink current={filter} value="all" label="Tous" tab={tab} />
-        <FilterLink current={filter} value="private" label="Publié — Privé" tab={tab} />
-        <FilterLink current={filter} value="public" label="Publié — Public" tab={tab} />
+        <FilterLink current={filter} value="all" label={ml.filterAll} tab={tab} />
+        <FilterLink current={filter} value="private" label={ml.filterPrivate} tab={tab} />
+        <FilterLink current={filter} value="public" label={ml.filterPublic} tab={tab} />
       </div>
       </div>
 
@@ -653,8 +656,8 @@ export default async function MyBracketsPage({
         tierlistSessions.length === 0 &&
         blindtestSessions.length === 0 ? (
           <EmptyState
-            label="Aucun élément dans ta bibliothèque pour le moment"
-            cta="Créer un bracket"
+            label={ml.emptyAll}
+            cta={ml.createBracketCta}
             href="/create-bracket"
           />
         ) : (
@@ -662,9 +665,9 @@ export default async function MyBracketsPage({
             {bracketList.length > 0 || bracketSessions.length > 0 ? (
               <section className="space-y-6">
                 <h2 className="text-2xl font-bold">Brackets</h2>
-                <SubSection label="Mes créations">
+                <SubSection label={ml.myCreations}>
                   {bracketList.length === 0 ? (
-                    <EmptySub label="Aucun bracket créé." />
+                    <EmptySub label={ml.noBracketCreated} />
                   ) : (
                     <CardsGrid>
                       {bracketList.map((b) => (
@@ -673,9 +676,9 @@ export default async function MyBracketsPage({
                     </CardsGrid>
                   )}
                 </SubSection>
-                <SubSection label="Mes résultats">
+                <SubSection label={ml.myResults}>
                   {bracketSessions.length === 0 ? (
-                    <EmptySub label="Aucune partie terminée." />
+                    <EmptySub label={ml.noGameFinished} />
                   ) : (
                     <CardsGrid>
                       {bracketSessions.map((s) => (
@@ -690,9 +693,9 @@ export default async function MyBracketsPage({
             {tierlistList.length > 0 || tierlistSessions.length > 0 ? (
               <section className="space-y-6">
                 <h2 className="text-2xl font-bold">Tierlists</h2>
-                <SubSection label="Mes créations">
+                <SubSection label={ml.myCreations}>
                   {tierlistList.length === 0 ? (
-                    <EmptySub label="Aucune tierlist créée." />
+                    <EmptySub label={ml.noTierlistCreated} />
                   ) : (
                     <CardsGrid>
                       {tierlistList.map((t) => (
@@ -701,9 +704,9 @@ export default async function MyBracketsPage({
                     </CardsGrid>
                   )}
                 </SubSection>
-                <SubSection label="Mes résultats">
+                <SubSection label={ml.myResults}>
                   {tierlistSessions.length === 0 ? (
-                    <EmptySub label="Aucune tierlist sauvegardée." />
+                    <EmptySub label={ml.noTierlistSaved} />
                   ) : (
                     <CardsGrid>
                       {tierlistSessions.map((s) => (
@@ -718,9 +721,9 @@ export default async function MyBracketsPage({
             {blindtestList.length > 0 || blindtestRoomList.length > 0 || blindtestSessions.length > 0 ? (
               <section className="space-y-6">
                 <h2 className="text-2xl font-bold">Blindtests</h2>
-                <SubSection label="Mes créations">
+                <SubSection label={ml.myCreations}>
                   {blindtestList.length === 0 ? (
-                    <EmptySub label="Aucun blindtest créé." />
+                    <EmptySub label={ml.noBlindtestCreated} />
                   ) : (
                     <CardsGrid>
                       {blindtestList.map((b) => (
@@ -729,9 +732,9 @@ export default async function MyBracketsPage({
                     </CardsGrid>
                   )}
                 </SubSection>
-                <SubSection label="Mes résultats multijoueur">
+                <SubSection label={ml.myMultiResults}>
                   {blindtestRoomList.length === 0 ? (
-                    <EmptySub label="Aucun résultat multijoueur." />
+                    <EmptySub label={ml.noMultiResult} />
                   ) : (
                     <CardsGrid>
                       {blindtestRoomList.map((room) => (
@@ -740,9 +743,9 @@ export default async function MyBracketsPage({
                     </CardsGrid>
                   )}
                 </SubSection>
-                <SubSection label="Mes résultats solo">
+                <SubSection label={ml.mySoloResults}>
                   {blindtestSessions.length === 0 ? (
-                    <EmptySub label="Aucun résultat solo." />
+                    <EmptySub label={ml.noSoloResult} />
                   ) : (
                     <CardsGrid>
                       {blindtestSessions.map((s) => (
@@ -759,7 +762,7 @@ export default async function MyBracketsPage({
                 <h2 className="text-2xl font-bold">BattleFeat</h2>
                 {battleFeatChallengeList.length > 0 ? (
                   <div className="space-y-3">
-                    <p className="text-sm text-[color:var(--muted)]">Mes créations</p>
+                    <p className="text-sm text-[color:var(--muted)]">{ml.myCreations}</p>
                     <CardsGrid>
                       {battleFeatChallengeList.map((c) => (
                         <BattleFeatChallengeCard key={c.id} c={c} libraryEditor={libraryEditor} />
@@ -769,7 +772,7 @@ export default async function MyBracketsPage({
                 ) : null}
                 {battleFeatList.length > 0 ? (
                   <div className="space-y-3">
-                    <p className="text-sm text-[color:var(--muted)]">Mes résultats solo / solo vs IA</p>
+                    <p className="text-sm text-[color:var(--muted)]">{ml.battleFeatMySoloResultsLabel}</p>
                     <CardsGrid>
                       {battleFeatList.map((s) => (
                         <BattleFeatSoloCard key={s.id} s={s} libraryEditor={libraryEditor} />
@@ -779,7 +782,7 @@ export default async function MyBracketsPage({
                 ) : null}
                 {battleFeatRoomList.length > 0 ? (
                   <div className="space-y-3">
-                    <p className="text-sm text-[color:var(--muted)]">Mes résultats multijoueur</p>
+                    <p className="text-sm text-[color:var(--muted)]">{ml.myMultiResults}</p>
                     <CardsGrid>
                       {battleFeatRoomList.map((room) => (
                         <BattleFeatRoomCard key={room.id} r={room} libraryEditor={libraryEditor} />
@@ -795,9 +798,9 @@ export default async function MyBracketsPage({
             streamClashSessionList.length > 0 ? (
               <section className="space-y-6">
                 <h2 className="text-2xl font-bold">Stream Clash</h2>
-                <SubSection label="Mes créations">
+                <SubSection label={ml.myCreations}>
                   {streamClashList.length === 0 ? (
-                    <EmptySub label="Aucun Stream Clash créé." />
+                    <EmptySub label={ml.noStreamClashCreated} />
                   ) : (
                     <CardsGrid>
                       {streamClashList.map((sc) => (
@@ -806,9 +809,9 @@ export default async function MyBracketsPage({
                     </CardsGrid>
                   )}
                 </SubSection>
-                <SubSection label="Mes résultats multijoueur">
+                <SubSection label={ml.myMultiResults}>
                   {streamClashRoomList.length === 0 ? (
-                    <EmptySub label="Aucune room multijoueur." />
+                    <EmptySub label={ml.noMultiResult} />
                   ) : (
                     <CardsGrid>
                       {streamClashRoomList.map((room) => (
@@ -817,9 +820,9 @@ export default async function MyBracketsPage({
                     </CardsGrid>
                   )}
                 </SubSection>
-                <SubSection label="Mes résultats solo">
+                <SubSection label={ml.mySoloResults}>
                   {streamClashSessionList.length === 0 ? (
-                    <EmptySub label="Aucun résultat solo." />
+                    <EmptySub label={ml.noSoloResult} />
                   ) : (
                     <CardsGrid>
                       {streamClashSessionList.map((s) => (
@@ -834,9 +837,9 @@ export default async function MyBracketsPage({
             {smashPassList.length > 0 || smashPassRoomList.length > 0 ? (
               <section className="space-y-4">
                 <h2 className="text-2xl font-bold">Smash or Pass</h2>
-                <SubSection label="Mes créations">
+                <SubSection label={ml.myCreations}>
                   {smashPassList.length === 0 ? (
-                    <EmptySub label="Aucun deck créé." />
+                    <EmptySub label={ml.noDeckCreated} />
                   ) : (
                     <CardsGrid>
                       {smashPassList.map((sp) => (
@@ -845,9 +848,9 @@ export default async function MyBracketsPage({
                     </CardsGrid>
                   )}
                 </SubSection>
-                <SubSection label="Mes rooms multijoueur">
+                <SubSection label={ml.myRooms}>
                   {smashPassRoomList.length === 0 ? (
-                    <EmptySub label="Aucune room multijoueur." />
+                    <EmptySub label={ml.noMultiResult} />
                   ) : (
                     <CardsGrid>
                       {smashPassRoomList.map((room) => (
@@ -863,15 +866,15 @@ export default async function MyBracketsPage({
       ) : tab === "brackets" ? (
         bracketList.length === 0 && bracketSessions.length === 0 ? (
           <EmptyState
-            label="Aucun bracket pour le moment"
-            cta="Créer un bracket"
+            label={ml.emptyBrackets}
+            cta={ml.createBracketCta}
             href="/create-bracket"
           />
         ) : (
           <div className="mt-8 space-y-8">
-            <SubSection label="Mes créations">
+            <SubSection label={ml.myCreations}>
               {bracketList.length === 0 ? (
-                <EmptySub label="Aucun bracket créé." />
+                <EmptySub label={ml.noBracketCreated} />
               ) : (
                 <CardsGrid>
                   {bracketList.map((b) => (
@@ -880,9 +883,9 @@ export default async function MyBracketsPage({
                 </CardsGrid>
               )}
             </SubSection>
-            <SubSection label="Mes résultats">
+            <SubSection label={ml.myResults}>
               {bracketSessions.length === 0 ? (
-                <EmptySub label="Aucune partie terminée." />
+                <EmptySub label={ml.noGameFinished} />
               ) : (
                 <CardsGrid>
                   {bracketSessions.map((s) => (
@@ -896,15 +899,15 @@ export default async function MyBracketsPage({
       ) : tab === "tierlists" ? (
         tierlistList.length === 0 && tierlistSessions.length === 0 ? (
           <EmptyState
-            label="Aucune tierlist pour le moment"
-            cta="Créer une tierlist"
+            label={ml.emptyTierlists}
+            cta={ml.createTierlistCta}
             href="/create-tierlist"
           />
         ) : (
           <div className="mt-8 space-y-8">
-            <SubSection label="Mes créations">
+            <SubSection label={ml.myCreations}>
               {tierlistList.length === 0 ? (
-                <EmptySub label="Aucune tierlist créée." />
+                <EmptySub label={ml.noTierlistCreated} />
               ) : (
                 <CardsGrid>
                   {tierlistList.map((t) => (
@@ -913,9 +916,9 @@ export default async function MyBracketsPage({
                 </CardsGrid>
               )}
             </SubSection>
-            <SubSection label="Mes résultats">
+            <SubSection label={ml.myResults}>
               {tierlistSessions.length === 0 ? (
-                <EmptySub label="Aucune tierlist sauvegardée." />
+                <EmptySub label={ml.noTierlistSaved} />
               ) : (
                 <CardsGrid>
                   {tierlistSessions.map((s) => (
@@ -929,15 +932,15 @@ export default async function MyBracketsPage({
       ) : tab === "blindtests" ? (
         blindtestList.length === 0 && blindtestRoomList.length === 0 && blindtestSessions.length === 0 ? (
           <EmptyState
-            label="Aucun blindtest pour le moment"
-            cta="Créer un blindtest"
+            label={ml.emptyBlindtests}
+            cta={ml.createBlindtestCta}
             href="/create-blindtest"
           />
         ) : (
           <div className="mt-8 space-y-8">
-            <SubSection label="Mes créations">
+            <SubSection label={ml.myCreations}>
               {blindtestList.length === 0 ? (
-                <EmptySub label="Aucun blindtest créé." />
+                <EmptySub label={ml.noBlindtestCreated} />
               ) : (
                 <CardsGrid>
                   {blindtestList.map((b) => (
@@ -946,9 +949,9 @@ export default async function MyBracketsPage({
                 </CardsGrid>
               )}
             </SubSection>
-            <SubSection label="Mes résultats multijoueur">
+            <SubSection label={ml.myMultiResults}>
               {blindtestRoomList.length === 0 ? (
-                <EmptySub label="Aucun résultat multijoueur." />
+                <EmptySub label={ml.noMultiResult} />
               ) : (
                 <CardsGrid>
                   {blindtestRoomList.map((room) => (
@@ -957,9 +960,9 @@ export default async function MyBracketsPage({
                 </CardsGrid>
               )}
             </SubSection>
-            <SubSection label="Mes résultats solo">
+            <SubSection label={ml.mySoloResults}>
               {blindtestSessions.length === 0 ? (
-                <EmptySub label="Aucun résultat solo." />
+                <EmptySub label={ml.noSoloResult} />
               ) : (
                 <CardsGrid>
                   {blindtestSessions.map((s) => (
@@ -973,15 +976,15 @@ export default async function MyBracketsPage({
       ) : tab === "smashpass" ? (
         smashPassList.length === 0 && smashPassRoomList.length === 0 ? (
           <EmptyState
-            label="Aucun Smash or Pass pour le moment"
-            cta="Créer un Smash or Pass"
+            label={ml.emptySmashPass}
+            cta={ml.createSmashPassCta}
             href="/create-smash-pass"
           />
         ) : (
           <div className="mt-8 space-y-8">
-            <SubSection label="Mes créations">
+            <SubSection label={ml.myCreations}>
               {smashPassList.length === 0 ? (
-                <EmptySub label="Aucun deck créé." />
+                <EmptySub label={ml.noDeckCreated} />
               ) : (
                 <CardsGrid>
                   {smashPassList.map((sp) => (
@@ -990,9 +993,9 @@ export default async function MyBracketsPage({
                 </CardsGrid>
               )}
             </SubSection>
-            <SubSection label="Mes rooms multijoueur">
+            <SubSection label={ml.myRooms}>
               {smashPassRoomList.length === 0 ? (
-                <EmptySub label="Aucune room multijoueur." />
+                <EmptySub label={ml.noMultiResult} />
               ) : (
                 <CardsGrid>
                   {smashPassRoomList.map((room) => (
@@ -1008,15 +1011,15 @@ export default async function MyBracketsPage({
         streamClashRoomList.length === 0 &&
         streamClashSessionList.length === 0 ? (
           <EmptyState
-            label="Aucun Stream Clash pour le moment"
-            cta="Créer un Stream Clash"
+            label={ml.emptyStreamClash}
+            cta={ml.createStreamClashCta}
             href="/create-stream-clash"
           />
         ) : (
           <div className="mt-8 space-y-8">
-            <SubSection label="Mes créations">
+            <SubSection label={ml.myCreations}>
               {streamClashList.length === 0 ? (
-                <EmptySub label="Aucun Stream Clash créé." />
+                <EmptySub label={ml.noStreamClashCreated} />
               ) : (
                 <CardsGrid>
                   {streamClashList.map((sc) => (
@@ -1025,9 +1028,9 @@ export default async function MyBracketsPage({
                 </CardsGrid>
               )}
             </SubSection>
-            <SubSection label="Mes résultats multijoueur">
+            <SubSection label={ml.myMultiResults}>
               {streamClashRoomList.length === 0 ? (
-                <EmptySub label="Aucune room multijoueur." />
+                <EmptySub label={ml.noMultiResult} />
               ) : (
                 <CardsGrid>
                   {streamClashRoomList.map((room) => (
@@ -1036,9 +1039,9 @@ export default async function MyBracketsPage({
                 </CardsGrid>
               )}
             </SubSection>
-            <SubSection label="Mes résultats solo">
+            <SubSection label={ml.mySoloResults}>
               {streamClashSessionList.length === 0 ? (
-                <EmptySub label="Aucun résultat solo." />
+                <EmptySub label={ml.noSoloResult} />
               ) : (
                 <CardsGrid>
                   {streamClashSessionList.map((s) => (
@@ -1052,8 +1055,8 @@ export default async function MyBracketsPage({
       ) : tab === "battlefeat" ? (
         battleFeatList.length === 0 && battleFeatChallengeList.length === 0 && battleFeatRoomList.length === 0 ? (
           <EmptyState
-            label="Aucune partie BattleFeat pour le moment"
-            cta="Créer un BattleFeat solo"
+            label={ml.emptyBattleFeat}
+            cta={ml.createBattleFeatCta}
             href="/create-battlefeat"
           />
         ) : (
@@ -1061,9 +1064,9 @@ export default async function MyBracketsPage({
             {battleFeatChallengeList.length > 0 ? (
               <section className="space-y-4">
                 <div>
-                  <h2 className="text-2xl font-bold">Mes créations</h2>
+                  <h2 className="text-2xl font-bold">{ml.myCreations}</h2>
                   <p className="text-sm text-[color:var(--muted)]">
-                    Tes BattleFeats solo rejouables.
+                    {ml.battleFeatMyCreationsDesc}
                   </p>
                 </div>
                 <CardsGrid>
@@ -1077,9 +1080,9 @@ export default async function MyBracketsPage({
             {battleFeatList.length > 0 ? (
               <section className="space-y-4">
                 <div>
-                  <h2 className="text-2xl font-bold">Mes résultats solo / solo vs IA</h2>
+                  <h2 className="text-2xl font-bold">{ml.battleFeatMySoloResultsLabel}</h2>
                   <p className="text-sm text-[color:var(--muted)]">
-                    Tes dernières parties BattleFeat solo.
+                    {ml.battleFeatMySoloResultsDesc}
                   </p>
                 </div>
                 <CardsGrid>
@@ -1093,9 +1096,9 @@ export default async function MyBracketsPage({
             {battleFeatRoomList.length > 0 ? (
               <section className="space-y-4">
                 <div>
-                  <h2 className="text-2xl font-bold">Mes résultats multijoueur</h2>
+                  <h2 className="text-2xl font-bold">{ml.myMultiResults}</h2>
                   <p className="text-sm text-[color:var(--muted)]">
-                    Tes rooms BattleFeat en mode multijoueur.
+                    {ml.battleFeatMyMultiResultsDesc}
                   </p>
                 </div>
                 <CardsGrid>

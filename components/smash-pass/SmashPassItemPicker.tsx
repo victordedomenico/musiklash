@@ -1,78 +1,46 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Search, Plus, X, Disc3, User, Music } from "lucide-react";
 import type { DeezerTrack, DeezerAlbum, DeezerArtist } from "@/lib/deezer";
 import type { SmashPassItemType } from "@/lib/smash-pass";
 import type { SmashPassItemInput } from "@/app/create-smash-pass/actions";
 import DeezerAttribution from "@/components/DeezerAttribution";
+import { useDeezerSearch } from "@/components/deezer/useDeezerSearch";
+import { genreLabel, type MusicGenre } from "@/lib/genres";
 
 const MIN_ITEMS = 5;
 const MAX_ITEMS = 100;
-
-function useDebouncedSearch<T>(
-  endpoint: string,
-  query: string,
-  enabled: boolean,
-): { data: T[]; loading: boolean } {
-  const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const trimmed = query.trim();
-    if (!trimmed || !enabled) {
-      setData([]);
-      return;
-    }
-    const ctrl = new AbortController();
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(
-          `${endpoint}?q=${encodeURIComponent(trimmed)}`,
-          { signal: ctrl.signal },
-        );
-        const json = await res.json();
-        setData(json.data ?? []);
-      } catch (e) {
-        if ((e as { name?: string }).name !== "AbortError") console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }, 400);
-    return () => {
-      ctrl.abort();
-      clearTimeout(timer);
-    };
-  }, [query, endpoint, enabled]);
-
-  return { data: query.trim() ? data : [], loading };
-}
 
 type Props = {
   itemType: SmashPassItemType;
   selected: SmashPassItemInput[];
   onChange: (next: SmashPassItemInput[]) => void;
+  genre?: MusicGenre | null;
 };
 
-export default function SmashPassItemPicker({ itemType, selected, onChange }: Props) {
+export default function SmashPassItemPicker({ itemType, selected, onChange, genre = null }: Props) {
   const [query, setQuery] = useState("");
   const canAdd = selected.length < MAX_ITEMS;
+  const genreHint = genre ? genreLabel(genre, "fr") : null;
 
-  const trackSearch = useDebouncedSearch<DeezerTrack>(
+  const trackSearch = useDeezerSearch<DeezerTrack>(
     "/api/deezer/search",
     query,
     itemType === "track",
+    genre,
   );
-  const albumSearch = useDebouncedSearch<DeezerAlbum>(
+  const albumSearch = useDeezerSearch<DeezerAlbum>(
     "/api/deezer/search/album",
     query,
     itemType === "album",
+    genre,
   );
-  const artistSearch = useDebouncedSearch<DeezerArtist>(
+  const artistSearch = useDeezerSearch<DeezerArtist>(
     "/api/deezer/search/artist",
     query,
     itemType === "artist",
+    genre,
   );
 
   const loading =
@@ -81,6 +49,13 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
       : itemType === "album"
         ? albumSearch.loading
         : artistSearch.loading;
+
+  const browsing =
+    itemType === "track"
+      ? trackSearch.browsing
+      : itemType === "album"
+        ? albumSearch.browsing
+        : artistSearch.browsing;
 
   const isSelected = (deezerId: number) =>
     selected.some((s) => s.deezer_id === deezerId);
@@ -160,10 +135,19 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={`Nom du ${typeLabel}…`}
+            placeholder={
+              genreHint
+                ? `Nom du ${typeLabel}… (top ${genreHint} sans recherche)`
+                : `Nom du ${typeLabel}…`
+            }
             className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] py-2.5 pl-9 pr-3 text-sm"
           />
         </div>
+        {browsing && genreHint ? (
+          <p className="mt-2 text-xs text-[color:var(--muted)]">
+            Top {genreHint} — tape pour affiner
+          </p>
+        ) : null}
 
         <ul className="mt-3 max-h-[400px] overflow-y-auto space-y-2">
           {loading && (

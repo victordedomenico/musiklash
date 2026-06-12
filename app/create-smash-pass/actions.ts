@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { ensureGenreColumns } from "@/lib/ensure-genre-columns";
+import { sanitizeGenre } from "@/lib/genres";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { createClient } from "@/lib/supabase/server";
 import type { SmashPassItemType } from "@/lib/smash-pass";
@@ -20,6 +22,7 @@ export type SmashPassItemInput = {
 
 export async function createSmashPass(input: {
   title: string;
+  genre?: string | null;
   itemType: SmashPassItemType;
   visibility: "private" | "public" | "none";
   items: SmashPassItemInput[];
@@ -51,10 +54,12 @@ export async function createSmashPass(input: {
 
   let smashPassId: string;
   try {
+    await ensureGenreColumns(prisma);
     const sp = await prisma.smashPass.create({
       data: {
         ownerId: identity.playerId,
         title: input.title.trim(),
+        genre: sanitizeGenre(input.genre),
         itemType: input.itemType,
         visibility: storedVisibility,
         items: {

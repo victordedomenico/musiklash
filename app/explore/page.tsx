@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { ensureBattleFeatVisibilityColumns } from "@/lib/ensure-battle-feat-visibility-columns";
+import { ensureGenreColumns } from "@/lib/ensure-genre-columns";
+import { MUSIC_GENRES, genreLabel, isMusicGenre, type MusicGenre } from "@/lib/genres";
 import BracketCard, { type BracketSummary } from "@/components/BracketCard";
 import TierlistCard, { type TierlistSummary } from "@/components/TierlistCard";
 import BlindtestCard, { type BlindtestSummary } from "@/components/BlindtestCard";
@@ -95,13 +97,24 @@ function modelHasField(modelName: string, fieldName: string): boolean {
 export default async function ExplorePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; tab?: string }>;
+  searchParams: Promise<{ q?: string; tab?: string; genre?: string }>;
 }) {
-  const { q, tab: rawTab } = await searchParams;
+  const { q, tab: rawTab, genre: rawGenre } = await searchParams;
   const tab = parseTab(rawTab);
   const term = q?.trim();
-  const { t } = await getI18n();
+  const genre: MusicGenre | null =
+    rawGenre && isMusicGenre(rawGenre) ? rawGenre : null;
+  const { t, locale } = await getI18n();
   const e = t.explore;
+
+  const exploreUrl = (overrides: { tab?: Tab; genre?: MusicGenre | null }) => {
+    const nextTab = "tab" in overrides && overrides.tab ? overrides.tab : tab;
+    const nextGenre = "genre" in overrides ? overrides.genre ?? null : genre;
+    const params = new URLSearchParams({ tab: nextTab });
+    if (term) params.set("q", term);
+    if (nextGenre) params.set("genre", nextGenre);
+    return `/explore?${params.toString()}`;
+  };
 
   const textFilter = term
     ? {
@@ -123,6 +136,13 @@ export default async function ExplorePage({
     ? { title: { contains: term, mode: "insensitive" as const } }
     : {};
 
+  // Only filter on genre when the Prisma client knows the field; the DB column
+  // itself is guaranteed by ensureGenreColumns below.
+  const genreFilter =
+    genre && modelHasField("Bracket", "genre") ? { genre } : {};
+  const hasContentGenre = modelHasField("Bracket", "genre");
+  const genreSelect = hasContentGenre ? ({ genre: true } as const) : {};
+
   const takeGrid = tab === "all" ? 12 : 48;
   const takeBfChallenge = tab === "all" ? 8 : 36;
   const takeBfRoom = tab === "all" ? 8 : 36;
@@ -130,7 +150,9 @@ export default async function ExplorePage({
   const loadBrackets = tab === "all" || tab === "brackets";
   const loadTierlists = tab === "all" || tab === "tierlists";
   const loadBlindtests = tab === "all" || tab === "blindtests";
-  const loadBattlefeat = tab === "all" || tab === "battlefeat";
+  // BattleFeat est un jeu 100 % rap : on ne le montre pas quand un autre genre est filtré.
+  const loadBattlefeat =
+    (tab === "all" || tab === "battlefeat") && (!genre || genre === "rap");
   const loadStreamClash = tab === "all" || tab === "streamclash";
   const loadSmashPass = tab === "all" || tab === "smashpass";
   const hasBlindtestRoomVisibility = modelHasField("BlindtestRoom", "visibility");
@@ -148,6 +170,9 @@ export default async function ExplorePage({
   if (loadBattlefeat) {
     await ensureBattleFeatVisibilityColumns(prisma);
   }
+  if (genre || !hasContentGenre) {
+    await ensureGenreColumns(prisma);
+  }
 
   const [
     brackets,
@@ -163,27 +188,28 @@ export default async function ExplorePage({
   ] = await Promise.all([
     loadBrackets
       ? prisma.bracket.findMany({
-          where: { visibility: "public", ...textFilter },
-          select: { id: true, title: true, theme: true, size: true, visibility: true, coverUrl: true },
+          where: { visibility: "public", ...textFilter, ...genreFilter },
+          select: { id: true, title: true, theme: true, size: true, visibility: true, coverUrl: true, ...genreSelect },
           orderBy: { createdAt: "desc" },
           take: takeGrid,
         })
       : Promise.resolve([]),
     loadTierlists
       ? prisma.tierlist.findMany({
-          where: { visibility: "public", ...textFilter },
-          select: { id: true, title: true, theme: true, visibility: true, coverUrl: true },
+          where: { visibility: "public", ...textFilter, ...genreFilter },
+          select: { id: true, title: true, theme: true, visibility: true, coverUrl: true, ...genreSelect },
           orderBy: { createdAt: "desc" },
           take: takeGrid,
         })
       : Promise.resolve([]),
     loadBlindtests
       ? prisma.blindtest.findMany({
-          where: { visibility: "public", ...blindtestTextFilter },
+          where: { visibility: "public", ...blindtestTextFilter, ...genreFilter },
           select: {
             id: true,
             title: true,
             visibility: true,
+            ...genreSelect,
             _count: { select: { tracks: true } },
           },
           orderBy: { createdAt: "desc" },
@@ -195,6 +221,7 @@ export default async function ExplorePage({
           where: {
             status: { in: ["waiting", "playing"] },
             visibility: "public",
+            ...(genreFilter.genre ? { blindtest: { genre: genreFilter.genre } } : {}),
             ...(term
               ? {
                   OR: [
@@ -271,11 +298,12 @@ export default async function ExplorePage({
       : Promise.resolve([]),
     loadStreamClash
       ? prisma.streamClash.findMany({
-          where: { visibility: "public", ...streamClashTextFilter },
+          where: { visibility: "public", ...streamClashTextFilter, ...genreFilter },
           select: {
             id: true,
             title: true,
             visibility: true,
+            ...genreSelect,
             _count: { select: { tracks: true } },
             tracks: {
               take: 1,
@@ -292,6 +320,7 @@ export default async function ExplorePage({
           where: {
             status: { in: ["waiting", "playing"] },
             visibility: "public",
+            ...(genreFilter.genre ? { streamClash: { genre: genreFilter.genre } } : {}),
             ...(term
               ? {
                   OR: [
@@ -321,12 +350,13 @@ export default async function ExplorePage({
       : Promise.resolve([]),
     loadSmashPass
       ? prisma.smashPass.findMany({
-          where: { visibility: "public", ...smashPassTextFilter },
+          where: { visibility: "public", ...smashPassTextFilter, ...genreFilter },
           select: {
             id: true,
             title: true,
             visibility: true,
             itemType: true,
+            ...genreSelect,
             items: {
               take: 1,
               orderBy: { position: "asc" },
@@ -343,6 +373,7 @@ export default async function ExplorePage({
           where: {
             status: { in: ["waiting", "playing"] },
             visibility: "public",
+            ...(genreFilter.genre ? { smashPass: { genre: genreFilter.genre } } : {}),
             ...(term
               ? {
                   OR: [
@@ -371,12 +402,20 @@ export default async function ExplorePage({
       : Promise.resolve([]),
   ]);
 
-  const bracketList = brackets.map((b) => ({ ...b, cover_url: b.coverUrl })) as BracketSummary[];
-  const tierlistList = tierlists as TierlistSummary[];
+  const bracketList = brackets.map((b) => ({
+    ...b,
+    cover_url: b.coverUrl,
+    genre: hasContentGenre && "genre" in b ? b.genre : null,
+  })) as BracketSummary[];
+  const tierlistList = tierlists.map((t) => ({
+    ...t,
+    genre: hasContentGenre && "genre" in t ? t.genre : null,
+  })) as TierlistSummary[];
   const blindtestList = blindtests.map((b) => ({
     id: b.id,
     title: b.title,
     visibility: b.visibility,
+    genre: hasContentGenre && "genre" in b ? b.genre : null,
     trackCount: b._count.tracks,
   })) as BlindtestSummary[];
 
@@ -445,6 +484,7 @@ export default async function ExplorePage({
     id: sc.id,
     title: sc.title,
     visibility: sc.visibility,
+    genre: hasContentGenre && "genre" in sc ? sc.genre : null,
     trackCount: sc._count.tracks,
     coverUrl: sc.tracks[0]?.coverUrl ?? null,
   })) as StreamClashSummary[];
@@ -468,6 +508,7 @@ export default async function ExplorePage({
     title: sp.title,
     visibility: sp.visibility,
     itemType: sp.itemType,
+    genre: hasContentGenre && "genre" in sp ? sp.genre : null,
     itemCount: sp._count.items,
     coverUrl: sp.items[0]?.coverUrl ?? null,
   })) as SmashPassSummary[];
@@ -538,7 +579,7 @@ export default async function ExplorePage({
             return (
               <Link
                 key={item.key}
-                href={`/explore?tab=${item.key}${term ? `&q=${encodeURIComponent(term)}` : ""}`}
+                href={exploreUrl({ tab: item.key })}
                 className="whitespace-nowrap rounded-xl px-3 py-2 text-xs font-bold tracking-wide no-underline sm:px-4 sm:text-sm lg:px-5"
                 style={{
                   background: active ? "#f3f4f6" : "transparent",
@@ -562,7 +603,28 @@ export default async function ExplorePage({
           style={{ background: "#171a23", borderColor: "#2a3242" }}
         />
         <input type="hidden" name="tab" value={tab} />
+        {genre ? <input type="hidden" name="genre" value={genre} /> : null}
       </form>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link
+          href={exploreUrl({ genre: null })}
+          className="btn-chip no-underline"
+          data-active={genre === null}
+        >
+          {e.genreAll}
+        </Link>
+        {MUSIC_GENRES.map((g) => (
+          <Link
+            key={g.value}
+            href={exploreUrl({ genre: g.value })}
+            className="btn-chip no-underline"
+            data-active={genre === g.value}
+          >
+            {g[locale]}
+          </Link>
+        ))}
+      </div>
 
       {isEmpty ? (
         <div
@@ -571,7 +633,12 @@ export default async function ExplorePage({
         >
           <p className="text-lg font-semibold">
             {e.emptyTitle}{" "}
-            {term ? e.emptyFor.replace("{term}", term) : e.emptyDefault}.
+            {term
+              ? e.emptyFor.replace("{term}", term)
+              : genre
+                ? e.emptyForGenre.replace("{genre}", genreLabel(genre, locale))
+                : e.emptyDefault}
+            .
           </p>
           <p className="mt-1 text-sm text-[color:var(--muted)]">{e.emptyHint}</p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -643,7 +710,7 @@ export default async function ExplorePage({
               </div>
               <div className="flex justify-end">
                 <Link
-                  href={`/explore?tab=brackets${term ? `&q=${encodeURIComponent(term)}` : ""}`}
+                  href={exploreUrl({ tab: "brackets" })}
                   className="text-sm font-semibold text-[color:var(--accent)] no-underline hover:underline"
                 >
                   {e.seeAll} →
@@ -662,7 +729,7 @@ export default async function ExplorePage({
               </div>
               <div className="flex justify-end">
                 <Link
-                  href={`/explore?tab=tierlists${term ? `&q=${encodeURIComponent(term)}` : ""}`}
+                  href={exploreUrl({ tab: "tierlists" })}
                   className="text-sm font-semibold text-[color:var(--accent)] no-underline hover:underline"
                 >
                   {e.seeAll} →
@@ -696,7 +763,7 @@ export default async function ExplorePage({
               ) : null}
               <div className="flex justify-end">
                 <Link
-                  href={`/explore?tab=blindtests${term ? `&q=${encodeURIComponent(term)}` : ""}`}
+                  href={exploreUrl({ tab: "blindtests" })}
                   className="text-sm font-semibold text-[color:var(--accent)] no-underline hover:underline"
                 >
                   {e.seeAll} →
@@ -729,7 +796,7 @@ export default async function ExplorePage({
               ) : null}
               <div className="flex justify-end">
                 <Link
-                  href="/explore?tab=battlefeat"
+                  href={exploreUrl({ tab: "battlefeat" })}
                   className="text-sm font-semibold text-[color:var(--accent)] no-underline hover:underline"
                 >
                   {e.seeAll} →
@@ -763,7 +830,7 @@ export default async function ExplorePage({
               ) : null}
               <div className="flex justify-end">
                 <Link
-                  href={`/explore?tab=smashpass${term ? `&q=${encodeURIComponent(term)}` : ""}`}
+                  href={exploreUrl({ tab: "smashpass" })}
                   className="text-sm font-semibold text-[color:var(--accent)] no-underline hover:underline"
                 >
                   {e.seeAll} →
@@ -797,7 +864,7 @@ export default async function ExplorePage({
               ) : null}
               <div className="flex justify-end">
                 <Link
-                  href={`/explore?tab=streamclash${term ? `&q=${encodeURIComponent(term)}` : ""}`}
+                  href={exploreUrl({ tab: "streamclash" })}
                   className="text-sm font-semibold text-[color:var(--accent)] no-underline hover:underline"
                 >
                   {e.seeAll} →

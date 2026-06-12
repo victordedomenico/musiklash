@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Eye, EyeOff, LayoutList } from "lucide-react";
+import GenreBadge from "@/components/GenreBadge";
 import LibraryVisibilityToggle from "@/components/LibraryVisibilityToggle";
 
 export type TierlistSummary = {
@@ -9,6 +10,7 @@ export type TierlistSummary = {
   visibility: string;
   coverUrl: string | null;
   trackCount?: number;
+  genre?: string | null;
 };
 
 export default function TierlistCard({
@@ -49,6 +51,11 @@ export default function TierlistCard({
       </div>
       <div className="p-4">
         <p className="font-semibold line-clamp-1">{t.title}</p>
+        {t.genre ? (
+          <div className="mt-1">
+            <GenreBadge genre={t.genre} />
+          </div>
+        ) : null}
         {t.theme ? (
           <p className="mt-0.5 text-xs text-[color:var(--muted)] line-clamp-1">{t.theme}</p>
         ) : null}

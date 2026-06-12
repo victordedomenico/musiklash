@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { isValidSize, effectiveBracketSize } from "@/lib/bracket";
+import { ensureGenreColumns } from "@/lib/ensure-genre-columns";
+import { sanitizeGenre } from "@/lib/genres";
 import { resolvePlayerIdentity } from "@/lib/guest";
 
 export type SelectedTrack = {
@@ -16,6 +18,7 @@ export type SelectedTrack = {
 export async function createBracket(input: {
   title: string;
   theme: string;
+  genre?: string | null;
   size: number;
   visibility: "private" | "public" | "none";
   tracks: SelectedTrack[];
@@ -56,11 +59,13 @@ export async function createBracket(input: {
   const storedVisibility = transient ? "private" : input.visibility;
 
   try {
+    await ensureGenreColumns(prisma);
     const bracket = await prisma.bracket.create({
       data: {
         ownerId: identity.playerId,
         title: input.title.trim(),
         theme: input.theme.trim() || null,
+        genre: sanitizeGenre(input.genre),
         size: storedSize,
         visibility: storedVisibility,
         coverUrl: input.tracks[0]?.cover_url ?? null,

@@ -46,6 +46,7 @@ model Bracket {
   ownerId    String   @map("owner_id") @db.Uuid
   title      String
   theme      String?
+  genre      String?
   size       Int      @db.SmallInt
   visibility String   @default("private")
   coverUrl   String?  @map("cover_url")
@@ -113,6 +114,7 @@ model Blindtest {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ownerId    String   @map("owner_id") @db.Uuid
   title      String
+  genre      String?
   visibility String   @default("private")
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
 
@@ -204,6 +206,7 @@ model Tierlist {
   ownerId    String   @map("owner_id") @db.Uuid
   title      String
   theme      String?
+  genre      String?
   visibility String   @default("private")
   coverUrl   String?  @map("cover_url")
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -359,6 +362,7 @@ model StreamClash {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ownerId    String   @map("owner_id") @db.Uuid
   title      String
+  genre      String?
   visibility String   @default("private")
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
 
@@ -439,6 +443,7 @@ model SmashPass {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   ownerId    String   @map("owner_id") @db.Uuid
   title      String
+  genre      String?
   itemType   String   @map("item_type") // track | album | artist
   visibility String   @default("private")
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz

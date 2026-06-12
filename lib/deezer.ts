@@ -30,6 +30,7 @@ export type DeezerAlbum = {
   cover_big?: string;
   nb_tracks?: number;
   release_date?: string;
+  genre_id?: number;
   artist?: {
     id: number;
     name: string;
@@ -77,6 +78,24 @@ import { sanitizePreviewUrl } from "@/lib/deezer-sanitize";
 
 const BASE_URL = "https://api.deezer.com";
 
+const albumGenreCache = new Map<number, number | null>();
+
+export async function getAlbumGenreId(albumId: number): Promise<number | null> {
+  const cached = albumGenreCache.get(albumId);
+  if (cached !== undefined) return cached;
+
+  const url = `${BASE_URL}/album/${albumId}`;
+  const res = await fetch(url, { headers: { Accept: "application/json" }, next: { revalidate: 86400 } });
+  if (!res.ok) {
+    albumGenreCache.set(albumId, null);
+    return null;
+  }
+  const json = (await res.json()) as { genre_id?: number; error?: unknown };
+  const genreId = json.error ? null : (json.genre_id ?? null);
+  albumGenreCache.set(albumId, genreId);
+  return genreId;
+}
+
 export async function getTrackPreview(trackId: number | string): Promise<string | null> {
   const url = `${BASE_URL}/track/${trackId}`;
   const res = await fetch(url, {
@@ -92,12 +111,12 @@ export async function getTrackPreview(trackId: number | string): Promise<string 
 export async function searchTracks(
   query: string,
   limit = 25,
-  options: TrackFetchOptions = {},
+  options: TrackFetchOptions & { index?: number } = {},
 ): Promise<DeezerTrack[]> {
-  const { requirePreview = true } = options;
+  const { requirePreview = true, index = 0 } = options;
   const trimmed = query.trim();
   if (!trimmed) return [];
-  const url = `${BASE_URL}/search/track?q=${encodeURIComponent(trimmed)}&limit=${limit}`;
+  const url = `${BASE_URL}/search/track?q=${encodeURIComponent(trimmed)}&limit=${limit}&index=${index}`;
   const res = await fetch(url, { headers: { Accept: "application/json" }, next: { revalidate: 3600 } });
   if (!res.ok) throw new Error(`Deezer search failed: ${res.status}`);
   const json = (await res.json()) as DeezerSearchResponse;
@@ -106,20 +125,28 @@ export async function searchTracks(
   return tracks.filter((t) => sanitizePreviewUrl(t.preview) !== null);
 }
 
-export async function searchAlbums(query: string, limit = 20): Promise<DeezerAlbum[]> {
+export async function searchAlbums(
+  query: string,
+  limit = 20,
+  index = 0,
+): Promise<DeezerAlbum[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
-  const url = `${BASE_URL}/search/album?q=${encodeURIComponent(trimmed)}&limit=${limit}`;
+  const url = `${BASE_URL}/search/album?q=${encodeURIComponent(trimmed)}&limit=${limit}&index=${index}`;
   const res = await fetch(url, { headers: { Accept: "application/json" }, next: { revalidate: 3600 } });
   if (!res.ok) throw new Error(`Deezer album search failed: ${res.status}`);
   const json = await res.json() as { data?: DeezerAlbum[] };
   return json.data ?? [];
 }
 
-export async function searchArtists(query: string, limit = 20): Promise<DeezerArtist[]> {
+export async function searchArtists(
+  query: string,
+  limit = 20,
+  index = 0,
+): Promise<DeezerArtist[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
-  const url = `${BASE_URL}/search/artist?q=${encodeURIComponent(trimmed)}&limit=${limit}`;
+  const url = `${BASE_URL}/search/artist?q=${encodeURIComponent(trimmed)}&limit=${limit}&index=${index}`;
   const res = await fetch(url, { headers: { Accept: "application/json" }, next: { revalidate: 3600 } });
   if (!res.ok) throw new Error(`Deezer artist search failed: ${res.status}`);
   const json = await res.json() as { data?: DeezerArtist[] };
@@ -172,4 +199,24 @@ export async function getArtistById(artistId: number | string): Promise<DeezerAr
   const json = await res.json() as DeezerArtist & { error?: unknown };
   if (json.error) return null;
   return json;
+}
+
+async function fetchChart<T>(kind: "tracks" | "albums" | "artists", genreId: number, limit: number): Promise<T[]> {
+  const url = `${BASE_URL}/chart/${genreId}/${kind}?limit=${limit}`;
+  const res = await fetch(url, { headers: { Accept: "application/json" }, next: { revalidate: 3600 } });
+  if (!res.ok) throw new Error(`Deezer chart ${kind} failed: ${res.status}`);
+  const json = await res.json() as { data?: T[] };
+  return json.data ?? [];
+}
+
+export function getChartTracks(genreId: number, limit = 25): Promise<DeezerTrack[]> {
+  return fetchChart<DeezerTrack>("tracks", genreId, limit);
+}
+
+export function getChartAlbums(genreId: number, limit = 20): Promise<DeezerAlbum[]> {
+  return fetchChart<DeezerAlbum>("albums", genreId, limit);
+}
+
+export function getChartArtists(genreId: number, limit = 20): Promise<DeezerArtist[]> {
+  return fetchChart<DeezerArtist>("artists", genreId, limit);
 }

@@ -52,7 +52,11 @@ export function DeezerLogo({
   height = 28,
   className = "",
 }: DeezerLogoProps) {
-  const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "dark");
+  const theme = useSyncExternalStore(
+    subscribeTheme,
+    readTheme,
+    (): "light" | "dark" => "dark",
+  );
   const src = LOGO_SOURCES[variant][theme];
   const width = Math.round(height * ASPECT_RATIO[variant]);
   const useDarkBackdrop = theme === "dark";

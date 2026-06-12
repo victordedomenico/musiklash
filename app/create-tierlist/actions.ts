@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { ensureGenreColumns } from "@/lib/ensure-genre-columns";
+import { sanitizeGenre } from "@/lib/genres";
 import { resolvePlayerIdentity } from "@/lib/guest";
 
 export type TierlistTrackInput = {
@@ -15,6 +17,7 @@ export type TierlistTrackInput = {
 export async function createTierlist(input: {
   title: string;
   theme: string;
+  genre?: string | null;
   visibility: "private" | "public" | "none";
   tracks: TierlistTrackInput[];
 }) {
@@ -39,11 +42,13 @@ export async function createTierlist(input: {
   const transient = input.visibility === "none";
   const storedVisibility = transient ? "private" : input.visibility;
   try {
+    await ensureGenreColumns(prisma);
     const tl = await prisma.tierlist.create({
       data: {
         ownerId: identity.playerId,
         title: input.title.trim(),
         theme: input.theme.trim() || null,
+        genre: sanitizeGenre(input.genre),
         visibility: storedVisibility,
         coverUrl: input.tracks[0]?.cover_url ?? null,
         tracks: {

@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { ensureGenreColumns } from "@/lib/ensure-genre-columns";
+import { sanitizeGenre } from "@/lib/genres";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { createClient } from "@/lib/supabase/server";
 import type { StreamClashParticipant } from "@/lib/stream-clash-room";
@@ -18,6 +20,7 @@ export type StreamClashTrackInput = {
 
 export async function createStreamClash(input: {
   title: string;
+  genre?: string | null;
   visibility: "private" | "public" | "none";
   tracks: StreamClashTrackInput[];
   mode: "solo" | "multi";
@@ -76,10 +79,12 @@ export async function createStreamClash(input: {
 
   let streamClashId: string;
   try {
+    await ensureGenreColumns(prisma);
     const sc = await streamClashModel.create({
       data: {
         ownerId: identity.playerId,
         title: input.title.trim(),
+        genre: sanitizeGenre(input.genre),
         visibility: storedVisibility,
         tracks: {
           create: input.tracks.map((t, i) => ({

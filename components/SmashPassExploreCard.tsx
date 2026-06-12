@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Eye, EyeOff, Heart, Users } from "lucide-react";
+import GenreBadge from "@/components/GenreBadge";
 import LibraryVisibilityToggle from "@/components/LibraryVisibilityToggle";
 
 export type SmashPassSummary = {
@@ -9,6 +10,7 @@ export type SmashPassSummary = {
   itemType: string;
   itemCount?: number;
   coverUrl?: string | null;
+  genre?: string | null;
 };
 
 export type SmashPassRoomSummary = {
@@ -75,6 +77,11 @@ export function SmashPassCard({
       </div>
       <div className="p-4">
         <p className="line-clamp-1 font-semibold">{sp.title}</p>
+        {sp.genre ? (
+          <div className="mt-1">
+            <GenreBadge genre={sp.genre} />
+          </div>
+        ) : null}
         <p className="mt-0.5 text-xs text-[color:var(--muted)]">
           {itemTypeLabel[sp.itemType] ?? sp.itemType}
           {sp.itemCount != null

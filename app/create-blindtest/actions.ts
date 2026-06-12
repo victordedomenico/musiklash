@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { ensureGenreColumns } from "@/lib/ensure-genre-columns";
+import { sanitizeGenre } from "@/lib/genres";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { createClient } from "@/lib/supabase/server";
 import type { BlindtestParticipant } from "@/lib/blindtest-room";
@@ -17,6 +19,7 @@ export type BlindtestTrackInput = {
 
 export async function createBlindtest(input: {
   title: string;
+  genre?: string | null;
   visibility: "private" | "public" | "none";
   tracks: BlindtestTrackInput[];
   mode: "solo" | "multi";
@@ -45,10 +48,12 @@ export async function createBlindtest(input: {
 
   let blindtestId: string;
   try {
+    await ensureGenreColumns(prisma);
     const bt = await prisma.blindtest.create({
       data: {
         ownerId: identity.playerId,
         title: input.title.trim(),
+        genre: sanitizeGenre(input.genre),
         visibility: storedVisibility,
         tracks: {
           create: input.tracks.map((t, i) => ({

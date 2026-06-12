@@ -5,6 +5,7 @@ import {
   computeRoomVoteTotals,
   formatStatCount,
   normalizeSessionChoices,
+  type SmashPassParticipant,
 } from "./smash-pass";
 
 describe("computePercentages", () => {
@@ -41,13 +42,13 @@ describe("normalizeSessionChoices", () => {
 
 describe("allParticipantsVoted", () => {
   it("requires every participant to vote", () => {
-    const participants = [
+    const participants: SmashPassParticipant[] = [
       {
         playerId: "a",
         username: "A",
         smashCount: 0,
         passCount: 0,
-        choices: { "0": "smash" as const },
+        choices: { "0": "smash" },
         lastSeenAt: null,
         joinedAt: "",
       },

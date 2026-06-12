@@ -120,6 +120,8 @@ export interface Dictionary {
     sectionSmashPassCreations: string;
     sectionSmashPassRooms: string;
     seeAll: string;
+    genreAll: string;
+    emptyForGenre: string;
   };
   room: {
     spectatorTitle: string;
@@ -206,6 +208,69 @@ export interface Dictionary {
     privacyRights: string;
     cookieSettings: string;
     allRightsReserved: string;
+  };
+  myLibrary: {
+    title: string;
+    subtitle: string;
+    newBracket: string;
+    newTierlist: string;
+    newBlindtest: string;
+    newBattleFeat: string;
+    newStreamClash: string;
+    newSmashPass: string;
+    welcomeMsg: string;
+    guestMsg: string;
+    filterAll: string;
+    filterPrivate: string;
+    filterPublic: string;
+    myCreations: string;
+    myResults: string;
+    myMultiResults: string;
+    mySoloResults: string;
+    myRooms: string;
+    noBracketCreated: string;
+    noGameFinished: string;
+    noTierlistCreated: string;
+    noTierlistSaved: string;
+    noBlindtestCreated: string;
+    noMultiResult: string;
+    noSoloResult: string;
+    noDeckCreated: string;
+    noStreamClashCreated: string;
+    emptyAll: string;
+    emptyBrackets: string;
+    emptyTierlists: string;
+    emptyBlindtests: string;
+    emptySmashPass: string;
+    emptyStreamClash: string;
+    emptyBattleFeat: string;
+    createBracketCta: string;
+    createTierlistCta: string;
+    createBlindtestCta: string;
+    createBattleFeatCta: string;
+    createStreamClashCta: string;
+    createSmashPassCta: string;
+    battleFeatMyCreationsDesc: string;
+    battleFeatMySoloResultsLabel: string;
+    battleFeatMySoloResultsDesc: string;
+    battleFeatMyMultiResultsDesc: string;
+  };
+  luckyWheel: {
+    title: string;
+    subtitle: string;
+    spinAriaLabel: string;
+    spinning: string;
+    respin: string;
+    randomChose: string;
+    playMode: string;
+    respin2: string;
+    closeAriaLabel: string;
+    bracketDesc: string;
+    tierlistDesc: string;
+    blindtestDesc: string;
+    battleFeatDesc: string;
+    smashPassDesc: string;
+    streamClashDesc: string;
   };
 }
 
@@ -338,6 +403,8 @@ export const fr: Dictionary = {
     sectionSmashPassCreations: "Smash or Pass — Créations publiques",
     sectionSmashPassRooms: "Smash or Pass — Rooms rejoignables",
     seeAll: "Voir tout",
+    genreAll: "Tous les genres",
+    emptyForGenre: "en {genre}",
   },
   room: {
     spectatorTitle: "Mode spectateur",
@@ -426,5 +493,68 @@ export const fr: Dictionary = {
     privacyRights: "Exercer mes droits RGPD",
     cookieSettings: "Gestion des cookies",
     allRightsReserved: "Tous droits réservés",
+  },
+  myLibrary: {
+    title: "Ma Bibliothèque",
+    subtitle: "Retrouve toutes tes créations et tes résultats, en public ou en privé.",
+    newBracket: "Nouveau bracket",
+    newTierlist: "Nouvelle tierlist",
+    newBlindtest: "Nouveau blindtest",
+    newBattleFeat: "Nouveau BattleFeat solo",
+    newStreamClash: "Nouveau Stream Clash",
+    newSmashPass: "Nouveau Smash or Pass",
+    welcomeMsg: "Compte créé 🎉 tu peux maintenant créer ton premier bracket ou ta première tierlist.",
+    guestMsg: "Tu es en mode invité. Tes parties et créations restent liées à ce pseudo sur cet appareil.",
+    filterAll: "Tous",
+    filterPrivate: "Publié — Privé",
+    filterPublic: "Publié — Public",
+    myCreations: "Mes créations",
+    myResults: "Mes résultats",
+    myMultiResults: "Mes résultats multijoueur",
+    mySoloResults: "Mes résultats solo",
+    myRooms: "Mes rooms multijoueur",
+    noBracketCreated: "Aucun bracket créé.",
+    noGameFinished: "Aucune partie terminée.",
+    noTierlistCreated: "Aucune tierlist créée.",
+    noTierlistSaved: "Aucune tierlist sauvegardée.",
+    noBlindtestCreated: "Aucun blindtest créé.",
+    noMultiResult: "Aucun résultat multijoueur.",
+    noSoloResult: "Aucun résultat solo.",
+    noDeckCreated: "Aucun deck créé.",
+    noStreamClashCreated: "Aucun Stream Clash créé.",
+    emptyAll: "Aucun élément dans ta bibliothèque pour le moment",
+    emptyBrackets: "Aucun bracket pour le moment",
+    emptyTierlists: "Aucune tierlist pour le moment",
+    emptyBlindtests: "Aucun blindtest pour le moment",
+    emptySmashPass: "Aucun Smash or Pass pour le moment",
+    emptyStreamClash: "Aucun Stream Clash pour le moment",
+    emptyBattleFeat: "Aucune partie BattleFeat pour le moment",
+    createBracketCta: "Créer un bracket",
+    createTierlistCta: "Créer une tierlist",
+    createBlindtestCta: "Créer un blindtest",
+    createBattleFeatCta: "Créer un BattleFeat solo",
+    createStreamClashCta: "Créer un Stream Clash",
+    createSmashPassCta: "Créer un Smash or Pass",
+    battleFeatMyCreationsDesc: "Tes BattleFeats solo rejouables.",
+    battleFeatMySoloResultsLabel: "Mes résultats solo / solo vs IA",
+    battleFeatMySoloResultsDesc: "Tes dernières parties BattleFeat solo.",
+    battleFeatMyMultiResultsDesc: "Tes rooms BattleFeat en mode multijoueur.",
+  },
+  luckyWheel: {
+    title: "J'ai de la chance",
+    subtitle: "La roue choisit ton prochain mode de jeu, au hasard parmi les six.",
+    spinAriaLabel: "Tourner la roue",
+    spinning: "La roue tourne…",
+    respin: "Relancer la roue",
+    randomChose: "Le hasard a parlé !",
+    playMode: "Jouer à {label}",
+    respin2: "Retourner la roue",
+    closeAriaLabel: "Fermer",
+    bracketDesc: "Fais s'affronter tes sons en duels jusqu'au grand vainqueur.",
+    tierlistDesc: "Classe tes morceaux du tier S au tier D, à ta façon.",
+    blindtestDesc: "Devine le titre le plus vite possible, seul ou entre amis.",
+    battleFeatDesc: "Relie deux artistes par leurs collaborations.",
+    smashPassDesc: "Un son, une décision. Tranche en un swipe.",
+    streamClashDesc: "Devine quel morceau a le plus de streams.",
   },
 };
