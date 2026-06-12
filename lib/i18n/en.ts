@@ -42,6 +42,13 @@ export const en: Dictionary = {
     tagline: "Arena of sound",
     previewVolume: "Preview volume",
   },
+  introVideo: {
+    title: "Discover MusiKlash",
+    skip: "Skip",
+    unmute: "Unmute",
+    mute: "Mute",
+    close: "Close presentation",
+  },
   homeHero: {
     newBadge: "New: multiplayer BattleFeat",
     title1: "Turn",
@@ -198,6 +205,7 @@ export const en: Dictionary = {
     loginLink: "Log in",
   },
   footer: {
+    tagline: "Pit your tracks against each other, share your rankings, challenge your friends.",
     catalog: "Music catalog via",
     features: "Features",
     support: "Help & Support",

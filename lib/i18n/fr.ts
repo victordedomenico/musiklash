@@ -40,6 +40,13 @@ export interface Dictionary {
     tagline: string;
     previewVolume: string;
   };
+  introVideo: {
+    title: string;
+    skip: string;
+    unmute: string;
+    mute: string;
+    close: string;
+  };
   homeHero: {
     newBadge: string;
     title1: string;
@@ -187,6 +194,7 @@ export interface Dictionary {
     loginLink: string;
   };
   footer: {
+    tagline: string;
     catalog: string;
     features: string;
     support: string;
@@ -315,6 +323,13 @@ export const fr: Dictionary = {
   sidebar: {
     tagline: "L'arène du son",
     previewVolume: "Volume des extraits",
+  },
+  introVideo: {
+    title: "Découvrir MusiKlash",
+    skip: "Passer",
+    unmute: "Activer le son",
+    mute: "Couper le son",
+    close: "Fermer la présentation",
   },
   homeHero: {
     newBadge: "Nouveau : BattleFeat multijoueur",
@@ -472,6 +487,7 @@ export const fr: Dictionary = {
     loginLink: "Connexion",
   },
   footer: {
+    tagline: "Fais s'affronter tes sons, partage tes classements, défie tes amis.",
     catalog: "Catalogue musical via",
     features: "Fonctionnalités",
     support: "Aide & Support",

@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import SiteSidebar from "@/components/SiteSidebar";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
+import SiteIntroVideo from "@/components/SiteIntroVideo";
 import Footer from "@/components/Footer";
 import JsonLd from "@/components/JsonLd";
 import {
@@ -10,7 +11,7 @@ import {
   hasPreferencesConsent,
 } from "@/lib/cookie-consent";
 import { Analytics } from "@vercel/analytics/next";
-import { getLocale } from "@/lib/i18n";
+import { getI18n } from "@/lib/i18n";
 import { absoluteUrl, rootMetadata, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 
 export const metadata = rootMetadata;
@@ -25,7 +26,7 @@ export default async function RootLayout({
   const canUsePreferenceCookies = hasPreferencesConsent(cookieConsent);
   const canUseAnalyticsCookies = hasAnalyticsConsent(cookieConsent);
   const theme = canUsePreferenceCookies && cookieStore.get("theme")?.value === "light" ? "light" : "dark";
-  const locale = await getLocale();
+  const { locale, t } = await getI18n();
 
   return (
     <html
@@ -55,6 +56,7 @@ export default async function RootLayout({
             <Footer />
           </main>
         </div>
+        <SiteIntroVideo labels={t.introVideo} />
         <CookieConsentBanner initialConsent={cookieConsent} />
         {canUseAnalyticsCookies ? <Analytics /> : null}
       </body>
