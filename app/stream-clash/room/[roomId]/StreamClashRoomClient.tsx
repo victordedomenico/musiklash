@@ -608,7 +608,6 @@ export default function StreamClashRoomClient({
               void playTrack(
                 String(pair.trackA.position),
                 pair.trackA.title,
-                pair.trackA.previewUrl,
                 pair.trackA.deezerTrackId,
               )
             }
@@ -626,7 +625,6 @@ export default function StreamClashRoomClient({
               void playTrack(
                 String(pair.trackB.position),
                 pair.trackB.title,
-                pair.trackB.previewUrl,
                 pair.trackB.deezerTrackId,
               )
             }

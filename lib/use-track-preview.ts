@@ -2,16 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePreviewVolume } from "@/lib/audio-volume";
-
-function safePreviewUrl(url: string) {
-  return url.replace(/^http:\/\//i, "https://");
-}
-
-async function fetchFreshPreview(deezerTrackId: number): Promise<string> {
-  const res = await fetch(`/api/deezer/track/${deezerTrackId}`);
-  const data = (await res.json()) as { preview?: string };
-  return data.preview ?? "";
-}
+import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 
 export function useTrackPreview() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -41,15 +32,12 @@ export function useTrackPreview() {
   }, []);
 
   const playUrl = useCallback(
-    (key: string, title: string, previewUrl: string, deezerTrackId?: number) => {
-      const url = safePreviewUrl(previewUrl);
-
+    (key: string, title: string, previewUrl: string, deezerTrackId: number) => {
       if (audioRef.current && nowPlaying?.key === key) {
         if (audioRef.current.paused) {
           void audioRef.current.play().catch(async () => {
-            if (!deezerTrackId) return;
-            const fresh = await fetchFreshPreview(deezerTrackId);
-            if (fresh) playUrl(key, title, fresh);
+            const fresh = await fetchTrackPreview(deezerTrackId);
+            if (fresh) playUrl(key, title, fresh, deezerTrackId);
           });
         } else {
           audioRef.current.pause();
@@ -71,21 +59,16 @@ export function useTrackPreview() {
       const audio = audioRef.current;
       audio.pause();
       audio.volume = volume;
-      audio.src = url;
+      audio.src = previewUrl;
       setNowPlaying({ key, title });
       void audio.play().catch(async () => {
-        if (!deezerTrackId) {
-          setIsPlaying(false);
-          setNowPlaying(null);
-          return;
-        }
-        const fresh = await fetchFreshPreview(deezerTrackId);
+        const fresh = await fetchTrackPreview(deezerTrackId);
         if (!fresh) {
           setIsPlaying(false);
           setNowPlaying(null);
           return;
         }
-        audio.src = safePreviewUrl(fresh);
+        audio.src = fresh;
         void audio.play().catch(() => {
           setIsPlaying(false);
           setNowPlaying(null);
@@ -96,16 +79,11 @@ export function useTrackPreview() {
   );
 
   const playTrack = useCallback(
-    async (
-      key: string,
-      title: string,
-      previewUrl: string | null | undefined,
-      deezerTrackId: number,
-    ) => {
+    async (key: string, title: string, deezerTrackId: number) => {
       if (audioRef.current && nowPlaying?.key === key) {
         if (audioRef.current.paused) {
           void audioRef.current.play().catch(async () => {
-            const fresh = await fetchFreshPreview(deezerTrackId);
+            const fresh = await fetchTrackPreview(deezerTrackId);
             if (fresh) playUrl(key, title, fresh, deezerTrackId);
           });
         } else {
@@ -114,8 +92,7 @@ export function useTrackPreview() {
         return;
       }
 
-      let url = previewUrl?.trim() ? safePreviewUrl(previewUrl.trim()) : "";
-      if (!url) url = safePreviewUrl(await fetchFreshPreview(deezerTrackId));
+      const url = await fetchTrackPreview(deezerTrackId);
       if (!url) return;
 
       playUrl(key, title, url, deezerTrackId);

@@ -64,7 +64,7 @@ export async function createSmashPass(input: {
             title: item.title,
             subtitle: item.subtitle,
             coverUrl: item.cover_url,
-            previewUrl: item.preview_url,
+            previewUrl: "",
             tags: item.tags as Prisma.InputJsonValue,
             description: item.description,
           })),

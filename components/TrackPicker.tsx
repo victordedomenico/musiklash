@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { DeezerTrack, DeezerAlbum, DeezerArtist, DeezerAlbumTrack } from "@/lib/deezer";
 import type { SelectedTrack } from "@/app/create-bracket/actions";
+import DeezerAttribution from "@/components/DeezerAttribution";
 import { usePreviewVolume } from "@/lib/audio-volume";
 
 type Props = {
@@ -538,6 +539,7 @@ export default function TrackPicker({ size, selected, onChange, freeMode = false
     <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2">
       {/* Left: search panel */}
       <div>
+        <DeezerAttribution className="mb-4" />
         {/* Tabs */}
         <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-2)] p-1">
           {tabs.map((t) => (

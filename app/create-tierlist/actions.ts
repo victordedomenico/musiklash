@@ -52,7 +52,7 @@ export async function createTierlist(input: {
             deezerTrackId: BigInt(t.deezer_track_id),
             title: t.title,
             artist: t.artist,
-            previewUrl: t.preview_url,
+            previewUrl: "",
             coverUrl: t.cover_url,
           })),
         },

@@ -62,7 +62,7 @@ export default function SmashPassGameCard({
             ) : null}
           </div>
         </div>
-        {onPreview && (item.previewUrl || itemType !== "track") ? (
+        {onPreview && (item.deezerId || itemType !== "track") ? (
           <button
             type="button"
             onClick={onPreview}

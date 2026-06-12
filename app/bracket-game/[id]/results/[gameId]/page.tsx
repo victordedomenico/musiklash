@@ -43,7 +43,6 @@ export default async function BracketGameResultsPage({
           deezerTrackId: true,
           title: true,
           artist: true,
-          previewUrl: true,
           coverUrl: true,
         },
         orderBy: { seed: "asc" },
@@ -56,7 +55,6 @@ export default async function BracketGameResultsPage({
   const tracks = bracket.tracks.map((t) => ({
     ...t,
     deezerTrackId: Number(t.deezerTrackId),
-    preview_url: t.previewUrl,
     cover_url: t.coverUrl,
   }));
 

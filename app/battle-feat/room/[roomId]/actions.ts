@@ -2,6 +2,7 @@
 
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { sanitizePreviewUrl } from "@/lib/deezer-sanitize";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import {
   canClaimTurnTimeout,
@@ -141,9 +142,10 @@ async function applyMoveToRoom(
   room: RoomRow,
   artist: MoveArtistInput,
   trackTitle: string | null,
-  previewUrl: string | null,
+  rawPreviewUrl: string | null,
   options?: { decrementJoker?: boolean },
 ) {
+  const previewUrl = sanitizePreviewUrl(rawPreviewUrl);
   const participants = normalizeBattleFeatParticipants(room.participants);
   const nextParticipant = nextActiveParticipant(participants, actorId);
   const nextTurnId = nextParticipant?.playerId ?? null;
@@ -398,7 +400,7 @@ export async function submitMove(roomId: string, artist: MoveArtistInput) {
     ok: true,
     valid: true,
     trackTitle: moveResult.trackTitle,
-    previewUrl: feat.previewUrl ?? null,
+    previewUrl: sanitizePreviewUrl(feat.previewUrl),
     room: response.room,
     event: response.event,
   } as const;

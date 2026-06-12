@@ -317,7 +317,6 @@ export default function StreamClashPlayer({
             void playTrack(
               String(pair.trackA.position),
               pair.trackA.title,
-              pair.trackA.previewUrl,
               pair.trackA.deezerTrackId,
             )
           }
@@ -334,7 +333,6 @@ export default function StreamClashPlayer({
             void playTrack(
               String(pair.trackB.position),
               pair.trackB.title,
-              pair.trackB.previewUrl,
               pair.trackB.deezerTrackId,
             )
           }

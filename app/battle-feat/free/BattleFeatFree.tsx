@@ -21,6 +21,7 @@ import ArtistSearchInput from "@/components/ArtistSearchInput";
 import type { ArtistResult, FeatMove } from "@/lib/battle-feat";
 import { saveSoloSession } from "@/app/battle-feat/solo/actions";
 import { downloadNodeAsPng } from "@/lib/download-png";
+import DeezerAttribution from "@/components/DeezerAttribution";
 import { usePreviewVolume } from "@/lib/audio-volume";
 
 type Phase = "setup" | "playing" | "validating" | "joker" | "game-over";
@@ -587,6 +588,7 @@ export default function BattleFeatFree() {
           >
             {isPlaying ? <Pause size={16} /> : <Play size={16} />}
           </button>
+          <DeezerAttribution compact variant="icon" className="shrink-0" />
         </div>
       )}
 

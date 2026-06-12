@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import type { BattleFeatParticipant, BattleFeatRoomSnapshot, FeatMove } from "@/lib/battle-feat";
 import { parseFeatArtists, slugifyName, popularityTier } from "@/lib/battle-feat";
 import { getArtistTopTracks, searchArtists, searchTracks } from "@/lib/deezer";
+import { sanitizePreviewUrl } from "@/lib/deezer-sanitize";
 
 type ConnectedArtist = {
   id: string;
@@ -234,11 +235,6 @@ type DeezerArtistMove = {
   previewUrl: string | null;
 };
 
-function normalizePreviewUrl(previewUrl: string | null | undefined): string | null {
-  if (!previewUrl || previewUrl.length === 0) return null;
-  return previewUrl.replace(/^http:\/\//i, "https://");
-}
-
 function shuffle<T>(values: T[]): T[] {
   const out = [...values];
   for (let i = out.length - 1; i > 0; i -= 1) {
@@ -344,7 +340,7 @@ async function getFeatCandidates(artistId: string): Promise<FeatCandidate[]> {
         name: featName,
         artistId: null,
         trackTitle: track.title,
-        previewUrl: normalizePreviewUrl(track.preview),
+        previewUrl: sanitizePreviewUrl(track.preview),
       });
     }
     // Deezer often lists collaborations in contributors instead of the title.
@@ -359,7 +355,7 @@ async function getFeatCandidates(artistId: string): Promise<FeatCandidate[]> {
         name: contributor.name,
         artistId: contributorId,
         trackTitle: track.title,
-        previewUrl: normalizePreviewUrl(track.preview),
+        previewUrl: sanitizePreviewUrl(track.preview),
       });
     }
   }
@@ -468,7 +464,7 @@ export async function validateFeatLinkDeezerBidirectional(
         if (hasPrev && hasNext) {
           return {
             trackTitle: track.title,
-            previewUrl: normalizePreviewUrl(track.preview),
+            previewUrl: sanitizePreviewUrl(track.preview),
           };
         }
       }

@@ -5,6 +5,7 @@ import { Search, Plus, X, Disc3, User, Music } from "lucide-react";
 import type { DeezerTrack, DeezerAlbum, DeezerArtist } from "@/lib/deezer";
 import type { SmashPassItemType } from "@/lib/smash-pass";
 import type { SmashPassItemInput } from "@/app/create-smash-pass/actions";
+import DeezerAttribution from "@/components/DeezerAttribution";
 
 const MIN_ITEMS = 5;
 const MAX_ITEMS = 100;
@@ -145,6 +146,7 @@ export default function SmashPassItemPicker({ itemType, selected, onChange }: Pr
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div>
+        <DeezerAttribution className="mb-3" />
         <label className="text-sm font-medium flex items-center gap-2">
           <Icon size={16} />
           Rechercher un {typeLabel}

@@ -164,7 +164,7 @@ export function mapPrismaItem(
     title: item.title,
     subtitle: item.subtitle,
     coverUrl: item.coverUrl,
-    previewUrl: item.previewUrl,
+    previewUrl: null,
     tags,
     description: item.description,
   };

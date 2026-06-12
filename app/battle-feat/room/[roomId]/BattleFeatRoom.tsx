@@ -40,6 +40,7 @@ import {
   submitMove,
   useJoker as playJoker,
 } from "./actions";
+import DeezerAttribution from "@/components/DeezerAttribution";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { downloadNodeAsPng } from "@/lib/download-png";
 
@@ -880,6 +881,7 @@ export default function BattleFeatRoom({
           >
             {isPlaying ? <Pause size={16} /> : <Play size={16} />}
           </button>
+          <DeezerAttribution compact variant="icon" className="shrink-0" />
         </div>
       )}
 

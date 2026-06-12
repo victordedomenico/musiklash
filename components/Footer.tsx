@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getI18n } from "@/lib/i18n";
 import { BrandMark } from "@/components/BrandLogo";
+import { DeezerLogo } from "@/components/DeezerLogo";
 
 export default async function Footer() {
   const { t } = await getI18n();
@@ -112,19 +113,19 @@ export default async function Footer() {
           style={{ color: "var(--muted)" }}
         >
           {/* Left — copyright + catalog */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <span>© 2026 MusiKlash. {f.allRightsReserved}</span>
             <span style={{ color: "var(--border-strong)" }}>·</span>
-            <span>
-              {f.catalog}{" "}
+            <span className="inline-flex items-center gap-2 whitespace-nowrap">
+              {f.catalog}
               <a
-                href="https://developers.deezer.com/api"
+                href="https://www.deezer.com"
                 target="_blank"
-                rel="noreferrer"
-                style={{ color: "var(--accent)" }}
-                className="hover:underline"
+                rel="noopener noreferrer"
+                title="Deezer"
+                className="inline-flex"
               >
-                Deezer API
+                <DeezerLogo height={18} />
               </a>
             </span>
           </div>

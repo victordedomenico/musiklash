@@ -17,7 +17,6 @@ export type StreamClashTrackData = {
   deezerTrackId: number;
   title: string;
   artist: string;
-  previewUrl: string;
   coverUrl: string | null;
   rank: number;
 };

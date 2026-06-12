@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import type { DeezerAlbum, DeezerArtist, DeezerTrack } from "@/lib/deezer";
+import DeezerAttribution from "@/components/DeezerAttribution";
 import { useTrackPreview } from "@/lib/use-track-preview";
 import { useSoundFx } from "@/lib/use-sound-fx";
 
@@ -461,6 +462,7 @@ export default function LuckyWheelClient() {
                 background: "var(--surface)",
               }}
             >
+              <DeezerAttribution compact />
               {/* Type tabs */}
               <div
                 className="flex gap-1 rounded-xl p-1"
@@ -907,15 +909,10 @@ export default function LuckyWheelClient() {
                 </motion.p>
               )}
 
-              {winner.previewUrl && winner.deezerTrackId ? (
+              {winner.deezerTrackId ? (
                 <button
                   onClick={() => {
-                    void playTrack(
-                      winner.id,
-                      winner.label,
-                      winner.previewUrl ?? "",
-                      winner.deezerTrackId!,
-                    );
+                    void playTrack(winner.id, winner.label, winner.deezerTrackId!);
                   }}
                   className="btn-primary mb-3 w-full"
                 >

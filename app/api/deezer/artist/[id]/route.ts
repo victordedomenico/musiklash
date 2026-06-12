@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getArtistById } from "@/lib/deezer";
+import { sanitizeArtistForClient } from "@/lib/deezer-sanitize";
 
 export async function GET(
   _request: Request,
@@ -11,7 +12,7 @@ export async function GET(
   try {
     const artist = await getArtistById(id);
     if (!artist) return NextResponse.json({ data: null }, { status: 404 });
-    return NextResponse.json({ data: artist });
+    return NextResponse.json({ data: sanitizeArtistForClient(artist) });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ data: null, error: "Erreur Deezer" }, { status: 502 });

@@ -14,6 +14,8 @@ import {
   POINTS_TITLE_MAX,
   POINTS_ARTIST_MAX,
 } from "@/lib/blindtest-utils";
+import DeezerAttribution from "@/components/DeezerAttribution";
+import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 
 // Ré-exports pour les modules qui importaient ces constantes depuis ce composant.
 export {
@@ -155,10 +157,9 @@ export default function BlindtestGame({
     freshUrlRef.current = "";
     audioRef.current?.pause();
 
-    fetch(`/api/deezer/track/${track.deezerTrackId}`)
-      .then((r) => r.json())
-      .then((d: { preview?: string }) => {
-        freshUrlRef.current = d.preview ?? "";
+    fetchTrackPreview(track.deezerTrackId)
+      .then((preview) => {
+        freshUrlRef.current = preview ?? "";
         trackStartRef.current = Date.now();
         setTimeLeft(TIMER_SECONDS);
         setPhase("playing");
@@ -506,6 +507,8 @@ export default function BlindtestGame({
           </motion.div>
         )}
       </div>
+
+      <DeezerAttribution compact className="justify-center" />
     </div>
   );
 }

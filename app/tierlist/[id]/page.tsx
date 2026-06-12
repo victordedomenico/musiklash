@@ -58,7 +58,6 @@ export default async function TierlistPage({
           title: true,
           artist: true,
           coverUrl: true,
-          previewUrl: true,
         },
       },
     },
@@ -72,7 +71,6 @@ export default async function TierlistPage({
     title: t.title,
     artist: t.artist,
     coverUrl: t.coverUrl,
-    previewUrl: t.previewUrl,
   }));
 
   return (

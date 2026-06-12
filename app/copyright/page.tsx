@@ -18,6 +18,12 @@ export default function CopyrightPage() {
               temporaires. Les œuvres musicales restent la propriété exclusive de leurs ayants droit
               respectifs (artistes, labels, éditeurs).
             </p>
+            <p>
+              Conformément aux conditions d&apos;utilisation de l&apos;API Deezer, la diffusion de ces
+              extraits est réservée à un <strong>usage strictement privé dans le cercle familial</strong>.
+              L&apos;écoute est limitée à 30 secondes par titre. MusiKlash ne stocke pas les fichiers
+              audio localement et ne diffuse que des extraits validés via l&apos;API Deezer.
+            </p>
           </section>
 
           <section className="space-y-3">

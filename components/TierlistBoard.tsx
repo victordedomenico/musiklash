@@ -19,6 +19,8 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import DeezerAttribution from "@/components/DeezerAttribution";
+import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 import {
   Play,
   Pause,
@@ -49,7 +51,6 @@ export type TierItem = {
   title: string;
   artist: string;
   coverUrl: string | null;
-  previewUrl: string;
 };
 
 type TierState = Record<string, TierItem[]>;
@@ -101,7 +102,7 @@ function TrackChip({
 }: {
   item: TierItem;
   isDragging?: boolean;
-  onPreview: (pos: number, deezerTrackId: number, url: string) => void;
+  onPreview: (pos: number, deezerTrackId: number) => void;
   playingPosition: number | null;
   texts: TierlistBoardTexts;
 }) {
@@ -124,7 +125,7 @@ function TrackChip({
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
-            onPreview(item.position, item.deezerTrackId, item.previewUrl);
+            onPreview(item.position, item.deezerTrackId);
           }}
           className="pointer-events-auto rounded-full bg-black/65 p-2 text-white transition hover:bg-black/80"
           aria-label={isPlaying ? "Pause" : texts.listen}
@@ -150,7 +151,7 @@ function SortableTrack({
   texts,
 }: {
   item: TierItem;
-  onPreview: (pos: number, deezerTrackId: number, url: string) => void;
+  onPreview: (pos: number, deezerTrackId: number) => void;
   playingPosition: number | null;
   texts: TierlistBoardTexts;
 }) {
@@ -195,7 +196,7 @@ function TierRow({
   onMoveDown: (tierId: string) => void;
   canMoveUp: boolean;
   canMoveDown: boolean;
-  onPreview: (pos: number, deezerTrackId: number, url: string) => void;
+  onPreview: (pos: number, deezerTrackId: number) => void;
   playingPosition: number | null;
   texts: TierlistBoardTexts;
 }) {
@@ -379,7 +380,7 @@ function PoolZone({
 }: {
   poolItems: TierItem[];
   tracks: TierItem[];
-  onPreview: (pos: number, deezerTrackId: number, url: string) => void;
+  onPreview: (pos: number, deezerTrackId: number) => void;
   playingPosition: number | null;
   texts: TierlistBoardTexts;
 }) {
@@ -471,7 +472,7 @@ export default function TierlistBoard({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
-  const handlePreview = useCallback(async (pos: number, deezerTrackId: number, staleUrl: string) => {
+  const handlePreview = useCallback(async (pos: number, deezerTrackId: number) => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.onended = () => setPlayingPosition(null);
@@ -484,18 +485,12 @@ export default function TierlistBoard({
       return;
     }
 
-    // Résoudre l'URL fraîche (cache ou fetch)
-    let url = freshUrlCache.current.get(deezerTrackId) ?? staleUrl;
-    if (!freshUrlCache.current.has(deezerTrackId)) {
-      try {
-        const res = await fetch(`/api/deezer/track/${deezerTrackId}`);
-        const data = await res.json() as { preview?: string };
-        if (data.preview) {
-          url = data.preview;
-          freshUrlCache.current.set(deezerTrackId, url);
-        }
-      } catch { /* garde l'URL stale */ }
+    let url = freshUrlCache.current.get(deezerTrackId);
+    if (!url) {
+      url = (await fetchTrackPreview(deezerTrackId)) ?? undefined;
+      if (url) freshUrlCache.current.set(deezerTrackId, url);
     }
+    if (!url) return;
 
     a.pause();
     a.volume = volume;
@@ -697,11 +692,12 @@ export default function TierlistBoard({
         ref={exportRef}
         className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3 md:p-4"
       >
-        <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--muted)]">
             {texts.resultTitle}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <DeezerAttribution compact className="no-export" />
             <p className="text-xs text-[color:var(--muted)]">
               {formatText(texts.rankedCount, { placed: placedCount, total: tracks.length })}
             </p>

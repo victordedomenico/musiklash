@@ -13,6 +13,7 @@ import {
 import { downloadNodeAsPng } from "@/lib/download-png";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { deleteTransientBracket, saveBracketGame } from "@/app/bracket-game/[id]/actions";
+import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 
 function roundLabel(round: number, total: number) {
   const remaining = total - round + 1;
@@ -21,12 +22,6 @@ function roundLabel(round: number, total: number) {
   if (remaining === 3) return "Quarts de finale";
   if (remaining === 4) return "Huitièmes de finale";
   return `Tour ${round}`;
-}
-
-async function fetchFreshPreview(deezerTrackId: number): Promise<string> {
-  const res = await fetch(`/api/deezer/track/${deezerTrackId}`);
-  const data = (await res.json()) as { preview?: string };
-  return data.preview ?? "";
 }
 
 export default function BracketGame({
@@ -181,7 +176,7 @@ export default function BracketGame({
         const results = await Promise.all(
           batch.map(async (track) => {
             try {
-              const fresh = await fetchFreshPreview(track.deezerTrackId);
+              const fresh = await fetchTrackPreview(track.deezerTrackId);
               return fresh ? ([track.seed, fresh] as const) : null;
             } catch {
               return null;
@@ -291,7 +286,7 @@ export default function BracketGame({
   ): Promise<string | null> => {
     setLoadingSeed(track.seed);
     try {
-      const fresh = await fetchFreshPreview(track.deezerTrackId);
+      const fresh = await fetchTrackPreview(track.deezerTrackId);
       if (!fresh) return null;
       setRefreshedPreviewBySeed((prev) => {
         const next = new Map(prev);

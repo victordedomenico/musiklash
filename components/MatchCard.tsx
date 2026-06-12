@@ -5,21 +5,16 @@ import { motion } from "framer-motion";
 import { Pause, Play } from "lucide-react";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { useSoundFx } from "@/lib/use-sound-fx";
+import DeezerAttribution from "@/components/DeezerAttribution";
+import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 
 export type BracketTrack = {
   seed: number;
   deezerTrackId: number;
   title: string;
   artist: string;
-  preview_url: string;
   cover_url: string | null;
 };
-
-async function fetchFreshPreview(deezerTrackId: number): Promise<string> {
-  const res = await fetch(`/api/deezer/track/${deezerTrackId}`);
-  const data = await res.json() as { preview?: string };
-  return data.preview ?? "";
-}
 
 export default function MatchCard({
   a,
@@ -38,13 +33,12 @@ export default function MatchCard({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { volume } = usePreviewVolume();
   const { play: playSound } = useSoundFx();
-  // Fresh preview URLs fetched on mount (les URLs Deezer signées expirent)
-  const [previewA, setPreviewA] = useState(a.preview_url);
-  const [previewB, setPreviewB] = useState(b.preview_url);
+  const [previewA, setPreviewA] = useState<string | null>(null);
+  const [previewB, setPreviewB] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchFreshPreview(a.deezerTrackId).then((url) => { if (url) setPreviewA(url); }).catch(() => {});
-    fetchFreshPreview(b.deezerTrackId).then((url) => { if (url) setPreviewB(url); }).catch(() => {});
+    fetchTrackPreview(a.deezerTrackId).then((url) => setPreviewA(url)).catch(() => {});
+    fetchTrackPreview(b.deezerTrackId).then((url) => setPreviewB(url)).catch(() => {});
   }, [a.deezerTrackId, b.deezerTrackId]);
 
   useEffect(() => {
@@ -62,7 +56,8 @@ export default function MatchCard({
     audioRef.current.volume = volume;
   }, [volume]);
 
-  const toggle = (seed: number, url: string) => {
+  const toggle = (seed: number, url: string | null) => {
+    if (!url) return;
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.onended = () => {
@@ -137,6 +132,7 @@ export default function MatchCard({
           onSeek={handleSeek}
         />
       </div>
+      <DeezerAttribution compact className="mt-4 justify-center" />
     </div>
   );
 }
@@ -152,11 +148,11 @@ function Side({
   onSeek,
 }: {
   track: BracketTrack;
-  previewUrl: string;
+  previewUrl: string | null;
   playing: boolean;
   currentTime: number;
   duration: number;
-  onToggle: (seed: number, url: string) => void;
+  onToggle: (seed: number, url: string | null) => void;
   onPick: (seed: number) => void;
   onSeek: (time: number) => void;
 }) {
@@ -202,8 +198,9 @@ function Side({
           <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row">
             <button
               type="button"
+              disabled={!previewUrl}
               onClick={() => onToggle(track.seed, previewUrl)}
-            className="btn-ghost w-full justify-center text-sm sm:flex-1"
+            className="btn-ghost w-full justify-center text-sm sm:flex-1 disabled:opacity-50"
             >
               {playing ? <Pause size={14} className="shrink-0" /> : <Play size={14} className="shrink-0" />}
               {playing ? "Pause" : "Écouter"}

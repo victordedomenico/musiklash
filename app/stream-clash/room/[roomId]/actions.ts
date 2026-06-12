@@ -196,7 +196,6 @@ export async function startGame(roomId: string) {
     deezerTrackId: Number(t.deezerTrackId),
     title: t.title,
     artist: t.artist,
-    previewUrl: t.previewUrl,
     coverUrl: t.coverUrl ?? null,
     rank: t.rank,
   }));
@@ -319,7 +318,6 @@ export async function nextRound(roomId: string) {
     deezerTrackId: Number(t.deezerTrackId),
     title: t.title,
     artist: t.artist,
-    previewUrl: t.previewUrl,
     coverUrl: t.coverUrl ?? null,
     rank: t.rank,
   }));
@@ -373,7 +371,6 @@ export async function rematch(roomId: string) {
     deezerTrackId: Number(t.deezerTrackId),
     title: t.title,
     artist: t.artist,
-    previewUrl: t.previewUrl,
     coverUrl: t.coverUrl ?? null,
     rank: t.rank,
   }));

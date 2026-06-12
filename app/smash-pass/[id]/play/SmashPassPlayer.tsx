@@ -76,18 +76,13 @@ export default function SmashPassPlayer({
   }, [transient, smashPassId]);
 
   const handlePreview = useCallback(() => {
-    if (!currentItem?.previewUrl) return;
+    if (!currentItem?.deezerId) return;
     const key = `sp-${currentItem.deezerId}`;
     if (isPlayingKey(key)) {
       toggle();
       return;
     }
-    void playTrack(
-      key,
-      currentItem.title,
-      currentItem.previewUrl,
-      currentItem.deezerId,
-    );
+    void playTrack(key, currentItem.title, currentItem.deezerId);
   }, [currentItem, isPlayingKey, toggle, playTrack]);
 
   const handleVote = useCallback(
@@ -177,9 +172,9 @@ export default function SmashPassPlayer({
       <SmashPassGameCard
         item={currentItem}
         itemType={itemType}
-        onPreview={currentItem.previewUrl ? handlePreview : undefined}
+        onPreview={currentItem.deezerId ? handlePreview : undefined}
         isPreviewPlaying={
-          currentItem.previewUrl
+          currentItem.deezerId
             ? isPlayingKey(`sp-${currentItem.deezerId}`)
             : false
         }

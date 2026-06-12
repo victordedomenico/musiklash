@@ -73,7 +73,21 @@ type TrackFetchOptions = {
   requirePreview?: boolean;
 };
 
+import { sanitizePreviewUrl } from "@/lib/deezer-sanitize";
+
 const BASE_URL = "https://api.deezer.com";
+
+export async function getTrackPreview(trackId: number | string): Promise<string | null> {
+  const url = `${BASE_URL}/track/${trackId}`;
+  const res = await fetch(url, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const data = (await res.json()) as { preview?: string; error?: unknown };
+  if (data.error) return null;
+  return sanitizePreviewUrl(data.preview);
+}
 
 export async function searchTracks(
   query: string,
@@ -88,7 +102,8 @@ export async function searchTracks(
   if (!res.ok) throw new Error(`Deezer search failed: ${res.status}`);
   const json = (await res.json()) as DeezerSearchResponse;
   const tracks = json.data ?? [];
-  return requirePreview ? tracks.filter((t) => t.preview && t.preview.length > 0) : tracks;
+  if (!requirePreview) return tracks;
+  return tracks.filter((t) => sanitizePreviewUrl(t.preview) !== null);
 }
 
 export async function searchAlbums(query: string, limit = 20): Promise<DeezerAlbum[]> {
@@ -121,7 +136,8 @@ export async function getAlbumTracks(
   if (!res.ok) throw new Error(`Deezer album tracks failed: ${res.status}`);
   const json = await res.json() as { data?: DeezerAlbumTrack[] };
   const tracks = json.data ?? [];
-  return requirePreview ? tracks.filter((t) => t.preview && t.preview.length > 0) : tracks;
+  if (!requirePreview) return tracks;
+  return tracks.filter((t) => sanitizePreviewUrl(t.preview) !== null);
 }
 
 export async function getArtistAlbums(artistId: number | string): Promise<DeezerAlbum[]> {
@@ -144,7 +160,8 @@ export async function getArtistTopTracks(
   if (!res.ok) throw new Error(`Deezer artist top tracks failed: ${res.status}`);
   const json = await res.json() as { data?: DeezerTrack[] };
   const tracks = json.data ?? [];
-  return requirePreview ? tracks.filter((t) => t.preview && t.preview.length > 0) : tracks;
+  if (!requirePreview) return tracks;
+  return tracks.filter((t) => sanitizePreviewUrl(t.preview) !== null);
 }
 
 // Fetches a single artist by Deezer ID

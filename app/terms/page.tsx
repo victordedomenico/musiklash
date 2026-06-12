@@ -46,6 +46,22 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-3">
+            <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Extraits musicaux Deezer</h2>
+            <p>
+              Les extraits musicaux proviennent de l&apos;API Deezer. En écoutant ces extraits, vous
+              reconnaissez que leur diffusion est limitée à un <strong>usage strictement privé dans le
+              cercle familial</strong>. L&apos;écoute est limitée à 30 secondes par titre.
+              Tout téléchargement des extraits est interdit.
+            </p>
+            <p>
+              MusiKlash n&apos;est pas un client Deezer : il n&apos;accède pas à votre bibliothèque
+              Deezer, ne crée pas de playlists Deezer et ne propose pas d&apos;écoute illimitée.
+              L&apos;audio est diffusé uniquement via des extraits de 30 secondes fournis par Deezer,
+              sans stockage local des fichiers audio.
+            </p>
+          </section>
+
+          <section className="space-y-3">
             <h2 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>Limitation de responsabilité</h2>
             <p>
               MusiKlash est fourni &quot;en l&apos;état&quot;, sans garantie d&apos;aucune sorte. Nous ne pouvons être

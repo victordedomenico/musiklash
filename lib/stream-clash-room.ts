@@ -100,7 +100,6 @@ export function toStreamClashRoomSnapshot(room: NonNullable<RoomRaw>): StreamCla
         deezerTrackId: Number(t.deezerTrackId),
         title: t.title,
         artist: t.artist,
-        previewUrl: t.previewUrl,
         coverUrl: t.coverUrl ?? null,
         rank: t.rank,
       })),

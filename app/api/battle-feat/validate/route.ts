@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { validateFeatLinkDeezerBidirectional } from "@/lib/battle-feat-server";
+import { sanitizePreviewUrl } from "@/lib/deezer-sanitize";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       valid: feat !== null,
       trackTitle: feat?.trackTitle ?? null,
-      previewUrl: feat?.previewUrl ?? null,
+      previewUrl: sanitizePreviewUrl(feat?.previewUrl),
     });
   } catch (err) {
     console.error("[validate]", err);

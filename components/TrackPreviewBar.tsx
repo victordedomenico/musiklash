@@ -1,6 +1,7 @@
 "use client";
 
 import { Pause, Play, Volume2 } from "lucide-react";
+import DeezerAttribution from "@/components/DeezerAttribution";
 
 export default function TrackPreviewBar({
   title,
@@ -26,6 +27,7 @@ export default function TrackPreviewBar({
       >
         {isPlaying ? <Pause size={16} /> : <Play size={16} />}
       </button>
+      <DeezerAttribution compact variant="icon" className="shrink-0" />
     </div>
   );
 }

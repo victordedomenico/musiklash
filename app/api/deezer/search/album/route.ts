@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { searchAlbums } from "@/lib/deezer";
+import { sanitizeAlbumForClient } from "@/lib/deezer-sanitize";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -9,7 +10,9 @@ export async function GET(request: Request) {
 
   try {
     const albums = await searchAlbums(q, 20);
-    return NextResponse.json({ data: albums });
+    return NextResponse.json({
+      data: albums.map((album) => sanitizeAlbumForClient(album)),
+    });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ data: [], error: "Erreur Deezer" }, { status: 502 });

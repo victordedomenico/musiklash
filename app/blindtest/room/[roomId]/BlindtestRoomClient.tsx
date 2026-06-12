@@ -21,6 +21,8 @@ import {
   Share2,
 } from "lucide-react";
 import Link from "next/link";
+import DeezerAttribution from "@/components/DeezerAttribution";
+import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 import type {
   BlindtestRoomSnapshot,
   BlindtestRoomBroadcastPayload,
@@ -337,10 +339,9 @@ export default function BlindtestRoomClient({
     freshUrlRef.current = "";
     audioRef.current?.pause();
 
-    fetch(`/api/deezer/track/${track.deezerTrackId}`)
-      .then((r) => r.json())
-      .then((d: { preview?: string }) => {
-        freshUrlRef.current = d.preview ?? "";
+    fetchTrackPreview(track.deezerTrackId)
+      .then((preview) => {
+        freshUrlRef.current = preview ?? "";
         setPhase("playing");
       })
       .catch(() => setPhase("playing"));
@@ -1357,6 +1358,8 @@ export default function BlindtestRoomClient({
           </div>
         )}
       </div>
+
+      <DeezerAttribution compact className="justify-center" />
 
       {/* Participants status */}
       {others.length > 0 && (

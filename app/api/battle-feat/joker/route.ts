@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { pickJokerMoveDeezer } from "@/lib/battle-feat-server";
+import { sanitizePreviewUrl } from "@/lib/deezer-sanitize";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
         name: artist.name,
         pictureUrl: artist.pictureUrl,
         trackTitle: artist.trackTitle,
-        previewUrl: artist.previewUrl,
+        previewUrl: sanitizePreviewUrl(artist.previewUrl),
       },
     });
   } catch (err) {

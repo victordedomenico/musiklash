@@ -33,7 +33,7 @@ export default function StreamClashTrackCard({
       : "var(--border)";
 
   const canPick = !disabled && !revealed;
-  const canPreview = !!track.previewUrl && !!onPlayPreview;
+  const canPreview = !!track.deezerTrackId && !!onPlayPreview;
 
   return (
     <div
