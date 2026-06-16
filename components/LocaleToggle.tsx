@@ -1,12 +1,26 @@
 "use client";
 
+import { useTransition, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
 import { setLocale } from "@/app/preferences/actions";
+import Toast from "@/components/ui/Toast";
+
+const MESSAGES = {
+  fr: {
+    toast: "Active les cookies de préférences pour sauvegarder ta langue.",
+    action: "Gérer",
+  },
+  en: {
+    toast: "Enable preference cookies to save your language.",
+    action: "Manage",
+  },
+};
 
 export default function LocaleToggle({ current }: { current: "fr" | "en" }) {
   const router = useRouter();
   const [locale, setLocaleState] = useState<"fr" | "en">(current);
+  const [showToast, setShowToast] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function toggle() {
@@ -20,26 +34,41 @@ export default function LocaleToggle({ current }: { current: "fr" | "en" }) {
         return;
       }
       setLocaleState(previous);
-      router.push("/cookies");
+      setShowToast(true);
     });
   }
 
+  const msg = MESSAGES[locale];
+
   return (
-    <button
-      onClick={toggle}
-      disabled={pending}
-      aria-label="Toggle language"
-      className="btn-ghost"
-      style={{
-        padding: "0.4rem 0.65rem",
-        fontSize: "0.75rem",
-        fontWeight: 700,
-        letterSpacing: "0.03em",
-        height: "2.25rem",
-        opacity: pending ? 0.5 : 1,
-      }}
-    >
-      {locale === "fr" ? "EN" : "FR"}
-    </button>
+    <>
+      <button
+        onClick={toggle}
+        disabled={pending}
+        aria-label="Toggle language"
+        className="btn-ghost"
+        style={{
+          padding: "0.4rem 0.65rem",
+          fontSize: "0.75rem",
+          fontWeight: 700,
+          letterSpacing: "0.03em",
+          height: "2.25rem",
+          opacity: pending ? 0.5 : 1,
+        }}
+      >
+        {locale === "fr" ? "EN" : "FR"}
+      </button>
+
+      {showToast &&
+        typeof window !== "undefined" &&
+        createPortal(
+          <Toast
+            message={msg.toast}
+            action={{ label: msg.action, href: "/cookies" }}
+            onDismiss={() => setShowToast(false)}
+          />,
+          document.body,
+        )}
+    </>
   );
 }
