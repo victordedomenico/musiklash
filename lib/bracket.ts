@@ -1,6 +1,6 @@
-export type BracketSize = 4 | 8 | 16 | 32 | 64 | 128;
+export type BracketSize = 4 | 8 | 16 | 32 | 64 | 128 | 256 | 512;
 
-export const VALID_BRACKET_SIZES = [4, 8, 16, 32, 64, 128] as const;
+export const VALID_BRACKET_SIZES = [4, 8, 16, 32, 64, 128, 256, 512] as const;
 
 export type Pairing = {
   matchIndex: number;
@@ -27,7 +27,7 @@ export function totalRounds(size: BracketSize): number {
  * e.g. effectiveBracketSize(6) → 8, effectiveBracketSize(9) → 16
  */
 export function effectiveBracketSize(trackCount: number): BracketSize {
-  return VALID_BRACKET_SIZES.find((s) => s >= trackCount) ?? 128;
+  return VALID_BRACKET_SIZES.find((s) => s >= trackCount) ?? 512;
 }
 
 /**
@@ -35,7 +35,7 @@ export function effectiveBracketSize(trackCount: number): BracketSize {
  * generateSeedOrder(4)  -> [1, 4, 2, 3]
  * generateSeedOrder(8)  -> [1, 8, 4, 5, 2, 7, 3, 6]
  * generateSeedOrder(16) -> classic NCAA-style bracket ordering
- * Works for any power of 2 (4, 8, 16, 32, 64, 128).
+ * Works for any supported power of 2 (4 through 512).
  */
 export function generateSeedOrder(size: BracketSize): number[] {
   let order: number[] = [1, 2];
