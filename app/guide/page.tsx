@@ -28,7 +28,7 @@ export default function GuidePage() {
       icon: <Trophy size={26} />,
       tone: "#f5c413",
       steps: [
-        "Création: minimum 3 morceaux, puis le bracket est automatiquement ajusté à la plus petite taille valide (4, 8, 16, 32, 64, 128, 256 ou 512).",
+        "Création: minimum 3 morceaux, puis le bracket est automatiquement ajusté à la plus petite taille valide (4, 8, 16, 32, 64, 128, 256, 512 ou 1024).",
         "Si la taille du bracket est supérieure au nombre de morceaux, les seeds vides donnent des passes automatiques (bye).",
         "Partie en duel 1v1, sans timer: vous votez morceau par morceau jusqu'à la finale.",
         "Objectif: élire un champion unique puis partager le lien du bracket.",

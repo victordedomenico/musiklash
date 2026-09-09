@@ -43,7 +43,7 @@ describe("generateSeedOrder", () => {
     expect(order[1]).toBe(128);
   });
 
-  it.each([256, 512] as const)("returns %i unique seeds", (size) => {
+  it.each([256, 512, 1024] as const)("returns %i unique seeds", (size) => {
     const order = generateSeedOrder(size);
     expect(order).toHaveLength(size);
     expect(new Set(order).size).toBe(size);
@@ -84,6 +84,7 @@ describe("totalRounds", () => {
     [128, 7],
     [256, 8],
     [512, 9],
+    [1024, 10],
   ] as const)("size %i -> %i rounds", (size, expected) => {
     expect(totalRounds(size)).toBe(expected);
   });
@@ -107,6 +108,8 @@ describe("effectiveBracketSize", () => {
     [256, 256],
     [257, 512],
     [512, 512],
+    [513, 1024],
+    [1024, 1024],
   ])("trackCount %i -> size %i", (count, expected) => {
     expect(effectiveBracketSize(count)).toBe(expected);
   });
