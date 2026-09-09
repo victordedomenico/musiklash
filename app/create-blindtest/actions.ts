@@ -23,9 +23,13 @@ export async function createBlindtest(input: {
   visibility: "private" | "public" | "none";
   tracks: BlindtestTrackInput[];
   mode: "solo" | "multi";
+  variant?: "classic" | "flash";
 }) {
   if (!input.title.trim()) return { error: "Le titre est requis." };
-  if (input.tracks.length < 3) return { error: "Il faut au moins 3 morceaux." };
+  const minimumTracks = input.variant === "flash" ? 5 : 3;
+  if (input.tracks.length < minimumTracks) {
+    return { error: `Il faut au moins ${minimumTracks} morceaux.` };
+  }
   if (input.tracks.length > 50) return { error: "50 morceaux maximum." };
 
   let identity: { playerId: string };
@@ -37,6 +41,10 @@ export async function createBlindtest(input: {
         ? err.message
         : "Impossible de créer une session invitée pour le moment.";
     return { error: msg };
+  }
+
+  if (input.variant === "flash" && input.mode !== "solo") {
+    return { error: "Le Blindtest éclair se joue en solo." };
   }
 
   if (input.mode === "multi" && input.visibility === "none") {
@@ -53,6 +61,7 @@ export async function createBlindtest(input: {
       data: {
         ownerId: identity.playerId,
         title: input.title.trim(),
+        mode: input.variant ?? "classic",
         genre: sanitizeGenre(input.genre),
         visibility: storedVisibility,
         tracks: {
@@ -114,5 +123,6 @@ export async function createBlindtest(input: {
     redirect(`/blindtest/${blindtestId}`);
   }
 
+  if (input.variant === "flash") redirect(`/blindtest/${blindtestId}/flash`);
   redirect(`/blindtest/${blindtestId}/play${transient ? "?transient=1" : ""}`);
 }

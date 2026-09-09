@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -42,6 +42,7 @@ import {
   type TierlistSavePayload,
 } from "@/lib/tierlist-tiers";
 import type { Dictionary } from "@/lib/i18n";
+import { clearGameProgress, readGameProgress, writeGameProgress } from "@/lib/local-game-progress";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -89,6 +90,55 @@ function buildInitialState(tracks: TierItem[], tiers: TierConfig[]): TierState {
   const state: TierState = { [POOL_ID]: [...tracks] };
   for (const t of tiers) state[t.id] = [];
   return state;
+}
+
+type TierlistDraft = {
+  tiers: TierConfig[];
+  placements: Record<string, number[]>;
+};
+
+function isTierlistDraft(value: unknown): value is TierlistDraft {
+  if (!value || typeof value !== "object") return false;
+  const draft = value as Record<string, unknown>;
+  if (!Array.isArray(draft.tiers) || !draft.placements || typeof draft.placements !== "object") {
+    return false;
+  }
+  return draft.tiers.every(
+    (tier) =>
+      tier &&
+      typeof tier === "object" &&
+      typeof (tier as TierConfig).id === "string" &&
+      typeof (tier as TierConfig).label === "string" &&
+      typeof (tier as TierConfig).color === "string",
+  );
+}
+
+function restoreTierlistState(draft: TierlistDraft, tracks: TierItem[]): TierState | null {
+  const tierIds = new Set(draft.tiers.map((tier) => tier.id));
+  if (tierIds.size !== draft.tiers.length || tierIds.has(POOL_ID)) return null;
+
+  const byPosition = new Map(tracks.map((track) => [track.position, track]));
+  const seen = new Set<number>();
+  const restored: TierState = { [POOL_ID]: [] };
+  for (const tier of draft.tiers) restored[tier.id] = [];
+
+  for (const [container, positions] of Object.entries(draft.placements)) {
+    if (container !== POOL_ID && !tierIds.has(container)) return null;
+    if (!Array.isArray(positions) || !positions.every(Number.isInteger)) return null;
+    for (const position of positions) {
+      const track = byPosition.get(position);
+      if (!track || seen.has(position)) return null;
+      seen.add(position);
+      restored[container].push(track);
+    }
+  }
+
+  // New tracks, if a tierlist was edited after a draft was written, safely
+  // return to the unranked pool instead of disappearing from the board.
+  for (const track of tracks) {
+    if (!seen.has(track.position)) restored[POOL_ID].push(track);
+  }
+  return restored;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -418,12 +468,13 @@ function PoolZone({
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function TierlistBoard({
+  tierlistId,
   tracks,
   onSave,
   saving,
   texts,
 }: {
-  tierlistId?: string;
+  tierlistId: string;
   tracks: TierItem[];
   onSave: (payload: TierlistSavePayload) => void;
   saving: boolean;
@@ -437,12 +488,49 @@ export default function TierlistBoard({
   const [playingPosition, setPlayingPosition] = useState<number | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [editingTierId, setEditingTierId] = useState<string | null>(null);
+  const [progressReady, setProgressReady] = useState(false);
+  const [resumedProgress, setResumedProgress] = useState(false);
   const exportRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const nextTierIndexRef = useRef(DEFAULT_TIERS.length);
   const { volume } = usePreviewVolume();
   // Cache des URLs fraîches (les URLs Deezer signées expirent)
   const freshUrlCache = useRef<Map<number, string>>(new Map());
+  const trackSignature = useMemo(
+    () => tracks.map((track) => `${track.position}:${track.deezerTrackId}`).join(","),
+    [tracks],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const draft = readGameProgress(
+      window.localStorage,
+      "tierlist",
+      tierlistId,
+      trackSignature,
+      isTierlistDraft,
+    );
+    const restored = draft ? restoreTierlistState(draft, tracks) : null;
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+      if (draft && restored) {
+        setTiers(draft.tiers);
+        setState(restored);
+        const highestCustomTier = draft.tiers.reduce((highest, tier) => {
+          const match = /^tier-(\d+)$/.exec(tier.id);
+          return Math.max(highest, match ? Number(match[1]) : 0);
+        }, DEFAULT_TIERS.length);
+        nextTierIndexRef.current = highestCustomTier;
+        setResumedProgress(true);
+      }
+      setProgressReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tierlistId, trackSignature, tracks]);
 
   useEffect(() => {
     return () => {
@@ -458,6 +546,24 @@ export default function TierlistBoard({
     if (!audioRef.current) return;
     audioRef.current.volume = volume;
   }, [volume]);
+
+  useEffect(() => {
+    if (!progressReady) return;
+    try {
+      const placements = Object.fromEntries(
+        Object.entries(state).map(([container, items]) => [
+          container,
+          items.map((item) => item.position),
+        ]),
+      );
+      writeGameProgress(window.localStorage, "tierlist", tierlistId, trackSignature, {
+        tiers,
+        placements,
+      });
+    } catch {
+      // Browser storage is optional; ranking still works without it.
+    }
+  }, [progressReady, state, tierlistId, tiers, trackSignature]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -564,6 +670,12 @@ export default function TierlistBoard({
     audioRef.current?.pause();
     setPlayingPosition(null);
     setState(buildInitialState(tracks, tiers));
+    setResumedProgress(false);
+    try {
+      clearGameProgress(window.localStorage, "tierlist", tierlistId);
+    } catch {
+      // Browser storage is optional.
+    }
   };
 
   const handleAddTier = () => {
@@ -664,6 +776,14 @@ export default function TierlistBoard({
   const placedCount = tracks.length - poolItems.length;
   const editingTier = tiers.find((tier) => tier.id === editingTierId) ?? null;
 
+  if (!progressReady) {
+    return (
+      <div className="card p-6 text-center text-sm text-[color:var(--muted)]">
+        Restauration de ta tierlist…
+      </div>
+    );
+  }
+
   return (
     <DndContext
       id="tierlist-dnd"
@@ -676,6 +796,15 @@ export default function TierlistBoard({
         ref={exportRef}
         className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3 md:p-4"
       >
+        {resumedProgress ? (
+          <div
+            role="status"
+            className="mb-3 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+            Tierlist reprise : tes placements et tes tiers personnalisés sont restaurés.
+          </div>
+        ) : null}
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--muted)]">
             {texts.resultTitle}

@@ -13,6 +13,8 @@ export type CreateHubLabels = {
   tierlistDesc: string;
   blindtest: string;
   blindtestDesc: string;
+  flashBlindtest: string;
+  flashBlindtestDesc: string;
   streamClash: string;
   streamClashDesc: string;
   smashPass: string;
@@ -121,6 +123,14 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
       href: "/create-blindtest?mode=multi",
       accent: "#3b82f6",
       bg: "rgba(59,130,246,0.12)",
+    },
+    {
+      icon: Zap,
+      label: labels.flashBlindtest,
+      desc: labels.flashBlindtestDesc,
+      href: "/create-blindtest-eclair",
+      accent: "#20df70",
+      bg: "rgba(32,223,112,0.12)",
     },
   ];
 

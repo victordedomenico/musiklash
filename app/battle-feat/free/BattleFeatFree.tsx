@@ -23,8 +23,33 @@ import { saveSoloSession } from "@/app/battle-feat/solo/actions";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import DeezerAttribution from "@/components/DeezerAttribution";
 import { usePreviewVolume } from "@/lib/audio-volume";
+import { clearGameProgress, readGameProgress, writeGameProgress } from "@/lib/local-game-progress";
 
 type Phase = "setup" | "playing" | "validating" | "joker" | "game-over";
+
+type FreeBattleFeatDraft = {
+  startingArtist: ArtistResult;
+  moves: FeatMove[];
+  score: number;
+  jokers: number;
+  jokersUsed: number;
+  publishMode: "none" | "private" | "public";
+};
+
+function isFreeBattleFeatDraft(value: unknown): value is FreeBattleFeatDraft {
+  if (!value || typeof value !== "object") return false;
+  const draft = value as Partial<FreeBattleFeatDraft>;
+  return (
+    Boolean(draft.startingArtist?.id && draft.startingArtist.name) &&
+    Array.isArray(draft.moves) &&
+    Number.isFinite(draft.score) &&
+    Number.isFinite(draft.jokers) &&
+    Number.isFinite(draft.jokersUsed) &&
+    (draft.publishMode === "none" ||
+      draft.publishMode === "private" ||
+      draft.publishMode === "public")
+  );
+}
 
 // ── ArtistChip ────────────────────────────────────────────────────────────────
 
@@ -108,6 +133,36 @@ export default function BattleFeatFree() {
   const exportRef = useRef<HTMLDivElement | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [promoted, setPromoted] = useState(false);
+  const [progressReady, setProgressReady] = useState(false);
+  const [resumedProgress, setResumedProgress] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const draft = readGameProgress(
+      window.localStorage,
+      "battle-feat-free",
+      "current",
+      "v1",
+      isFreeBattleFeatDraft,
+    );
+    queueMicrotask(() => {
+      if (cancelled) return;
+      if (draft) {
+        setStartingArtist(draft.startingArtist);
+        setMoves(draft.moves);
+        setScore(draft.score);
+        setJokers(draft.jokers);
+        setJokersUsed(draft.jokersUsed);
+        setPublishMode(draft.publishMode);
+        setPhase("playing");
+        setResumedProgress(true);
+      }
+      setProgressReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const lastMove = moves.length > 0 ? moves[moves.length - 1] : null;
   const currentArtistId = lastMove?.artistId ?? startingArtist?.id ?? "";
@@ -118,6 +173,22 @@ export default function BattleFeatFree() {
     if (!audioRef.current) return;
     audioRef.current.volume = volume;
   }, [volume]);
+
+  useEffect(() => {
+    if (!progressReady || phase !== "playing" || !startingArtist) return;
+    try {
+      writeGameProgress(window.localStorage, "battle-feat-free", "current", "v1", {
+        startingArtist,
+        moves,
+        score,
+        jokers,
+        jokersUsed,
+        publishMode,
+      });
+    } catch {
+      // Browser storage is optional; the game remains playable.
+    }
+  }, [jokers, jokersUsed, moves, phase, progressReady, publishMode, score, startingArtist]);
 
   // ── Audio ─────────────────────────────────────────────────────────────────
   const playPreview = useCallback(
@@ -172,6 +243,12 @@ export default function BattleFeatFree() {
     setJokers(1);
     setJokersUsed(0);
     setSessionId(null);
+    setResumedProgress(false);
+    try {
+      clearGameProgress(window.localStorage, "battle-feat-free", "current");
+    } catch {
+      // Browser storage is optional.
+    }
     setPhase("playing");
   };
 
@@ -188,6 +265,11 @@ export default function BattleFeatFree() {
       setNowPlaying(null);
       setGameOverReason(reason);
       setPhase("game-over");
+      try {
+        clearGameProgress(window.localStorage, "battle-feat-free", "current");
+      } catch {
+        // Browser storage is optional.
+      }
       // In "non publié" mode we skip persistence; the user can still promote
       // via "Sauvegarder et partager" on the results screen.
       if (publishMode === "none") return;
@@ -367,6 +449,14 @@ export default function BattleFeatFree() {
     }
   }
 
+  if (!progressReady) {
+    return (
+      <div className="card p-6 text-center text-sm text-[color:var(--muted)]">
+        Restauration de ta partie BattleFeat…
+      </div>
+    );
+  }
+
   // ── SETUP ─────────────────────────────────────────────────────────────────
   if (phase === "setup") {
     return (
@@ -524,6 +614,12 @@ export default function BattleFeatFree() {
               setMoves([]);
               setScore(0);
               setPromoted(false);
+              setResumedProgress(false);
+              try {
+                clearGameProgress(window.localStorage, "battle-feat-free", "current");
+              } catch {
+                // Browser storage is optional.
+              }
             }}
             className="btn-ghost flex-1"
           >
@@ -544,6 +640,14 @@ export default function BattleFeatFree() {
 
   return (
     <div className="space-y-4">
+      {resumedProgress ? (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100"
+        >
+          Partie reprise : ta chaîne de feats est restaurée.
+        </div>
+      ) : null}
       {/* Score */}
       <div className="card flex items-center justify-between px-4 py-2.5 text-sm">
         <span className="flex items-center gap-2 text-[color:var(--muted)]">

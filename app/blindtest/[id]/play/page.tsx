@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import BlindtestPlayer from "./BlindtestPlayer";
 import type { BlindtrackData } from "@/components/BlindtestGame";
@@ -28,6 +28,7 @@ export default async function BlindtestPlayPage({
     select: {
       id: true,
       title: true,
+      mode: true,
       tracks: {
         select: { position: true, deezerTrackId: true, title: true, artist: true, coverUrl: true },
         orderBy: { position: "asc" },
@@ -36,6 +37,7 @@ export default async function BlindtestPlayPage({
   });
 
   if (!blindtest) notFound();
+  if (blindtest.mode === "flash") redirect(`/blindtest/${id}/flash`);
 
   const tracks: BlindtrackData[] = blindtest.tracks.map((t) => ({
     position: t.position,

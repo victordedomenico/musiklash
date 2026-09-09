@@ -58,6 +58,8 @@ export default async function CreatePage() {
             tierlistDesc: n.createTierlistDesc,
             blindtest: n.createBlindtest,
             blindtestDesc: n.createBlindtestDesc,
+            flashBlindtest: n.flashBlindtest,
+            flashBlindtestDesc: n.flashBlindtestDesc,
             streamClash: n.createStreamClash,
             streamClashDesc: n.createStreamClashDesc,
             smashPass: n.createSmashPass,

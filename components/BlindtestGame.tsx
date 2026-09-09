@@ -96,18 +96,22 @@ function AnswerRow({
 export default function BlindtestGame({
   tracks,
   onComplete,
+  initialAnswers = [],
+  onProgressChange,
 }: {
   tracks: BlindtrackData[];
   onComplete: (answers: BlindtestAnswer[], score: number) => void;
+  initialAnswers?: BlindtestAnswer[];
+  onProgressChange?: (answers: BlindtestAnswer[]) => void;
 }) {
   const singleArtistMode = useMemo(() => isSingleArtistBlindtest(tracks), [tracks]);
 
-  const [idx, setIdx] = useState(0);
+  const [idx, setIdx] = useState(initialAnswers.length);
   const [phase, setPhase] = useState<Phase>("loading");
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const [guessTitle, setGuessTitle] = useState("");
   const [guessArtist, setGuessArtist] = useState("");
-  const [answers, setAnswers] = useState<BlindtestAnswer[]>([]);
+  const [answers, setAnswers] = useState<BlindtestAnswer[]>(initialAnswers);
   const [audioPlaying, setAudioPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const freshUrlRef = useRef("");
@@ -252,6 +256,10 @@ export default function BlindtestGame({
 
     return () => clearInterval(id);
   }, [phase, idx, submit]);
+
+  useEffect(() => {
+    onProgressChange?.(answers);
+  }, [answers, onProgressChange]);
 
   // ── Next track / finish ───────────────────────────────────────────────────
   const goNext = useCallback(() => {

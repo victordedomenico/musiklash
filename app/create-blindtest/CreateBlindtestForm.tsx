@@ -7,23 +7,30 @@ import { createBlindtest, type BlindtestTrackInput } from "./actions";
 import Input from "@/components/ui/Input";
 import type { MusicGenre } from "@/lib/genres";
 
-export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }) {
+export default function CreateBlindtestForm({
+  mode,
+  variant = "classic",
+}: {
+  mode: "solo" | "multi";
+  variant?: "classic" | "flash";
+}) {
   const [title, setTitle] = useState("");
   const [genre, setGenre] = useState<MusicGenre | null>(null);
   const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
   const [tracks, setTracks] = useState<BlindtestTrackInput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const minimumTracks = variant === "flash" ? 5 : 3;
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (tracks.length < 3) {
-      setError("Il faut au moins 3 morceaux.");
+    if (tracks.length < minimumTracks) {
+      setError(`Il faut au moins ${minimumTracks} morceaux.`);
       return;
     }
     startTransition(async () => {
-      const res = await createBlindtest({ title, genre, visibility, tracks, mode });
+      const res = await createBlindtest({ title, genre, visibility, tracks, mode, variant });
       if (res?.error) setError(res.error);
     });
   };
@@ -91,18 +98,20 @@ export default function CreateBlindtestForm({ mode }: { mode: "solo" | "multi" }
       <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
         <p className="text-sm text-[color:var(--muted)]">
           {tracks.length} morceau{tracks.length > 1 ? "x" : ""} sélectionné
-          {tracks.length > 1 ? "s" : ""} · min. 3
+          {tracks.length > 1 ? "s" : ""} · min. {minimumTracks}
         </p>
         <button
           type="submit"
-          disabled={pending || tracks.length < 3}
+          disabled={pending || tracks.length < minimumTracks}
           className="btn-primary disabled:opacity-50"
         >
           {pending
             ? "Création…"
             : mode === "multi"
               ? "Créer et lancer la room"
-              : "Créer le blindtest"}
+              : variant === "flash"
+                ? "Créer le Blindtest éclair"
+                : "Créer le blindtest"}
         </button>
       </div>
     </form>

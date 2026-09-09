@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import prisma from "@/lib/prisma";
 import { createBlindtestRoom } from "../room/new/actions";
-import { User, Users, ArrowRight, Music } from "lucide-react";
+import { User, Users, ArrowRight, Music, Zap } from "lucide-react";
 import { buildPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -57,13 +57,54 @@ export default async function BlindtestPage({
       id: true,
       title: true,
       visibility: true,
+      mode: true,
       _count: { select: { tracks: true } },
     },
   });
 
   if (!blindtest) notFound();
-
   const trackCount = blindtest._count.tracks;
+
+  if (blindtest.mode === "flash") {
+    return (
+      <div className="page-shell max-w-3xl py-10">
+        <section
+          className="overflow-hidden rounded-[32px] border p-7 text-center md:p-12"
+          style={{
+            borderColor: "rgba(32,223,112,0.28)",
+            background:
+              "radial-gradient(660px 360px at 50% 0%, rgba(32,223,112,0.17), transparent 72%), var(--surface)",
+          }}
+        >
+          <span
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl"
+            style={{ background: "rgba(32,223,112,0.14)", color: "#20df70" }}
+          >
+            <Zap size={32} />
+          </span>
+          <p
+            className="mt-6 text-xs font-black uppercase tracking-[0.2em]"
+            style={{ color: "#20df70" }}
+          >
+            Blindtest éclair
+          </p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">{blindtest.title}</h1>
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-[color:var(--muted-strong)]">
+            {trackCount} morceau{trackCount > 1 ? "x" : ""} prêts pour un rush. Choisis la
+            difficulté et la durée d&apos;écoute avant de lancer la partie.
+          </p>
+          <Link
+            href={`/blindtest/${id}/flash`}
+            className="mt-7 inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-black text-black transition hover:brightness-110"
+            style={{ background: "#20df70", boxShadow: "0 0 28px rgba(32,223,112,0.24)" }}
+          >
+            Jouer au Blindtest éclair <ArrowRight size={17} />
+          </Link>
+        </section>
+      </div>
+    );
+  }
+
   const hasBlindtestRoomParticipants = modelHasField("BlindtestRoom", "participants");
   const hasBlindtestRoomVisibility = modelHasField("BlindtestRoom", "visibility");
   const multiplayerEnabled = hasBlindtestRoomParticipants;

@@ -14,6 +14,8 @@ export interface Dictionary {
     createBracketDesc: string;
     createTierlistDesc: string;
     createBlindtestDesc: string;
+    flashBlindtest: string;
+    flashBlindtestDesc: string;
     createStreamClashDesc: string;
     createSmashPassDesc: string;
     createBattleFeatDesc: string;
@@ -298,6 +300,8 @@ export const fr: Dictionary = {
     createBracketDesc: "Tournoi éliminatoire morceau par morceau",
     createTierlistDesc: "Classe tes sons du meilleur au pire",
     createBlindtestDesc: "Devine les titres à l'aveugle",
+    flashBlindtest: "Blindtest éclair",
+    flashBlindtestDesc: "Devine vite avec une écoute ultra-courte",
     createStreamClashDesc: "Devine le morceau le plus streamé",
     createSmashPassDesc: "Smash ou Pass sur morceaux, albums ou artistes",
     createBattleFeatDesc: "Enchaîne les featurings",

@@ -51,6 +51,7 @@ export default function SmashPassPlayer({
   const [previousStats, setPreviousStats] = useState<SmashPassItemStatsSnapshot | null>(null);
   const [voting, setVoting] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [resumedProgress, setResumedProgress] = useState(false);
   const [pending] = useTransition();
   const initRef = useRef(false);
   const { nowPlaying, isPlaying, playTrack, toggle, stop, isPlayingKey } = useTrackPreview();
@@ -61,17 +62,23 @@ export default function SmashPassPlayer({
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
-    void startSmashPassSession(smashPassId).then((res) => {
-      if ("sessionId" in res && res.sessionId) setSessionId(res.sessionId);
+    void startSmashPassSession(smashPassId, items.length).then((res) => {
+      if ("sessionId" in res && res.sessionId) {
+        setSessionId(res.sessionId);
+        setPosition(res.position);
+        setSmashCount(res.smashCount);
+        setPassCount(res.passCount);
+        setResumedProgress(res.resumed);
+      }
     });
-  }, [smashPassId]);
+  }, [smashPassId, items.length]);
 
   useEffect(() => {
-    if (!transient) return;
+    if (!transient || !finished) return;
     return () => {
       void deleteTransientSmashPass(smashPassId);
     };
-  }, [transient, smashPassId]);
+  }, [transient, smashPassId, finished]);
 
   const handlePreview = useCallback(() => {
     if (!currentItem?.deezerId) return;
@@ -156,6 +163,14 @@ export default function SmashPassPlayer({
 
   return (
     <div className="space-y-8 pb-16">
+      {resumedProgress ? (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100"
+        >
+          Partie reprise : tu repars à l&apos;élément {position + 1}.
+        </div>
+      ) : null}
       <div className="text-center">
         <p className="text-xs font-bold uppercase tracking-widest text-blue-400">MusiKlash Smash</p>
         <h1 className="mt-1 text-lg font-bold text-[color:var(--muted)]">{title}</h1>

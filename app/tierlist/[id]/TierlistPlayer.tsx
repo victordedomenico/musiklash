@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import TierlistBoard, { type TierItem, type TierlistBoardTexts } from "@/components/TierlistBoard";
 import { type TierlistSavePayload } from "@/lib/tierlist-tiers";
 import type { Dictionary } from "@/lib/i18n";
-import { deleteTransientTierlist, saveTierlistSession } from "./actions";
+import { saveTierlistSession } from "./actions";
 
 export default function TierlistPlayer({
   tierlistId,
@@ -25,15 +25,6 @@ export default function TierlistPlayer({
   const [error, setError] = useState<string | null>(null);
   const [saving, startTransition] = useTransition();
   const promotedRef = useRef(false);
-
-  // Cleanup on unmount: delete the transient tierlist unless user saved it.
-  useEffect(() => {
-    if (!transient) return;
-    return () => {
-      if (promotedRef.current) return;
-      void deleteTransientTierlist(tierlistId);
-    };
-  }, [transient, tierlistId]);
 
   const handleSave = (payload: TierlistSavePayload) => {
     setError(null);
@@ -88,8 +79,8 @@ export default function TierlistPlayer({
     <>
       {transient ? (
         <p className="mb-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-          Mode non publié : cette tierlist sera supprimée en quittant. Clique sur « Sauvegarder et
-          partager » pour la conserver en Publié — Privé.
+          Mode non publié : ton brouillon reste disponible sur cet appareil pour que tu puisses le
+          reprendre. Sauvegarde et partage pour conserver un résultat permanent.
         </p>
       ) : null}
       <TierlistBoard

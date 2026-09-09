@@ -10,7 +10,7 @@ import {
 } from "@/lib/smash-pass";
 import type { Prisma } from "@prisma/client";
 
-export async function startSmashPassSession(smashPassId: string) {
+export async function startSmashPassSession(smashPassId: string, itemCount: number) {
   let identity: { playerId: string };
   try {
     identity = await resolvePlayerIdentity();
@@ -20,6 +20,31 @@ export async function startSmashPassSession(smashPassId: string) {
   }
 
   try {
+    const recentSessions = await prisma.smashPassSession.findMany({
+      where: { smashPassId, playerId: identity.playerId },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        choices: true,
+        smashCount: true,
+        passCount: true,
+      },
+    });
+    const resumable = recentSessions.find(
+      (session) => normalizeSessionChoices(session.choices).length < itemCount,
+    );
+    if (resumable) {
+      const choices = normalizeSessionChoices(resumable.choices);
+      return {
+        sessionId: resumable.id,
+        position: choices.length,
+        smashCount: resumable.smashCount,
+        passCount: resumable.passCount,
+        resumed: true as const,
+      };
+    }
+
     const session = await prisma.smashPassSession.create({
       data: {
         smashPassId,
@@ -27,7 +52,13 @@ export async function startSmashPassSession(smashPassId: string) {
         visibility: "private",
       },
     });
-    return { sessionId: session.id };
+    return {
+      sessionId: session.id,
+      position: 0,
+      smashCount: 0,
+      passCount: 0,
+      resumed: false as const,
+    };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Erreur session.";
     return { error: msg };

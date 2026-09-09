@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import BlindtestGame, {
   type BlindtrackData,
@@ -11,6 +11,15 @@ import { deleteTransientBlindtest, saveBlindtestSession } from "./actions";
 import { isSingleArtistBlindtest, maxTrackPoints } from "@/lib/blindtest-utils";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import { Trophy, RotateCcw, Share2, Check, X, Download } from "lucide-react";
+import { clearGameProgress, readGameProgress, writeGameProgress } from "@/lib/local-game-progress";
+
+type BlindtestDraft = { answers: BlindtestAnswer[] };
+
+function isBlindtestDraft(value: unknown): value is BlindtestDraft {
+  return (
+    Boolean(value) && typeof value === "object" && Array.isArray((value as BlindtestDraft).answers)
+  );
+}
 
 export default function BlindtestPlayer({
   blindtestId,
@@ -31,17 +40,86 @@ export default function BlindtestPlayer({
   const exportRef = useRef<HTMLDivElement | null>(null);
   const promotedRef = useRef(false);
   const [promoted, setPromoted] = useState(false);
+  const [draftAnswers, setDraftAnswers] = useState<BlindtestAnswer[]>([]);
+  const [draftReady, setDraftReady] = useState(false);
+  const [resumedProgress, setResumedProgress] = useState(false);
+  const trackSignature = useMemo(
+    () => tracks.map((track) => `${track.position}:${track.deezerTrackId}`).join(","),
+    [tracks],
+  );
 
-  // Cleanup on unmount: delete the transient blindtest unless the user saved & shared.
   useEffect(() => {
-    if (!transient) return;
+    let cancelled = false;
+    const draft = readGameProgress(
+      window.localStorage,
+      "blindtest",
+      blindtestId,
+      trackSignature,
+      isBlindtestDraft,
+    );
+    const validAnswers = draft?.answers;
+    const canRestore =
+      validAnswers &&
+      validAnswers.length > 0 &&
+      validAnswers.length < tracks.length &&
+      validAnswers.every((answer, index) => {
+        const track = tracks[index];
+        return (
+          track &&
+          answer &&
+          answer.position === track.position &&
+          answer.trueTitle === track.title &&
+          answer.trueArtist === track.artist &&
+          Number.isFinite(answer.points)
+        );
+      });
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+      if (canRestore) {
+        setDraftAnswers(validAnswers);
+        setResumedProgress(true);
+      }
+      setDraftReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [blindtestId, trackSignature, tracks]);
+
+  // An unpublished blindtest stays available while it is in progress, so an
+  // accidental tab close does not delete the very draft we need to restore.
+  useEffect(() => {
+    if (!transient || !finalAnswers) return;
     return () => {
       if (promotedRef.current) return;
       void deleteTransientBlindtest(blindtestId);
     };
-  }, [transient, blindtestId]);
+  }, [transient, blindtestId, finalAnswers]);
+
+  const handleProgressChange = useCallback(
+    (answers: BlindtestAnswer[]) => {
+      try {
+        if (answers.length === 0) {
+          clearGameProgress(window.localStorage, "blindtest", blindtestId);
+          return;
+        }
+        writeGameProgress(window.localStorage, "blindtest", blindtestId, trackSignature, {
+          answers,
+        });
+      } catch {
+        // Browser storage is optional; the game remains playable.
+      }
+    },
+    [blindtestId, trackSignature],
+  );
 
   const handleComplete = (answers: BlindtestAnswer[], score: number) => {
+    try {
+      clearGameProgress(window.localStorage, "blindtest", blindtestId);
+    } catch {
+      // Browser storage is optional.
+    }
     setFinalAnswers(answers);
     setFinalScore(score);
     if (transient) {
@@ -67,6 +145,13 @@ export default function BlindtestPlayer({
     setFinalScore(0);
     setSessionId(null);
     setSaveError(null);
+    setDraftAnswers([]);
+    setResumedProgress(false);
+    try {
+      clearGameProgress(window.localStorage, "blindtest", blindtestId);
+    } catch {
+      // Browser storage is optional.
+    }
   };
 
   const handleDownload = async () => {
@@ -236,5 +321,32 @@ export default function BlindtestPlayer({
   }
 
   // ── Game ──────────────────────────────────────────────────────────────────
-  return <BlindtestGame tracks={tracks} onComplete={handleComplete} />;
+  if (!draftReady) {
+    return (
+      <div className="card p-6 text-center text-sm text-[color:var(--muted)]">
+        Restauration de ton blindtest…
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {resumedProgress ? (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100"
+        >
+          Blindtest repris : {draftAnswers.length} morceau{draftAnswers.length > 1 ? "x" : ""} déjà
+          validé{draftAnswers.length > 1 ? "s" : ""}.
+        </div>
+      ) : null}
+      <BlindtestGame
+        key={draftAnswers.length}
+        tracks={tracks}
+        initialAnswers={draftAnswers}
+        onProgressChange={handleProgressChange}
+        onComplete={handleComplete}
+      />
+    </div>
+  );
 }

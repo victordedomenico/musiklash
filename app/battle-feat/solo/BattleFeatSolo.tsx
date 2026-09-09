@@ -24,8 +24,37 @@ import { saveSoloSession } from "./actions";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import DeezerAttribution from "@/components/DeezerAttribution";
 import { usePreviewVolume } from "@/lib/audio-volume";
+import { clearGameProgress, readGameProgress, writeGameProgress } from "@/lib/local-game-progress";
 
 type Phase = "setup" | "player-turn" | "validating" | "ai-thinking" | "joker" | "game-over";
+
+type SoloBattleFeatDraft = {
+  difficulty: number;
+  startingArtist: ArtistResult;
+  moves: FeatMove[];
+  playerScore: number;
+  aiScore: number;
+  jokers: number;
+  jokersUsed: number;
+  publishMode: "none" | "private" | "public";
+};
+
+function isSoloBattleFeatDraft(value: unknown): value is SoloBattleFeatDraft {
+  if (!value || typeof value !== "object") return false;
+  const draft = value as Partial<SoloBattleFeatDraft>;
+  return (
+    Number.isInteger(draft.difficulty) &&
+    Boolean(draft.startingArtist?.id && draft.startingArtist.name) &&
+    Array.isArray(draft.moves) &&
+    Number.isFinite(draft.playerScore) &&
+    Number.isFinite(draft.aiScore) &&
+    Number.isFinite(draft.jokers) &&
+    Number.isFinite(draft.jokersUsed) &&
+    (draft.publishMode === "none" ||
+      draft.publishMode === "private" ||
+      draft.publishMode === "public")
+  );
+}
 
 const TIMER_BY_DIFFICULTY: Record<number, number> = { 1: 20, 2: 20, 3: 10 };
 
@@ -157,6 +186,10 @@ export default function BattleFeatSolo({
   const exportRef = useRef<HTMLDivElement | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [promoted, setPromoted] = useState(false);
+  const [progressReady, setProgressReady] = useState(false);
+  const [resumedProgress, setResumedProgress] = useState(false);
+  const progressId = challenge?.id ?? "free";
+  const progressSignature = `${challenge?.id ?? "free"}:${challenge?.difficulty ?? "open"}`;
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -164,6 +197,68 @@ export default function BattleFeatSolo({
   }, [volume]);
 
   const turnSeconds = TIMER_BY_DIFFICULTY[difficulty] ?? 20;
+
+  useEffect(() => {
+    let cancelled = false;
+    const draft = readGameProgress(
+      window.localStorage,
+      "battle-feat-solo",
+      progressId,
+      progressSignature,
+      isSoloBattleFeatDraft,
+    );
+    queueMicrotask(() => {
+      if (cancelled) return;
+      if (draft && (!challengeLocked || draft.difficulty === challenge?.difficulty)) {
+        setDifficulty(draft.difficulty);
+        setStartingArtist(draft.startingArtist);
+        setMoves(draft.moves);
+        setPlayerScore(draft.playerScore);
+        setAiScore(draft.aiScore);
+        setJokers(draft.jokers);
+        setJokersUsed(draft.jokersUsed);
+        setPublishMode(draft.publishMode);
+        setTimeLeft(TIMER_BY_DIFFICULTY[draft.difficulty] ?? 20);
+        setPhase("player-turn");
+        setResumedProgress(true);
+      }
+      setProgressReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [challenge?.difficulty, challengeLocked, progressId, progressSignature]);
+
+  useEffect(() => {
+    if (!progressReady || phase !== "player-turn" || !startingArtist) return;
+    try {
+      writeGameProgress(window.localStorage, "battle-feat-solo", progressId, progressSignature, {
+        difficulty,
+        startingArtist,
+        moves,
+        playerScore,
+        aiScore,
+        jokers,
+        jokersUsed,
+        publishMode,
+      });
+    } catch {
+      // Browser storage is optional; the game remains playable.
+    }
+  }, [
+    aiScore,
+    difficulty,
+    jokers,
+    jokersUsed,
+    moves,
+    phase,
+    playerScore,
+    progressId,
+    progressReady,
+    progressSignature,
+    publishMode,
+    startingArtist,
+  ]);
 
   const lastMove = moves.length > 0 ? moves[moves.length - 1] : null;
   const currentArtistId = lastMove?.artistId ?? startingArtist?.id ?? "";
@@ -238,6 +333,12 @@ export default function BattleFeatSolo({
     setEasyOptions([]);
     setRoundMessage("");
     setTimeLeft(turnSeconds);
+    setResumedProgress(false);
+    try {
+      clearGameProgress(window.localStorage, "battle-feat-solo", progressId);
+    } catch {
+      // Browser storage is optional.
+    }
     setPhase("player-turn");
   };
 
@@ -254,6 +355,11 @@ export default function BattleFeatSolo({
       setGameOverReason(reason);
       setGameOverWinner(winner);
       setPhase("game-over");
+      try {
+        clearGameProgress(window.localStorage, "battle-feat-solo", progressId);
+      } catch {
+        // Browser storage is optional.
+      }
       // In "non publié" mode we skip persistence; the user can still promote
       // via "Sauvegarder et partager" on the results screen.
       if (publishMode === "none") return;
@@ -274,7 +380,7 @@ export default function BattleFeatSolo({
       }
       setSaving(false);
     },
-    [difficulty, startingArtist, jokersUsed, publishMode, challenge],
+    [difficulty, startingArtist, jokersUsed, publishMode, challenge, progressId],
   );
 
   const handleDownload = async () => {
@@ -555,6 +661,14 @@ export default function BattleFeatSolo({
 
   const timerProgress = ((turnSeconds - timeLeft) / turnSeconds) * 100;
 
+  if (!progressReady) {
+    return (
+      <div className="card p-6 text-center text-sm text-[color:var(--muted)]">
+        Restauration de ta partie BattleFeat…
+      </div>
+    );
+  }
+
   // ── SETUP ─────────────────────────────────────────────────────────────────
   if (phase === "setup") {
     return (
@@ -774,6 +888,12 @@ export default function BattleFeatSolo({
               setPlayerScore(0);
               setAiScore(0);
               setPromoted(false);
+              setResumedProgress(false);
+              try {
+                clearGameProgress(window.localStorage, "battle-feat-solo", progressId);
+              } catch {
+                // Browser storage is optional.
+              }
             }}
             className="btn-ghost flex-1"
           >
@@ -796,6 +916,14 @@ export default function BattleFeatSolo({
 
   return (
     <div className="space-y-4">
+      {resumedProgress ? (
+        <div
+          role="status"
+          className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100"
+        >
+          Partie reprise : ta chaîne et le score de l&apos;IA sont restaurés.
+        </div>
+      ) : null}
       {/* Scoreboard */}
       <div className="card flex items-center justify-between px-4 py-2 text-sm">
         <span className={`font-semibold ${isPlayerTurn ? "text-[color:var(--accent)]" : ""}`}>

@@ -2,13 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Download, Pause, Play, Share2 } from "lucide-react";
+import { Download, Pause, Play, RotateCcw, Save, Share2 } from "lucide-react";
 import MatchCard, { type BracketTrack } from "./MatchCard";
 import { buildBracketState, totalRounds, type BracketSize, type Vote } from "@/lib/bracket";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { deleteTransientBracket, saveBracketGame } from "@/app/bracket-game/[id]/actions";
 import { fetchTrackPreview } from "@/lib/deezer-preview-client";
+import {
+  bracketProgressStorageKey,
+  clearBracketProgress,
+  makeTrackSignature,
+  readBracketProgress,
+  writeBracketProgress,
+} from "@/lib/bracket-progress";
 
 function roundLabel(round: number, total: number) {
   const remaining = total - round + 1;
@@ -38,6 +45,8 @@ export default function BracketGame({
 }) {
   const [votes, setVotes] = useState<Vote[]>(initialVotes);
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId);
+  const [progressReady, setProgressReady] = useState(readOnly);
+  const [restoredProgress, setRestoredProgress] = useState(false);
   const savingRef = useRef(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [playingSeed, setPlayingSeed] = useState<number | null>(null);
@@ -55,6 +64,7 @@ export default function BracketGame({
   const total = totalRounds(size);
 
   const trackCount = tracks.length;
+  const trackSignature = useMemo(() => makeTrackSignature(tracks), [tracks]);
   const state = useMemo(
     () => buildBracketState(size, votes, trackCount),
     [size, votes, trackCount],
@@ -121,21 +131,61 @@ export default function BracketGame({
     audioRef.current.volume = volume;
   }, [volume]);
 
+  // A choice is kept in this browser as soon as it is made. The server only
+  // stores completed results, so this draft is what lets a large tournament
+  // survive an accidental refresh or a closed tab.
+  useEffect(() => {
+    if (readOnly) return;
+    let cancelled = false;
+    try {
+      const restored = readBracketProgress(
+        window.localStorage.getItem(bracketProgressStorageKey(bracketId)),
+        {
+          bracketId,
+          size,
+          trackCount,
+          trackSignature,
+        },
+      );
+      queueMicrotask(() => {
+        if (cancelled) return;
+        if (restored?.length) {
+          setVotes(restored);
+          setRestoredProgress(true);
+        }
+        setProgressReady(true);
+      });
+    } catch {
+      // Private browsing or disabled storage: the game remains playable.
+      queueMicrotask(() => {
+        if (!cancelled) setProgressReady(true);
+      });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [bracketId, readOnly, size, trackCount, trackSignature]);
+
   // Deezer preview URLs are signed and expire quickly. Once the bracket is
   // over and the tree is on screen, refresh every track's preview in the
   // background so a click immediately plays without an await (which would
   // break Safari's user-gesture requirement on audio.play()).
   const hasWinner = Boolean(state.winner);
 
-  // In transient mode, delete the bracket when the user leaves the results
-  // screen (component unmount) — unless they explicitly saved & shared.
+  // An unpublished bracket remains available while it is in progress so its
+  // local draft can be resumed. Delete it only after its result has been shown.
   useEffect(() => {
-    if (!transient || readOnly) return;
+    if (!transient || readOnly || !hasWinner) return;
     return () => {
       if (promotedRef.current) return;
+      try {
+        clearBracketProgress(window.localStorage, bracketId);
+      } catch {
+        // Storage is optional.
+      }
       void deleteTransientBracket(bracketId);
     };
-  }, [transient, bracketId, readOnly]);
+  }, [transient, bracketId, hasWinner, readOnly]);
 
   // Auto-save the completed bracket as a replayable session, unless we are
   // in transient mode (deleted at unmount) or rendering a read-only result.
@@ -151,6 +201,28 @@ export default function BracketGame({
       // ignore; user can still try via Sauvegarder et partager
     });
   }, [bracketId, hasWinner, readOnly, sessionId, state.winner, transient, votes]);
+
+  useEffect(() => {
+    if (readOnly || !progressReady) return;
+    try {
+      if (state.winner && sessionId) {
+        clearBracketProgress(window.localStorage, bracketId);
+        return;
+      }
+      if (votes.length === 0) {
+        clearBracketProgress(window.localStorage, bracketId);
+        return;
+      }
+      writeBracketProgress(window.localStorage, {
+        bracketId,
+        size,
+        trackSignature,
+        votes,
+      });
+    } catch {
+      // Private browsing or disabled storage: the game remains playable.
+    }
+  }, [bracketId, progressReady, readOnly, sessionId, size, state.winner, trackSignature, votes]);
 
   useEffect(() => {
     if (!hasWinner) return;
@@ -197,6 +269,18 @@ export default function BracketGame({
 
   const handlePick = (matchIndex: number, winnerSeed: number) => {
     setVotes((prev) => [...prev, { round: currentRound, matchIndex, winnerSeed }]);
+  };
+
+  const restart = () => {
+    setVotes([]);
+    setSessionId(null);
+    setRestoredProgress(false);
+    savingRef.current = false;
+    try {
+      clearBracketProgress(window.localStorage, bracketId);
+    } catch {
+      // Storage is optional.
+    }
   };
 
   const saveAndShare = async () => {
@@ -725,14 +809,8 @@ export default function BracketGame({
               Recommencer
             </Link>
           ) : (
-            <button
-              onClick={() => {
-                setVotes([]);
-                setSessionId(null);
-                savingRef.current = false;
-              }}
-              className="btn-ghost"
-            >
+            <button onClick={restart} className="btn-ghost">
+              <RotateCcw size={16} />
               Recommencer
             </button>
           )}
@@ -740,6 +818,14 @@ export default function BracketGame({
             Ma bibliothèque
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (!progressReady) {
+    return (
+      <div className="card p-6 text-center text-sm text-[color:var(--muted)]">
+        Restauration de ton tournoi…
       </div>
     );
   }
@@ -766,6 +852,20 @@ export default function BracketGame({
 
   return (
     <div className="space-y-6">
+      {restoredProgress ? (
+        <div
+          role="status"
+          className="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 shadow-[0_8px_24px_rgba(16,185,129,0.08)]"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
+            <Save size={16} aria-hidden />
+          </span>
+          <p>
+            Tournoi repris : {votes.length} duel{votes.length > 1 ? "s" : ""} déjà choisi
+            {votes.length > 1 ? "s" : ""}. Tes choix sont sauvegardés sur cet appareil.
+          </p>
+        </div>
+      ) : null}
       <div className="flex items-center justify-between text-sm">
         <span className="text-[color:var(--muted)]">
           {roundLabel(currentRound, total)} — Duel {votedThisRound + 1} / {realPairings.length}

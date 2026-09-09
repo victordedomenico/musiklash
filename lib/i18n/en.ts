@@ -16,6 +16,8 @@ export const en: Dictionary = {
     createBracketDesc: "Elimination tournament track by track",
     createTierlistDesc: "Rank your tracks from best to worst",
     createBlindtestDesc: "Guess songs without seeing the title",
+    flashBlindtest: "Flash Blindtest",
+    flashBlindtestDesc: "Guess fast with ultra-short previews",
     createStreamClashDesc: "Guess which song has more streams",
     createSmashPassDesc: "Smash or Pass on tracks, albums, or artists",
     createBattleFeatDesc: "Chain featurings together",
