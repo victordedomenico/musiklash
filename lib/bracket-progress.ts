@@ -29,12 +29,13 @@ export function validateBracketProgress(
   size: BracketSize,
   trackCount: number,
   votes: unknown,
+  drawVersion = 1,
 ): Vote[] | null {
   if (!Array.isArray(votes) || !votes.every(isVote)) return null;
 
   const accepted: Vote[] = [];
   for (const vote of votes) {
-    const state = buildBracketState(size, accepted, trackCount);
+    const state = buildBracketState(size, accepted, trackCount, drawVersion);
     if (state.winner) return null;
 
     const round = state.rounds.length;
@@ -67,11 +68,13 @@ export function readBracketProgress(
     size,
     trackCount,
     trackSignature,
+    drawVersion = 1,
   }: {
     bracketId: string;
     size: BracketSize;
     trackCount: number;
     trackSignature: string;
+    drawVersion?: number;
   },
 ): Vote[] | null {
   if (!raw) return null;
@@ -86,7 +89,7 @@ export function readBracketProgress(
     ) {
       return null;
     }
-    return validateBracketProgress(size, trackCount, saved.votes);
+    return validateBracketProgress(size, trackCount, saved.votes, drawVersion);
   } catch {
     return null;
   }

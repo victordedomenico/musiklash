@@ -49,6 +49,7 @@ model Bracket {
   theme      String?
   genre      String?
   size       Int      @db.SmallInt
+  drawVersion Int     @default(1) @map("draw_version") @db.SmallInt
   visibility String   @default("private")
   coverUrl   String?  @map("cover_url")
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz

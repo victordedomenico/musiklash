@@ -26,6 +26,7 @@ type Props = {
   selected: SelectedTrack[];
   onChange: (next: SelectedTrack[]) => void;
   freeMode?: boolean;
+  unlimited?: boolean;
   genre?: MusicGenre | null;
 };
 
@@ -212,6 +213,7 @@ export default function TrackPicker({
   selected,
   onChange,
   freeMode = false,
+  unlimited = false,
   genre = null,
 }: Props) {
   const [tab, setTab] = useState<Tab>("track");
@@ -619,7 +621,9 @@ export default function TrackPicker({
       <div>
         <div className="flex items-baseline justify-between">
           <label className="text-sm font-medium">
-            {freeMode ? `Sélection (${selected.length})` : `Sélection (${selected.length}/${size})`}
+            {freeMode || unlimited
+              ? `Sélection (${selected.length})`
+              : `Sélection (${selected.length}/${size})`}
           </label>
         </div>
 
@@ -650,6 +654,7 @@ export default function TrackPicker({
             </li>
           ))}
           {!freeMode &&
+            !unlimited &&
             Array.from({ length: Math.max(0, size - selected.length) }).map((_, i) => (
               <li key={`empty-${i}`} className="card flex items-center gap-3 p-2 opacity-50">
                 <div className="w-6 text-center text-sm font-bold text-[color:var(--muted)]">

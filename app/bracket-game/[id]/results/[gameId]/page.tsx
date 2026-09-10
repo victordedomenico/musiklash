@@ -37,6 +37,7 @@ export default async function BracketGameResultsPage({
       title: true,
       theme: true,
       size: true,
+      drawVersion: true,
       tracks: {
         select: {
           seed: true,
@@ -80,6 +81,7 @@ export default async function BracketGameResultsPage({
       <BracketGame
         bracketId={bracket.id}
         size={bracket.size}
+        drawVersion={bracket.drawVersion}
         tracks={tracks}
         initialVotes={initialVotes}
         initialSessionId={game.id}

@@ -1,6 +1,8 @@
-export type BracketSize = 4 | 8 | 16 | 32 | 64 | 128 | 256 | 512 | 1024;
+export type BracketSize = number;
 
-export const VALID_BRACKET_SIZES = [4, 8, 16, 32, 64, 128, 256, 512, 1024] as const;
+// `size` and each track seed are stored as PostgreSQL SMALLINT values.
+export const MAX_BRACKET_TRACKS = 32_767;
+const LEGACY_BRACKET_SIZES = [4, 8, 16, 32, 64, 128, 256, 512, 1024] as const;
 
 export type Pairing = {
   matchIndex: number;
@@ -15,19 +17,11 @@ export type Vote = {
 };
 
 export function isValidSize(size: number): size is BracketSize {
-  return (VALID_BRACKET_SIZES as readonly number[]).includes(size);
+  return Number.isInteger(size) && size >= 3 && size <= MAX_BRACKET_TRACKS;
 }
 
 export function totalRounds(size: BracketSize): number {
-  return Math.log2(size);
-}
-
-/**
- * Returns the smallest valid BracketSize that can hold `trackCount` participants.
- * e.g. effectiveBracketSize(6) → 8, effectiveBracketSize(9) → 16
- */
-export function effectiveBracketSize(trackCount: number): BracketSize {
-  return VALID_BRACKET_SIZES.find((s) => s >= trackCount) ?? 1024;
+  return Math.ceil(Math.log2(size));
 }
 
 /**
@@ -49,9 +43,12 @@ export function shuffle<T>(values: readonly T[], random: () => number = Math.ran
  * generateSeedOrder(4)  -> [1, 4, 2, 3]
  * generateSeedOrder(8)  -> [1, 8, 4, 5, 2, 7, 3, 6]
  * generateSeedOrder(16) -> classic NCAA-style bracket ordering
- * Works for any supported power of 2 (4 through 1024).
+ * Used by legacy brackets created before dynamic draws.
  */
 export function generateSeedOrder(size: BracketSize): number[] {
+  if (!(LEGACY_BRACKET_SIZES as readonly number[]).includes(size)) {
+    throw new Error("Legacy brackets must use a supported power-of-two size");
+  }
   let order: number[] = [1, 2];
   let step = 2;
   while (step < size) {
@@ -96,6 +93,55 @@ export function nextRoundPairings(winnerSeeds: number[]): Pairing[] {
   return pairings;
 }
 
+function dynamicRoundPairings(seeds: number[], byeSeed: number): Pairing[] {
+  const pairings: Pairing[] = [];
+  for (let i = 0; i + 1 < seeds.length; i += 2) {
+    pairings.push({
+      matchIndex: pairings.length,
+      seedA: seeds[i]!,
+      seedB: seeds[i + 1]!,
+    });
+  }
+  if (seeds.length % 2 === 1) {
+    pairings.push({
+      matchIndex: pairings.length,
+      seedA: seeds.at(-1)!,
+      seedB: byeSeed,
+    });
+  }
+  return pairings;
+}
+
+function buildDynamicBracketState(
+  trackCount: number,
+  votes: Vote[],
+): { rounds: Pairing[][]; winner: number | null } {
+  const byeSeed = trackCount + 1;
+  const rounds: Pairing[][] = [
+    dynamicRoundPairings(
+      Array.from({ length: trackCount }, (_, index) => index + 1),
+      byeSeed,
+    ),
+  ];
+
+  for (let round = 1; ; round += 1) {
+    const winners: number[] = [];
+    for (const pairing of rounds.at(-1)!) {
+      if (pairing.seedB === byeSeed) {
+        winners.push(pairing.seedA);
+        continue;
+      }
+      const vote = votes.find(
+        (candidate) => candidate.round === round && candidate.matchIndex === pairing.matchIndex,
+      );
+      if (!vote) return { rounds, winner: null };
+      winners.push(vote.winnerSeed);
+    }
+    if (winners.length === 1) return { rounds, winner: winners[0]! };
+    rounds.push(dynamicRoundPairings(winners, byeSeed));
+  }
+}
+
 /**
  * Returns the full list of pairings for every round given a vote history.
  * Useful to render progress so far or resume a game.
@@ -105,15 +151,21 @@ export function nextRoundPairings(winnerSeeds: number[]): Pairing[] {
  * @param trackCount  - Actual number of tracks (defaults to `size`).
  *                      When trackCount < size, seeds > trackCount are "byes":
  *                      their opponent auto-advances without needing a vote.
+ * @param drawVersion - 1 is the historic fixed power-of-two tree; 2 uses a
+ *                      dynamic tree and gives one randomized bye whenever a
+ *                      round has an odd number of remaining tracks.
  */
 export function buildBracketState(
   size: BracketSize,
   votes: Vote[],
   trackCount: number = size,
+  drawVersion = 1,
 ): {
   rounds: Pairing[][];
   winner: number | null;
 } {
+  if (drawVersion === 2) return buildDynamicBracketState(trackCount, votes);
+
   const total = totalRounds(size);
   const rounds: Pairing[][] = [firstRoundPairings(size)];
 

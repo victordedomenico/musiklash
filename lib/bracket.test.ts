@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   buildBracketState,
-  effectiveBracketSize,
   firstRoundPairings,
   generateSeedOrder,
   nextRoundPairings,
@@ -100,31 +99,6 @@ describe("totalRounds", () => {
   });
 });
 
-describe("effectiveBracketSize", () => {
-  it.each([
-    [3, 4],
-    [4, 4],
-    [5, 8],
-    [6, 8],
-    [7, 8],
-    [8, 8],
-    [9, 16],
-    [16, 16],
-    [33, 64],
-    [64, 64],
-    [65, 128],
-    [128, 128],
-    [129, 256],
-    [256, 256],
-    [257, 512],
-    [512, 512],
-    [513, 1024],
-    [1024, 1024],
-  ])("trackCount %i -> size %i", (count, expected) => {
-    expect(effectiveBracketSize(count)).toBe(expected);
-  });
-});
-
 describe("buildBracketState", () => {
   it("returns only round 1 when no votes", () => {
     const state = buildBracketState(8, []);
@@ -207,6 +181,39 @@ describe("buildBracketState", () => {
       ];
       const state = buildBracketState(4, votes, 3);
       expect(state.winner).toBe(2);
+    });
+  });
+
+  describe("dynamic draws", () => {
+    it("creates 34 duels and one automatic qualification for 69 tracks", () => {
+      const state = buildBracketState(69, [], 69, 2);
+      const firstRound = state.rounds[0]!;
+
+      expect(firstRound).toHaveLength(35);
+      expect(firstRound.filter((pairing) => pairing.seedB > 69)).toHaveLength(1);
+      expect(firstRound.filter((pairing) => pairing.seedB <= 69)).toHaveLength(34);
+    });
+
+    it("gives exactly one automatic qualification when an odd round starts", () => {
+      const state = buildBracketState(
+        5,
+        [
+          { round: 1, matchIndex: 0, winnerSeed: 1 },
+          { round: 1, matchIndex: 1, winnerSeed: 3 },
+        ],
+        5,
+        2,
+      );
+
+      expect(state.rounds[0]).toEqual([
+        { matchIndex: 0, seedA: 1, seedB: 2 },
+        { matchIndex: 1, seedA: 3, seedB: 4 },
+        { matchIndex: 2, seedA: 5, seedB: 6 },
+      ]);
+      expect(state.rounds[1]).toEqual([
+        { matchIndex: 0, seedA: 1, seedB: 3 },
+        { matchIndex: 1, seedA: 5, seedB: 6 },
+      ]);
     });
   });
 });

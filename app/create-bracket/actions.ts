@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { isValidSize, effectiveBracketSize, shuffle } from "@/lib/bracket";
+import { MAX_BRACKET_TRACKS, shuffle } from "@/lib/bracket";
 import { ensureGenreColumns } from "@/lib/ensure-genre-columns";
 import { sanitizeGenre } from "@/lib/genres";
 import { resolvePlayerIdentity } from "@/lib/guest";
@@ -19,30 +19,21 @@ export async function createBracket(input: {
   title: string;
   theme: string;
   genre?: string | null;
-  size: number;
   visibility: "private" | "public" | "none";
   tracks: SelectedTrack[];
 }) {
-  if (!isValidSize(input.size)) {
-    return { error: "Taille de bracket invalide." };
-  }
   if (input.tracks.length < 3) {
     return { error: "Il faut au moins 3 morceaux." };
   }
-  if (input.tracks.length > input.size) {
-    return {
-      error: `Maximum ${input.size} morceaux pour un bracket de taille ${input.size}.`,
-    };
+  if (input.tracks.length > MAX_BRACKET_TRACKS) {
+    return { error: `Un tournoi peut contenir jusqu’à ${MAX_BRACKET_TRACKS} morceaux.` };
   }
   if (!input.title.trim()) {
     return { error: "Le titre est requis." };
   }
 
-  // The stored size is the smallest power-of-2 that fits the actual track count.
-  // This may be smaller than `input.size` (the user's chosen max), which is fine.
-  const storedSize = effectiveBracketSize(input.tracks.length);
-  // Randomize the initial draw once. The stored seeds keep this bracket stable
-  // for resumed sessions and ensure later rounds only pair adjacent winners.
+  // Randomize the draw once. Stored seeds preserve it across resumed sessions;
+  // a dynamic round grants one bye whenever its participant count is odd.
   const drawnTracks = shuffle(input.tracks);
 
   const prisma = (await import("@/lib/prisma")).default;
@@ -69,7 +60,8 @@ export async function createBracket(input: {
         title: input.title.trim(),
         theme: input.theme.trim() || null,
         genre: sanitizeGenre(input.genre),
-        size: storedSize,
+        size: drawnTracks.length,
+        drawVersion: 2,
         visibility: storedVisibility,
         coverUrl: input.tracks[0]?.cover_url ?? null,
         tracks: {

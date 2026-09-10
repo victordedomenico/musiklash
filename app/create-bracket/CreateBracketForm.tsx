@@ -5,10 +5,8 @@ import TrackPicker from "@/components/TrackPicker";
 import GenrePicker from "@/components/GenrePicker";
 import { createBracket, type SelectedTrack } from "@/app/create-bracket/actions";
 import Input from "@/components/ui/Input";
-import { effectiveBracketSize, VALID_BRACKET_SIZES } from "@/lib/bracket";
+import { MAX_BRACKET_TRACKS } from "@/lib/bracket";
 import type { MusicGenre } from "@/lib/genres";
-
-const SIZES = VALID_BRACKET_SIZES;
 
 const VIS_HINTS = {
   public: "Visible dans Explorer. Accessible à tous par lien.",
@@ -20,14 +18,10 @@ export default function CreateBracketForm() {
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState("");
   const [genre, setGenre] = useState<MusicGenre | null>(null);
-  const [size, setSize] = useState<(typeof SIZES)[number]>(8);
   const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
   const [selected, setSelected] = useState<SelectedTrack[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-
-  const effectiveSize = selected.length >= 3 ? effectiveBracketSize(selected.length) : null;
-  const byeCount = effectiveSize ? effectiveSize - selected.length : 0;
 
   const onSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
@@ -37,7 +31,7 @@ export default function CreateBracketForm() {
       return;
     }
     startTransition(async () => {
-      const res = await createBracket({ title, theme, genre, size, visibility, tracks: selected });
+      const res = await createBracket({ title, theme, genre, visibility, tracks: selected });
       if (res?.error) setError(res.error);
     });
   };
@@ -70,27 +64,6 @@ export default function CreateBracketForm() {
       {/* Ligne 2 — Genre musical */}
       <GenrePicker value={genre} onChange={setGenre} />
 
-      {/* Ligne 3 — Options supplémentaires */}
-      <div>
-        <label className="text-sm font-medium">Taille du tournoi</label>
-        <div className="mt-1 flex flex-wrap gap-2">
-          {SIZES.map((s) => (
-            <button
-              type="button"
-              key={s}
-              onClick={() => {
-                if (selected.length > s) setSelected(selected.slice(0, s));
-                setSize(s);
-              }}
-              className="btn-chip"
-              data-active={s === size}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Ligne 3 — Publication */}
       <div>
         <label className="text-sm font-medium">Publication</label>
@@ -115,7 +88,13 @@ export default function CreateBracketForm() {
       </div>
 
       {/* Picker */}
-      <TrackPicker size={size} selected={selected} onChange={setSelected} genre={genre} />
+      <TrackPicker
+        size={MAX_BRACKET_TRACKS}
+        selected={selected}
+        onChange={setSelected}
+        unlimited
+        genre={genre}
+      />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">
@@ -127,15 +106,10 @@ export default function CreateBracketForm() {
       <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
         <p className="text-sm text-[color:var(--muted)]">
           {selected.length} morceau{selected.length !== 1 ? "x" : ""} · min. 3
-          {effectiveSize ? (
+          {selected.length >= 3 ? (
             <span className="ml-2 text-[color:var(--muted-strong)]">
-              → bracket de {effectiveSize}
-              {byeCount > 0 && (
-                <span className="text-[color:var(--accent)]">
-                  {" "}
-                  ({byeCount} passe{byeCount > 1 ? "s" : ""} directe{byeCount > 1 ? "s" : ""})
-                </span>
-              )}
+              → tableau généré automatiquement · un morceau est qualifié par tirage au sort à chaque
+              tour impair
             </span>
           ) : null}
         </p>

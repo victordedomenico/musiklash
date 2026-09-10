@@ -29,6 +29,7 @@ function roundLabel(round: number, total: number) {
 export default function BracketGame({
   bracketId,
   size,
+  drawVersion = 1,
   tracks,
   transient = false,
   initialVotes = [],
@@ -37,6 +38,7 @@ export default function BracketGame({
 }: {
   bracketId: string;
   size: BracketSize;
+  drawVersion?: number;
   tracks: BracketTrack[];
   transient?: boolean;
   initialVotes?: Vote[];
@@ -66,8 +68,8 @@ export default function BracketGame({
   const trackCount = tracks.length;
   const trackSignature = useMemo(() => makeTrackSignature(tracks), [tracks]);
   const state = useMemo(
-    () => buildBracketState(size, votes, trackCount),
-    [size, votes, trackCount],
+    () => buildBracketState(size, votes, trackCount, drawVersion),
+    [size, votes, trackCount, drawVersion],
   );
   const tracksBySeed = useMemo(() => {
     const m = new Map<number, BracketTrack>();
@@ -144,6 +146,7 @@ export default function BracketGame({
           bracketId,
           size,
           trackCount,
+          drawVersion,
           trackSignature,
         },
       );
@@ -164,7 +167,7 @@ export default function BracketGame({
     return () => {
       cancelled = true;
     };
-  }, [bracketId, readOnly, size, trackCount, trackSignature]);
+  }, [bracketId, drawVersion, readOnly, size, trackCount, trackSignature]);
 
   // Deezer preview URLs are signed and expire quickly. Once the bracket is
   // over and the tree is on screen, refresh every track's preview in the

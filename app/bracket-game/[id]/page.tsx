@@ -48,6 +48,7 @@ export default async function BracketGamePage({
       title: true,
       theme: true,
       size: true,
+      drawVersion: true,
       visibility: true,
       ownerId: true,
       tracks: {
@@ -72,7 +73,6 @@ export default async function BracketGamePage({
     cover_url: t.coverUrl,
   }));
 
-  // tracks.length may be < bracket.size when byes are in use — that's expected.
   if (tracks.length === 0) {
     return (
       <div className="page-shell max-w-3xl py-12">
@@ -91,6 +91,7 @@ export default async function BracketGamePage({
       <BracketGame
         bracketId={bracket.id}
         size={bracket.size}
+        drawVersion={bracket.drawVersion}
         tracks={tracks}
         transient={transient === "1"}
       />
