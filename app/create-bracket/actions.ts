@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { isValidSize, effectiveBracketSize } from "@/lib/bracket";
+import { isValidSize, effectiveBracketSize, shuffle } from "@/lib/bracket";
 import { ensureGenreColumns } from "@/lib/ensure-genre-columns";
 import { sanitizeGenre } from "@/lib/genres";
 import { resolvePlayerIdentity } from "@/lib/guest";
@@ -41,6 +41,9 @@ export async function createBracket(input: {
   // The stored size is the smallest power-of-2 that fits the actual track count.
   // This may be smaller than `input.size` (the user's chosen max), which is fine.
   const storedSize = effectiveBracketSize(input.tracks.length);
+  // Randomize the initial draw once. The stored seeds keep this bracket stable
+  // for resumed sessions and ensure later rounds only pair adjacent winners.
+  const drawnTracks = shuffle(input.tracks);
 
   const prisma = (await import("@/lib/prisma")).default;
   let identity: { playerId: string };
@@ -70,7 +73,7 @@ export async function createBracket(input: {
         visibility: storedVisibility,
         coverUrl: input.tracks[0]?.cover_url ?? null,
         tracks: {
-          create: input.tracks.map((t, i) => ({
+          create: drawnTracks.map((t, i) => ({
             seed: i + 1,
             deezerTrackId: BigInt(t.deezer_track_id),
             title: t.title,

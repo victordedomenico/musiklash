@@ -5,8 +5,18 @@ import {
   firstRoundPairings,
   generateSeedOrder,
   nextRoundPairings,
+  shuffle,
   totalRounds,
 } from "./bracket";
+
+describe("shuffle", () => {
+  it("randomizes a copy without changing the supplied order", () => {
+    const source = [1, 2, 3, 4];
+
+    expect(shuffle(source, () => 0)).toEqual([2, 3, 4, 1]);
+    expect(source).toEqual([1, 2, 3, 4]);
+  });
+});
 
 describe("generateSeedOrder", () => {
   it("returns [1,4,2,3] for size 4", () => {

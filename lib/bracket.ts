@@ -31,6 +31,20 @@ export function effectiveBracketSize(trackCount: number): BracketSize {
 }
 
 /**
+ * Returns a new randomized ordering without changing the source array.
+ * The resulting order is stored as the bracket's seeds, so one tournament
+ * keeps the same draw while later rounds still follow their bracket paths.
+ */
+export function shuffle<T>(values: readonly T[], random: () => number = Math.random): T[] {
+  const out = [...values];
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}
+
+/**
  * Standard tournament seeding for a round of N seeds.
  * generateSeedOrder(4)  -> [1, 4, 2, 3]
  * generateSeedOrder(8)  -> [1, 8, 4, 5, 2, 7, 3, 6]
