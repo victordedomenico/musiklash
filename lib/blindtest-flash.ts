@@ -82,7 +82,7 @@ export function flashPoints(
   );
 }
 
-export function flashPerfectScore(trackCount = FLASH_TRACKS_PER_SESSION): number {
+export function flashPerfectScore(trackCount: number = FLASH_TRACKS_PER_SESSION): number {
   return FLASH_DIFFICULTIES.slice(0, trackCount).reduce(
     (total, difficulty) => total + flashPoints(difficulty, 0.1),
     0,
