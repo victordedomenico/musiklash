@@ -24,7 +24,14 @@ export default async function FlashBlindtestPage({ params }: { params: Promise<{
       title: true,
       mode: true,
       tracks: {
-        select: { position: true, deezerTrackId: true, title: true, artist: true, coverUrl: true },
+        select: {
+          position: true,
+          deezerTrackId: true,
+          title: true,
+          artist: true,
+          coverUrl: true,
+          rank: true,
+        },
         orderBy: { position: "asc" },
       },
     },
@@ -38,6 +45,7 @@ export default async function FlashBlindtestPage({ params }: { params: Promise<{
     title: track.title,
     artist: track.artist,
     coverUrl: track.coverUrl,
+    rank: track.rank,
   }));
 
   return (

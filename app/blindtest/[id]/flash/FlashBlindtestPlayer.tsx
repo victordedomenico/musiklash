@@ -1,24 +1,29 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Play, RotateCcw, Search, SkipForward, X, Zap } from "lucide-react";
+import { Pause, Play, RotateCcw, Search, SkipForward } from "lucide-react";
+import { usePreviewVolume } from "@/lib/audio-volume";
 import { fetchTrackPreview } from "@/lib/deezer-preview-client";
-import { isCorrect } from "@/lib/blindtest-utils";
+import { normalize } from "@/lib/blindtest-utils";
 import {
-  availableFlashTrackCounts,
   FLASH_DIFFICULTIES,
   FLASH_DIFFICULTY_CONFIG,
   FLASH_LISTEN_SECONDS,
+  FLASH_MAX_ATTEMPTS,
+  assignFlashSessionTracks,
+  flashAnswerPoints,
+  flashAttemptListenSeconds,
+  flashDifficultyAt,
+  flashNextAttempt,
+  flashPerfectScore,
   flashPoints,
-  isFlashDifficulty,
   isFlashListenSeconds,
   type FlashAnswer,
-  type FlashDifficulty,
-  type FlashListenSeconds,
 } from "@/lib/blindtest-flash";
-import { clearGameProgress, readGameProgress, writeGameProgress } from "@/lib/local-game-progress";
+import { readGameProgress, writeGameProgress } from "@/lib/local-game-progress";
 import { saveFlashBlindtestSession } from "./actions";
+import styles from "./flash.module.css";
 
 export type FlashBlindtestTrack = {
   position: number;
@@ -26,47 +31,81 @@ export type FlashBlindtestTrack = {
   title: string;
   artist: string;
   coverUrl: string | null;
+  rank: number;
 };
 
-type FlashDraft = {
-  difficulty: FlashDifficulty;
-  listenSeconds: FlashListenSeconds;
+type Draft = {
   orderedPositions: number[];
   answers: FlashAnswer[];
+  attemptIndex: number;
+  saved?: boolean;
 };
 
-function shuffle<T>(items: T[]) {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const next = Math.floor(Math.random() * (index + 1));
-    [copy[index], copy[next]] = [copy[next], copy[index]];
-  }
-  return copy;
-}
-
-function isFlashDraft(value: unknown): value is FlashDraft {
+function restoreDraft(value: unknown): value is Draft {
   if (!value || typeof value !== "object") return false;
-  const draft = value as Partial<FlashDraft>;
+  const d = value as Draft;
   return (
-    isFlashDifficulty(draft.difficulty) &&
-    isFlashListenSeconds(draft.listenSeconds) &&
-    Array.isArray(draft.orderedPositions) &&
-    draft.orderedPositions.every((position) => Number.isInteger(position)) &&
-    Array.isArray(draft.answers) &&
-    draft.answers.every(
-      (answer) =>
-        answer &&
-        typeof answer === "object" &&
-        Number.isInteger((answer as FlashAnswer).position) &&
-        typeof (answer as FlashAnswer).correct === "boolean" &&
-        typeof (answer as FlashAnswer).skipped === "boolean" &&
-        Number.isInteger((answer as FlashAnswer).points),
-    )
+    Number.isInteger(d.attemptIndex) &&
+    d.attemptIndex >= 0 &&
+    d.attemptIndex < FLASH_MAX_ATTEMPTS &&
+    Array.isArray(d.orderedPositions) &&
+    d.orderedPositions.length > 0 &&
+    d.orderedPositions.length <= FLASH_DIFFICULTIES.length &&
+    d.orderedPositions.every(Number.isInteger) &&
+    new Set(d.orderedPositions).size === d.orderedPositions.length &&
+    Array.isArray(d.answers) &&
+    d.answers.length <= d.orderedPositions.length &&
+    d.answers.every((answer, index) => {
+      const difficulty = flashDifficultyAt(index);
+      return (
+        !!answer &&
+        !!difficulty &&
+        answer.position === d.orderedPositions[index] &&
+        typeof answer.correct === "boolean" &&
+        typeof answer.skipped === "boolean" &&
+        !(answer.correct && answer.skipped) &&
+        answer.difficulty === difficulty &&
+        isFlashListenSeconds(answer.listenSeconds) &&
+        answer.points === flashAnswerPoints(answer, difficulty, answer.listenSeconds)
+      );
+    })
   );
 }
 
-function timeLabel(seconds: FlashListenSeconds) {
-  return `${String(seconds).replace(".", ",")} s`;
+function freshDraft(tracks: FlashBlindtestTrack[]): Draft {
+  return {
+    orderedPositions: assignFlashSessionTracks(tracks),
+    answers: [],
+    attemptIndex: 0,
+  };
+}
+
+function timeLabel(seconds: number) {
+  const rounded = Math.round(seconds * 10) / 10;
+  if (Number.isInteger(rounded)) return `${rounded} s`;
+  return `${rounded.toFixed(1).replace(".", ",")} s`;
+}
+
+function clockLabel(seconds: number) {
+  return `${Math.min(15, Math.max(0, seconds)).toFixed(1).replace(".", ",")} s`;
+}
+
+function timelinePercent(seconds: number) {
+  const marks = [
+    [0, 0],
+    [0.1, 4],
+    [0.5, 12],
+    [2, 32],
+    [8, 68],
+    [15, 100],
+  ];
+  for (let index = 1; index < marks.length; index++) {
+    const [end, percent] = marks[index];
+    const [start, previous] = marks[index - 1];
+    if (seconds <= end)
+      return previous + ((seconds - start) / (end - start)) * (percent - previous);
+  }
+  return 100;
 }
 
 export default function FlashBlindtestPlayer({
@@ -78,544 +117,501 @@ export default function FlashBlindtestPlayer({
   title: string;
   tracks: FlashBlindtestTrack[];
 }) {
-  const availableCounts = useMemo(() => availableFlashTrackCounts(tracks.length), [tracks.length]);
   const signature = useMemo(
-    () => tracks.map((track) => `${track.position}:${track.deezerTrackId}`).join("|"),
+    () => tracks.map((t) => `${t.position}:${t.deezerTrackId}`).join("|"),
     [tracks],
   );
-  const byPosition = useMemo(
-    () => new Map(tracks.map((track) => [track.position, track])),
-    [tracks],
-  );
-
-  const [difficulty, setDifficulty] = useState<FlashDifficulty>("easy");
-  const [listenSeconds, setListenSeconds] = useState<FlashListenSeconds>(0.5);
-  const [trackCount, setTrackCount] = useState(availableCounts[0] ?? 5);
-  const [orderedPositions, setOrderedPositions] = useState<number[]>([]);
-  const [answers, setAnswers] = useState<FlashAnswer[]>([]);
-  const [stage, setStage] = useState<"setup" | "playing" | "finished">("setup");
-  const [guess, setGuess] = useState("");
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [audioLoading, setAudioLoading] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [resultSaved, setResultSaved] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const { volume } = usePreviewVolume();
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const draftRef = useRef<Draft | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const finalSavedRef = useRef(false);
-  const restoreCheckedRef = useRef(false);
+  const playGenRef = useRef(0);
+  const rafRef = useRef(0);
+  const timeoutRef = useRef(0);
+  const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [audioError, setAudioError] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+  const [guess, setGuess] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [storageError, setStorageError] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveAttempt, setSaveAttempt] = useState(0);
+  const savingRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const gameTracks = orderedPositions
-    .map((position) => byPosition.get(position))
-    .filter((track): track is FlashBlindtestTrack => Boolean(track));
-  const currentTrack = stage === "playing" ? gameTracks[answers.length] : undefined;
-  const pointsPerSong = flashPoints(difficulty, listenSeconds);
-  const score = answers.reduce((total, answer) => total + answer.points, 0);
-
-  useEffect(() => {
-    if (restoreCheckedRef.current) return;
-    restoreCheckedRef.current = true;
-    const draft = readGameProgress(
-      window.localStorage,
-      "blindtest-flash",
-      blindtestId,
-      signature,
-      isFlashDraft,
-    );
-    if (!draft) return;
-    const allPositionsExist = draft.orderedPositions.every((position) => byPosition.has(position));
-    const answersFit = draft.answers.length < draft.orderedPositions.length;
-    if (
-      !allPositionsExist ||
-      !answersFit ||
-      !availableCounts.includes(draft.orderedPositions.length)
-    )
-      return;
-    queueMicrotask(() => {
-      setDifficulty(draft.difficulty);
-      setListenSeconds(draft.listenSeconds);
-      setTrackCount(draft.orderedPositions.length);
-      setOrderedPositions(draft.orderedPositions);
-      setAnswers(draft.answers);
-      setStage("playing");
-      setFeedback("Partie reprise : à toi de jouer.");
-      setAudioLoading(true);
-    });
-  }, [availableCounts, blindtestId, byPosition, signature]);
+  const commit = useCallback(
+    (next: Draft) => {
+      draftRef.current = next;
+      setDraft(next);
+      try {
+        writeGameProgress(window.localStorage, "blindtest-flash", blindtestId, signature, next);
+      } catch {
+        setStorageError(true);
+      }
+    },
+    [blindtestId, signature],
+  );
 
   useEffect(() => {
-    if (stage !== "playing" || orderedPositions.length === 0) return;
-    writeGameProgress(window.localStorage, "blindtest-flash", blindtestId, signature, {
-      difficulty,
-      listenSeconds,
-      orderedPositions,
-      answers,
-    } satisfies FlashDraft);
-  }, [answers, blindtestId, difficulty, listenSeconds, orderedPositions, signature, stage]);
-
-  useEffect(() => {
-    if (!currentTrack) return;
     let cancelled = false;
-    void fetchTrackPreview(currentTrack.deezerTrackId)
-      .then((url) => {
-        if (!cancelled) setAudioUrl(url);
-      })
-      .finally(() => {
-        if (!cancelled) setAudioLoading(false);
-      });
+    queueMicrotask(() => {
+      if (cancelled) return;
+      let restored: Draft | null = null;
+      try {
+        const stored = readGameProgress(
+          window.localStorage,
+          "blindtest-flash",
+          blindtestId,
+          signature,
+          (value): value is unknown => value !== null,
+        );
+        restored = restoreDraft(stored) ? stored : null;
+      } catch {
+        setStorageError(true);
+      }
+      if (
+        restored &&
+        !restored.orderedPositions.every((position) => tracks.some((t) => t.position === position))
+      )
+        restored = null;
+      commit(restored ?? freshDraft(tracks));
+      if (restored) setFeedback("Partie reprise là où tu l’avais laissée.");
+    });
     return () => {
       cancelled = true;
     };
-  }, [currentTrack]);
+  }, [blindtestId, commit, signature, tracks]);
 
-  useEffect(() => {
-    const audio = audioRef.current;
-    return () => {
-      if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
-      audio?.pause();
-    };
+  const finished = !!draft && draft.answers.length === draft.orderedPositions.length;
+  const currentPosition =
+    draft && !finished ? draft.orderedPositions[draft.answers.length] : undefined;
+  const currentTrack = tracks.find((t) => t.position === currentPosition);
+  const score = draft?.answers.reduce((total, answer) => total + answer.points, 0) ?? 0;
+  const difficulty = flashDifficultyAt(draft?.answers.length ?? 0) ?? "easy";
+  const config = FLASH_DIFFICULTY_CONFIG[difficulty];
+  const attemptIndex = draft?.attemptIndex ?? 0;
+  const listenSeconds = flashAttemptListenSeconds(attemptIndex);
+  const perfect = flashPerfectScore(draft?.orderedPositions.length ?? FLASH_DIFFICULTIES.length);
+
+  const stopClip = useCallback((resetElapsed = false) => {
+    playGenRef.current += 1;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    audioRef.current?.pause();
+    setPlaying(false);
+    if (resetElapsed) setElapsed(0);
   }, []);
 
   useEffect(() => {
-    if (stage !== "finished" || finalSavedRef.current) return;
-    finalSavedRef.current = true;
-    clearGameProgress(window.localStorage, "blindtest-flash", blindtestId);
-    setResultSaved("saving");
-    void saveFlashBlindtestSession({
-      blindtestId,
-      difficulty,
-      listenSeconds,
-      trackCount: gameTracks.length,
-      score,
-      answers,
-    }).then((result) => setResultSaved(result?.error ? "error" : "saved"));
-  }, [answers, blindtestId, difficulty, gameTracks.length, listenSeconds, score, stage]);
+    if (!currentTrack) return;
+    const audio = new Audio();
+    audio.preload = "auto";
+    audio.volume = volume;
+    audioRef.current = audio;
+    let cancelled = false;
+    const onError = () => {
+      setAudioError(true);
+      setLoading(false);
+      setPlaying(false);
+    };
+    audio.addEventListener("error", onError);
+    void fetchTrackPreview(currentTrack.deezerTrackId)
+      .then((url) => {
+        if (cancelled) return;
+        if (!url) throw new Error("No preview");
+        audio.src = url;
+        audio.load();
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) onError();
+      });
+    return () => {
+      cancelled = true;
+      stopClip(true);
+      audio.removeEventListener("error", onError);
+      audio.removeAttribute("src");
+      audio.load();
+      if (audioRef.current === audio) audioRef.current = null;
+    };
+  }, [currentTrack, retry, stopClip]);
 
-  const stopAndReset = () => {
-    if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
-    stopTimerRef.current = null;
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume;
+  }, [volume]);
+
+  useEffect(() => {
+    if (!playing) return;
     const audio = audioRef.current;
     if (!audio) return;
-    audio.pause();
-    audio.currentTime = 0;
-    setIsPlaying(false);
-  };
+    const generation = playGenRef.current;
+    const limit = listenSeconds;
+    const startedAt = performance.now();
+    const tick = () => {
+      if (playGenRef.current !== generation || audioRef.current !== audio) return;
+      const wall = (performance.now() - startedAt) / 1000;
+      const heard = Math.min(
+        limit,
+        Math.max(0, Number.isFinite(audio.currentTime) ? audio.currentTime : 0, wall),
+      );
+      setElapsed(heard);
+      if (heard >= limit) {
+        audio.pause();
+        audio.currentTime = 0;
+        setPlaying(false);
+        setElapsed(limit);
+        return;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    timeoutRef.current = window.setTimeout(() => {
+      if (playGenRef.current !== generation || audioRef.current !== audio) return;
+      audio.pause();
+      audio.currentTime = 0;
+      setPlaying(false);
+      setElapsed(limit);
+    }, limit * 1000 + 30);
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      window.clearTimeout(timeoutRef.current);
+    };
+  }, [listenSeconds, playing]);
 
-  const togglePreview = async () => {
+  const toggleAudio = async () => {
     const audio = audioRef.current;
-    if (!audio || !audioUrl) return;
-    if (isPlaying) {
-      stopAndReset();
+    if (!audio || loading || audioError) return;
+    if (playing) {
+      stopClip(true);
+      audio.currentTime = 0;
       return;
     }
-    if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
-    audio.pause();
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    playGenRef.current += 1;
     audio.currentTime = 0;
+    setElapsed(0);
     try {
       await audio.play();
-      setIsPlaying(true);
-      stopTimerRef.current = setTimeout(stopAndReset, listenSeconds * 1000);
+      if (audioRef.current !== audio) return;
+      setPlaying(true);
     } catch {
-      setFeedback("La pré-écoute n&apos;a pas pu démarrer. Réessaie dans un instant.");
+      setFeedback("Lecture impossible. Appuie à nouveau sur Play pour réessayer.");
     }
   };
 
-  const recordAnswer = (correct: boolean, skipped: boolean) => {
-    if (!currentTrack) return;
-    stopAndReset();
-    setAudioUrl(null);
-    setAudioLoading(true);
-    const nextAnswers = [
-      ...answers,
-      {
-        position: currentTrack.position,
-        correct,
-        skipped,
-        points: correct ? pointsPerSong : 0,
-      },
-    ];
-    setAnswers(nextAnswers);
-    setGuess("");
-    setFeedback(null);
-    if (nextAnswers.length === gameTracks.length) setStage("finished");
-  };
+  const answer = (skipped: boolean) => {
+    stopClip(true);
+    if (audioRef.current) audioRef.current.currentTime = 0;
+    const current = draftRef.current;
+    if (!current || finished || !currentTrack) return;
+    const level = flashDifficultyAt(current.answers.length);
+    if (!level) return;
+    const windowSeconds = flashAttemptListenSeconds(current.attemptIndex);
 
-  const submitGuess = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!currentTrack || !guess.trim()) return;
-    if (isCorrect(guess, currentTrack.title) || isCorrect(guess, currentTrack.artist)) {
-      recordAnswer(true, false);
-    } else {
-      setFeedback("Pas encore. Tu peux réécouter autant de fois que nécessaire.");
+    if (!skipped && normalize(guess) !== normalize(currentTrack.title)) {
+      setGuess("");
+      const nextAttempt = flashNextAttempt(current.attemptIndex);
+      if (nextAttempt === null) {
+        setLoading(true);
+        setAudioError(false);
+        commit({
+          ...current,
+          attemptIndex: 0,
+          answers: [
+            ...current.answers,
+            {
+              position: currentTrack.position,
+              correct: false,
+              skipped: false,
+              points: 0,
+              difficulty: level,
+              listenSeconds: windowSeconds,
+            },
+          ],
+        });
+        setFeedback(
+          `C’était « ${currentTrack.title} ». ${FLASH_DIFFICULTY_CONFIG[level].label} : 0 pt.`,
+        );
+        inputRef.current?.focus();
+        return;
+      }
+      commit({ ...current, attemptIndex: nextAttempt });
+      setElapsed(0);
+      setFeedback(
+        `Ce n’est pas ça. Prochaine écoute : ${timeLabel(flashAttemptListenSeconds(nextAttempt))}.`,
+      );
+      inputRef.current?.focus();
+      return;
     }
-  };
 
-  const startGame = () => {
-    finalSavedRef.current = false;
-    setResultSaved("idle");
-    setAnswers([]);
+    const points = skipped ? 0 : flashPoints(level, windowSeconds);
     setGuess("");
-    setFeedback(null);
-    setAudioUrl(null);
-    setAudioLoading(true);
-    setOrderedPositions(
-      shuffle(tracks)
-        .slice(0, trackCount)
-        .map((track) => track.position),
-    );
-    setStage("playing");
+    setLoading(true);
+    setAudioError(false);
+    commit({
+      ...current,
+      attemptIndex: 0,
+      answers: [
+        ...current.answers,
+        {
+          position: currentTrack.position,
+          correct: !skipped,
+          skipped,
+          points,
+          difficulty: level,
+          listenSeconds: windowSeconds,
+        },
+      ],
+    });
+    setFeedback(skipped ? `C’était « ${currentTrack.title} ».` : `Trouvé ! +${points} points.`);
+    inputRef.current?.focus();
   };
 
   const restart = () => {
-    stopAndReset();
-    clearGameProgress(window.localStorage, "blindtest-flash", blindtestId);
-    finalSavedRef.current = false;
-    setStage("setup");
-    setOrderedPositions([]);
-    setAnswers([]);
-    setFeedback(null);
-    setResultSaved("idle");
+    savingRef.current = false;
+    setSaveState("idle");
+    setFeedback("");
+    setElapsed(0);
+    setGuess("");
+    setLoading(true);
+    setAudioError(false);
+    commit(freshDraft(tracks));
   };
 
-  if (availableCounts.length === 0) {
+  useEffect(() => {
+    if (!finished || !draft || draft.saved || savingRef.current) return;
+    savingRef.current = true;
+    let cancelled = false;
+    void Promise.resolve().then(async () => {
+      if (cancelled) {
+        savingRef.current = false;
+        return;
+      }
+      setSaveState("saving");
+      try {
+        const last = draft.answers.at(-1);
+        const result = await saveFlashBlindtestSession({
+          blindtestId,
+          difficulty: last?.difficulty ?? "easy",
+          listenSeconds: last?.listenSeconds ?? 0.1,
+          trackCount: draft.answers.length,
+          score,
+          answers: draft.answers,
+        });
+        if (result.error) throw new Error(result.error);
+        if (!cancelled) {
+          commit({ ...draft, saved: true });
+          setSaveState("saved");
+        }
+      } catch {
+        if (!cancelled) setSaveState("error");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [blindtestId, commit, draft, finished, saveAttempt, score]);
+
+  if (!draft)
     return (
-      <div className="rounded-3xl border border-amber-400/25 bg-amber-400/5 p-6 text-center">
-        <p className="text-lg font-bold">
-          Il faut au moins 5 morceaux pour lancer un Blindtest éclair.
-        </p>
-        <Link
-          href={`/blindtest/${blindtestId}`}
-          className="mt-4 inline-flex text-sm text-[color:var(--accent)]"
-        >
-          Retour au blindtest
-        </Link>
+      <div className={styles.shell} role="status">
+        Préparation du blindtest…
       </div>
     );
-  }
 
-  if (stage === "setup") {
-    return (
-      <section
-        className="overflow-hidden rounded-[30px] border"
-        style={{ borderColor: "rgba(32,223,112,0.24)", background: "var(--surface)" }}
-      >
-        <div
-          className="border-b px-6 py-6 md:px-8"
-          style={{
-            borderColor: "rgba(32,223,112,0.15)",
-            background:
-              "radial-gradient(520px 220px at 0% 0%, rgba(32,223,112,0.16), transparent 75%)",
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <span
-              className="flex h-11 w-11 items-center justify-center rounded-2xl"
-              style={{ background: "rgba(32,223,112,0.16)", color: "#20df70" }}
-            >
-              <Zap size={22} />
-            </span>
-            <div>
-              <p
-                className="text-xs font-black uppercase tracking-[0.18em]"
-                style={{ color: "#20df70" }}
-              >
-                Blindtest éclair
-              </p>
-              <h1 className="mt-0.5 text-2xl font-black">Configure ton rush</h1>
-            </div>
-          </div>
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-[color:var(--muted-strong)]">
-            Chaque appui sur lecture repart de zéro et ne diffuse que la durée choisie. Les morceaux
-            se suivent uniquement quand tu trouves ou passes.
-          </p>
-          <p className="mt-3 text-xs font-semibold text-[color:var(--muted)]">Playlist : {title}</p>
-        </div>
-        <div className="space-y-7 px-6 py-7 md:px-8">
-          <ChoiceRow label="Difficulté">
-            {FLASH_DIFFICULTIES.map((level) => {
-              const config = FLASH_DIFFICULTY_CONFIG[level];
-              const active = difficulty === level;
-              return (
-                <button
-                  key={level}
-                  type="button"
-                  onClick={() => setDifficulty(level)}
-                  className="rounded-full border px-4 py-2 text-sm font-black transition"
-                  style={{
-                    borderColor: active ? config.color : "var(--border)",
-                    background: active ? `${config.color}22` : "var(--surface-2)",
-                    color: config.color,
-                    boxShadow: active ? `0 0 22px ${config.color}24` : "none",
-                  }}
-                >
-                  {config.label}
-                </button>
-              );
-            })}
-          </ChoiceRow>
-          <ChoiceRow label="Temps d’écoute">
-            {FLASH_LISTEN_SECONDS.map((seconds) => {
-              const active = listenSeconds === seconds;
-              return (
-                <button
-                  key={seconds}
-                  type="button"
-                  onClick={() => setListenSeconds(seconds)}
-                  className="rounded-xl border px-4 py-2 text-sm font-black transition"
-                  style={{
-                    borderColor: active ? "#20df70" : "var(--border)",
-                    background: active ? "rgba(32,223,112,0.14)" : "var(--surface-2)",
-                    color: active ? "#20df70" : "var(--muted-strong)",
-                  }}
-                >
-                  {timeLabel(seconds)}
-                </button>
-              );
-            })}
-          </ChoiceRow>
-          <ChoiceRow label="Nombre de sons">
-            {availableCounts.map((count) => {
-              const active = trackCount === count;
-              return (
-                <button
-                  key={count}
-                  type="button"
-                  onClick={() => setTrackCount(count)}
-                  className="rounded-xl border px-4 py-2 text-sm font-black transition"
-                  style={{
-                    borderColor: active ? "#20df70" : "var(--border)",
-                    background: active ? "rgba(32,223,112,0.14)" : "var(--surface-2)",
-                    color: active ? "#20df70" : "var(--muted-strong)",
-                  }}
-                >
-                  {count} sons
-                </button>
-              );
-            })}
-          </ChoiceRow>
-          <div
-            className="flex flex-col justify-between gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center"
-            style={{ borderColor: "rgba(32,223,112,0.2)", background: "rgba(32,223,112,0.06)" }}
-          >
-            <p className="text-sm text-[color:var(--muted-strong)]">
-              <strong className="text-white">{pointsPerSong} pts</strong> par bonne réponse ·
-              jusqu&apos;à <strong className="text-white">{pointsPerSong * trackCount} pts</strong>
-            </p>
-            <button
-              type="button"
-              onClick={startGame}
-              className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-black text-black transition hover:brightness-110"
-              style={{ background: "#20df70", boxShadow: "0 0 28px rgba(32,223,112,0.25)" }}
-            >
-              Lancer le rush <ChevronRight size={18} />
-            </button>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const foundAtFirstTry = draft.answers.filter(
+    (answer) => answer.correct && answer.listenSeconds === 0.1,
+  ).length;
 
-  if (stage === "finished") {
-    const correctCount = answers.filter((answer) => answer.correct).length;
-    return (
-      <section
-        className="overflow-hidden rounded-[30px] border p-6 text-center md:p-10"
-        style={{
-          borderColor: "rgba(32,223,112,0.26)",
-          background:
-            "radial-gradient(600px 360px at 50% 0%, rgba(32,223,112,0.16), transparent 70%), var(--surface)",
-        }}
-      >
-        <span
-          className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl"
-          style={{ background: "rgba(32,223,112,0.16)", color: "#20df70" }}
-        >
-          <Zap size={32} />
-        </span>
-        <p
-          className="mt-5 text-sm font-black uppercase tracking-[0.18em]"
-          style={{ color: "#20df70" }}
-        >
-          Rush terminé
-        </p>
-        <p className="mt-2 text-5xl font-black tracking-tight">
-          {score} <span className="text-xl text-[color:var(--muted)]">pts</span>
-        </p>
-        <p className="mt-3 text-[color:var(--muted-strong)]">
-          {correctCount}/{gameTracks.length} bonnes réponses ·{" "}
-          {FLASH_DIFFICULTY_CONFIG[difficulty].label} · {timeLabel(listenSeconds)}
-        </p>
-        <div className="mx-auto mt-7 grid max-w-md grid-cols-2 gap-3 text-left">
-          {gameTracks.map((track, index) => {
-            const answer = answers[index];
-            return (
-              <div
-                key={track.position}
-                className="rounded-xl border p-3 text-sm"
-                style={{
-                  borderColor: answer?.correct ? "rgba(32,223,112,0.35)" : "var(--border)",
-                  background: "var(--surface-2)",
-                }}
-              >
-                <p className="truncate font-bold">{track.title}</p>
-                <p className="truncate text-xs text-[color:var(--muted)]">{track.artist}</p>
-              </div>
-            );
-          })}
-        </div>
-        <p className="mt-6 text-xs text-[color:var(--muted)]">
-          {resultSaved === "saving"
-            ? "Enregistrement du score…"
-            : resultSaved === "saved"
-              ? "Score enregistré."
-              : resultSaved === "error"
-                ? "Score conservé localement, mais l&apos;enregistrement a échoué."
-                : null}
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <button
-            type="button"
-            onClick={restart}
-            className="inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold"
-            style={{ background: "#20df70", color: "#07120b" }}
-          >
-            <RotateCcw size={16} /> Rejouer
-          </button>
-          <Link
-            href={`/blindtest/${blindtestId}`}
-            className="rounded-xl border px-4 py-3 text-sm font-bold"
-            style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-          >
-            Retour
-          </Link>
-        </div>
-      </section>
-    );
-  }
-
-  const progress = (answers.length / gameTracks.length) * 100;
   return (
     <section
-      className="overflow-hidden rounded-[30px] border"
-      style={{ borderColor: "rgba(32,223,112,0.24)", background: "var(--surface)" }}
+      className={styles.shell}
+      style={{ "--flash-color": config.color } as React.CSSProperties}
+      aria-label="Blindtest éclair"
     >
-      <audio ref={audioRef} src={audioUrl ?? undefined} onEnded={stopAndReset} preload="auto" />
-      <div
-        className="flex items-center justify-between gap-3 border-b px-5 py-4 md:px-7"
-        style={{ borderColor: "rgba(32,223,112,0.14)" }}
-      >
+      <header className={styles.header}>
         <div>
-          <p
-            className="text-xs font-black uppercase tracking-[0.16em]"
-            style={{ color: "#20df70" }}
-          >
-            Blindtest éclair
-          </p>
-          <p className="mt-1 text-sm text-[color:var(--muted)]">
-            Son {answers.length + 1} / {gameTracks.length}
-          </p>
+          <p className={styles.eyebrow}>BLINDTEST ÉCLAIR</p>
+          <h1>{title}</h1>
         </div>
-        <p
-          className="rounded-full px-3 py-1 text-sm font-black"
-          style={{ background: "rgba(32,223,112,0.12)", color: "#20df70" }}
-        >
-          {score} pts
-        </p>
-      </div>
-      <div
-        className="mx-5 mt-5 h-2 overflow-hidden rounded-full border md:mx-7"
-        style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-      >
-        <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${progress}%`, background: "#20df70" }}
-        />
-      </div>
-      <div className="px-5 py-8 md:px-7 md:py-10">
-        <div className="mx-auto max-w-xl text-center">
-          <p className="text-sm font-bold text-[color:var(--muted-strong)]">
-            {FLASH_DIFFICULTY_CONFIG[difficulty].label} · {pointsPerSong} pts si tu trouves
+        <div className={styles.stats}>
+          <strong>{score.toLocaleString("fr-FR")} pts</strong>
+          <span>
+            {finished
+              ? "Terminé"
+              : `${FLASH_DIFFICULTY_CONFIG[difficulty].label} · ${draft.answers.length + 1} / ${draft.orderedPositions.length}`}
+          </span>
+        </div>
+      </header>
+      {finished ? (
+        <div className={styles.results}>
+          <h2>{foundAtFirstTry === draft.answers.length ? "Éclair parfait" : "Bien joué !"}</h2>
+          <p className={styles.total}>
+            {score.toLocaleString("fr-FR")} <small>/ {perfect.toLocaleString("fr-FR")} pts</small>
           </p>
-          <button
-            type="button"
-            disabled={!audioUrl || audioLoading}
-            onClick={() => void togglePreview()}
-            aria-label={
-              isPlaying
-                ? "Arrêter et remettre l'extrait à zéro"
-                : `Écouter ${timeLabel(listenSeconds)}`
-            }
-            className="mx-auto mt-7 flex h-36 w-36 items-center justify-center rounded-full border-4 transition hover:scale-[1.03] disabled:cursor-wait disabled:opacity-50"
-            style={{
-              borderColor: "#55ef98",
-              background: "#20df70",
-              color: "#07120b",
-              boxShadow: "0 0 42px rgba(32,223,112,0.3)",
+          <p>
+            {draft.answers.filter((a) => a.correct).length} / {draft.answers.length} titres trouvés
+            {foundAtFirstTry > 0 ? ` · ${foundAtFirstTry} en 0,1 s` : ""}
+          </p>
+          <ol>
+            {draft.answers.map((a, index) => (
+              <li key={a.position}>
+                <span>
+                  {tracks.find((t) => t.position === a.position)?.title}
+                  <small>
+                    {FLASH_DIFFICULTY_CONFIG[a.difficulty ?? flashDifficultyAt(index) ?? "easy"].label}{" "}
+                    · {a.correct ? timeLabel(a.listenSeconds ?? 15) : "non trouvé"}
+                  </small>
+                </span>
+                <strong>{a.points} pts</strong>
+              </li>
+            ))}
+          </ol>
+          <p role="status">
+            {draft.saved
+              ? "Score enregistré."
+              : saveState === "error"
+                ? "Enregistrement indisponible. Ton résultat reste sauvegardé dans ce navigateur."
+                : "Enregistrement…"}
+          </p>
+          {saveState === "error" && (
+            <button
+              className={styles.secondary}
+              onClick={() => {
+                savingRef.current = false;
+                setSaveAttempt((n) => n + 1);
+              }}
+            >
+              Réessayer l’enregistrement
+            </button>
+          )}
+          <div className={styles.resultActions}>
+            <button
+              disabled={saveState === "saving"}
+              className={styles.secondary}
+              onClick={restart}
+            >
+              <RotateCcw size={18} /> Rejouer
+            </button>
+            <Link href="/create-blindtest-eclair">Créer un blindtest</Link>
+          </div>
+        </div>
+      ) : (
+        <>
+          <ol className={styles.ladder} aria-label="Progression des difficultés">
+            {draft.orderedPositions.map((_, index) => {
+              const level = flashDifficultyAt(index) ?? "easy";
+              const answer = draft.answers[index];
+              const state = answer ? (answer.correct ? "won" : "lost") : index === draft.answers.length ? "current" : "next";
+              return (
+                <li
+                  key={level}
+                  data-state={state}
+                  style={
+                    { "--level-color": FLASH_DIFFICULTY_CONFIG[level].color } as React.CSSProperties
+                  }
+                >
+                  {FLASH_DIFFICULTY_CONFIG[level].label}
+                </li>
+              );
+            })}
+          </ol>
+          <div className={styles.timeline}>
+            <div
+              className={styles.track}
+              role="progressbar"
+              aria-label="Durée de l’écoute en cours"
+              aria-valuemin={0}
+              aria-valuemax={15}
+              aria-valuenow={Math.min(listenSeconds, elapsed)}
+              aria-valuetext={clockLabel(Math.min(elapsed, listenSeconds))}
+            >
+              <div className={styles.fill} style={{ width: `${timelinePercent(elapsed)}%` }} />
+              {FLASH_LISTEN_SECONDS.map((seconds) => (
+                <span
+                  key={seconds}
+                  className={styles.tick}
+                  data-active={listenSeconds === seconds}
+                  style={{ left: `${timelinePercent(seconds)}%` }}
+                />
+              ))}
+            </div>
+          </div>
+          <div className={styles.transport}>
+            <button
+              className={styles.play}
+              aria-label={playing ? "Stop et retour à zéro" : `Écouter ${timeLabel(listenSeconds)}`}
+              onClick={() => void toggleAudio()}
+              disabled={loading || audioError}
+            >
+              {playing ? <Pause fill="currentColor" /> : <Play fill="currentColor" />}
+            </button>
+            <output className={styles.clock} aria-label="Temps écouté">
+              {clockLabel(elapsed)}
+            </output>
+          </div>
+          <form
+            className={styles.answerRow}
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (guess.trim()) answer(false);
             }}
           >
-            {isPlaying ? (
-              <X size={46} strokeWidth={3} />
-            ) : (
-              <Play className="ml-1" size={50} fill="currentColor" strokeWidth={2.5} />
-            )}
-          </button>
-          <p className="mt-4 text-lg font-black" style={{ color: "#20df70" }}>
-            {audioLoading ? "Chargement…" : timeLabel(listenSeconds)}
-          </p>
-          <p className="mt-1 text-xs text-[color:var(--muted)]">
-            {isPlaying ? "Un nouvel appui coupe et remet à 0." : "Chaque écoute redémarre à 0."}
-          </p>
-        </div>
-        <form
-          onSubmit={submitGuess}
-          className="mx-auto mt-8 flex max-w-xl flex-col gap-3 sm:flex-row"
-        >
-          <label className="sr-only" htmlFor="flash-guess">
-            Titre ou artiste
-          </label>
-          <div className="relative flex-1">
-            <Search
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--muted)]"
-              size={20}
-            />
-            <input
-              id="flash-guess"
-              value={guess}
-              onChange={(event) => setGuess(event.target.value)}
-              placeholder="Cherche le titre ou l'artiste…"
-              className="h-14 w-full rounded-2xl border bg-transparent pl-12 pr-4 text-base outline-none transition focus:border-[#20df70]"
-              style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
-              autoComplete="off"
-            />
+            <label className={styles.search}>
+              <Search aria-hidden size={23} />
+              <span className="sr-only">Nom du morceau</span>
+              <input
+                ref={inputRef}
+                value={guess}
+                onChange={(e) => setGuess(e.target.value)}
+                placeholder="Nom du morceau…"
+                autoComplete="off"
+              />
+              <button className="sr-only focus:not-sr-only" type="submit">
+                Valider
+              </button>
+            </label>
+            <button className={styles.skip} type="button" onClick={() => answer(true)}>
+              <SkipForward size={24} /> Passer
+            </button>
+          </form>
+          <div className={styles.hints}>
+            <span>
+              Essai {attemptIndex + 1} / {FLASH_MAX_ATTEMPTS} · Entrée pour valider
+            </span>
+            <strong>{flashPoints(difficulty, listenSeconds)} pts à gagner</strong>
           </div>
-          <button
-            type="submit"
-            className="h-14 rounded-2xl px-5 font-black text-black"
-            style={{ background: "#20df70" }}
-          >
-            Valider
-          </button>
-        </form>
-        {feedback ? (
-          <p className="mx-auto mt-3 max-w-xl text-center text-sm text-amber-300">{feedback}</p>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => recordAnswer(false, true)}
-          className="mx-auto mt-6 flex items-center gap-2 text-sm font-bold text-[color:var(--muted)] transition hover:text-white"
-        >
-          <SkipForward size={17} /> Passer ce son
-        </button>
-      </div>
+          <p className={styles.feedback} role="status">
+            {audioError
+              ? "Extrait indisponible. Réessaie ou passe ce morceau."
+              : loading
+                ? "Chargement du son…"
+                : feedback ||
+                  "Écoute le flash, trouve le titre. Une mauvaise réponse allonge l’extrait."}
+          </p>
+          {audioError && (
+            <button
+              className={styles.secondary}
+              onClick={() => {
+                setAudioError(false);
+                setLoading(true);
+                setRetry((n) => n + 1);
+              }}
+            >
+              Réessayer l’extrait
+            </button>
+          )}
+        </>
+      )}
+      {storageError && (
+        <p role="alert" className={styles.feedback}>
+          La sauvegarde du navigateur est indisponible : garde cet onglet ouvert pour conserver la
+          partie.
+        </p>
+      )}
     </section>
-  );
-}
-
-function ChoiceRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="mb-3 text-sm font-black text-[color:var(--muted-strong)]">{label}</p>
-      <div className="flex flex-wrap gap-2">{children}</div>
-    </div>
   );
 }

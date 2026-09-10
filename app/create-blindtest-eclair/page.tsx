@@ -37,8 +37,9 @@ export default function CreateFlashBlindtestPage() {
               Blindtest éclair
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[color:var(--muted-strong)] md:text-base">
-              Choisis tes morceaux : avant la partie, tu règleras la difficulté, la durée
-              d&apos;écoute et le nombre de titres. Plus le défi est serré, plus il rapporte.
+              Compose exactement 5 morceaux : un Easy, un Medium, un Hard, un Expert et un
+              Impossible. Plus tu trouves vite, plus tu marques. Le jackpot : les 5 titres en
+              0,1&nbsp;s.
             </p>
           </div>
         </div>

@@ -161,6 +161,7 @@ model BlindtestTrack {
   artist        String
   previewUrl    String  @map("preview_url")
   coverUrl      String? @map("cover_url")
+  rank          Int     @default(0)
 
   blindtest Blindtest @relation(fields: [blindtestId], references: [id], onDelete: Cascade)
 

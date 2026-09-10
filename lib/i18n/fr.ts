@@ -301,7 +301,7 @@ export const fr: Dictionary = {
     createTierlistDesc: "Classe tes sons du meilleur au pire",
     createBlindtestDesc: "Devine les titres à l'aveugle",
     flashBlindtest: "Blindtest éclair",
-    flashBlindtestDesc: "Devine vite avec une écoute ultra-courte",
+    flashBlindtestDesc: "5 sons, 5 difficultés. Trouve-les en 0,1 s pour le max de points",
     createStreamClashDesc: "Devine le morceau le plus streamé",
     createSmashPassDesc: "Smash ou Pass sur morceaux, albums ou artistes",
     createBattleFeatDesc: "Enchaîne les featurings",

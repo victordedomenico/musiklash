@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import TrackPicker from "@/components/TrackPicker";
 import GenrePicker from "@/components/GenrePicker";
+import { FLASH_TRACKS_PER_SESSION } from "@/lib/blindtest-flash";
 import { createBlindtest, type BlindtestTrackInput } from "./actions";
 import Input from "@/components/ui/Input";
 import type { MusicGenre } from "@/lib/genres";
@@ -20,11 +21,17 @@ export default function CreateBlindtestForm({
   const [tracks, setTracks] = useState<BlindtestTrackInput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const minimumTracks = variant === "flash" ? 5 : 3;
+  const isFlash = variant === "flash";
+  const minimumTracks = isFlash ? FLASH_TRACKS_PER_SESSION : 3;
+  const maximumTracks = isFlash ? FLASH_TRACKS_PER_SESSION : 50;
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (isFlash && tracks.length !== FLASH_TRACKS_PER_SESSION) {
+      setError(`Il faut ${FLASH_TRACKS_PER_SESSION} morceaux : un par difficulté.`);
+      return;
+    }
     if (tracks.length < minimumTracks) {
       setError(`Il faut au moins ${minimumTracks} morceaux.`);
       return;
@@ -86,7 +93,13 @@ export default function CreateBlindtestForm({
       </div>
 
       {/* Picker */}
-      <TrackPicker size={50} selected={tracks} onChange={setTracks} freeMode genre={genre} />
+      <TrackPicker
+        size={maximumTracks}
+        selected={tracks}
+        onChange={setTracks}
+        freeMode={!isFlash}
+        genre={genre}
+      />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">
@@ -97,8 +110,9 @@ export default function CreateBlindtestForm({
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
         <p className="text-sm text-[color:var(--muted)]">
-          {tracks.length} morceau{tracks.length > 1 ? "x" : ""} sélectionné
-          {tracks.length > 1 ? "s" : ""} · min. {minimumTracks}
+          {isFlash
+            ? `${tracks.length} / ${FLASH_TRACKS_PER_SESSION} morceaux · un par difficulté`
+            : `${tracks.length} morceau${tracks.length > 1 ? "x" : ""} sélectionné${tracks.length > 1 ? "s" : ""} · min. ${minimumTracks}`}
         </p>
         <button
           type="submit"
@@ -109,8 +123,8 @@ export default function CreateBlindtestForm({
             ? "Création…"
             : mode === "multi"
               ? "Créer et lancer la room"
-              : variant === "flash"
-                ? "Créer le Blindtest éclair"
+              : isFlash
+                ? "Lancer le Blindtest éclair"
                 : "Créer le blindtest"}
         </button>
       </div>

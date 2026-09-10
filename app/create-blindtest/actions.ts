@@ -8,6 +8,7 @@ import { sanitizeGenre } from "@/lib/genres";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { createClient } from "@/lib/supabase/server";
 import type { BlindtestParticipant } from "@/lib/blindtest-room";
+import { FLASH_TRACKS_PER_SESSION } from "@/lib/blindtest-flash";
 
 export type BlindtestTrackInput = {
   deezer_track_id: number;
@@ -15,6 +16,7 @@ export type BlindtestTrackInput = {
   artist: string;
   preview_url: string;
   cover_url: string | null;
+  rank?: number;
 };
 
 export async function createBlindtest(input: {
@@ -26,11 +28,16 @@ export async function createBlindtest(input: {
   variant?: "classic" | "flash";
 }) {
   if (!input.title.trim()) return { error: "Le titre est requis." };
-  const minimumTracks = input.variant === "flash" ? 5 : 3;
-  if (input.tracks.length < minimumTracks) {
-    return { error: `Il faut au moins ${minimumTracks} morceaux.` };
+  if (input.variant === "flash") {
+    if (input.tracks.length !== FLASH_TRACKS_PER_SESSION) {
+      return {
+        error: `Le Blindtest éclair se joue avec ${FLASH_TRACKS_PER_SESSION} morceaux : un par difficulté.`,
+      };
+    }
+  } else {
+    if (input.tracks.length < 3) return { error: "Il faut au moins 3 morceaux." };
+    if (input.tracks.length > 50) return { error: "50 morceaux maximum." };
   }
-  if (input.tracks.length > 50) return { error: "50 morceaux maximum." };
 
   let identity: { playerId: string };
   try {
@@ -72,6 +79,7 @@ export async function createBlindtest(input: {
             artist: t.artist,
             previewUrl: "",
             coverUrl: t.cover_url,
+            rank: t.rank ?? 0,
           })),
         },
       },

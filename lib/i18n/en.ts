@@ -17,7 +17,7 @@ export const en: Dictionary = {
     createTierlistDesc: "Rank your tracks from best to worst",
     createBlindtestDesc: "Guess songs without seeing the title",
     flashBlindtest: "Flash Blindtest",
-    flashBlindtestDesc: "Guess fast with ultra-short previews",
+    flashBlindtestDesc: "5 tracks, 5 difficulties. Find them all in 0.1s for max points",
     createStreamClashDesc: "Guess which song has more streams",
     createSmashPassDesc: "Smash or Pass on tracks, albums, or artists",
     createBattleFeatDesc: "Chain featurings together",

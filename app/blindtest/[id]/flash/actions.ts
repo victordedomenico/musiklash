@@ -4,7 +4,9 @@ import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import {
-  flashPoints,
+  FLASH_TRACKS_PER_SESSION,
+  flashAnswerPoints,
+  flashDifficultyAt,
   isFlashDifficulty,
   isFlashListenSeconds,
   type FlashAnswer,
@@ -21,13 +23,19 @@ export async function saveFlashBlindtestSession(input: {
   if (!isFlashDifficulty(input.difficulty) || !isFlashListenSeconds(input.listenSeconds)) {
     return { error: "Réglages du Blindtest éclair invalides." };
   }
-  if (!Number.isInteger(input.trackCount) || input.trackCount < 1 || input.trackCount > 20) {
+  if (
+    !Number.isInteger(input.trackCount) ||
+    input.trackCount < 1 ||
+    input.trackCount > FLASH_TRACKS_PER_SESSION
+  ) {
     return { error: "Nombre de morceaux invalide." };
   }
   if (
     !Number.isInteger(input.score) ||
     input.score < 0 ||
-    input.answers.length !== input.trackCount
+    !Array.isArray(input.answers) ||
+    input.answers.length !== input.trackCount ||
+    input.answers.some((answer) => !answer || typeof answer !== "object")
   ) {
     return { error: "Résultat du Blindtest éclair invalide." };
   }
@@ -42,18 +50,23 @@ export async function saveFlashBlindtestSession(input: {
 
   const validPositions = new Set(blindtest.tracks.map((track) => track.position));
   const answeredPositions = new Set(input.answers.map((answer) => answer.position));
-  const pointsPerSong = flashPoints(input.difficulty, input.listenSeconds);
   const answersAreValid =
     answeredPositions.size === input.trackCount &&
-    input.answers.every(
-      (answer) =>
+    input.answers.every((answer, index) => {
+      const difficulty = answer.difficulty ?? flashDifficultyAt(index);
+      const listenSeconds = answer.listenSeconds ?? input.listenSeconds;
+      return (
         Number.isInteger(answer.position) &&
         validPositions.has(answer.position) &&
         typeof answer.correct === "boolean" &&
         typeof answer.skipped === "boolean" &&
         !(answer.correct && answer.skipped) &&
-        answer.points === (answer.correct ? pointsPerSong : 0),
-    );
+        isFlashDifficulty(difficulty) &&
+        difficulty === flashDifficultyAt(index) &&
+        isFlashListenSeconds(listenSeconds) &&
+        answer.points === flashAnswerPoints(answer, difficulty, listenSeconds)
+      );
+    });
   const expectedScore = input.answers.reduce((total, answer) => total + answer.points, 0);
   if (!answersAreValid || input.score !== expectedScore) {
     return { error: "Résultat du Blindtest éclair invalide." };
