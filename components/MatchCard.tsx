@@ -21,11 +21,17 @@ export default function MatchCard({
   b,
   onPick,
   roundLabel,
+  voteCounts,
+  canVote = true,
+  disabledVoteLabel = "Vote enregistré",
 }: {
   a: BracketTrack;
   b: BracketTrack;
   onPick: (winnerSeed: number) => void;
   roundLabel: string;
+  voteCounts?: Record<number, number>;
+  canVote?: boolean;
+  disabledVoteLabel?: string;
 }) {
   const [playing, setPlaying] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
@@ -121,6 +127,9 @@ export default function MatchCard({
           onToggle={toggle}
           onPick={handlePick}
           onSeek={handleSeek}
+          voteCount={voteCounts?.[a.seed]}
+          canVote={canVote}
+          disabledVoteLabel={disabledVoteLabel}
         />
         <div className="mx-auto text-lg font-black text-[color:var(--muted)] h-10 w-10 flex items-center justify-center rounded-full bg-[color:var(--surface-2)]">
           VS
@@ -134,6 +143,9 @@ export default function MatchCard({
           onToggle={toggle}
           onPick={handlePick}
           onSeek={handleSeek}
+          voteCount={voteCounts?.[b.seed]}
+          canVote={canVote}
+          disabledVoteLabel={disabledVoteLabel}
         />
       </div>
       <DeezerAttribution compact className="mt-4 justify-center" />
@@ -150,6 +162,9 @@ function Side({
   onToggle,
   onPick,
   onSeek,
+  voteCount,
+  canVote,
+  disabledVoteLabel,
 }: {
   track: BracketTrack;
   previewUrl: string | null;
@@ -159,6 +174,9 @@ function Side({
   onToggle: (seed: number, url: string | null) => void;
   onPick: (seed: number) => void;
   onSeek: (time: number) => void;
+  voteCount?: number;
+  canVote: boolean;
+  disabledVoteLabel: string;
 }) {
   const formatTime = (time: number) => {
     const mins = Math.floor(time / 60);
@@ -175,7 +193,20 @@ function Side({
         className="h-32 w-32 rounded-xl bg-[color:var(--surface-2)] object-cover shadow-lg sm:h-40 sm:w-40 md:h-48 md:w-48"
       />
       <div className="mt-4 w-full px-2 max-w-[240px]">
-        <p className="font-semibold line-clamp-1">{track.title}</p>
+        <div className="flex items-center justify-center gap-2">
+          <p className="min-w-0 truncate font-semibold">{track.title}</p>
+          {voteCount !== undefined ? (
+            <motion.span
+              key={voteCount}
+              initial={{ scale: 0.72, opacity: 0.5 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="inline-flex shrink-0 items-center rounded-full border border-sky-300/25 bg-sky-300/10 px-2 py-0.5 text-xs font-black tabular-nums text-sky-100"
+              aria-label={`${voteCount} vote${voteCount > 1 ? "s" : ""}`}
+            >
+              {voteCount} vote{voteCount > 1 ? "s" : ""}
+            </motion.span>
+          ) : null}
+        </div>
         <p className="text-sm text-[color:var(--muted)] line-clamp-1">{track.artist}</p>
 
         {/* Audio Player Controls */}
@@ -216,11 +247,12 @@ function Side({
             <motion.button
               type="button"
               onClick={() => onPick(track.seed)}
+              disabled={!canVote}
               className="btn-primary w-full justify-center text-sm sm:flex-1"
-              whileTap={{ scale: 0.9 }}
-              whileHover={{ scale: 1.05 }}
+              whileTap={canVote ? { scale: 0.9 } : undefined}
+              whileHover={canVote ? { scale: 1.05 } : undefined}
             >
-              Voter
+              {canVote ? "Voter" : disabledVoteLabel}
             </motion.button>
           </div>
         </div>

@@ -6,7 +6,12 @@ export const metadata: Metadata = {
   title: "Créer un bracket — MusiKlash",
 };
 
-export default async function CreateBracketPage() {
+export default async function CreateBracketPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
+  const { mode } = await searchParams;
   return (
     <div className="page-shell py-12">
       <SectionHeader
@@ -14,7 +19,7 @@ export default async function CreateBracketPage() {
         subtitle="Transforme ta sélection musicale en tournoi éliminatoire morceau par morceau."
       />
       <div className="mt-8">
-        <CreateBracketForm />
+        <CreateBracketForm mode={mode === "multi" ? "multi" : "solo"} />
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import { MAX_BRACKET_TRACKS, shuffle } from "@/lib/bracket";
 import { ensureGenreColumns } from "@/lib/ensure-genre-columns";
 import { sanitizeGenre } from "@/lib/genres";
 import { resolvePlayerIdentity } from "@/lib/guest";
+import type { Prisma } from "@prisma/client";
 
 export type SelectedTrack = {
   deezer_track_id: number;
@@ -20,6 +21,7 @@ export async function createBracket(input: {
   theme: string;
   genre?: string | null;
   visibility: "private" | "public" | "none";
+  mode?: "solo" | "multi";
   tracks: SelectedTrack[];
 }) {
   if (input.tracks.length < 3) {
@@ -37,7 +39,7 @@ export async function createBracket(input: {
   const drawnTracks = shuffle(input.tracks);
 
   const prisma = (await import("@/lib/prisma")).default;
-  let identity: { playerId: string };
+  let identity: { playerId: string; username: string };
   try {
     identity = await resolvePlayerIdentity();
   } catch (err: unknown) {
@@ -49,7 +51,9 @@ export async function createBracket(input: {
   }
 
   let bracketId: string;
-  const transient = input.visibility === "none";
+  let roomId: string | null = null;
+  const isCollaborative = input.mode === "multi";
+  const transient = input.visibility === "none" && !isCollaborative;
   const storedVisibility = transient ? "private" : input.visibility;
 
   try {
@@ -78,10 +82,24 @@ export async function createBracket(input: {
     });
 
     bracketId = bracket.id;
+    if (isCollaborative) {
+      const room = await prisma.bracketRoom.create({
+        data: {
+          bracketId,
+          hostId: identity.playerId,
+          participants: [
+            { playerId: identity.playerId, username: identity.username },
+          ] as unknown as Prisma.JsonArray,
+        },
+        select: { id: true },
+      });
+      roomId = room.id;
+    }
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Erreur à la création du bracket.";
     return { error: msg };
   }
 
+  if (roomId) redirect(`/bracket-game/room/${roomId}`);
   redirect(`/bracket-game/${bracketId}${transient ? "?transient=1" : ""}`);
 }

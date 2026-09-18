@@ -1,25 +1,33 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 
+// Recreate the cached client after `prisma generate` adds/removes fields.
+const schemaStamp = Object.values(Prisma.BracketRoomScalarFieldEnum).join(",");
+
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+  prisma?: PrismaClient;
+  prismaPool?: Pool;
+  prismaSchemaStamp?: string;
 };
 
-let prisma: PrismaClient;
-
-if (!globalForPrisma.prisma) {
-  const connectionString = process.env.DATABASE_URL;
+function createPrisma() {
   const pool = new Pool({
-    connectionString,
+    connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
   });
-  const adapter = new PrismaPg(pool);
-  prisma = new PrismaClient({ adapter });
-} else {
-  prisma = globalForPrisma.prisma;
+  return { prisma: new PrismaClient({ adapter: new PrismaPg(pool) }), pool };
 }
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+if (!globalForPrisma.prisma || globalForPrisma.prismaSchemaStamp !== schemaStamp) {
+  void globalForPrisma.prisma?.$disconnect();
+  void globalForPrisma.prismaPool?.end();
+  const created = createPrisma();
+  globalForPrisma.prisma = created.prisma;
+  globalForPrisma.prismaPool = created.pool;
+  globalForPrisma.prismaSchemaStamp = schemaStamp;
+}
+
+const prisma = globalForPrisma.prisma;
 
 export default prisma;

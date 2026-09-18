@@ -13,7 +13,7 @@ const VIS_HINTS = {
   none: "Éphémère : la tierlist sera supprimée définitivement après la partie.",
 } as const;
 
-export default function CreateTierlistForm() {
+export default function CreateTierlistForm({ mode = "solo" }: { mode?: "solo" | "multi" }) {
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState("");
   const [genre, setGenre] = useState<MusicGenre | null>(null);
@@ -30,7 +30,7 @@ export default function CreateTierlistForm() {
       return;
     }
     startTransition(async () => {
-      const res = await createTierlist({ title, theme, genre, visibility, tracks });
+      const res = await createTierlist({ title, theme, genre, visibility, mode, tracks });
       if (res?.error) setError(res.error);
     });
   };
@@ -63,25 +63,34 @@ export default function CreateTierlistForm() {
       {/* Ligne 2 — Genre musical */}
       <GenrePicker value={genre} onChange={setGenre} />
 
+      {mode === "multi" ? (
+        <p className="rounded-xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
+          Room collaborative : chaque joueur vote pour le rang d’un morceau. La majorité l’emporte ;
+          un tirage au sort départage une égalité.
+        </p>
+      ) : null}
+
       {/* Ligne 3 — Publication */}
       <div>
         <label className="text-sm font-medium">Publication</label>
         <div className="mt-1 flex flex-wrap gap-2">
-          {(["private", "public", "none"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setVisibility(v)}
-              className="btn-chip"
-              data-active={visibility === v}
-            >
-              {v === "private"
-                ? "Publié — Privé"
-                : v === "public"
-                  ? "Publié — Public"
-                  : "Non publié"}
-            </button>
-          ))}
+          {(["private", "public", "none"] as const)
+            .filter((v) => mode === "solo" || v !== "none")
+            .map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setVisibility(v)}
+                className="btn-chip"
+                data-active={visibility === v}
+              >
+                {v === "private"
+                  ? "Publié — Privé"
+                  : v === "public"
+                    ? "Publié — Public"
+                    : "Non publié"}
+              </button>
+            ))}
         </div>
         <p className="mt-2 text-xs text-[color:var(--muted)]">{VIS_HINTS[visibility]}</p>
       </div>
@@ -106,7 +115,7 @@ export default function CreateTierlistForm() {
           disabled={pending || tracks.length < 2}
           className="btn-primary disabled:opacity-50"
         >
-          {pending ? "Création…" : "Créer la tierlist"}
+          {pending ? "Création…" : mode === "multi" ? "Créer la room" : "Créer la tierlist"}
         </button>
       </div>
     </form>

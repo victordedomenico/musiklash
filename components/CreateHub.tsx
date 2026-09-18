@@ -29,24 +29,33 @@ export type CreateHubLabels = {
   modeMultiDesc: string;
 };
 
-type Step = "main" | "blindtest" | "battlefeat" | "streamclash" | "smashpass";
+type Step =
+  | "main"
+  | "bracket"
+  | "tierlist"
+  | "blindtest"
+  | "battlefeat"
+  | "streamclash"
+  | "smashpass";
 
 const MAIN_OPTIONS = [
   {
     key: "bracket" as const,
-    href: "/create-bracket",
+    href: null,
     icon: Swords,
     accent: "#f59e0b",
     bg: "rgba(245,158,11,0.12)",
-    hasSubMenu: false,
+    hasSubMenu: true,
+    step: "bracket" as Step,
   },
   {
     key: "tierlist" as const,
-    href: "/create-tierlist",
+    href: null,
     icon: Library,
     accent: "#3b82f6",
     bg: "rgba(59,130,246,0.12)",
-    hasSubMenu: false,
+    hasSubMenu: true,
+    step: "tierlist" as Step,
   },
   {
     key: "blindtest" as const,
@@ -131,6 +140,44 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
       href: "/create-blindtest-eclair",
       accent: "#20df70",
       bg: "rgba(32,223,112,0.12)",
+    },
+  ];
+
+  const bracketModes: BlindtestMode[] = [
+    {
+      icon: User,
+      label: labels.modeSolo,
+      desc: labels.modeSoloDesc,
+      href: "/create-bracket?mode=solo",
+      accent: "#f59e0b",
+      bg: "rgba(245,158,11,0.12)",
+    },
+    {
+      icon: Users,
+      label: labels.modeMulti,
+      desc: labels.modeMultiDesc,
+      href: "/create-bracket?mode=multi",
+      accent: "#3b82f6",
+      bg: "rgba(59,130,246,0.12)",
+    },
+  ];
+
+  const tierlistModes: BlindtestMode[] = [
+    {
+      icon: User,
+      label: labels.modeSolo,
+      desc: labels.modeSoloDesc,
+      href: "/create-tierlist?mode=solo",
+      accent: "#3b82f6",
+      bg: "rgba(59,130,246,0.12)",
+    },
+    {
+      icon: Users,
+      label: labels.modeMulti,
+      desc: labels.modeMultiDesc,
+      href: "/create-tierlist?mode=multi",
+      accent: "#3b82f6",
+      bg: "rgba(59,130,246,0.12)",
     },
   ];
 
@@ -256,13 +303,17 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
   };
 
   const subTitle =
-    step === "blindtest"
-      ? labels.blindtest
-      : step === "streamclash"
-        ? labels.streamClash
-        : step === "smashpass"
-          ? labels.smashPass
-          : labels.battleFeat;
+    step === "bracket"
+      ? labels.bracket
+      : step === "tierlist"
+        ? labels.tierlist
+        : step === "blindtest"
+          ? labels.blindtest
+          : step === "streamclash"
+            ? labels.streamClash
+            : step === "smashpass"
+              ? labels.smashPass
+              : labels.battleFeat;
 
   return (
     <div
@@ -370,6 +421,22 @@ export default function CreateHub({ labels }: { labels: CreateHubLabels }) {
       {step === "blindtest" && (
         <div className="mx-auto flex max-w-xl flex-col gap-3">
           {blindtestModes.map((m) => (
+            <ModeCard key={`${m.href}-${m.label}`} item={m} />
+          ))}
+        </div>
+      )}
+
+      {step === "bracket" && (
+        <div className="mx-auto flex max-w-xl flex-col gap-3">
+          {bracketModes.map((m) => (
+            <ModeCard key={`${m.href}-${m.label}`} item={m} />
+          ))}
+        </div>
+      )}
+
+      {step === "tierlist" && (
+        <div className="mx-auto flex max-w-xl flex-col gap-3">
+          {tierlistModes.map((m) => (
             <ModeCard key={`${m.href}-${m.label}`} item={m} />
           ))}
         </div>

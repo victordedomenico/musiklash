@@ -21,8 +21,10 @@ model Profile {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   brackets               Bracket[]
+  hostedBracketRooms     BracketRoom[]             @relation("BracketRoomHost")
   games                  BracketGame[]
   tierlists              Tierlist[]
+  hostedTierlistRooms    TierlistRoom[]            @relation("TierlistRoomHost")
   tierlistSessions       TierlistSession[]
   blindtests             Blindtest[]
   blindtestSessions      BlindtestSession[]
@@ -43,20 +45,21 @@ model Profile {
 }
 
 model Bracket {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  ownerId    String   @map("owner_id") @db.Uuid
-  title      String
-  theme      String?
-  genre      String?
-  size       Int      @db.SmallInt
-  drawVersion Int     @default(1) @map("draw_version") @db.SmallInt
-  visibility String   @default("private")
-  coverUrl   String?  @map("cover_url")
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId     String   @map("owner_id") @db.Uuid
+  title       String
+  theme       String?
+  genre       String?
+  size        Int      @db.SmallInt
+  drawVersion Int      @default(1) @map("draw_version") @db.SmallInt
+  visibility  String   @default("private")
+  coverUrl    String?  @map("cover_url")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   owner  Profile        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   tracks BracketTrack[]
   games  BracketGame[]
+  rooms  BracketRoom[]
 
   @@index([ownerId])
   @@index([visibility, createdAt(sort: Desc)])
@@ -108,6 +111,31 @@ model BracketVote {
 
   @@id([gameId, round, matchIndex])
   @@map("bracket_votes")
+}
+
+// A collaborative bracket keeps the canonical draw on the Bracket itself.
+// `votes` contains resolved match results and `ballots` only the open duel.
+model BracketRoom {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bracketId      String    @map("bracket_id") @db.Uuid
+  hostId         String    @map("host_id") @db.Uuid
+  status         String    @default("waiting")
+  participants   Json      @default("[]") @db.JsonB
+  votes          Json      @default("[]") @db.JsonB
+  ballots        Json      @default("[]") @db.JsonB
+  lastResolution Json?     @map("last_resolution") @db.JsonB
+  duelStartedAt  DateTime? @map("duel_started_at") @db.Timestamptz
+  winnerSeed     Int?      @map("winner_seed") @db.SmallInt
+  revision       Int       @default(0)
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  bracket Bracket @relation(fields: [bracketId], references: [id], onDelete: Cascade)
+  host    Profile @relation("BracketRoomHost", fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([bracketId])
+  @@index([hostId])
+  @@map("bracket_rooms")
 }
 
 // ─── Blindtests ───────────────────────────────────────────────────────────────
@@ -238,6 +266,7 @@ model Tierlist {
   owner    Profile           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   tracks   TierlistTrack[]
   sessions TierlistSession[]
+  rooms    TierlistRoom[]
 
   @@index([ownerId])
   @@index([visibility, createdAt(sort: Desc)])
@@ -275,6 +304,28 @@ model TierlistSession {
   @@index([tierlistId])
   @@index([visibility, createdAt(sort: Desc)])
   @@map("tierlist_sessions")
+}
+
+// Collaborative tierlists use the seven fixed ranks. Each participant votes
+// for one rank per track; `placements` stores the resolved majority outcome.
+model TierlistRoom {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tierlistId      String   @map("tierlist_id") @db.Uuid
+  hostId          String   @map("host_id") @db.Uuid
+  status          String   @default("waiting")
+  currentPosition Int      @default(0) @map("current_position") @db.SmallInt
+  participants    Json     @default("[]") @db.JsonB
+  placements      Json     @default("{}") @db.JsonB
+  ballots         Json     @default("[]") @db.JsonB
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  tierlist Tierlist @relation(fields: [tierlistId], references: [id], onDelete: Cascade)
+  host     Profile  @relation("TierlistRoomHost", fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@index([tierlistId])
+  @@index([hostId])
+  @@map("tierlist_rooms")
 }
 
 // ─── BattleFeat ───────────────────────────────────────────────────────────────
