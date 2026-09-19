@@ -6,7 +6,7 @@ import { DEFAULT_TIERS } from "@/lib/tierlist-tiers";
 
 export type RoomParticipant = { playerId: string; username: string };
 export type BracketBallot = { playerId: string; winnerSeed: number | null };
-export type TierlistBallot = { playerId: string; tierId: string };
+export type TierlistBallot = { playerId: string; tierId: string | null };
 
 export type BracketRoundResolution = {
   id: string;
@@ -20,6 +20,19 @@ export type BracketRoundResolution = {
   skippedCount: number;
   tie: boolean;
   coinSide: "pile" | "face" | null;
+  resolvedAt: string;
+};
+
+export type TierlistRoundResolution = {
+  id: string;
+  position: number;
+  tierId: string;
+  votesByTier: Record<string, number>;
+  skippedCount: number;
+  tie: boolean;
+  coinSide: "pile" | "face" | null;
+  pileTierId: string | null;
+  faceTierId: string | null;
   resolvedAt: string;
 };
 
@@ -62,6 +75,8 @@ export type TierlistRoomSnapshot = {
   participants: RoomParticipant[];
   placements: Record<string, string>;
   ballots: TierlistBallot[];
+  lastResolution: TierlistRoundResolution | null;
+  positionStartedAt: string | null;
   currentPosition: number;
   updatedAt: string;
   tierlist: { id: string; title: string; tracks: CollaborativeTrack[] };
@@ -156,15 +171,47 @@ export function normalizeTierlistBallots(value: unknown): TierlistBallot[] {
     if (
       !isRecord(entry) ||
       typeof entry.playerId !== "string" ||
-      typeof entry.tierId !== "string" ||
-      !validTiers.has(entry.tierId)
+      (entry.tierId !== null && (typeof entry.tierId !== "string" || !validTiers.has(entry.tierId)))
     ) {
       return [];
     }
     if (ids.has(entry.playerId)) return [];
     ids.add(entry.playerId);
-    return [{ playerId: entry.playerId, tierId: entry.tierId }];
+    return [{ playerId: entry.playerId, tierId: entry.tierId as string | null }];
   });
+}
+
+export function normalizeTierlistResolution(value: unknown): TierlistRoundResolution | null {
+  if (!isRecord(value)) return null;
+  const votesByTierValue = value.votesByTier;
+  const validTiers = new Set(DEFAULT_TIERS.map((tier) => tier.id));
+  if (
+    typeof value.id !== "string" ||
+    !Number.isInteger(value.position) ||
+    typeof value.tierId !== "string" ||
+    !validTiers.has(value.tierId) ||
+    !isRecord(votesByTierValue) ||
+    !Number.isInteger(value.skippedCount) ||
+    typeof value.tie !== "boolean" ||
+    (value.coinSide !== null && value.coinSide !== "pile" && value.coinSide !== "face") ||
+    (value.pileTierId !== null &&
+      (typeof value.pileTierId !== "string" || !validTiers.has(value.pileTierId))) ||
+    (value.faceTierId !== null &&
+      (typeof value.faceTierId !== "string" || !validTiers.has(value.faceTierId))) ||
+    typeof value.resolvedAt !== "string"
+  ) {
+    return null;
+  }
+  const votesByTier = Object.fromEntries(
+    DEFAULT_TIERS.map((tier) => [
+      tier.id,
+      Number.isInteger(votesByTierValue[tier.id]) ? (votesByTierValue[tier.id] as number) : 0,
+    ]),
+  );
+  return {
+    ...(value as unknown as Omit<TierlistRoundResolution, "votesByTier">),
+    votesByTier,
+  };
 }
 
 export function normalizePlacements(value: unknown): Record<string, string> {
@@ -273,6 +320,11 @@ export function toTierlistRoomSnapshot(room: NonNullable<TierlistRoomRaw>): Tier
     participants: normalizeParticipants(room.participants),
     placements: normalizePlacements(room.placements),
     ballots: normalizeTierlistBallots(room.ballots),
+    lastResolution: normalizeTierlistResolution(room.lastResolution),
+    positionStartedAt:
+      (
+        room.positionStartedAt ?? (room.status === "playing" ? room.updatedAt : null)
+      )?.toISOString() ?? null,
     currentPosition: room.currentPosition,
     updatedAt: room.updatedAt.toISOString(),
     tierlist: {

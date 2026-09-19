@@ -309,16 +309,19 @@ model TierlistSession {
 // Collaborative tierlists use the seven fixed ranks. Each participant votes
 // for one rank per track; `placements` stores the resolved majority outcome.
 model TierlistRoom {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tierlistId      String   @map("tierlist_id") @db.Uuid
-  hostId          String   @map("host_id") @db.Uuid
-  status          String   @default("waiting")
-  currentPosition Int      @default(0) @map("current_position") @db.SmallInt
-  participants    Json     @default("[]") @db.JsonB
-  placements      Json     @default("{}") @db.JsonB
-  ballots         Json     @default("[]") @db.JsonB
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tierlistId        String    @map("tierlist_id") @db.Uuid
+  hostId            String    @map("host_id") @db.Uuid
+  status            String    @default("waiting")
+  currentPosition   Int       @default(0) @map("current_position") @db.SmallInt
+  participants      Json      @default("[]") @db.JsonB
+  placements        Json      @default("{}") @db.JsonB
+  ballots           Json      @default("[]") @db.JsonB
+  lastResolution    Json?     @map("last_resolution") @db.JsonB
+  positionStartedAt DateTime? @map("position_started_at") @db.Timestamptz
+  revision          Int       @default(0)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   tierlist Tierlist @relation(fields: [tierlistId], references: [id], onDelete: Cascade)
   host     Profile  @relation("TierlistRoomHost", fields: [hostId], references: [id], onDelete: Cascade)

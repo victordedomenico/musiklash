@@ -33,7 +33,8 @@ export default async function TierlistRoomPage({
       <div className="mb-6">
         <SectionHeader title={room.tierlist.title} subtitle="Tierlist collaborative" />
         <p className="mt-1 text-sm text-[color:var(--muted)]">
-          Chaque morceau est placé dans le rang choisi par la majorité des joueurs.
+          Chaque morceau est placé dans le rang choisi par la majorité, avec pile ou face en cas
+          d’égalité.
         </p>
       </div>
       <TierlistRoomClient
