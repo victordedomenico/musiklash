@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Download, Pause, Play, RotateCcw, Save, Share2 } from "lucide-react";
 import MatchCard, { type BracketTrack } from "./MatchCard";
 import { buildBracketState, totalRounds, type BracketSize, type Vote } from "@/lib/bracket";
+import { bracketRoundLabel } from "@/lib/bracket-round-label";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { deleteTransientBracket, saveBracketGame } from "@/app/bracket-game/[id]/actions";
@@ -16,15 +17,6 @@ import {
   readBracketProgress,
   writeBracketProgress,
 } from "@/lib/bracket-progress";
-
-function roundLabel(round: number, total: number) {
-  const remaining = total - round + 1;
-  if (round === total) return "Finale";
-  if (remaining === 2) return "Demi-finale";
-  if (remaining === 3) return "Quarts de finale";
-  if (remaining === 4) return "Huitièmes de finale";
-  return `Tour ${round}`;
-}
 
 export default function BracketGame({
   bracketId,
@@ -553,7 +545,7 @@ export default function BracketGame({
       const slotsPerMatch = Math.max(1, Math.floor(sideBaseMatches / Math.max(1, matches.length)));
       const size = coverSizeFor(roundNumber, forExport);
 
-      const label = roundLabel(roundNumber, total);
+      const label = bracketRoundLabel(roundNumber, total);
       return (
         <div key={`${side}-${roundNumber}`} className="px-1">
           <p className="mb-2 flex items-center justify-center gap-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
@@ -871,7 +863,8 @@ export default function BracketGame({
       ) : null}
       <div className="flex items-center justify-between text-sm">
         <span className="text-[color:var(--muted)]">
-          {roundLabel(currentRound, total)} — Duel {votedThisRound + 1} / {realPairings.length}
+          {bracketRoundLabel(currentRound, total)} — Duel {votedThisRound + 1} /{" "}
+          {realPairings.length}
         </span>
         <div className="h-2 w-40 rounded-full bg-[color:var(--surface-2)]">
           <div
@@ -887,7 +880,7 @@ export default function BracketGame({
         a={a}
         b={b}
         onPick={(seed) => handlePick(nextMatch.matchIndex, seed)}
-        roundLabel={roundLabel(currentRound, total)}
+        roundLabel={bracketRoundLabel(currentRound, total)}
       />
     </div>
   );

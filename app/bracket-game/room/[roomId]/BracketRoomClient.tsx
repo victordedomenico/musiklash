@@ -11,7 +11,15 @@ import type {
   CollaborativeTrack,
 } from "@/lib/collaborative-room";
 import { BRACKET_DUEL_SECONDS, remainingDuelSeconds } from "@/lib/bracket-room-rules";
+import { buildBracketState, totalRounds } from "@/lib/bracket";
+import { bracketRoundLabel } from "@/lib/bracket-round-label";
 import {
+  forgetMultiplayerRoom,
+  MULTIPLAYER_ROOMS_CHANGED_EVENT,
+  rememberMultiplayerRoom,
+} from "@/lib/multiplayer-room-resume";
+import {
+  clearBracketVote,
   expireBracketDuel,
   finishBracketRound,
   joinBracketRoom,
@@ -185,6 +193,41 @@ export default function BracketRoomClient({
     () => new Map(room.bracket.tracks.map((track) => [track.seed, track])),
     [room.bracket.tracks],
   );
+  const bracketState = useMemo(
+    () =>
+      buildBracketState(
+        room.bracket.size,
+        room.votes,
+        room.bracket.tracks.length,
+        room.bracket.drawVersion,
+      ),
+    [room.bracket.drawVersion, room.bracket.size, room.bracket.tracks.length, room.votes],
+  );
+  const currentRound = bracketState.rounds.length;
+  const realPairings = (bracketState.rounds.at(-1) ?? []).filter(
+    (pairing) => pairing.seedB <= room.bracket.tracks.length,
+  );
+  const currentDuelIndex = room.currentPair
+    ? Math.max(
+        0,
+        realPairings.findIndex((pairing) => pairing.matchIndex === room.currentPair?.matchIndex),
+      )
+    : 0;
+  const roundProgressLabel = `${bracketRoundLabel(currentRound, totalRounds(room.bracket.size))} — Duel ${currentDuelIndex + 1} / ${realPairings.length}`;
+
+  useEffect(() => {
+    if (room.status === "finished") {
+      forgetMultiplayerRoom(window.localStorage, { id: room.id, kind: "bracket" });
+      window.dispatchEvent(new Event(MULTIPLAYER_ROOMS_CHANGED_EVENT));
+      return;
+    }
+    rememberMultiplayerRoom(window.localStorage, {
+      id: room.id,
+      kind: "bracket",
+      title: room.bracket.title,
+    });
+    window.dispatchEvent(new Event(MULTIPLAYER_ROOMS_CHANGED_EVENT));
+  }, [room.bracket.title, room.id, room.status]);
 
   const acceptRoom = useCallback((nextRoom: BracketRoomSnapshot) => {
     const resolution = nextRoom.lastResolution;
@@ -392,6 +435,14 @@ export default function BracketRoomClient({
       ) : trackA && trackB ? (
         <section className="space-y-4">
           <div className="overflow-hidden rounded-2xl border border-sky-400/25 bg-sky-400/10">
+            <div className="border-b border-sky-300/15 px-4 py-4 text-center">
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-sky-200/70">
+                Tour en cours
+              </p>
+              <h2 className="mt-1 text-xl font-black tracking-tight text-sky-50 sm:text-2xl">
+                {roundProgressLabel}
+              </h2>
+            </div>
             <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
               <div className="flex items-center gap-3">
                 <span
@@ -412,10 +463,20 @@ export default function BracketRoomClient({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {hasVoted ? (
-                  <span className="inline-flex items-center gap-1 text-emerald-200">
-                    <Check size={15} />
-                    {myBallot?.winnerSeed === null ? "Tu as passé" : "Ton vote est enregistré"}
-                  </span>
+                  <>
+                    <span className="inline-flex items-center gap-1 text-emerald-200">
+                      <Check size={15} />
+                      {myBallot?.winnerSeed === null ? "Tu as passé" : "Ton vote est enregistré"}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={pending || timeLeft === 0}
+                      onClick={() => run(() => clearBracketVote(room.id))}
+                      className="btn-ghost text-xs"
+                    >
+                      Annuler mon vote
+                    </button>
+                  </>
                 ) : me ? (
                   <button
                     type="button"
@@ -475,6 +536,47 @@ export default function BracketRoomClient({
                     : "Vote enregistré"
             }
           />
+          <section className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)]">
+            <div className="flex items-center justify-between border-b border-[color:var(--border)] px-4 py-3">
+              <p className="text-sm font-bold">Votes de la room</p>
+              <p className="text-xs text-[color:var(--muted)]">Modifiables jusqu’à la clôture</p>
+            </div>
+            <div className="divide-y divide-[color:var(--border)]">
+              {room.participants.map((participant) => {
+                const ballot = room.ballots.find(
+                  (candidate) => candidate.playerId === participant.playerId,
+                );
+                const selectedTrack =
+                  ballot?.winnerSeed === trackA.seed
+                    ? trackA
+                    : ballot?.winnerSeed === trackB.seed
+                      ? trackB
+                      : null;
+                return (
+                  <div
+                    key={participant.playerId}
+                    className="flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm"
+                  >
+                    <span className="min-w-0 truncate font-medium">
+                      {participant.username}
+                      {participant.playerId === userId ? " · toi" : ""}
+                    </span>
+                    <span
+                      className={`max-w-[58%] truncate text-right text-xs font-semibold ${
+                        selectedTrack
+                          ? "text-sky-200"
+                          : ballot?.winnerSeed === null
+                            ? "text-amber-200"
+                            : "text-[color:var(--muted)]"
+                      }`}
+                    >
+                      {selectedTrack?.title ?? (ballot ? "A passé" : "En attente")}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         </section>
       ) : (
         <div className="card p-6 text-center text-sm text-[color:var(--muted)]">

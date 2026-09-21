@@ -22,9 +22,15 @@ import type {
 } from "@/lib/collaborative-room";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { BRACKET_DUEL_SECONDS, remainingDuelSeconds } from "@/lib/bracket-room-rules";
+import {
+  forgetMultiplayerRoom,
+  MULTIPLAYER_ROOMS_CHANGED_EVENT,
+  rememberMultiplayerRoom,
+} from "@/lib/multiplayer-room-resume";
 import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 import { DEFAULT_TIERS } from "@/lib/tierlist-tiers";
 import {
+  clearTierlistVote,
   expireTierlistRound,
   finishTierlistRound,
   joinTierlistRoom,
@@ -314,6 +320,19 @@ export default function TierlistRoomClient({
     () => new Map(room.tierlist.tracks.map((track) => [track.position, track])),
     [room.tierlist.tracks],
   );
+  useEffect(() => {
+    if (room.status === "finished") {
+      forgetMultiplayerRoom(window.localStorage, { id: room.id, kind: "tierlist" });
+      window.dispatchEvent(new Event(MULTIPLAYER_ROOMS_CHANGED_EVENT));
+      return;
+    }
+    rememberMultiplayerRoom(window.localStorage, {
+      id: room.id,
+      kind: "tierlist",
+      title: room.tierlist.title,
+    });
+    window.dispatchEvent(new Event(MULTIPLAYER_ROOMS_CHANGED_EVENT));
+  }, [room.id, room.status, room.tierlist.title]);
   const byTier = useMemo(
     () =>
       Object.fromEntries(
@@ -504,10 +523,20 @@ export default function TierlistRoomClient({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {hasVoted ? (
-                  <span className="inline-flex items-center gap-1 text-emerald-200">
-                    <Check size={15} />
-                    {myBallot?.tierId === null ? "Tu as passé" : "Ton vote est enregistré"}
-                  </span>
+                  <>
+                    <span className="inline-flex items-center gap-1 text-emerald-200">
+                      <Check size={15} />
+                      {myBallot?.tierId === null ? "Tu as passé" : "Ton vote est enregistré"}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={pending || timeLeft === 0}
+                      onClick={() => run(() => clearTierlistVote(room.id))}
+                      className="btn-ghost text-xs"
+                    >
+                      Annuler mon vote
+                    </button>
+                  </>
                 ) : me ? (
                   <button
                     type="button"
@@ -573,6 +602,47 @@ export default function TierlistRoomClient({
               ))}
             </div>
             {!me ? <p className="mt-4 text-sm text-sky-200">Tu observes cette room.</p> : null}
+            {hasVoted && me ? (
+              <p className="mt-4 text-xs text-[color:var(--muted)]">
+                Annule ton vote pour sélectionner un autre rang.
+              </p>
+            ) : null}
+          </section>
+          <section className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)]">
+            <div className="flex items-center justify-between border-b border-[color:var(--border)] px-4 py-3">
+              <p className="text-sm font-bold">Votes de la room</p>
+              <p className="text-xs text-[color:var(--muted)]">Modifiables jusqu’à la clôture</p>
+            </div>
+            <div className="divide-y divide-[color:var(--border)]">
+              {room.participants.map((participant) => {
+                const ballot = room.ballots.find(
+                  (candidate) => candidate.playerId === participant.playerId,
+                );
+                const tier = DEFAULT_TIERS.find((candidate) => candidate.id === ballot?.tierId);
+                return (
+                  <div
+                    key={participant.playerId}
+                    className="flex min-h-12 items-center justify-between gap-3 px-4 py-3 text-sm"
+                  >
+                    <span className="min-w-0 truncate font-medium">
+                      {participant.username}
+                      {participant.playerId === userId ? " · toi" : ""}
+                    </span>
+                    <span
+                      className={`max-w-[58%] truncate text-right text-xs font-semibold ${
+                        tier
+                          ? "text-sky-200"
+                          : ballot?.tierId === null
+                            ? "text-amber-200"
+                            : "text-[color:var(--muted)]"
+                      }`}
+                    >
+                      {tier ? `Rang ${tier.label}` : ballot ? "A passé" : "En attente"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </section>
         </section>
       ) : null}

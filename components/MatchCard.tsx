@@ -248,7 +248,7 @@ function Side({
               type="button"
               onClick={() => onPick(track.seed)}
               disabled={!canVote}
-              className="btn-primary w-full justify-center text-sm sm:flex-1"
+              className="btn-primary min-h-10 w-full justify-center whitespace-normal break-words text-center text-sm leading-tight sm:flex-1"
               whileTap={canVote ? { scale: 0.9 } : undefined}
               whileHover={canVote ? { scale: 1.05 } : undefined}
             >

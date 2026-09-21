@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { BRACKET_DUEL_SECONDS } from "@/lib/bracket-room-rules";
+import { removePlayerBallot, replacePlayerBallot } from "@/lib/room-ballots";
 import { resolveTierlistBallots } from "@/lib/tierlist-room-rules";
 import {
   getTierlistRoomSnapshot,
@@ -154,14 +155,10 @@ async function submitTierlistBallot(roomId: string, tierId: string | null) {
     if (!currentTrack(room)) return { ok: false as const, error: "Ce morceau n’est plus actif." };
 
     const ballots = normalizeTierlistBallots(room.ballots);
-    if (ballots.some((ballot) => ballot.playerId === user.playerId)) {
-      return { ok: false as const, error: "Tu as déjà répondu pour ce morceau." };
-    }
-
     const shouldResolveExpired = hasExpired(room);
     const nextBallots = shouldResolveExpired
       ? ballots
-      : [...ballots, { playerId: user.playerId, tierId }];
+      : replacePlayerBallot(ballots, { playerId: user.playerId, tierId });
     const shouldResolve = shouldResolveExpired || nextBallots.length >= participants.length;
     const data = shouldResolve
       ? resolvedPositionData(room, nextBallots)
@@ -187,6 +184,40 @@ export async function voteTierlistRoom(roomId: string, tierId: string) {
 
 export async function skipTierlistVote(roomId: string) {
   return submitTierlistBallot(roomId, null);
+}
+
+export async function clearTierlistVote(roomId: string) {
+  const user = await identity();
+  if (!user) return { ok: false as const, error: "Connexion requise." };
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const room = await findRoomForVote(roomId);
+    if (!room) return { ok: false as const, error: "Room introuvable." };
+    if (room.status !== "playing" || !currentTrack(room)) {
+      return { ok: false as const, error: "Ce morceau n’est plus actif." };
+    }
+    if (hasExpired(room)) return { ok: false as const, error: "Le temps de vote est écoulé." };
+
+    const participants = normalizeParticipants(room.participants);
+    if (!participants.some((participant) => participant.playerId === user.playerId)) {
+      return { ok: false as const, error: "Rejoins la room avant de participer." };
+    }
+    const ballots = normalizeTierlistBallots(room.ballots);
+    if (!ballots.some((ballot) => ballot.playerId === user.playerId)) {
+      return { ok: false as const, error: "Tu n’as pas encore voté pour ce morceau." };
+    }
+
+    const updated = await prisma.tierlistRoom.updateMany({
+      where: { id: roomId, revision: room.revision, status: "playing" },
+      data: {
+        ballots: removePlayerBallot(ballots, user.playerId) as unknown as Prisma.JsonArray,
+        revision: { increment: 1 },
+      },
+    });
+    if (updated.count === 1) return response(roomId);
+  }
+
+  return { ok: false as const, error: "La room a changé, réessaie." };
 }
 
 export async function finishTierlistRound(roomId: string) {

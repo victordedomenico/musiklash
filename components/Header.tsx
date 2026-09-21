@@ -6,6 +6,7 @@ import { getI18n } from "@/lib/i18n";
 import { cookies } from "next/headers";
 import ThemeToggle from "./ThemeToggle";
 import LocaleToggle from "./LocaleToggle";
+import ResumeMultiplayerRooms from "./ResumeMultiplayerRooms";
 import { getCookieConsent, hasPreferencesConsent } from "@/lib/cookie-consent";
 import { BrandMark } from "@/components/BrandLogo";
 
@@ -68,6 +69,7 @@ export default async function Header() {
 
         {/* Right actions */}
         <div className="ml-auto flex items-center gap-2">
+          <ResumeMultiplayerRooms />
           <ThemeToggle current={theme} />
           <LocaleToggle current={locale} />
 
