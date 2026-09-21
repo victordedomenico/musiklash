@@ -90,8 +90,9 @@ export default async function BlindtestPage({
           </p>
           <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">{blindtest.title}</h1>
           <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-[color:var(--muted-strong)]">
-            Cinq sons, cinq difficultés. Chaque essai allonge l&apos;écoute : 0,1&nbsp;s, 0,5&nbsp;s,
-            2&nbsp;s, 8&nbsp;s, puis 15&nbsp;s. Trouve-les tous en 0,1&nbsp;s pour le max de points.
+            Cinq sons, cinq difficultés. Chaque essai allonge l&apos;écoute : 0,1&nbsp;s,
+            0,5&nbsp;s, 2&nbsp;s, 8&nbsp;s, puis 15&nbsp;s. Trouve-les tous en 0,1&nbsp;s pour le
+            max de points.
           </p>
           <Link
             href={`/blindtest/${id}/flash`}

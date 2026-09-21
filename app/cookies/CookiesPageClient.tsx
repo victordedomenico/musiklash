@@ -36,9 +36,8 @@ export default function CookiesPageClient({ initialPrefs }: { initialPrefs: Cook
             <div>
               <p className="font-semibold">Cookies essentiels</p>
               <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-                Indispensables au fonctionnement de la plateforme : session
-                d&apos;authentification, sécurité et maintien de session. Ils ne peuvent pas être
-                désactivés.
+                Indispensables au fonctionnement de la plateforme : session d&apos;authentification,
+                sécurité et maintien de session. Ils ne peuvent pas être désactivés.
               </p>
             </div>
             <span
@@ -88,8 +87,8 @@ export default function CookiesPageClient({ initialPrefs }: { initialPrefs: Cook
             <div>
               <p className="font-semibold">Cookies analytiques</p>
               <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
-                Mesure d&apos;audience via Vercel Analytics (pages vues, interactions,
-                statistiques de consultation). Active seulement avec votre consentement.
+                Mesure d&apos;audience via Vercel Analytics (pages vues, interactions, statistiques
+                de consultation). Active seulement avec votre consentement.
               </p>
             </div>
             <button
@@ -111,11 +110,7 @@ export default function CookiesPageClient({ initialPrefs }: { initialPrefs: Cook
       </div>
 
       <div className="mt-6 flex items-center gap-4">
-        <button
-          onClick={handleSave}
-          disabled={pending}
-          className="btn-primary disabled:opacity-60"
-        >
+        <button onClick={handleSave} disabled={pending} className="btn-primary disabled:opacity-60">
           Enregistrer mes préférences
         </button>
         {saved && (

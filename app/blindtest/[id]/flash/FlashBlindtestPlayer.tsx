@@ -208,7 +208,6 @@ export default function FlashBlindtestPlayer({
     if (!currentTrack) return;
     const audio = new Audio();
     audio.preload = "auto";
-    audio.volume = volume;
     audioRef.current = audio;
     let cancelled = false;
     const onError = () => {
@@ -267,13 +266,16 @@ export default function FlashBlindtestPlayer({
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
-    timeoutRef.current = window.setTimeout(() => {
-      if (playGenRef.current !== generation || audioRef.current !== audio) return;
-      audio.pause();
-      audio.currentTime = 0;
-      setPlaying(false);
-      setElapsed(limit);
-    }, limit * 1000 + 30);
+    timeoutRef.current = window.setTimeout(
+      () => {
+        if (playGenRef.current !== generation || audioRef.current !== audio) return;
+        audio.pause();
+        audio.currentTime = 0;
+        setPlaying(false);
+        setElapsed(limit);
+      },
+      limit * 1000 + 30,
+    );
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.clearTimeout(timeoutRef.current);
@@ -462,7 +464,10 @@ export default function FlashBlindtestPlayer({
                 <span>
                   {tracks.find((t) => t.position === a.position)?.title}
                   <small>
-                    {FLASH_DIFFICULTY_CONFIG[a.difficulty ?? flashDifficultyAt(index) ?? "easy"].label}{" "}
+                    {
+                      FLASH_DIFFICULTY_CONFIG[a.difficulty ?? flashDifficultyAt(index) ?? "easy"]
+                        .label
+                    }{" "}
                     · {a.correct ? timeLabel(a.listenSeconds ?? 15) : "non trouvé"}
                   </small>
                 </span>
@@ -505,7 +510,13 @@ export default function FlashBlindtestPlayer({
             {draft.orderedPositions.map((_, index) => {
               const level = flashDifficultyAt(index) ?? "easy";
               const answer = draft.answers[index];
-              const state = answer ? (answer.correct ? "won" : "lost") : index === draft.answers.length ? "current" : "next";
+              const state = answer
+                ? answer.correct
+                  ? "won"
+                  : "lost"
+                : index === draft.answers.length
+                  ? "current"
+                  : "next";
               return (
                 <li
                   key={level}

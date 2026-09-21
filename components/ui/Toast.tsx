@@ -60,7 +60,10 @@ export default function Toast({ message, action, duration = 4000, onDismiss }: T
         </a>
       )}
       <button
-        onClick={() => { setVisible(false); setTimeout(onDismiss, 300); }}
+        onClick={() => {
+          setVisible(false);
+          setTimeout(onDismiss, 300);
+        }}
         aria-label="Fermer"
         style={{
           background: "none",
