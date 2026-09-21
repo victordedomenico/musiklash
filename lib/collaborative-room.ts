@@ -49,6 +49,7 @@ export type BracketRoomSnapshot = {
   id: string;
   hostId: string;
   hostName: string;
+  previousHostId: string | null;
   status: "waiting" | "playing" | "finished";
   participants: RoomParticipant[];
   votes: Vote[];
@@ -71,6 +72,7 @@ export type TierlistRoomSnapshot = {
   id: string;
   hostId: string;
   hostName: string;
+  previousHostId: string | null;
   status: "waiting" | "playing" | "finished";
   participants: RoomParticipant[];
   placements: Record<string, string>;
@@ -274,6 +276,7 @@ export function toBracketRoomSnapshot(room: NonNullable<BracketRoomRaw>): Bracke
     id: room.id,
     hostId: room.hostId,
     hostName: room.host.username,
+    previousHostId: room.previousHostId,
     status: room.status as BracketRoomSnapshot["status"],
     participants: normalizeParticipants(room.participants),
     votes,
@@ -316,6 +319,7 @@ export function toTierlistRoomSnapshot(room: NonNullable<TierlistRoomRaw>): Tier
     id: room.id,
     hostId: room.hostId,
     hostName: room.host.username,
+    previousHostId: room.previousHostId,
     status: room.status as TierlistRoomSnapshot["status"],
     participants: normalizeParticipants(room.participants),
     placements: normalizePlacements(room.placements),

@@ -12,6 +12,7 @@ import {
   Play,
   SkipForward,
   Swords,
+  UserMinus,
   Users,
 } from "lucide-react";
 import DeezerAttribution from "@/components/DeezerAttribution";
@@ -29,18 +30,26 @@ import {
 } from "@/lib/multiplayer-room-resume";
 import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 import { DEFAULT_TIERS } from "@/lib/tierlist-tiers";
+import type { Dictionary } from "@/lib/i18n";
 import {
   clearTierlistVote,
   expireTierlistRound,
   finishTierlistRound,
   joinTierlistRoom,
+  kickTierlistPlayer,
   refreshTierlistRoom,
   skipTierlistVote,
   startTierlistRoom,
   voteTierlistRoom,
 } from "./actions";
 
-function TrackPreview({ track }: { track: CollaborativeTrack }) {
+function TrackPreview({
+  track,
+  texts,
+}: {
+  track: CollaborativeTrack;
+  texts: Dictionary["multiplayerRoom"];
+}) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { volume } = usePreviewVolume();
   const [url, setUrl] = useState<string | null>(null);
@@ -116,10 +125,10 @@ function TrackPreview({ track }: { track: CollaborativeTrack }) {
         disabled={!url}
         onClick={toggle}
         className="btn-ghost shrink-0 text-xs disabled:cursor-not-allowed"
-        aria-label={playing ? "Mettre l’extrait en pause" : "Écouter l’extrait"}
+        aria-label={playing ? texts.pausePreview : texts.listenPreview}
       >
         {playing ? <Pause size={15} /> : <Play size={15} />}
-        {url ? (playing ? "Pause" : "Écouter") : "Extrait indisponible"}
+        {url ? (playing ? texts.pause : texts.listenPreview) : texts.previewUnavailable}
       </button>
       <DeezerAttribution compact variant="icon" className="shrink-0" />
       <input
@@ -134,7 +143,7 @@ function TrackPreview({ track }: { track: CollaborativeTrack }) {
           setCurrentTime(value);
         }}
         className="h-1 flex-1 accent-sky-300 disabled:opacity-40"
-        aria-label="Position dans l’extrait"
+        aria-label={texts.previewPosition}
       />
       <span className="w-9 text-right text-[11px] tabular-nums text-[color:var(--muted)]">
         {labelTime(playing ? currentTime : 0)}
@@ -147,10 +156,12 @@ function ResolutionReveal({
   resolution,
   winner,
   onDone,
+  texts,
 }: {
   resolution: TierlistRoundResolution;
   winner: CollaborativeTrack | null;
   onDone: () => void;
+  texts: Dictionary["multiplayerRoom"];
 }) {
   const reducedMotion = useReducedMotion();
   const [coinLanded, setCoinLanded] = useState(!resolution.tie);
@@ -184,11 +195,11 @@ function ResolutionReveal({
               initial={{ y: -12, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
             >
-              Égalité · {winningVotes} vote{winningVotes > 1 ? "s" : ""}
+              {texts.tie} · {winningVotes} {winningVotes === 1 ? texts.vote : texts.votes}
             </motion.p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-white">Pile ou face</h2>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-white">{texts.coinFlip}</h2>
             <p className="mt-2 text-sm text-white/60">
-              {pileTier?.label ?? "?"} contre {faceTier?.label ?? "?"}
+              {pileTier?.label ?? "?"} vs {faceTier?.label ?? "?"}
             </p>
             <div className="mx-auto my-8 h-36 w-36 [perspective:900px]">
               <motion.div
@@ -206,10 +217,10 @@ function ResolutionReveal({
                 onAnimationComplete={() => setCoinLanded(true)}
               >
                 <div className="absolute inset-0 grid place-items-center rounded-full border-[5px] border-amber-200 bg-[radial-gradient(circle_at_35%_28%,#fff2a8,#f59e0b_52%,#92400e)] text-xl font-black text-amber-950 shadow-[0_0_50px_rgba(245,158,11,0.42)] [backface-visibility:hidden]">
-                  PILE
+                  {texts.heads}
                 </div>
                 <div className="absolute inset-0 grid place-items-center rounded-full border-[5px] border-orange-200 bg-[radial-gradient(circle_at_35%_28%,#fed7aa,#ea580c_52%,#7c2d12)] text-xl font-black text-orange-950 shadow-[0_0_50px_rgba(234,88,12,0.42)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                  FACE
+                  {texts.tails}
                 </div>
               </motion.div>
             </div>
@@ -221,7 +232,7 @@ function ResolutionReveal({
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
                 >
-                  {resolution.coinSide} !
+                  {resolution.coinSide === "face" ? texts.tails : texts.heads}!
                 </motion.p>
               ) : (
                 <motion.p
@@ -229,7 +240,7 @@ function ResolutionReveal({
                   className="text-sm uppercase tracking-[0.22em] text-white/55"
                   exit={{ opacity: 0 }}
                 >
-                  La pièce décide…
+                  {texts.coinDecides}
                 </motion.p>
               )}
             </AnimatePresence>
@@ -238,13 +249,14 @@ function ResolutionReveal({
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
             <Crown className="mx-auto text-amber-300" size={34} />
             <p className="mt-3 text-xs font-black uppercase tracking-[0.3em] text-amber-300">
-              Majorité · {winningVotes} voix
+              {texts.majority} · {winningVotes} {winningVotes === 1 ? texts.vote : texts.votes}
             </p>
           </motion.div>
         )}
         {resolution.skippedCount > 0 ? (
           <p className="mt-3 text-xs text-white/45">
-            {resolution.skippedCount} joueur{resolution.skippedCount > 1 ? "s ont" : " a"} passé
+            {resolution.skippedCount}{" "}
+            {resolution.skippedCount === 1 ? texts.skippedOne : texts.skippedMany}
           </p>
         ) : null}
         <AnimatePresence>
@@ -256,7 +268,7 @@ function ResolutionReveal({
               transition={{ type: "spring", stiffness: 260, damping: 22 }}
             >
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-white/55">
-                Morceau vainqueur du vote
+                {texts.winningTrack}
               </p>
               <div className="mx-auto w-44 overflow-hidden rounded-[26px] border border-white/15 bg-white/5 p-2 shadow-2xl">
                 {winner.coverUrl ? (
@@ -277,11 +289,11 @@ function ResolutionReveal({
                   className="mt-3 inline-flex rounded-full px-3 py-1 text-sm font-black text-black"
                   style={{ background: winnerTier.color }}
                 >
-                  Rang {winnerTier.label}
+                  {texts.rank} {winnerTier.label}
                 </span>
               ) : null}
               <button type="button" onClick={onDone} className="btn-primary mt-6">
-                Morceau suivant
+                {texts.nextTrack}
               </button>
             </motion.div>
           ) : null}
@@ -294,10 +306,12 @@ function ResolutionReveal({
 export default function TierlistRoomClient({
   initialRoom,
   userId,
+  texts,
 }: {
   initialRoom: TierlistRoomSnapshot;
   userId: string;
   username: string;
+  texts: Dictionary["multiplayerRoom"];
 }) {
   const [room, setRoom] = useState(initialRoom);
   const [error, setError] = useState("");
@@ -362,6 +376,13 @@ export default function TierlistRoomClient({
   }, []);
 
   useEffect(() => {
+    if (me || room.previousHostId !== userId) return;
+    void joinTierlistRoom(room.id).then((result) => {
+      if (result.ok) acceptRoom(result.room);
+    });
+  }, [acceptRoom, me, room.id, room.previousHostId, userId]);
+
+  useEffect(() => {
     if (room.status === "finished") return;
     const id = window.setInterval(() => {
       void refreshTierlistRoom(room.id).then((result) => {
@@ -417,7 +438,7 @@ export default function TierlistRoomClient({
     startTransition(async () => {
       const result = await action();
       if (result.ok) acceptRoom(result.room);
-      else setError(result.error);
+      else setError(texts.errors[result.error] ?? result.error);
     });
   };
   const copyLink = async () => {
@@ -426,7 +447,7 @@ export default function TierlistRoomClient({
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
-      setError("Impossible de copier le lien automatiquement.");
+      setError(texts.cannotCopyLink);
     }
   };
   const revealedWinner = activeResolution
@@ -440,6 +461,7 @@ export default function TierlistRoomClient({
           resolution={activeResolution}
           winner={revealedWinner}
           onDone={() => setActiveResolution(null)}
+          texts={texts}
         />
       ) : null}
     </AnimatePresence>
@@ -451,36 +473,49 @@ export default function TierlistRoomClient({
       <section className="card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-bold">Room collaborative</p>
+            <p className="font-bold">{texts.roomTitle}</p>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
-              {room.participants.length} joueur{room.participants.length > 1 ? "s" : ""} · hôte :{" "}
+              {room.participants.length}{" "}
+              {room.participants.length === 1 ? texts.player : texts.players} · {texts.host}:{" "}
               {room.hostName}
             </p>
           </div>
           <button type="button" onClick={copyLink} className="btn-ghost text-sm">
             <Copy size={15} />
-            {copied ? "Lien copié" : "Copier le lien"}
+            {copied ? texts.copiedLink : texts.copyLink}
           </button>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           {room.participants.map((participant) => (
-            <span
+            <div
               key={participant.playerId}
-              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-1 text-xs"
+              className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border)] bg-[color:var(--surface-2)] py-1 pl-3 pr-1 text-xs"
             >
-              {participant.username}
-              {participant.playerId === room.hostId ? " · hôte" : ""}
-            </span>
+              <span>
+                {participant.username}
+                {participant.playerId === room.hostId ? ` · ${texts.hostSuffix}` : ""}
+              </span>
+              {isHost && participant.playerId !== userId ? (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => run(() => kickTierlistPlayer(room.id, participant.playerId))}
+                  className="rounded-full p-1 text-[color:var(--muted)] transition hover:bg-red-400/15 hover:text-red-200 disabled:opacity-40"
+                  aria-label={texts.removePlayer.replace("{name}", participant.username)}
+                  title={texts.removePlayer.replace("{name}", participant.username)}
+                >
+                  <UserMinus size={13} />
+                </button>
+              ) : null}
+            </div>
           ))}
         </div>
       </section>
       {room.status === "waiting" ? (
         <section className="card p-6 text-center">
           <Users className="mx-auto text-sky-300" size={30} />
-          <h2 className="mt-3 text-xl font-bold">En attente des joueurs</h2>
-          <p className="mt-2 text-sm text-[color:var(--muted)]">
-            Partage le lien, puis lance la tierlist à partir de 2 joueurs.
-          </p>
+          <h2 className="mt-3 text-xl font-bold">{texts.waitingPlayers}</h2>
+          <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.tierlistWaitingCopy}</p>
           {!me ? (
             <button
               type="button"
@@ -488,7 +523,7 @@ export default function TierlistRoomClient({
               onClick={() => run(() => joinTierlistRoom(room.id))}
               className="btn-primary mt-5"
             >
-              Rejoindre la room
+              {texts.joinRoom}
             </button>
           ) : isHost ? (
             <button
@@ -498,10 +533,10 @@ export default function TierlistRoomClient({
               className="btn-primary mt-5"
             >
               <ListOrdered size={16} />
-              Lancer la tierlist
+              {texts.tierlistStart}
             </button>
           ) : (
-            <p className="mt-5 text-sm text-sky-200">En attente du lancement par l’hôte…</p>
+            <p className="mt-5 text-sm text-sky-200">{texts.waitingHost}</p>
           )}
         </section>
       ) : null}
@@ -517,8 +552,8 @@ export default function TierlistRoomClient({
                   {timeLabel}
                 </span>
                 <span>
-                  Morceau {currentTrackIndex + 1} / {room.tierlist.tracks.length} · réponses :{" "}
-                  {room.ballots.length} / {room.participants.length}
+                  {texts.track} {currentTrackIndex + 1} / {room.tierlist.tracks.length} ·{" "}
+                  {texts.responses}: {room.ballots.length} / {room.participants.length}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -526,7 +561,7 @@ export default function TierlistRoomClient({
                   <>
                     <span className="inline-flex items-center gap-1 text-emerald-200">
                       <Check size={15} />
-                      {myBallot?.tierId === null ? "Tu as passé" : "Ton vote est enregistré"}
+                      {myBallot?.tierId === null ? texts.votePassed : texts.voteRecorded}
                     </span>
                     <button
                       type="button"
@@ -534,7 +569,7 @@ export default function TierlistRoomClient({
                       onClick={() => run(() => clearTierlistVote(room.id))}
                       className="btn-ghost text-xs"
                     >
-                      Annuler mon vote
+                      {texts.cancelVote}
                     </button>
                   </>
                 ) : me ? (
@@ -545,7 +580,7 @@ export default function TierlistRoomClient({
                     className="btn-ghost text-xs"
                   >
                     <SkipForward size={15} />
-                    Passer mon vote
+                    {texts.skipVote}
                   </button>
                 ) : null}
                 {isHost && room.ballots.length < room.participants.length ? (
@@ -556,7 +591,7 @@ export default function TierlistRoomClient({
                     className="btn-ghost border-amber-400/35 bg-amber-400/10 text-xs text-amber-100 hover:bg-amber-400/20"
                   >
                     <Swords size={15} />
-                    Finir le tour
+                    {texts.finishRound}
                   </button>
                 ) : null}
               </div>
@@ -578,7 +613,7 @@ export default function TierlistRoomClient({
             ) : null}
             <h2 className="mt-4 text-xl font-bold">{currentTrack.title}</h2>
             <p className="text-sm text-[color:var(--muted)]">{currentTrack.artist}</p>
-            <TrackPreview key={currentTrack.deezerTrackId} track={currentTrack} />
+            <TrackPreview key={currentTrack.deezerTrackId} track={currentTrack} texts={texts} />
             <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
               {DEFAULT_TIERS.map((tier) => (
                 <button
@@ -596,22 +631,20 @@ export default function TierlistRoomClient({
                     animate={{ scale: 1, opacity: 1 }}
                     className="mt-1 block text-[11px] font-bold"
                   >
-                    {voteCounts[tier.id]} vote{voteCounts[tier.id] > 1 ? "s" : ""}
+                    {voteCounts[tier.id]} {voteCounts[tier.id] === 1 ? texts.vote : texts.votes}
                   </motion.span>
                 </button>
               ))}
             </div>
-            {!me ? <p className="mt-4 text-sm text-sky-200">Tu observes cette room.</p> : null}
+            {!me ? <p className="mt-4 text-sm text-sky-200">{texts.spectator}</p> : null}
             {hasVoted && me ? (
-              <p className="mt-4 text-xs text-[color:var(--muted)]">
-                Annule ton vote pour sélectionner un autre rang.
-              </p>
+              <p className="mt-4 text-xs text-[color:var(--muted)]">{texts.changeRankHint}</p>
             ) : null}
           </section>
           <section className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)]">
             <div className="flex items-center justify-between border-b border-[color:var(--border)] px-4 py-3">
-              <p className="text-sm font-bold">Votes de la room</p>
-              <p className="text-xs text-[color:var(--muted)]">Modifiables jusqu’à la clôture</p>
+              <p className="text-sm font-bold">{texts.votesTitle}</p>
+              <p className="text-xs text-[color:var(--muted)]">{texts.votesEditable}</p>
             </div>
             <div className="divide-y divide-[color:var(--border)]">
               {room.participants.map((participant) => {
@@ -626,7 +659,7 @@ export default function TierlistRoomClient({
                   >
                     <span className="min-w-0 truncate font-medium">
                       {participant.username}
-                      {participant.playerId === userId ? " · toi" : ""}
+                      {participant.playerId === userId ? ` · ${texts.youSuffix}` : ""}
                     </span>
                     <span
                       className={`max-w-[58%] truncate text-right text-xs font-semibold ${
@@ -637,7 +670,7 @@ export default function TierlistRoomClient({
                             : "text-[color:var(--muted)]"
                       }`}
                     >
-                      {tier ? `Rang ${tier.label}` : ballot ? "A passé" : "En attente"}
+                      {tier ? `${texts.rank} ${tier.label}` : ballot ? texts.passed : texts.waiting}
                     </span>
                   </div>
                 );
@@ -648,7 +681,7 @@ export default function TierlistRoomClient({
       ) : null}
       {room.status === "finished" ? (
         <p className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
-          Tierlist terminée : tous les placements ont été votés collectivement.
+          {texts.tierlistFinished}
         </p>
       ) : null}
       {room.status !== "waiting" ? (

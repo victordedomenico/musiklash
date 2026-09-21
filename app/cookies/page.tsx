@@ -81,7 +81,9 @@ export default async function CookiesPage() {
                 <tr className="border-t" style={{ borderColor: "var(--border)" }}>
                   <td className="px-4 py-3 font-mono text-xs">theme</td>
                   <td className="px-4 py-3">Preferences</td>
-                  <td className="px-4 py-3">Memoriser le theme clair/sombre choisi.</td>
+                  <td className="px-4 py-3">
+                    Memoriser le theme clair, sombre ou automatique choisi.
+                  </td>
                   <td className="px-4 py-3">12 mois</td>
                   <td className="px-4 py-3">MusiKlash</td>
                 </tr>

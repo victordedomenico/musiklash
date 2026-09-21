@@ -21,8 +21,11 @@ export default async function RootLayout({
   const cookieConsent = await getCookieConsent();
   const canUsePreferenceCookies = hasPreferencesConsent(cookieConsent);
   const canUseAnalyticsCookies = hasAnalyticsConsent(cookieConsent);
+  const storedTheme = canUsePreferenceCookies ? cookieStore.get("theme")?.value : null;
   const theme =
-    canUsePreferenceCookies && cookieStore.get("theme")?.value === "light" ? "light" : "dark";
+    storedTheme === "light" || storedTheme === "system" || storedTheme === "dark"
+      ? storedTheme
+      : "dark";
   const { locale, t } = await getI18n();
 
   return (

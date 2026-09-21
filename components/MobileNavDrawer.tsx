@@ -9,7 +9,7 @@ import LocaleToggle from "@/components/LocaleToggle";
 import { BrandMark } from "@/components/BrandLogo";
 
 type MobileNavDrawerProps = {
-  theme: "dark" | "light";
+  theme: "dark" | "light" | "system";
   locale: "fr" | "en";
   tagline: string;
   ariaOpenMenu: string;

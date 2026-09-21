@@ -41,6 +41,10 @@ export interface Dictionary {
   sidebar: {
     tagline: string;
     previewVolume: string;
+    guestMode: string;
+    guestName: string;
+    guestNameHint: string;
+    saveGuestName: string;
   };
   introVideo: {
     title: string;
@@ -144,6 +148,71 @@ export interface Dictionary {
     chatPlaceholder: string;
     chatEmpty: string;
     chatOpen: string;
+  };
+  multiplayerRoom: {
+    bracketSubtitle: string;
+    bracketRule: string;
+    tierlistSubtitle: string;
+    tierlistRule: string;
+    roomTitle: string;
+    player: string;
+    players: string;
+    defaultPlayer: string;
+    host: string;
+    hostSuffix: string;
+    youSuffix: string;
+    copyLink: string;
+    copiedLink: string;
+    cannotCopyLink: string;
+    removePlayer: string;
+    waitingPlayers: string;
+    joiningRoom: string;
+    joiningRoomHint: string;
+    joinRoom: string;
+    waitingHost: string;
+    responses: string;
+    voteRecorded: string;
+    votePassed: string;
+    cancelVote: string;
+    skipVote: string;
+    finishRound: string;
+    votesTitle: string;
+    votesEditable: string;
+    passed: string;
+    waiting: string;
+    spectator: string;
+    vote: string;
+    votes: string;
+    tie: string;
+    coinFlip: string;
+    heads: string;
+    tails: string;
+    coinDecides: string;
+    majority: string;
+    skippedOne: string;
+    skippedMany: string;
+    winningTrack: string;
+    nextDuel: string;
+    bracketStart: string;
+    bracketWaitingCopy: string;
+    currentRound: string;
+    collectiveVote: string;
+    timeElapsed: string;
+    bracketFinished: string;
+    preparingDuel: string;
+    tierlistStart: string;
+    tierlistWaitingCopy: string;
+    track: string;
+    rank: string;
+    tierlistFinished: string;
+    nextTrack: string;
+    previewUnavailable: string;
+    pause: string;
+    listenPreview: string;
+    pausePreview: string;
+    previewPosition: string;
+    changeRankHint: string;
+    errors: Record<string, string>;
   };
   tierlistPage: {
     helper: string;
@@ -327,6 +396,10 @@ export const fr: Dictionary = {
   sidebar: {
     tagline: "L'arène du son",
     previewVolume: "Volume des extraits",
+    guestMode: "Mode invité",
+    guestName: "Ton pseudo",
+    guestNameHint: "Facultatif : sans pseudo, tu joues en Guest.",
+    saveGuestName: "Enregistrer mon pseudo",
   },
   introVideo: {
     title: "Découvrir MusiKlash",
@@ -438,6 +511,72 @@ export const fr: Dictionary = {
     chatPlaceholder: "Ton message…",
     chatEmpty: "Dis bonjour ! Les messages ne sont pas conservés en dehors de la session.",
     chatOpen: "Chat",
+  },
+  multiplayerRoom: {
+    bracketSubtitle: "Bracket collaboratif",
+    bracketRule: "Les duels sont décidés à la majorité ; une égalité est tranchée au hasard.",
+    tierlistSubtitle: "Tierlist collaborative",
+    tierlistRule:
+      "Chaque morceau est placé dans le rang choisi par la majorité, avec pile ou face en cas d’égalité.",
+    roomTitle: "Room collaborative",
+    player: "joueur",
+    players: "joueurs",
+    defaultPlayer: "Joueur",
+    host: "hôte",
+    hostSuffix: "hôte",
+    youSuffix: "toi",
+    copyLink: "Copier le lien",
+    copiedLink: "Lien copié",
+    cannotCopyLink: "Impossible de copier le lien automatiquement.",
+    removePlayer: "Retirer {name} de la room",
+    waitingPlayers: "En attente des joueurs",
+    joiningRoom: "Connexion à la room…",
+    joiningRoomHint: "Tu pourras voter dès que tu seras ajouté·e.",
+    joinRoom: "Rejoindre la room",
+    waitingHost: "En attente du lancement par l’hôte…",
+    responses: "Réponses",
+    voteRecorded: "Ton vote est enregistré",
+    votePassed: "Tu as passé",
+    cancelVote: "Annuler mon vote",
+    skipVote: "Passer mon vote",
+    finishRound: "Finir le tour",
+    votesTitle: "Votes de la room",
+    votesEditable: "Modifiables jusqu’à la clôture",
+    passed: "A passé",
+    waiting: "En attente",
+    spectator: "Spectateur",
+    vote: "vote",
+    votes: "votes",
+    tie: "Égalité",
+    coinFlip: "Pile ou face",
+    heads: "PILE",
+    tails: "FACE",
+    coinDecides: "La pièce décide…",
+    majority: "Majorité",
+    skippedOne: "joueur a passé",
+    skippedMany: "joueurs ont passé",
+    winningTrack: "Morceau vainqueur",
+    nextDuel: "Duel suivant",
+    bracketStart: "Lancer le bracket",
+    bracketWaitingCopy: "Partage le lien, puis lance la room à partir de 2 joueurs.",
+    currentRound: "Tour en cours",
+    collectiveVote: "Vote collectif",
+    timeElapsed: "Temps écoulé",
+    bracketFinished: "Tournoi terminé : voici le vote collectif final.",
+    preparingDuel: "Préparation du duel suivant…",
+    tierlistStart: "Lancer la tierlist",
+    tierlistWaitingCopy: "Partage le lien, puis lance la tierlist à partir de 2 joueurs.",
+    track: "Morceau",
+    rank: "Rang",
+    tierlistFinished: "Tierlist terminée : tous les placements ont été votés collectivement.",
+    nextTrack: "Morceau suivant",
+    previewUnavailable: "Extrait indisponible",
+    pause: "Pause",
+    listenPreview: "Écouter l’extrait",
+    pausePreview: "Mettre l’extrait en pause",
+    previewPosition: "Position dans l’extrait",
+    changeRankHint: "Annule ton vote pour sélectionner un autre rang.",
+    errors: {},
   },
   tierlistPage: {
     helper: "Glisse les morceaux dans les tiers · clique sur une pochette pour écouter l'extrait",

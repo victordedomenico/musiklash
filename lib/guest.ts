@@ -8,32 +8,6 @@ const GUEST_ID_COOKIE = "mk_guest_id";
 const GUEST_USERNAME_COOKIE = "mk_guest_username";
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
-const ADJECTIVES = [
-  "Blue",
-  "Neon",
-  "Wild",
-  "Cosmic",
-  "Golden",
-  "Lucky",
-  "Rapid",
-  "Silent",
-  "Funky",
-  "Crimson",
-];
-
-const ANIMALS = [
-  "Fox",
-  "Panda",
-  "Wolf",
-  "Tiger",
-  "Falcon",
-  "Otter",
-  "Lynx",
-  "Raven",
-  "Koala",
-  "Panther",
-];
-
 const COOKIE_OPTIONS = {
   path: "/",
   sameSite: "lax" as const,
@@ -51,10 +25,8 @@ function randomInt(min: number, max: number): number {
 }
 
 function generateReadableGuestUsername(): string {
-  const adjective = ADJECTIVES[randomInt(0, ADJECTIVES.length - 1)] ?? "Guest";
-  const animal = ANIMALS[randomInt(0, ANIMALS.length - 1)] ?? "User";
   const suffix = randomInt(10, 9999);
-  return `${adjective}${animal}${suffix}`;
+  return `Guest${suffix}`;
 }
 
 function normalizePreferredUsername(value: string | undefined | null): string | null {
@@ -199,16 +171,8 @@ export async function resolvePlayerIdentity() {
   const preferredGuestUsername = isGuest ? cookieStore.get(GUEST_USERNAME_COOKIE)?.value : null;
   const normalizedPreferred = normalizePreferredUsername(preferredGuestUsername);
 
-  let finalUsername = profile.username;
-  if (isGuest && normalizedPreferred && normalizedPreferred !== profile.username) {
-    const username = await generateUniqueUsername(normalizedPreferred);
-    const updated = await prisma.profile.update({
-      where: { id: profile.id },
-      data: { username },
-      select: { username: true },
-    });
-    finalUsername = updated.username;
-  } else if (isGuest && /^user\d*$/i.test(profile.username)) {
+  let finalUsername = normalizedPreferred ?? profile.username;
+  if (!normalizedPreferred && isGuest && /^(?:user|guest)\d*$/i.test(profile.username)) {
     const username = await generateUniqueUsername();
     const updated = await prisma.profile.update({
       where: { id: profile.id },
@@ -252,21 +216,18 @@ export async function setGuestUsername(preferredUsername: string) {
     return { error: "Profil invité introuvable." };
   }
 
-  const username = await generateUniqueUsername(normalized);
-  const updated = await prisma.profile.update({
-    where: { id: profile.id },
-    data: { username },
-    select: { id: true, username: true },
-  });
-
   const cookieStore = await cookies();
-  cookieStore.set(GUEST_ID_COOKIE, updated.id, COOKIE_OPTIONS);
-  cookieStore.set(GUEST_USERNAME_COOKIE, updated.username, COOKIE_OPTIONS);
+  cookieStore.set(GUEST_ID_COOKIE, profile.id, COOKIE_OPTIONS);
+  cookieStore.set(GUEST_USERNAME_COOKIE, normalized, COOKIE_OPTIONS);
 
-  return { username: updated.username };
+  return { username: normalized };
 }
 
 export async function getGuestIdentityFromCookies() {
+  const cookieStore = await cookies();
+  const preferredUsername = normalizePreferredUsername(
+    cookieStore.get(GUEST_USERNAME_COOKIE)?.value,
+  );
   const supabase = await createClient();
   const {
     data: { user },
@@ -279,7 +240,7 @@ export async function getGuestIdentityFromCookies() {
     });
     return {
       id: user.id,
-      username: profile?.username ?? "Anonyme",
+      username: preferredUsername ?? profile?.username ?? "Anonyme",
     };
   }
 
@@ -287,7 +248,6 @@ export async function getGuestIdentityFromCookies() {
     return null;
   }
 
-  const cookieStore = await cookies();
   const guestId = cookieStore.get(GUEST_ID_COOKIE)?.value;
   if (!isUuid(guestId)) return null;
 
@@ -298,7 +258,7 @@ export async function getGuestIdentityFromCookies() {
 
   return {
     id: guestId,
-    username: profile?.username ?? cookieStore.get(GUEST_USERNAME_COOKIE)?.value ?? "Anonyme",
+    username: preferredUsername ?? profile?.username ?? "Anonyme",
   };
 }
 

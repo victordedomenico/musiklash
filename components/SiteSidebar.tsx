@@ -12,7 +12,7 @@ import MobileNavDrawer from "@/components/MobileNavDrawer";
 import { getGuestIdentityFromCookies } from "@/lib/guest";
 
 type SiteSidebarProps = {
-  theme: "dark" | "light";
+  theme: "dark" | "light" | "system";
   locale: "fr" | "en";
 };
 
@@ -22,7 +22,10 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const guestIdentity = user ? null : await getGuestIdentityFromCookies();
+  const isRegisteredUser = Boolean(
+    user && !user.is_anonymous && !user.email?.endsWith("@guest.bracketfight.local"),
+  );
+  const guestIdentity = isRegisteredUser ? null : await getGuestIdentityFromCookies();
 
   const topLinks = [
     { href: "/", label: t.nav.home, icon: "home" as const },
@@ -35,10 +38,12 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
 
   const helperLinks = [
     { href: "/guide", label: t.nav.guide, icon: "guide" as const },
-    ...(user ? [{ href: "/settings", label: t.nav.settings, icon: "settings" as const }] : []),
+    ...(isRegisteredUser
+      ? [{ href: "/settings", label: t.nav.settings, icon: "settings" as const }]
+      : []),
   ];
 
-  const authSection = user ? (
+  const authSection = isRegisteredUser ? (
     <form action={signOut} className="mt-6 lg:mt-8">
       <button
         type="submit"
@@ -54,39 +59,44 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
     </form>
   ) : (
     <div className="mt-6 space-y-3 lg:mt-8">
-      {guestIdentity ? (
-        <div
-          className="rounded-2xl border px-4 py-3"
-          style={{
-            borderColor: "var(--border-strong)",
-            color: "var(--foreground)",
-            background: "var(--surface-2)",
-          }}
-        >
-          <p className="text-xs uppercase tracking-[0.18em]" style={{ color: "var(--muted)" }}>
-            Mode invite
+      <div
+        className="rounded-2xl border px-4 py-3"
+        style={{
+          borderColor: "var(--border-strong)",
+          color: "var(--foreground)",
+          background: "var(--surface-2)",
+        }}
+      >
+        <p className="text-xs uppercase tracking-[0.18em]" style={{ color: "var(--muted)" }}>
+          {t.sidebar.guestMode}
+        </p>
+        <form action={updateGuestUsername} className="mt-3 space-y-2">
+          <label htmlFor="guest-username" className="sr-only">
+            {t.sidebar.guestName}
+          </label>
+          <input
+            id="guest-username"
+            type="text"
+            name="username"
+            defaultValue={guestIdentity?.username ?? ""}
+            minLength={3}
+            maxLength={24}
+            placeholder={t.sidebar.guestName}
+            className="w-full rounded-xl border px-3 py-2 text-sm"
+            style={{
+              borderColor: "var(--border)",
+              background: "var(--surface)",
+              color: "var(--foreground)",
+            }}
+          />
+          <p className="text-xs" style={{ color: "var(--muted)" }}>
+            {t.sidebar.guestNameHint}
           </p>
-          <p className="mt-1 text-sm font-semibold">{guestIdentity.username}</p>
-          <form action={updateGuestUsername} className="mt-3 space-y-2">
-            <input
-              type="text"
-              name="username"
-              defaultValue={guestIdentity.username}
-              minLength={3}
-              maxLength={24}
-              className="w-full rounded-xl border px-3 py-2 text-sm"
-              style={{
-                borderColor: "var(--border)",
-                background: "var(--surface)",
-                color: "var(--foreground)",
-              }}
-            />
-            <button type="submit" className="btn-ghost w-full justify-center text-sm">
-              Modifier le pseudo
-            </button>
-          </form>
-        </div>
-      ) : null}
+          <button type="submit" className="btn-ghost w-full justify-center text-sm">
+            {t.sidebar.saveGuestName}
+          </button>
+        </form>
+      </div>
       <Link
         href="/login"
         className="flex items-center gap-3 rounded-2xl border px-4 py-3 text-base lg:py-4 lg:text-[1.03rem]"

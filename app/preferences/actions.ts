@@ -18,7 +18,7 @@ export async function setLocale(locale: "fr" | "en") {
   return { persisted: true };
 }
 
-export async function setTheme(theme: "dark" | "light") {
+export async function setTheme(theme: "dark" | "light" | "system") {
   const consent = await getCookieConsent();
   if (!hasPreferencesConsent(consent)) {
     return { persisted: false };

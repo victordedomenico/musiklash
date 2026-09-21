@@ -35,7 +35,11 @@ type DeezerLogoProps = {
 
 function readTheme(): "light" | "dark" {
   if (typeof document === "undefined") return "dark";
-  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+  const theme = document.documentElement.dataset.theme;
+  if (theme === "system") {
+    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  }
+  return theme === "light" ? "light" : "dark";
 }
 
 function subscribeTheme(onStoreChange: () => void) {
@@ -44,7 +48,12 @@ function subscribeTheme(onStoreChange: () => void) {
     attributes: true,
     attributeFilter: ["data-theme"],
   });
-  return () => observer.disconnect();
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+  mediaQuery.addEventListener("change", onStoreChange);
+  return () => {
+    observer.disconnect();
+    mediaQuery.removeEventListener("change", onStoreChange);
+  };
 }
 
 export function DeezerLogo({

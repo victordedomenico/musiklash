@@ -119,6 +119,7 @@ model BracketRoom {
   id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   bracketId      String    @map("bracket_id") @db.Uuid
   hostId         String    @map("host_id") @db.Uuid
+  previousHostId String?   @map("previous_host_id") @db.Uuid
   status         String    @default("waiting")
   participants   Json      @default("[]") @db.JsonB
   votes          Json      @default("[]") @db.JsonB
@@ -312,6 +313,7 @@ model TierlistRoom {
   id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tierlistId        String    @map("tierlist_id") @db.Uuid
   hostId            String    @map("host_id") @db.Uuid
+  previousHostId    String?   @map("previous_host_id") @db.Uuid
   status            String    @default("waiting")
   currentPosition   Int       @default(0) @map("current_position") @db.SmallInt
   participants      Json      @default("[]") @db.JsonB

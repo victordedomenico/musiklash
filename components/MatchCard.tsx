@@ -16,6 +16,14 @@ export type BracketTrack = {
   cover_url: string | null;
 };
 
+type MatchCardLabels = {
+  listen: string;
+  pause: string;
+  vote: string;
+  voteSingular: string;
+  votePlural: string;
+};
+
 export default function MatchCard({
   a,
   b,
@@ -24,6 +32,7 @@ export default function MatchCard({
   voteCounts,
   canVote = true,
   disabledVoteLabel = "Vote enregistré",
+  labels,
 }: {
   a: BracketTrack;
   b: BracketTrack;
@@ -32,7 +41,15 @@ export default function MatchCard({
   voteCounts?: Record<number, number>;
   canVote?: boolean;
   disabledVoteLabel?: string;
+  labels?: MatchCardLabels;
 }) {
+  const resolvedLabels: MatchCardLabels = labels ?? {
+    listen: "Écouter",
+    pause: "Pause",
+    vote: "Voter",
+    voteSingular: "vote",
+    votePlural: "votes",
+  };
   const [playing, setPlaying] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(30);
@@ -130,6 +147,7 @@ export default function MatchCard({
           voteCount={voteCounts?.[a.seed]}
           canVote={canVote}
           disabledVoteLabel={disabledVoteLabel}
+          labels={resolvedLabels}
         />
         <div className="mx-auto text-lg font-black text-[color:var(--muted)] h-10 w-10 flex items-center justify-center rounded-full bg-[color:var(--surface-2)]">
           VS
@@ -146,6 +164,7 @@ export default function MatchCard({
           voteCount={voteCounts?.[b.seed]}
           canVote={canVote}
           disabledVoteLabel={disabledVoteLabel}
+          labels={resolvedLabels}
         />
       </div>
       <DeezerAttribution compact className="mt-4 justify-center" />
@@ -165,6 +184,7 @@ function Side({
   voteCount,
   canVote,
   disabledVoteLabel,
+  labels,
 }: {
   track: BracketTrack;
   previewUrl: string | null;
@@ -177,6 +197,7 @@ function Side({
   voteCount?: number;
   canVote: boolean;
   disabledVoteLabel: string;
+  labels: MatchCardLabels;
 }) {
   const formatTime = (time: number) => {
     const mins = Math.floor(time / 60);
@@ -201,9 +222,9 @@ function Side({
               initial={{ scale: 0.72, opacity: 0.5 }}
               animate={{ scale: 1, opacity: 1 }}
               className="inline-flex shrink-0 items-center rounded-full border border-sky-300/25 bg-sky-300/10 px-2 py-0.5 text-xs font-black tabular-nums text-sky-100"
-              aria-label={`${voteCount} vote${voteCount > 1 ? "s" : ""}`}
+              aria-label={`${voteCount} ${voteCount === 1 ? labels.voteSingular : labels.votePlural}`}
             >
-              {voteCount} vote{voteCount > 1 ? "s" : ""}
+              {voteCount} {voteCount === 1 ? labels.voteSingular : labels.votePlural}
             </motion.span>
           ) : null}
         </div>
@@ -242,7 +263,7 @@ function Side({
               ) : (
                 <Play size={14} className="shrink-0" />
               )}
-              {playing ? "Pause" : "Écouter"}
+              {playing ? labels.pause : labels.listen}
             </button>
             <motion.button
               type="button"
@@ -252,7 +273,7 @@ function Side({
               whileTap={canVote ? { scale: 0.9 } : undefined}
               whileHover={canVote ? { scale: 1.05 } : undefined}
             >
-              {canVote ? "Voter" : disabledVoteLabel}
+              {canVote ? labels.vote : disabledVoteLabel}
             </motion.button>
           </div>
         </div>

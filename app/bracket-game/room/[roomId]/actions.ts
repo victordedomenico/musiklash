@@ -34,23 +34,174 @@ export async function refreshBracketRoom(roomId: string) {
 export async function joinBracketRoom(roomId: string) {
   const user = await identity();
   if (!user) return { ok: false as const, error: "Connexion requise." };
-  const room = await prisma.bracketRoom.findUnique({ where: { id: roomId } });
-  if (!room) return { ok: false as const, error: "Room introuvable." };
-  if (room.status !== "waiting") return { ok: false as const, error: "La partie a déjà commencé." };
-  const participants = normalizeParticipants(room.participants);
-  if (!participants.some((participant) => participant.playerId === user.playerId)) {
-    await prisma.bracketRoom.update({
-      where: { id: roomId },
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const room = await prisma.bracketRoom.findUnique({ where: { id: roomId } });
+    if (!room) return { ok: false as const, error: "Room introuvable." };
+    if (room.status === "finished") {
+      return { ok: false as const, error: "La partie est terminée." };
+    }
+
+    const participants = normalizeParticipants(room.participants);
+    if (participants.some((participant) => participant.playerId === user.playerId)) {
+      return response(roomId);
+    }
+
+    const isReturningHost = room.previousHostId === user.playerId;
+    const updated = await prisma.bracketRoom.updateMany({
+      where: { id: roomId, revision: room.revision, status: room.status },
       data: {
         participants: [
           ...participants,
           { playerId: user.playerId, username: user.username },
         ] as unknown as Prisma.JsonArray,
+        ...(isReturningHost ? { hostId: user.playerId, previousHostId: null } : {}),
         revision: { increment: 1 },
       },
     });
+    if (updated.count === 1) return response(roomId);
   }
-  return response(roomId);
+
+  return { ok: false as const, error: "La room a changé, réessaie." };
+}
+
+/**
+ * Removes the current player when their game tab is closed. Unlike a host kick,
+ * the host is allowed to leave: the oldest remaining player becomes host.
+ */
+export async function leaveBracketRoom(roomId: string) {
+  const user = await identity();
+  if (!user) return { ok: false as const, error: "Connexion requise." };
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const room = await findRoomForDuel(roomId);
+    if (!room) return { ok: true as const };
+    if (room.status === "finished") return { ok: true as const };
+
+    const participants = normalizeParticipants(room.participants);
+    if (!participants.some((participant) => participant.playerId === user.playerId)) {
+      return { ok: true as const };
+    }
+
+    const nextParticipants = participants.filter(
+      (participant) => participant.playerId !== user.playerId,
+    );
+    if (nextParticipants.length === 0) {
+      const canRejoin = room.hostId === user.playerId || room.previousHostId !== null;
+      if (canRejoin) {
+        const updated = await prisma.bracketRoom.updateMany({
+          where: { id: roomId, revision: room.revision, status: room.status },
+          data: {
+            participants: [] as Prisma.JsonArray,
+            ballots: [] as Prisma.JsonArray,
+            ...(room.hostId === user.playerId && room.previousHostId === null
+              ? { previousHostId: user.playerId }
+              : {}),
+            revision: { increment: 1 },
+          },
+        });
+        if (updated.count === 1) return { ok: true as const };
+        continue;
+      }
+      const deleted = await prisma.bracketRoom.deleteMany({
+        where: { id: roomId, revision: room.revision, status: room.status },
+      });
+      if (deleted.count === 1) return { ok: true as const };
+      continue;
+    }
+
+    const nextBallots = removePlayerBallot(normalizeBracketBallots(room.ballots), user.playerId);
+    const { votes, round, pair } = getOpenDuel(room);
+    const resolutionData =
+      room.status === "playing" &&
+      pair &&
+      (hasExpired(room) || nextBallots.length >= nextParticipants.length)
+        ? resolvedDuelData(room, nextBallots, pair, round, votes)
+        : null;
+    const nextHost = room.hostId === user.playerId ? nextParticipants[0] : null;
+    const data = resolutionData
+      ? {
+          ...resolutionData,
+          participants: nextParticipants as unknown as Prisma.JsonArray,
+          ...(nextHost
+            ? {
+                hostId: nextHost.playerId,
+                previousHostId: room.previousHostId ?? user.playerId,
+              }
+            : {}),
+        }
+      : {
+          participants: nextParticipants as unknown as Prisma.JsonArray,
+          ballots: nextBallots as unknown as Prisma.JsonArray,
+          ...(nextHost
+            ? {
+                hostId: nextHost.playerId,
+                previousHostId: room.previousHostId ?? user.playerId,
+              }
+            : {}),
+          revision: { increment: 1 as const },
+        };
+    const updated = await prisma.bracketRoom.updateMany({
+      where: { id: roomId, revision: room.revision, status: room.status },
+      data,
+    });
+    if (updated.count === 1) return { ok: true as const };
+  }
+
+  return { ok: false as const, error: "La room a changé, réessaie." };
+}
+
+export async function kickBracketPlayer(roomId: string, playerId: string) {
+  const user = await identity();
+  if (!user) return { ok: false as const, error: "Connexion requise." };
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const room = await findRoomForDuel(roomId);
+    if (!room) return { ok: false as const, error: "Room introuvable." };
+    if (room.hostId !== user.playerId) {
+      return { ok: false as const, error: "Seul l’hôte peut retirer un joueur." };
+    }
+    if (room.status === "finished") {
+      return { ok: false as const, error: "La partie est déjà terminée." };
+    }
+    if (playerId === room.hostId) {
+      return { ok: false as const, error: "L’hôte ne peut pas être retiré." };
+    }
+
+    const participants = normalizeParticipants(room.participants);
+    if (!participants.some((participant) => participant.playerId === playerId)) {
+      return { ok: false as const, error: "Ce joueur ne fait plus partie de la room." };
+    }
+    const nextParticipants = participants.filter(
+      (participant) => participant.playerId !== playerId,
+    );
+    if (room.status === "playing" && nextParticipants.length < 2) {
+      return { ok: false as const, error: "Une partie en cours doit garder au moins 2 joueurs." };
+    }
+
+    const nextBallots = removePlayerBallot(normalizeBracketBallots(room.ballots), playerId);
+    const { votes, round, pair } = getOpenDuel(room);
+    const data =
+      room.status === "playing" &&
+      pair &&
+      (hasExpired(room) || nextBallots.length >= nextParticipants.length)
+        ? {
+            ...resolvedDuelData(room, nextBallots, pair, round, votes),
+            participants: nextParticipants as unknown as Prisma.JsonArray,
+          }
+        : {
+            participants: nextParticipants as unknown as Prisma.JsonArray,
+            ballots: nextBallots as unknown as Prisma.JsonArray,
+            revision: { increment: 1 as const },
+          };
+
+    const updated = await prisma.bracketRoom.updateMany({
+      where: { id: roomId, revision: room.revision, status: room.status },
+      data,
+    });
+    if (updated.count === 1) return response(roomId);
+  }
+
+  return { ok: false as const, error: "La room a changé, réessaie." };
 }
 
 export async function startBracketRoom(roomId: string) {

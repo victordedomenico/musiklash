@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, Clock3, Copy, Crown, SkipForward, Swords, Users } from "lucide-react";
+import { Check, Clock3, Copy, Crown, SkipForward, Swords, UserMinus, Users } from "lucide-react";
 import MatchCard from "@/components/MatchCard";
 import BracketGame from "@/components/BracketGame";
 import type {
@@ -10,9 +10,15 @@ import type {
   BracketRoundResolution,
   CollaborativeTrack,
 } from "@/lib/collaborative-room";
-import { BRACKET_DUEL_SECONDS, remainingDuelSeconds } from "@/lib/bracket-room-rules";
+import {
+  BRACKET_DUEL_SECONDS,
+  crossedBracketWarningThreshold,
+  remainingDuelSeconds,
+} from "@/lib/bracket-room-rules";
 import { buildBracketState, totalRounds } from "@/lib/bracket";
 import { bracketRoundLabel } from "@/lib/bracket-round-label";
+import type { Dictionary } from "@/lib/i18n";
+import { useSoundFx } from "@/lib/use-sound-fx";
 import {
   forgetMultiplayerRoom,
   MULTIPLAYER_ROOMS_CHANGED_EVENT,
@@ -23,6 +29,7 @@ import {
   expireBracketDuel,
   finishBracketRound,
   joinBracketRoom,
+  kickBracketPlayer,
   refreshBracketRoom,
   skipBracketVote,
   startBracketRoom,
@@ -33,10 +40,12 @@ function ResolutionReveal({
   resolution,
   winner,
   onDone,
+  texts,
 }: {
   resolution: BracketRoundResolution;
   winner: CollaborativeTrack | null;
   onDone: () => void;
+  texts: Dictionary["multiplayerRoom"];
 }) {
   const reducedMotion = useReducedMotion();
   const [coinLanded, setCoinLanded] = useState(!resolution.tie);
@@ -69,9 +78,9 @@ function ResolutionReveal({
               initial={{ y: -12, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
             >
-              Égalité parfaite · {resolution.votesA}–{resolution.votesB}
+              {texts.tie} · {resolution.votesA}–{resolution.votesB}
             </motion.p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-white">Pile ou face</h2>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-white">{texts.coinFlip}</h2>
 
             <div className="mx-auto my-8 h-36 w-36 [perspective:900px]">
               <motion.div
@@ -89,10 +98,10 @@ function ResolutionReveal({
                 onAnimationComplete={() => setCoinLanded(true)}
               >
                 <div className="absolute inset-0 grid place-items-center rounded-full border-[5px] border-amber-200 bg-[radial-gradient(circle_at_35%_28%,#fff2a8,#f59e0b_52%,#92400e)] text-xl font-black text-amber-950 shadow-[0_0_50px_rgba(245,158,11,0.42)] [backface-visibility:hidden]">
-                  PILE
+                  {texts.heads}
                 </div>
                 <div className="absolute inset-0 grid place-items-center rounded-full border-[5px] border-orange-200 bg-[radial-gradient(circle_at_35%_28%,#fed7aa,#ea580c_52%,#7c2d12)] text-xl font-black text-orange-950 shadow-[0_0_50px_rgba(234,88,12,0.42)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                  FACE
+                  {texts.tails}
                 </div>
               </motion.div>
             </div>
@@ -105,7 +114,7 @@ function ResolutionReveal({
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
                 >
-                  {resolution.coinSide} !
+                  {resolution.coinSide === "face" ? texts.tails : texts.heads} !
                 </motion.p>
               ) : (
                 <motion.p
@@ -113,7 +122,7 @@ function ResolutionReveal({
                   className="text-sm uppercase tracking-[0.22em] text-white/55"
                   exit={{ opacity: 0 }}
                 >
-                  La pièce décide…
+                  {texts.coinDecides}
                 </motion.p>
               )}
             </AnimatePresence>
@@ -122,14 +131,15 @@ function ResolutionReveal({
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
             <Crown className="mx-auto text-amber-300" size={34} />
             <p className="mt-3 text-xs font-black uppercase tracking-[0.3em] text-amber-300">
-              Majorité · {Math.max(resolution.votesA, resolution.votesB)} voix
+              {texts.majority} · {Math.max(resolution.votesA, resolution.votesB)} {texts.votes}
             </p>
           </motion.div>
         )}
 
         {resolution.skippedCount > 0 ? (
           <p className="mt-3 text-xs text-white/45">
-            {resolution.skippedCount} joueur{resolution.skippedCount > 1 ? "s ont" : " a"} passé
+            {resolution.skippedCount}{" "}
+            {resolution.skippedCount === 1 ? texts.skippedOne : texts.skippedMany}
           </p>
         ) : null}
 
@@ -142,7 +152,7 @@ function ResolutionReveal({
               transition={{ type: "spring", stiffness: 260, damping: 22 }}
             >
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-white/55">
-                Morceau vainqueur
+                {texts.winningTrack}
               </p>
               <div className="mx-auto w-48 overflow-hidden rounded-[28px] border border-white/15 bg-white/5 p-2 shadow-2xl">
                 {winner.coverUrl ? (
@@ -159,7 +169,7 @@ function ResolutionReveal({
               </h3>
               <p className="mt-1 truncate text-sm text-white/60">{winner.artist}</p>
               <button type="button" onClick={onDone} className="btn-primary mt-6">
-                Duel suivant
+                {texts.nextDuel}
               </button>
             </motion.div>
           ) : null}
@@ -172,10 +182,14 @@ function ResolutionReveal({
 export default function BracketRoomClient({
   initialRoom,
   userId,
+  locale,
+  texts,
 }: {
   initialRoom: BracketRoomSnapshot;
   userId: string;
   username: string;
+  locale: "fr" | "en";
+  texts: Dictionary["multiplayerRoom"];
 }) {
   const [room, setRoom] = useState(initialRoom);
   const [error, setError] = useState("");
@@ -185,6 +199,8 @@ export default function BracketRoomClient({
   const [pending, startTransition] = useTransition();
   const seenResolutionRef = useRef(initialRoom.lastResolution?.id ?? null);
   const expiryAttemptRef = useRef<string | null>(null);
+  const timerWarningRef = useRef<{ duelKey: string; timeLeft: number } | null>(null);
+  const { play: playSound, prime: primeSound } = useSoundFx();
   const me = room.participants.find((participant) => participant.playerId === userId) ?? null;
   const isHost = room.hostId === userId;
   const hasVoted = room.ballots.some((ballot) => ballot.playerId === userId);
@@ -213,7 +229,7 @@ export default function BracketRoomClient({
         realPairings.findIndex((pairing) => pairing.matchIndex === room.currentPair?.matchIndex),
       )
     : 0;
-  const roundProgressLabel = `${bracketRoundLabel(currentRound, totalRounds(room.bracket.size))} — Duel ${currentDuelIndex + 1} / ${realPairings.length}`;
+  const roundProgressLabel = `${bracketRoundLabel(currentRound, totalRounds(room.bracket.size), locale)} — Duel ${currentDuelIndex + 1} / ${realPairings.length}`;
 
   useEffect(() => {
     if (room.status === "finished") {
@@ -239,6 +255,17 @@ export default function BracketRoomClient({
   }, []);
 
   useEffect(() => {
+    if (me || room.status === "finished") return;
+    void joinBracketRoom(room.id).then((result) => {
+      if (result.ok) {
+        acceptRoom(result.room);
+        return;
+      }
+      setError(texts.errors[result.error] ?? result.error);
+    });
+  }, [acceptRoom, me, room.id, room.status, texts.errors]);
+
+  useEffect(() => {
     if (room.status === "finished") return;
     const id = window.setInterval(() => {
       void refreshBracketRoom(room.id).then((result) => {
@@ -254,6 +281,16 @@ export default function BracketRoomClient({
     return () => window.clearInterval(id);
   }, [room.status, room.duelStartedAt]);
 
+  useEffect(() => {
+    const unlockAudio = () => primeSound();
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    window.addEventListener("keydown", unlockAudio, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+  }, [primeSound]);
+
   const timeLeft = remainingDuelSeconds(room.duelStartedAt, now);
   const timeLabel = `${String(Math.floor(timeLeft / 60)).padStart(2, "0")}:${String(
     timeLeft % 60,
@@ -261,6 +298,21 @@ export default function BracketRoomClient({
   const duelKey = room.currentPair
     ? `${room.votes.length}:${room.currentPair.matchIndex}:${room.duelStartedAt ?? "pending"}`
     : null;
+
+  useEffect(() => {
+    if (room.status !== "playing" || !duelKey) {
+      timerWarningRef.current = null;
+      return;
+    }
+    const previous = timerWarningRef.current;
+    if (
+      previous?.duelKey === duelKey &&
+      crossedBracketWarningThreshold(previous.timeLeft, timeLeft)
+    ) {
+      playSound("timer_warning");
+    }
+    timerWarningRef.current = { duelKey, timeLeft };
+  }, [duelKey, playSound, room.status, timeLeft]);
 
   useEffect(() => {
     if (
@@ -302,7 +354,7 @@ export default function BracketRoomClient({
     startTransition(async () => {
       const result = await action();
       if (result.ok) acceptRoom(result.room);
-      else setError(result.error);
+      else setError(texts.errors[result.error] ?? result.error);
     });
   };
 
@@ -312,7 +364,7 @@ export default function BracketRoomClient({
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
-      setError("Impossible de copier le lien automatiquement.");
+      setError(texts.cannotCopyLink);
     }
   };
 
@@ -326,6 +378,7 @@ export default function BracketRoomClient({
           resolution={activeResolution}
           winner={revealedWinner}
           onDone={() => setActiveResolution(null)}
+          texts={texts}
         />
       ) : null}
     </AnimatePresence>
@@ -337,7 +390,7 @@ export default function BracketRoomClient({
         {resolutionOverlay}
         <div className="space-y-5">
           <p className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
-            Tournoi terminé : voici le vote collectif final.
+            {texts.bracketFinished}
           </p>
           <BracketGame
             bracketId={room.bracket.id}
@@ -355,6 +408,17 @@ export default function BracketRoomClient({
           />
         </div>
       </>
+    );
+  }
+
+  if (!me) {
+    return (
+      <section className="card p-6 text-center">
+        <Users className="mx-auto text-sky-300" size={30} />
+        <h2 className="mt-3 text-xl font-bold">{texts.joiningRoom}</h2>
+        <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.joiningRoomHint}</p>
+        {error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null}
+      </section>
     );
   }
 
@@ -378,26 +442,41 @@ export default function BracketRoomClient({
       <section className="card p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="font-bold">Room collaborative</p>
+            <p className="font-bold">{texts.roomTitle}</p>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
-              {room.participants.length} joueur{room.participants.length > 1 ? "s" : ""} · hôte :{" "}
+              {room.participants.length}{" "}
+              {room.participants.length === 1 ? texts.player : texts.players} · {texts.host}:{" "}
               {room.hostName}
             </p>
           </div>
           <button type="button" onClick={copyLink} className="btn-ghost text-sm">
             <Copy size={15} />
-            {copied ? "Lien copié" : "Copier le lien"}
+            {copied ? texts.copiedLink : texts.copyLink}
           </button>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           {room.participants.map((participant) => (
-            <span
+            <div
               key={participant.playerId}
-              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-1 text-xs"
+              className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border)] bg-[color:var(--surface-2)] py-1 pl-3 pr-1 text-xs"
             >
-              {participant.username}
-              {participant.playerId === room.hostId ? " · hôte" : ""}
-            </span>
+              <span>
+                {participant.username}
+                {participant.playerId === room.hostId ? ` · ${texts.hostSuffix}` : ""}
+              </span>
+              {isHost && participant.playerId !== userId ? (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => run(() => kickBracketPlayer(room.id, participant.playerId))}
+                  className="rounded-full p-1 text-[color:var(--muted)] transition hover:bg-red-400/15 hover:text-red-200 disabled:opacity-40"
+                  aria-label={texts.removePlayer.replace("{name}", participant.username)}
+                  title={texts.removePlayer.replace("{name}", participant.username)}
+                >
+                  <UserMinus size={13} />
+                </button>
+              ) : null}
+            </div>
           ))}
         </div>
       </section>
@@ -405,10 +484,8 @@ export default function BracketRoomClient({
       {room.status === "waiting" ? (
         <section className="card p-6 text-center">
           <Users className="mx-auto text-sky-300" size={30} />
-          <h2 className="mt-3 text-xl font-bold">En attente des joueurs</h2>
-          <p className="mt-2 text-sm text-[color:var(--muted)]">
-            Partage le lien, puis lance la room à partir de 2 joueurs.
-          </p>
+          <h2 className="mt-3 text-xl font-bold">{texts.waitingPlayers}</h2>
+          <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.bracketWaitingCopy}</p>
           {!me ? (
             <button
               type="button"
@@ -416,7 +493,7 @@ export default function BracketRoomClient({
               onClick={() => run(() => joinBracketRoom(room.id))}
               className="btn-primary mt-5"
             >
-              Rejoindre la room
+              {texts.joinRoom}
             </button>
           ) : isHost ? (
             <button
@@ -426,10 +503,10 @@ export default function BracketRoomClient({
               className="btn-primary mt-5"
             >
               <Swords size={16} />
-              Lancer le bracket
+              {texts.bracketStart}
             </button>
           ) : (
-            <p className="mt-5 text-sm text-sky-200">En attente du lancement par l’hôte…</p>
+            <p className="mt-5 text-sm text-sky-200">{texts.waitingHost}</p>
           )}
         </section>
       ) : trackA && trackB ? (
@@ -437,7 +514,7 @@ export default function BracketRoomClient({
           <div className="overflow-hidden rounded-2xl border border-sky-400/25 bg-sky-400/10">
             <div className="border-b border-sky-300/15 px-4 py-4 text-center">
               <p className="text-[11px] font-black uppercase tracking-[0.24em] text-sky-200/70">
-                Tour en cours
+                {texts.currentRound}
               </p>
               <h2 className="mt-1 text-xl font-black tracking-tight text-sky-50 sm:text-2xl">
                 {roundProgressLabel}
@@ -458,7 +535,7 @@ export default function BracketRoomClient({
                   {timeLabel}
                 </span>
                 <span>
-                  Réponses reçues : {room.ballots.length} / {room.participants.length}
+                  {texts.responses}: {room.ballots.length} / {room.participants.length}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -466,7 +543,7 @@ export default function BracketRoomClient({
                   <>
                     <span className="inline-flex items-center gap-1 text-emerald-200">
                       <Check size={15} />
-                      {myBallot?.winnerSeed === null ? "Tu as passé" : "Ton vote est enregistré"}
+                      {myBallot?.winnerSeed === null ? texts.votePassed : texts.voteRecorded}
                     </span>
                     <button
                       type="button"
@@ -474,7 +551,7 @@ export default function BracketRoomClient({
                       onClick={() => run(() => clearBracketVote(room.id))}
                       className="btn-ghost text-xs"
                     >
-                      Annuler mon vote
+                      {texts.cancelVote}
                     </button>
                   </>
                 ) : me ? (
@@ -485,7 +562,7 @@ export default function BracketRoomClient({
                     className="btn-ghost text-xs"
                   >
                     <SkipForward size={15} />
-                    Passer mon vote
+                    {texts.skipVote}
                   </button>
                 ) : null}
                 {isHost && room.ballots.length < room.participants.length ? (
@@ -496,7 +573,7 @@ export default function BracketRoomClient({
                     className="btn-ghost border-amber-400/35 bg-amber-400/10 text-xs text-amber-100 hover:bg-amber-400/20"
                   >
                     <Swords size={15} />
-                    Finir le tour
+                    {texts.finishRound}
                   </button>
                 ) : null}
               </div>
@@ -523,23 +600,30 @@ export default function BracketRoomClient({
               cover_url: trackB.coverUrl,
             }}
             onPick={(seed) => run(() => voteBracketRoom(room.id, seed))}
-            roundLabel="Vote collectif"
+            roundLabel={texts.collectiveVote}
             voteCounts={liveVoteCounts}
+            labels={{
+              listen: texts.listenPreview,
+              pause: texts.pause,
+              vote: texts.vote,
+              voteSingular: texts.vote,
+              votePlural: texts.votes,
+            }}
             canVote={Boolean(me && !hasVoted && !pending && timeLeft > 0)}
             disabledVoteLabel={
               !me
-                ? "Spectateur"
+                ? texts.spectator
                 : timeLeft === 0
-                  ? "Temps écoulé"
+                  ? texts.timeElapsed
                   : myBallot?.winnerSeed === null
-                    ? "Vote passé"
-                    : "Vote enregistré"
+                    ? texts.votePassed
+                    : texts.voteRecorded
             }
           />
           <section className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)]">
             <div className="flex items-center justify-between border-b border-[color:var(--border)] px-4 py-3">
-              <p className="text-sm font-bold">Votes de la room</p>
-              <p className="text-xs text-[color:var(--muted)]">Modifiables jusqu’à la clôture</p>
+              <p className="text-sm font-bold">{texts.votesTitle}</p>
+              <p className="text-xs text-[color:var(--muted)]">{texts.votesEditable}</p>
             </div>
             <div className="divide-y divide-[color:var(--border)]">
               {room.participants.map((participant) => {
@@ -559,7 +643,7 @@ export default function BracketRoomClient({
                   >
                     <span className="min-w-0 truncate font-medium">
                       {participant.username}
-                      {participant.playerId === userId ? " · toi" : ""}
+                      {participant.playerId === userId ? ` · ${texts.youSuffix}` : ""}
                     </span>
                     <span
                       className={`max-w-[58%] truncate text-right text-xs font-semibold ${
@@ -570,7 +654,7 @@ export default function BracketRoomClient({
                             : "text-[color:var(--muted)]"
                       }`}
                     >
-                      {selectedTrack?.title ?? (ballot ? "A passé" : "En attente")}
+                      {selectedTrack?.title ?? (ballot ? texts.passed : texts.waiting)}
                     </span>
                   </div>
                 );
@@ -580,7 +664,7 @@ export default function BracketRoomClient({
         </section>
       ) : (
         <div className="card p-6 text-center text-sm text-[color:var(--muted)]">
-          Préparation du duel suivant…
+          {texts.preparingDuel}
         </div>
       )}
       {error ? <p className="text-sm text-red-400">{error}</p> : null}

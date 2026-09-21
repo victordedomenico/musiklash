@@ -20,8 +20,11 @@ export default async function Header() {
   const cookieStore = await cookies();
   const consent = await getCookieConsent();
   const canUsePreferenceCookies = hasPreferencesConsent(consent);
+  const storedTheme = canUsePreferenceCookies ? cookieStore.get("theme")?.value : null;
   const theme =
-    canUsePreferenceCookies && cookieStore.get("theme")?.value === "light" ? "light" : "dark";
+    storedTheme === "light" || storedTheme === "system" || storedTheme === "dark"
+      ? storedTheme
+      : "dark";
 
   return (
     <header
