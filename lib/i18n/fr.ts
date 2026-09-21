@@ -168,6 +168,8 @@ export interface Dictionary {
     waitingPlayers: string;
     joiningRoom: string;
     joiningRoomHint: string;
+    hostAwayTitle: string;
+    hostAwayHint: string;
     joinRoom: string;
     waitingHost: string;
     responses: string;
@@ -532,6 +534,8 @@ export const fr: Dictionary = {
     waitingPlayers: "En attente des joueurs",
     joiningRoom: "Connexion à la room…",
     joiningRoomHint: "Tu pourras voter dès que tu seras ajouté·e.",
+    hostAwayTitle: "Partie en pause",
+    hostAwayHint: "L’hôte a quitté la room. La partie reprendra à son retour.",
     joinRoom: "Rejoindre la room",
     waitingHost: "En attente du lancement par l’hôte…",
     responses: "Réponses",

@@ -50,7 +50,7 @@ export type BracketRoomSnapshot = {
   hostId: string;
   hostName: string;
   previousHostId: string | null;
-  status: "waiting" | "playing" | "finished";
+  status: "waiting" | "playing" | "paused" | "finished";
   participants: RoomParticipant[];
   votes: Vote[];
   ballots: BracketBallot[];
@@ -103,6 +103,16 @@ export function normalizeParticipants(value: unknown): RoomParticipant[] {
     ids.add(entry.playerId);
     return [{ playerId: entry.playerId, username: entry.username.slice(0, 48) }];
   });
+}
+
+function getHostDisplayName(
+  hostId: string,
+  participants: RoomParticipant[],
+  profileUsername: string,
+): string {
+  return (
+    participants.find((participant) => participant.playerId === hostId)?.username ?? profileUsername
+  );
 }
 
 export function normalizeVotes(value: unknown): Vote[] {
@@ -248,6 +258,7 @@ async function findBracketRoom(roomId: string) {
 }
 
 export function toBracketRoomSnapshot(room: NonNullable<BracketRoomRaw>): BracketRoomSnapshot {
+  const participants = normalizeParticipants(room.participants);
   const votes = normalizeVotes(room.votes);
   const tracks = room.bracket.tracks.map((track) => ({
     position: track.seed,
@@ -275,10 +286,10 @@ export function toBracketRoomSnapshot(room: NonNullable<BracketRoomRaw>): Bracke
   return {
     id: room.id,
     hostId: room.hostId,
-    hostName: room.host.username,
+    hostName: getHostDisplayName(room.hostId, participants, room.host.username),
     previousHostId: room.previousHostId,
     status: room.status as BracketRoomSnapshot["status"],
-    participants: normalizeParticipants(room.participants),
+    participants,
     votes,
     ballots: normalizeBracketBallots(room.ballots),
     lastResolution: normalizeBracketResolution(room.lastResolution),
@@ -315,13 +326,14 @@ async function findTierlistRoom(roomId: string) {
 }
 
 export function toTierlistRoomSnapshot(room: NonNullable<TierlistRoomRaw>): TierlistRoomSnapshot {
+  const participants = normalizeParticipants(room.participants);
   return {
     id: room.id,
     hostId: room.hostId,
-    hostName: room.host.username,
+    hostName: getHostDisplayName(room.hostId, participants, room.host.username),
     previousHostId: room.previousHostId,
     status: room.status as TierlistRoomSnapshot["status"],
-    participants: normalizeParticipants(room.participants),
+    participants,
     placements: normalizePlacements(room.placements),
     ballots: normalizeTierlistBallots(room.ballots),
     lastResolution: normalizeTierlistResolution(room.lastResolution),

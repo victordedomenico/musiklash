@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  BRACKET_ONE_MINUTE_WARNING_SECONDS,
-  crossedBracketWarningThreshold,
   BRACKET_DUEL_SECONDS,
   remainingDuelSeconds,
   resolveBracketBallots,
@@ -46,17 +44,5 @@ describe("remainingDuelSeconds", () => {
     expect(
       remainingDuelSeconds(startedAt, startedAt.getTime() + (BRACKET_DUEL_SECONDS + 10) * 1000),
     ).toBe(0);
-  });
-});
-
-describe("crossedBracketWarningThreshold", () => {
-  it("warns exactly once when the timer crosses one minute", () => {
-    expect(crossedBracketWarningThreshold(61, BRACKET_ONE_MINUTE_WARNING_SECONDS)).toBe(true);
-    expect(crossedBracketWarningThreshold(60, 59)).toBe(false);
-  });
-
-  it("does not play late after a page load or once the duel has expired", () => {
-    expect(crossedBracketWarningThreshold(null, 59)).toBe(false);
-    expect(crossedBracketWarningThreshold(61, 0)).toBe(false);
   });
 });

@@ -178,6 +178,8 @@ export const en: Dictionary = {
     waitingPlayers: "Waiting for players",
     joiningRoom: "Joining room…",
     joiningRoomHint: "You will be able to vote as soon as you are added.",
+    hostAwayTitle: "Game paused",
+    hostAwayHint: "The host left the room. The game will resume when they return.",
     joinRoom: "Join room",
     waitingHost: "Waiting for the host to start…",
     responses: "Responses",

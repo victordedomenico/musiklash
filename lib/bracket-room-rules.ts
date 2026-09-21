@@ -1,5 +1,4 @@
 export const BRACKET_DUEL_SECONDS = 6 * 60;
-export const BRACKET_ONE_MINUTE_WARNING_SECONDS = 60;
 
 type Ballot = { winnerSeed: number | null };
 
@@ -43,13 +42,4 @@ export function remainingDuelSeconds(
   const startedAt = new Date(duelStartedAt).getTime();
   if (!Number.isFinite(startedAt)) return BRACKET_DUEL_SECONDS;
   return Math.max(0, Math.ceil((startedAt + BRACKET_DUEL_SECONDS * 1000 - now) / 1000));
-}
-
-export function crossedBracketWarningThreshold(previousTimeLeft: number | null, timeLeft: number) {
-  return (
-    previousTimeLeft !== null &&
-    previousTimeLeft > BRACKET_ONE_MINUTE_WARNING_SECONDS &&
-    timeLeft <= BRACKET_ONE_MINUTE_WARNING_SECONDS &&
-    timeLeft > 0
-  );
 }

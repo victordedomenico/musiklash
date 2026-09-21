@@ -11,6 +11,7 @@ export type TierlistSummary = {
   coverUrl: string | null;
   trackCount?: number;
   genre?: string | null;
+  resumeHref?: string;
 };
 
 export default function TierlistCard({
@@ -65,7 +66,7 @@ export default function TierlistCard({
 
   if (!libraryEditor) {
     return (
-      <Link href={`/tierlist/${t.id}`} className="group media-card">
+      <Link href={t.resumeHref ?? `/tierlist/${t.id}`} className="group media-card">
         {inner}
       </Link>
     );
@@ -73,7 +74,7 @@ export default function TierlistCard({
 
   return (
     <div className="flex flex-col gap-2">
-      <Link href={`/tierlist/${t.id}`} className="group media-card">
+      <Link href={t.resumeHref ?? `/tierlist/${t.id}`} className="group media-card">
         {inner}
       </Link>
       <LibraryVisibilityToggle entity="tierlist" id={t.id} visibility={vis} />

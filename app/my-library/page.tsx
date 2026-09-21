@@ -37,6 +37,7 @@ import {
 import { Plus, Play } from "lucide-react";
 import { buildPageMetadata } from "@/lib/seo";
 import { getI18n } from "@/lib/i18n";
+import { roomResumeHref } from "@/lib/multiplayer-room-resume";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Ma bibliothèque",
@@ -121,6 +122,8 @@ export default async function MyBracketsPage({
   const [
     brackets,
     tierlists,
+    bracketRoomsRaw,
+    tierlistRoomsRaw,
     blindtests,
     blindtestRoomsRaw,
     soloSessions,
@@ -154,6 +157,16 @@ export default async function MyBracketsPage({
             where: { ownerId: activePlayerId, ...visFilter },
             select: { id: true, title: true, theme: true, visibility: true, coverUrl: true },
             orderBy: { createdAt: "desc" },
+          }),
+          prisma.bracketRoom.findMany({
+            where: { hostId: activePlayerId, status: { not: "finished" } },
+            select: { id: true, bracketId: true },
+            orderBy: { updatedAt: "desc" },
+          }),
+          prisma.tierlistRoom.findMany({
+            where: { hostId: activePlayerId, status: { not: "finished" } },
+            select: { id: true, tierlistId: true },
+            orderBy: { updatedAt: "desc" },
           }),
           prisma.blindtest.findMany({
             where: { ownerId: activePlayerId, ...visFilter },
@@ -378,10 +391,37 @@ export default async function MyBracketsPage({
           }),
         ]);
       })()
-    : [[], [], [], [], [], [], [], [], [], [], [], [], [], [], []];
+    : [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []];
 
-  const bracketList = brackets.map((b) => ({ ...b, cover_url: b.coverUrl })) as BracketSummary[];
-  const tierlistList = tierlists.map((t) => ({ ...t, coverUrl: t.coverUrl })) as TierlistSummary[];
+  const activeBracketRoomsByBracketId = new Map<string, string>();
+  for (const room of bracketRoomsRaw) {
+    if (!activeBracketRoomsByBracketId.has(room.bracketId)) {
+      activeBracketRoomsByBracketId.set(room.bracketId, room.id);
+    }
+  }
+  const activeTierlistRoomsByTierlistId = new Map<string, string>();
+  for (const room of tierlistRoomsRaw) {
+    if (!activeTierlistRoomsByTierlistId.has(room.tierlistId)) {
+      activeTierlistRoomsByTierlistId.set(room.tierlistId, room.id);
+    }
+  }
+
+  const bracketList = brackets.map((b) => {
+    const roomId = activeBracketRoomsByBracketId.get(b.id);
+    return {
+      ...b,
+      cover_url: b.coverUrl,
+      resumeHref: roomId ? roomResumeHref({ id: roomId, kind: "bracket" }) : undefined,
+    };
+  }) as BracketSummary[];
+  const tierlistList = tierlists.map((t) => {
+    const roomId = activeTierlistRoomsByTierlistId.get(t.id);
+    return {
+      ...t,
+      coverUrl: t.coverUrl,
+      resumeHref: roomId ? roomResumeHref({ id: roomId, kind: "tierlist" }) : undefined,
+    };
+  }) as TierlistSummary[];
   const blindtestList = blindtests.map((b) => ({
     id: b.id,
     title: b.title,

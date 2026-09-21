@@ -11,6 +11,7 @@ export type BracketSummary = {
   visibility: "public" | "private";
   cover_url: string | null;
   genre?: string | null;
+  resumeHref?: string;
 };
 
 export default function BracketCard({
@@ -60,7 +61,7 @@ export default function BracketCard({
 
   if (!libraryEditor) {
     return (
-      <Link href={`/bracket-game/${b.id}`} className="group media-card">
+      <Link href={b.resumeHref ?? `/bracket-game/${b.id}`} className="group media-card">
         {inner}
       </Link>
     );
@@ -68,7 +69,7 @@ export default function BracketCard({
 
   return (
     <div className="flex flex-col gap-2">
-      <Link href={`/bracket-game/${b.id}`} className="group media-card">
+      <Link href={b.resumeHref ?? `/bracket-game/${b.id}`} className="group media-card">
         {inner}
       </Link>
       <LibraryVisibilityToggle entity="bracket" id={b.id} visibility={b.visibility} />

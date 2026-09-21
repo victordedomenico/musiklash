@@ -2,16 +2,7 @@
 
 import { useCallback, useRef } from "react";
 
-type SoundName =
-  | "tick"
-  | "spin_end"
-  | "win"
-  | "correct"
-  | "wrong"
-  | "smash"
-  | "pass"
-  | "vote"
-  | "timer_warning";
+type SoundName = "tick" | "spin_end" | "win" | "correct" | "wrong" | "smash" | "pass" | "vote";
 
 function getCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -150,24 +141,6 @@ function playVote(ctx: AudioContext) {
   osc.stop(ctx.currentTime + 0.13);
 }
 
-function playTimerWarning(ctx: AudioContext) {
-  // A short, gentle two-note alert that lasts just over one second.
-  [0, 0.32, 0.64, 0.96].forEach((offset, index) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    const start = ctx.currentTime + offset;
-    osc.type = "sine";
-    osc.frequency.value = index % 2 === 0 ? 880 : 1046.5;
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(0.11, start + 0.025);
-    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.19);
-    osc.start(start);
-    osc.stop(start + 0.2);
-  });
-}
-
 export function useSoundFx() {
   const ctxRef = useRef<AudioContext | null>(null);
 
@@ -175,11 +148,6 @@ export function useSoundFx() {
     if (!ctxRef.current) ctxRef.current = getCtx();
     return ctxRef.current;
   }, []);
-
-  const prime = useCallback(() => {
-    const ctx = ensureCtx();
-    if (ctx?.state === "suspended") void ctx.resume();
-  }, [ensureCtx]);
 
   const play = useCallback(
     (name: SoundName) => {
@@ -211,13 +179,10 @@ export function useSoundFx() {
         case "vote":
           playVote(ctx);
           break;
-        case "timer_warning":
-          playTimerWarning(ctx);
-          break;
       }
     },
     [ensureCtx],
   );
 
-  return { play, prime };
+  return { play };
 }

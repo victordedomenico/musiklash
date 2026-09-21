@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { buildBracketState, type Pairing } from "@/lib/bracket";
-import { BRACKET_DUEL_SECONDS, resolveBracketBallots } from "@/lib/bracket-room-rules";
+import { resolveBracketBallots } from "@/lib/bracket-room-rules";
 import { removePlayerBallot, replacePlayerBallot } from "@/lib/room-ballots";
 import {
   getBracketRoomSnapshot,
@@ -46,7 +46,7 @@ export async function joinBracketRoom(roomId: string) {
       return response(roomId);
     }
 
-    const isReturningHost = room.previousHostId === user.playerId;
+    const isReturningHost = room.hostId === user.playerId && room.previousHostId === user.playerId;
     const updated = await prisma.bracketRoom.updateMany({
       where: { id: roomId, revision: room.revision, status: room.status },
       data: {
@@ -54,7 +54,12 @@ export async function joinBracketRoom(roomId: string) {
           ...participants,
           { playerId: user.playerId, username: user.username },
         ] as unknown as Prisma.JsonArray,
-        ...(isReturningHost ? { hostId: user.playerId, previousHostId: null } : {}),
+        ...(isReturningHost
+          ? {
+              previousHostId: null,
+              ...(room.status === "paused" ? { status: "playing" } : {}),
+            }
+          : {}),
         revision: { increment: 1 },
       },
     });
@@ -64,10 +69,7 @@ export async function joinBracketRoom(roomId: string) {
   return { ok: false as const, error: "La room a changé, réessaie." };
 }
 
-/**
- * Removes the current player when their game tab is closed. Unlike a host kick,
- * the host is allowed to leave: the oldest remaining player becomes host.
- */
+/** Removes the current player when their game tab is closed. */
 export async function leaveBracketRoom(roomId: string) {
   const user = await identity();
   if (!user) return { ok: false as const, error: "Connexion requise." };
@@ -85,17 +87,30 @@ export async function leaveBracketRoom(roomId: string) {
     const nextParticipants = participants.filter(
       (participant) => participant.playerId !== user.playerId,
     );
+    const nextBallots = removePlayerBallot(normalizeBracketBallots(room.ballots), user.playerId);
+
+    if (room.hostId === user.playerId) {
+      const updated = await prisma.bracketRoom.updateMany({
+        where: { id: roomId, revision: room.revision, status: room.status },
+        data: {
+          participants: nextParticipants as unknown as Prisma.JsonArray,
+          ballots: nextBallots as unknown as Prisma.JsonArray,
+          previousHostId: user.playerId,
+          ...(room.status === "playing" ? { status: "paused" } : {}),
+          revision: { increment: 1 },
+        },
+      });
+      if (updated.count === 1) return { ok: true as const };
+      continue;
+    }
+
     if (nextParticipants.length === 0) {
-      const canRejoin = room.hostId === user.playerId || room.previousHostId !== null;
-      if (canRejoin) {
+      if (room.previousHostId !== null) {
         const updated = await prisma.bracketRoom.updateMany({
           where: { id: roomId, revision: room.revision, status: room.status },
           data: {
             participants: [] as Prisma.JsonArray,
             ballots: [] as Prisma.JsonArray,
-            ...(room.hostId === user.playerId && room.previousHostId === null
-              ? { previousHostId: user.playerId }
-              : {}),
             revision: { increment: 1 },
           },
         });
@@ -109,35 +124,19 @@ export async function leaveBracketRoom(roomId: string) {
       continue;
     }
 
-    const nextBallots = removePlayerBallot(normalizeBracketBallots(room.ballots), user.playerId);
     const { votes, round, pair } = getOpenDuel(room);
     const resolutionData =
-      room.status === "playing" &&
-      pair &&
-      (hasExpired(room) || nextBallots.length >= nextParticipants.length)
+      room.status === "playing" && pair && nextBallots.length >= nextParticipants.length
         ? resolvedDuelData(room, nextBallots, pair, round, votes)
         : null;
-    const nextHost = room.hostId === user.playerId ? nextParticipants[0] : null;
     const data = resolutionData
       ? {
           ...resolutionData,
           participants: nextParticipants as unknown as Prisma.JsonArray,
-          ...(nextHost
-            ? {
-                hostId: nextHost.playerId,
-                previousHostId: room.previousHostId ?? user.playerId,
-              }
-            : {}),
         }
       : {
           participants: nextParticipants as unknown as Prisma.JsonArray,
           ballots: nextBallots as unknown as Prisma.JsonArray,
-          ...(nextHost
-            ? {
-                hostId: nextHost.playerId,
-                previousHostId: room.previousHostId ?? user.playerId,
-              }
-            : {}),
           revision: { increment: 1 as const },
         };
     const updated = await prisma.bracketRoom.updateMany({
@@ -181,9 +180,7 @@ export async function kickBracketPlayer(roomId: string, playerId: string) {
     const nextBallots = removePlayerBallot(normalizeBracketBallots(room.ballots), playerId);
     const { votes, round, pair } = getOpenDuel(room);
     const data =
-      room.status === "playing" &&
-      pair &&
-      (hasExpired(room) || nextBallots.length >= nextParticipants.length)
+      room.status === "playing" && pair && nextBallots.length >= nextParticipants.length
         ? {
             ...resolvedDuelData(room, nextBallots, pair, round, votes),
             participants: nextParticipants as unknown as Prisma.JsonArray,
@@ -221,7 +218,7 @@ export async function startBracketRoom(roomId: string) {
       status: "playing",
       ballots: [],
       lastResolution: Prisma.DbNull,
-      duelStartedAt: new Date(),
+      duelStartedAt: null,
       revision: { increment: 1 },
     },
   });
@@ -255,11 +252,6 @@ function getOpenDuel(room: DuelRoom) {
           !votes.some((vote) => vote.round === round && vote.matchIndex === candidate.matchIndex),
       ) ?? null;
   return { votes, round, pair };
-}
-
-function hasExpired(room: DuelRoom) {
-  const startedAt = room.duelStartedAt ?? (room.status === "playing" ? room.updatedAt : null);
-  return Boolean(startedAt && Date.now() >= startedAt.getTime() + BRACKET_DUEL_SECONDS * 1000);
 }
 
 function resolvedDuelData(
@@ -300,7 +292,7 @@ function resolvedDuelData(
     } as unknown as Prisma.JsonObject,
     status: state.winner ? "finished" : "playing",
     winnerSeed: state.winner,
-    duelStartedAt: state.winner ? null : new Date(),
+    duelStartedAt: null,
     revision: { increment: 1 },
   };
 }
@@ -327,11 +319,8 @@ async function submitBracketBallot(roomId: string, winnerSeed: number | null) {
     }
 
     const ballots = normalizeBracketBallots(room.ballots);
-    const shouldResolveExpired = hasExpired(room);
-    const nextBallots = shouldResolveExpired
-      ? ballots
-      : replacePlayerBallot(ballots, { playerId: user.playerId, winnerSeed });
-    const shouldResolve = shouldResolveExpired || nextBallots.length >= participants.length;
+    const nextBallots = replacePlayerBallot(ballots, { playerId: user.playerId, winnerSeed });
+    const shouldResolve = nextBallots.length >= participants.length;
     const data = shouldResolve
       ? resolvedDuelData(room, nextBallots, pair, round, votes)
       : {
@@ -367,8 +356,6 @@ export async function clearBracketVote(roomId: string) {
     if (room.status !== "playing" || !getOpenDuel(room).pair) {
       return { ok: false as const, error: "Ce duel n’est plus actif." };
     }
-    if (hasExpired(room)) return { ok: false as const, error: "Le temps de vote est écoulé." };
-
     const participants = normalizeParticipants(room.participants);
     if (!participants.some((participant) => participant.playerId === user.playerId)) {
       return { ok: false as const, error: "Rejoins la room avant de participer." };
@@ -413,33 +400,4 @@ export async function finishBracketRound(roomId: string) {
   }
 
   return { ok: false as const, error: "La room a changé, réessaie." };
-}
-
-export async function expireBracketDuel(roomId: string) {
-  const user = await identity();
-  if (!user) return { ok: false as const, error: "Connexion requise." };
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const room = await findRoomForDuel(roomId);
-    if (!room) return { ok: false as const, error: "Room introuvable." };
-    if (room.status !== "playing") return response(roomId);
-
-    const participants = normalizeParticipants(room.participants);
-    if (!participants.some((participant) => participant.playerId === user.playerId)) {
-      return { ok: false as const, error: "Rejoins la room avant de continuer." };
-    }
-    if (!hasExpired(room)) {
-      return { ok: false as const, error: "Le temps de vote n’est pas encore écoulé." };
-    }
-
-    const { votes, round, pair } = getOpenDuel(room);
-    if (!pair) return response(roomId);
-    const updated = await prisma.bracketRoom.updateMany({
-      where: { id: roomId, revision: room.revision, status: "playing" },
-      data: resolvedDuelData(room, normalizeBracketBallots(room.ballots), pair, round, votes),
-    });
-    if (updated.count === 1) return response(roomId);
-  }
-
-  return response(roomId);
 }
