@@ -21,6 +21,7 @@ export async function createTierlist(input: {
   genre?: string | null;
   visibility: "private" | "public" | "none";
   mode?: "solo" | "multi";
+  timerEnabled?: boolean;
   tracks: TierlistTrackInput[];
 }) {
   if (!input.title.trim()) return { error: "Le titre est requis." };
@@ -41,6 +42,7 @@ export async function createTierlist(input: {
   let tierlistId: string;
   let roomId: string | null = null;
   const isCollaborative = input.mode === "multi";
+  const timerEnabled = isCollaborative && input.timerEnabled === true;
   const transient = input.visibility === "none" && !isCollaborative;
   const storedVisibility = transient ? "private" : input.visibility;
   try {
@@ -71,6 +73,7 @@ export async function createTierlist(input: {
         data: {
           tierlistId,
           hostId: identity.playerId,
+          timerEnabled,
           participants: [
             { playerId: identity.playerId, username: identity.username },
           ] as unknown as Prisma.JsonArray,

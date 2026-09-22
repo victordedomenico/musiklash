@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { buildBracketState, type Pairing } from "@/lib/bracket";
-import { resolveBracketBallots } from "@/lib/bracket-room-rules";
+import { BRACKET_DUEL_SECONDS, resolveBracketBallots } from "@/lib/bracket-room-rules";
 import { removePlayerBallot, replacePlayerBallot } from "@/lib/room-ballots";
 import {
   getBracketRoomSnapshot,
@@ -390,7 +390,7 @@ export async function startBracketRoom(roomId: string) {
       status: "playing",
       ballots: [],
       lastResolution: Prisma.DbNull,
-      duelStartedAt: null,
+      duelStartedAt: room.timerEnabled ? new Date() : null,
       revision: { increment: 1 },
     },
   });
@@ -464,9 +464,15 @@ function resolvedDuelData(
     } as unknown as Prisma.JsonObject,
     status: state.winner ? "finished" : "playing",
     winnerSeed: state.winner,
-    duelStartedAt: null,
+    duelStartedAt: state.winner ? null : room.timerEnabled ? new Date() : null,
     revision: { increment: 1 },
   };
+}
+
+function hasExpired(room: DuelRoom) {
+  if (!room.timerEnabled) return false;
+  const startedAt = room.duelStartedAt ?? (room.status === "playing" ? room.updatedAt : null);
+  return Boolean(startedAt && Date.now() >= startedAt.getTime() + BRACKET_DUEL_SECONDS * 1000);
 }
 
 async function submitBracketBallot(roomId: string, winnerSeed: number | null) {
@@ -491,8 +497,11 @@ async function submitBracketBallot(roomId: string, winnerSeed: number | null) {
     }
 
     const ballots = normalizeBracketBallots(room.ballots);
-    const nextBallots = replacePlayerBallot(ballots, { playerId: user.playerId, winnerSeed });
-    const shouldResolve = nextBallots.length >= participants.length;
+    const shouldResolveExpired = hasExpired(room);
+    const nextBallots = shouldResolveExpired
+      ? ballots
+      : replacePlayerBallot(ballots, { playerId: user.playerId, winnerSeed });
+    const shouldResolve = shouldResolveExpired || nextBallots.length >= participants.length;
     const data = shouldResolve
       ? resolvedDuelData(room, nextBallots, pair, round, votes)
       : {
@@ -528,6 +537,7 @@ export async function clearBracketVote(roomId: string) {
     if (room.status !== "playing" || !getOpenDuel(room).pair) {
       return { ok: false as const, error: "Ce duel n’est plus actif." };
     }
+    if (hasExpired(room)) return { ok: false as const, error: "Le temps de vote est écoulé." };
     const participants = normalizeParticipants(room.participants);
     if (!participants.some((participant) => participant.playerId === user.playerId)) {
       return { ok: false as const, error: "Rejoins la room avant de participer." };
@@ -572,4 +582,38 @@ export async function finishBracketRound(roomId: string) {
   }
 
   return { ok: false as const, error: "La room a changé, réessaie." };
+}
+
+export async function expireBracketRound(roomId: string) {
+  const user = await identity();
+  if (!user) return { ok: false as const, error: "Connexion requise." };
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const room = await findRoomForDuel(roomId);
+    if (!room) return { ok: false as const, error: "Room introuvable." };
+    if (room.status !== "playing") return response(roomId);
+    if (
+      !normalizeParticipants(room.participants).some(
+        (participant) => participant.playerId === user.playerId,
+      )
+    ) {
+      return { ok: false as const, error: "Rejoins la room avant de continuer." };
+    }
+    if (!room.timerEnabled) {
+      return { ok: false as const, error: "Le chronomètre n’est pas activé." };
+    }
+    if (!hasExpired(room)) {
+      return { ok: false as const, error: "Le temps de vote n’est pas encore écoulé." };
+    }
+
+    const { votes, round, pair } = getOpenDuel(room);
+    if (!pair) return response(roomId);
+    const updated = await prisma.bracketRoom.updateMany({
+      where: { id: roomId, revision: room.revision, status: "playing" },
+      data: resolvedDuelData(room, normalizeBracketBallots(room.ballots), pair, round, votes),
+    });
+    if (updated.count === 1) return response(roomId);
+  }
+
+  return response(roomId);
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, Copy, Crown, SkipForward, Swords, UserMinus, Users } from "lucide-react";
+import { Check, Clock3, Copy, Crown, SkipForward, Swords, UserMinus, Users } from "lucide-react";
 import MatchCard from "@/components/MatchCard";
 import BracketGame from "@/components/BracketGame";
 import type {
@@ -12,7 +12,9 @@ import type {
 } from "@/lib/collaborative-room";
 import { buildBracketState, totalRounds } from "@/lib/bracket";
 import { bracketRoundLabel } from "@/lib/bracket-round-label";
+import { BRACKET_DUEL_SECONDS, remainingDuelSeconds } from "@/lib/bracket-room-rules";
 import type { Dictionary } from "@/lib/i18n";
+import { useSoundFx } from "@/lib/use-sound-fx";
 import {
   forgetMultiplayerRoom,
   MULTIPLAYER_ROOMS_CHANGED_EVENT,
@@ -21,6 +23,7 @@ import {
 import {
   approveBracketJoinRequest,
   clearBracketVote,
+  expireBracketRound,
   finishBracketRound,
   heartbeatBracketHost,
   joinBracketRoom,
@@ -191,8 +194,12 @@ export default function BracketRoomClient({
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [activeResolution, setActiveResolution] = useState<BracketRoundResolution | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const [pending, startTransition] = useTransition();
   const seenResolutionRef = useRef(initialRoom.lastResolution?.id ?? null);
+  const expiryAttemptRef = useRef<string | null>(null);
+  const warningAttemptRef = useRef<string | null>(null);
+  const { play: playSound, unlock } = useSoundFx();
   const me = room.participants.find((participant) => participant.playerId === userId) ?? null;
   const isPending = room.pendingParticipants.some((participant) => participant.playerId === userId);
   const isRejected = room.rejectedPlayerIds.includes(userId);
@@ -225,6 +232,15 @@ export default function BracketRoomClient({
       )
     : 0;
   const roundProgressLabel = `${bracketRoundLabel(currentRound, totalRounds(room.bracket.size), locale)} — Duel ${currentDuelIndex + 1} / ${realPairings.length}`;
+  const timeLeft = room.timerEnabled ? remainingDuelSeconds(room.duelStartedAt, now) : null;
+  const timerExpired = timeLeft === 0;
+  const timeLabel =
+    timeLeft === null
+      ? null
+      : `${String(Math.floor(timeLeft / 60)).padStart(2, "0")}:${String(timeLeft % 60).padStart(2, "0")}`;
+  const roundKey = room.currentPair
+    ? `${currentRound}:${room.currentPair.matchIndex}:${room.duelStartedAt ?? "pending"}`
+    : null;
 
   useEffect(() => {
     if (room.status === "finished") {
@@ -250,6 +266,12 @@ export default function BracketRoomClient({
   }, []);
 
   useEffect(() => {
+    const activateAudio = () => unlock();
+    window.addEventListener("pointerdown", activateAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", activateAudio);
+  }, [unlock]);
+
+  useEffect(() => {
     if (room.status === "finished") return;
     const id = window.setInterval(() => {
       void refreshBracketRoom(room.id).then((result) => {
@@ -258,6 +280,62 @@ export default function BracketRoomClient({
     }, 1500);
     return () => window.clearInterval(id);
   }, [acceptRoom, room.id, room.status]);
+
+  useEffect(() => {
+    if (room.status !== "playing" || !room.timerEnabled) return;
+    const id = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(id);
+  }, [room.duelStartedAt, room.status, room.timerEnabled]);
+
+  useEffect(() => {
+    if (
+      room.status !== "playing" ||
+      !room.timerEnabled ||
+      !me ||
+      !room.currentPair ||
+      !room.duelStartedAt ||
+      !timerExpired ||
+      !roundKey ||
+      expiryAttemptRef.current === roundKey
+    )
+      return;
+    expiryAttemptRef.current = roundKey;
+    void expireBracketRound(room.id).then((result) => {
+      if (result.ok) {
+        acceptRoom(result.room);
+        return;
+      }
+      window.setTimeout(() => {
+        if (expiryAttemptRef.current === roundKey) expiryAttemptRef.current = null;
+        setNow(Date.now());
+      }, 1000);
+    });
+  }, [
+    acceptRoom,
+    me,
+    room.currentPair,
+    room.duelStartedAt,
+    room.id,
+    room.status,
+    room.timerEnabled,
+    roundKey,
+    timerExpired,
+  ]);
+
+  useEffect(() => {
+    if (
+      room.status !== "playing" ||
+      !room.timerEnabled ||
+      !roundKey ||
+      timeLeft === null ||
+      timeLeft > 60 ||
+      timeLeft < 56 ||
+      warningAttemptRef.current === roundKey
+    )
+      return;
+    warningAttemptRef.current = roundKey;
+    playSound("timer_warning");
+  }, [playSound, room.status, room.timerEnabled, roundKey, timeLeft]);
 
   useEffect(() => {
     if (!isHost || room.status === "finished") return;
@@ -528,7 +606,7 @@ export default function BracketRoomClient({
                     </span>
                     <button
                       type="button"
-                      disabled={pending}
+                      disabled={pending || timerExpired}
                       onClick={() => run(() => clearBracketVote(room.id))}
                       className="btn-ghost text-xs"
                     >
@@ -538,7 +616,7 @@ export default function BracketRoomClient({
                 ) : me ? (
                   <button
                     type="button"
-                    disabled={pending}
+                    disabled={pending || timerExpired}
                     onClick={() => run(() => skipBracketVote(room.id))}
                     className="btn-ghost text-xs"
                   >
@@ -559,6 +637,23 @@ export default function BracketRoomClient({
                 ) : null}
               </div>
             </div>
+            {room.timerEnabled && timeLeft !== null && timeLabel ? (
+              <>
+                <div className="flex items-center justify-center px-4 pb-3">
+                  <span
+                    className={`inline-flex min-w-20 items-center gap-2 rounded-full px-3 py-1 text-sm font-black tabular-nums ${timeLeft <= 5 ? "bg-red-400/20 text-red-200" : timeLeft <= 10 ? "bg-amber-400/20 text-amber-200" : "bg-sky-400/15 text-sky-100"}`}
+                  >
+                    <Clock3 size={15} />
+                    {timeLabel}
+                  </span>
+                </div>
+                <motion.div
+                  className={`h-1 origin-left ${timeLeft <= 5 ? "bg-red-400" : "bg-sky-400"}`}
+                  animate={{ scaleX: timeLeft / BRACKET_DUEL_SECONDS }}
+                  transition={{ duration: 0.2, ease: "linear" }}
+                />
+              </>
+            ) : null}
           </div>
           <MatchCard
             a={{
@@ -585,13 +680,15 @@ export default function BracketRoomClient({
               voteSingular: texts.vote,
               votePlural: texts.votes,
             }}
-            canVote={Boolean(me && !hasVoted && !pending)}
+            canVote={Boolean(me && !hasVoted && !pending && !timerExpired)}
             disabledVoteLabel={
               !me
                 ? texts.spectator
-                : myBallot?.winnerSeed === null
-                  ? texts.votePassed
-                  : texts.voteRecorded
+                : timerExpired
+                  ? texts.timeElapsed
+                  : myBallot?.winnerSeed === null
+                    ? texts.votePassed
+                    : texts.voteRecorded
             }
           />
           <section className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)]">

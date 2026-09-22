@@ -23,6 +23,7 @@ import type {
 } from "@/lib/collaborative-room";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { BRACKET_DUEL_SECONDS, remainingDuelSeconds } from "@/lib/bracket-room-rules";
+import { useSoundFx } from "@/lib/use-sound-fx";
 import {
   forgetMultiplayerRoom,
   MULTIPLAYER_ROOMS_CHANGED_EVENT,
@@ -323,6 +324,8 @@ export default function TierlistRoomClient({
   const [pending, startTransition] = useTransition();
   const seenResolutionRef = useRef(initialRoom.lastResolution?.id ?? null);
   const expiryAttemptRef = useRef<string | null>(null);
+  const warningAttemptRef = useRef<string | null>(null);
+  const { play: playSound, unlock } = useSoundFx();
   const me = room.participants.find((participant) => participant.playerId === userId) ?? null;
   const isPending = room.pendingParticipants.some((participant) => participant.playerId === userId);
   const isRejected = room.rejectedPlayerIds.includes(userId);
@@ -381,6 +384,12 @@ export default function TierlistRoomClient({
   }, []);
 
   useEffect(() => {
+    const activateAudio = () => unlock();
+    window.addEventListener("pointerdown", activateAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", activateAudio);
+  }, [unlock]);
+
+  useEffect(() => {
     if (me || room.previousHostId !== userId) return;
     void joinTierlistRoom(room.id).then((result) => {
       if (result.ok) acceptRoom(result.room);
@@ -397,22 +406,27 @@ export default function TierlistRoomClient({
     return () => window.clearInterval(id);
   }, [acceptRoom, room.id, room.status]);
   useEffect(() => {
-    if (room.status !== "playing") return;
+    if (room.status !== "playing" || !room.timerEnabled) return;
     const id = window.setInterval(() => setNow(Date.now()), 250);
     return () => window.clearInterval(id);
-  }, [room.positionStartedAt, room.status]);
-  const timeLeft = remainingDuelSeconds(room.positionStartedAt, now);
-  const timeLabel = `${String(Math.floor(timeLeft / 60)).padStart(2, "0")}:${String(timeLeft % 60).padStart(2, "0")}`;
+  }, [room.positionStartedAt, room.status, room.timerEnabled]);
+  const timeLeft = room.timerEnabled ? remainingDuelSeconds(room.positionStartedAt, now) : null;
+  const timerExpired = timeLeft === 0;
+  const timeLabel =
+    timeLeft === null
+      ? null
+      : `${String(Math.floor(timeLeft / 60)).padStart(2, "0")}:${String(timeLeft % 60).padStart(2, "0")}`;
   const roundKey = currentTrack
     ? `${currentTrack.position}:${room.positionStartedAt ?? "pending"}`
     : null;
   useEffect(() => {
     if (
       room.status !== "playing" ||
+      !room.timerEnabled ||
       !me ||
       !currentTrack ||
       !room.positionStartedAt ||
-      timeLeft > 0 ||
+      !timerExpired ||
       !roundKey ||
       expiryAttemptRef.current === roundKey
     )
@@ -435,9 +449,24 @@ export default function TierlistRoomClient({
     room.id,
     room.positionStartedAt,
     room.status,
+    room.timerEnabled,
     roundKey,
-    timeLeft,
+    timerExpired,
   ]);
+  useEffect(() => {
+    if (
+      room.status !== "playing" ||
+      !room.timerEnabled ||
+      !roundKey ||
+      timeLeft === null ||
+      timeLeft > 60 ||
+      timeLeft < 56 ||
+      warningAttemptRef.current === roundKey
+    )
+      return;
+    warningAttemptRef.current = roundKey;
+    playSound("timer_warning");
+  }, [playSound, room.status, room.timerEnabled, roundKey, timeLeft]);
   const run = (action: () => Promise<Awaited<ReturnType<typeof refreshTierlistRoom>>>) => {
     setError("");
     startTransition(async () => {
@@ -616,12 +645,14 @@ export default function TierlistRoomClient({
           <div className="overflow-hidden rounded-2xl border border-sky-400/25 bg-sky-400/10">
             <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
               <div className="flex flex-wrap items-center gap-3">
-                <span
-                  className={`inline-flex min-w-20 items-center gap-2 rounded-full px-3 py-1 font-black tabular-nums ${timeLeft <= 5 ? "bg-red-400/20 text-red-200" : timeLeft <= 10 ? "bg-amber-400/20 text-amber-200" : "bg-sky-400/15 text-sky-100"}`}
-                >
-                  <Clock3 size={15} />
-                  {timeLabel}
-                </span>
+                {room.timerEnabled && timeLeft !== null && timeLabel ? (
+                  <span
+                    className={`inline-flex min-w-20 items-center gap-2 rounded-full px-3 py-1 font-black tabular-nums ${timeLeft <= 5 ? "bg-red-400/20 text-red-200" : timeLeft <= 10 ? "bg-amber-400/20 text-amber-200" : "bg-sky-400/15 text-sky-100"}`}
+                  >
+                    <Clock3 size={15} />
+                    {timeLabel}
+                  </span>
+                ) : null}
                 <span>
                   {texts.track} {currentTrackIndex + 1} / {room.tierlist.tracks.length} ·{" "}
                   {texts.responses}: {room.ballots.length} / {room.participants.length}
@@ -636,7 +667,7 @@ export default function TierlistRoomClient({
                     </span>
                     <button
                       type="button"
-                      disabled={pending || timeLeft === 0}
+                      disabled={pending || timerExpired}
                       onClick={() => run(() => clearTierlistVote(room.id))}
                       className="btn-ghost text-xs"
                     >
@@ -646,7 +677,7 @@ export default function TierlistRoomClient({
                 ) : me ? (
                   <button
                     type="button"
-                    disabled={pending || timeLeft === 0}
+                    disabled={pending || timerExpired}
                     onClick={() => run(() => skipTierlistVote(room.id))}
                     className="btn-ghost text-xs"
                   >
@@ -667,11 +698,13 @@ export default function TierlistRoomClient({
                 ) : null}
               </div>
             </div>
-            <motion.div
-              className={`h-1 origin-left ${timeLeft <= 5 ? "bg-red-400" : "bg-sky-400"}`}
-              animate={{ scaleX: timeLeft / BRACKET_DUEL_SECONDS }}
-              transition={{ duration: 0.2, ease: "linear" }}
-            />
+            {room.timerEnabled && timeLeft !== null ? (
+              <motion.div
+                className={`h-1 origin-left ${timeLeft <= 5 ? "bg-red-400" : "bg-sky-400"}`}
+                animate={{ scaleX: timeLeft / BRACKET_DUEL_SECONDS }}
+                transition={{ duration: 0.2, ease: "linear" }}
+              />
+            ) : null}
           </div>
           <section className="card p-5 text-center">
             {currentTrack.coverUrl ? (
@@ -690,7 +723,7 @@ export default function TierlistRoomClient({
                 <button
                   key={tier.id}
                   type="button"
-                  disabled={!me || hasVoted || pending || timeLeft === 0}
+                  disabled={!me || hasVoted || pending || timerExpired}
                   onClick={() => run(() => voteTierlistRoom(room.id, tier.id))}
                   className="rounded-xl border px-2 py-3 font-black text-black transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
                   style={{ background: tier.color, borderColor: tier.color }}

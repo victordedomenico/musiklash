@@ -6,6 +6,7 @@ import GenrePicker from "@/components/GenrePicker";
 import { createTierlist, type TierlistTrackInput } from "./actions";
 import Input from "@/components/ui/Input";
 import type { MusicGenre } from "@/lib/genres";
+import type { Dictionary } from "@/lib/i18n";
 
 const VIS_HINTS = {
   public: "Visible dans Explorer. Accessible à tous par lien.",
@@ -13,11 +14,18 @@ const VIS_HINTS = {
   none: "Éphémère : la tierlist sera supprimée définitivement après la partie.",
 } as const;
 
-export default function CreateTierlistForm({ mode = "solo" }: { mode?: "solo" | "multi" }) {
+export default function CreateTierlistForm({
+  mode = "solo",
+  timerTexts,
+}: {
+  mode?: "solo" | "multi";
+  timerTexts: Pick<Dictionary["multiplayerRoom"], "timerEnabled" | "timerEnabledHint">;
+}) {
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState("");
   const [genre, setGenre] = useState<MusicGenre | null>(null);
   const [visibility, setVisibility] = useState<"private" | "public" | "none">("private");
+  const [timerEnabled, setTimerEnabled] = useState(false);
   const [tracks, setTracks] = useState<TierlistTrackInput[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -30,7 +38,15 @@ export default function CreateTierlistForm({ mode = "solo" }: { mode?: "solo" | 
       return;
     }
     startTransition(async () => {
-      const res = await createTierlist({ title, theme, genre, visibility, mode, tracks });
+      const res = await createTierlist({
+        title,
+        theme,
+        genre,
+        visibility,
+        mode,
+        timerEnabled,
+        tracks,
+      });
       if (res?.error) setError(res.error);
     });
   };
@@ -64,10 +80,26 @@ export default function CreateTierlistForm({ mode = "solo" }: { mode?: "solo" | 
       <GenrePicker value={genre} onChange={setGenre} />
 
       {mode === "multi" ? (
-        <p className="rounded-xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
-          Room collaborative : chaque joueur vote pour le rang d’un morceau. La majorité l’emporte ;
-          un tirage au sort départage une égalité.
-        </p>
+        <div className="space-y-3">
+          <p className="rounded-xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
+            Room collaborative : chaque joueur vote pour le rang d’un morceau. La majorité l’emporte
+            ; un tirage au sort départage une égalité.
+          </p>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-3 transition hover:border-sky-400/45">
+            <input
+              type="checkbox"
+              checked={timerEnabled}
+              onChange={(event) => setTimerEnabled(event.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-sky-400"
+            />
+            <span>
+              <span className="block text-sm font-bold">{timerTexts.timerEnabled}</span>
+              <span className="mt-1 block text-xs text-[color:var(--muted)]">
+                {timerTexts.timerEnabledHint}
+              </span>
+            </span>
+          </label>
+        </div>
       ) : null}
 
       {/* Ligne 3 — Publication */}

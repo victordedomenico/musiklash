@@ -218,6 +218,8 @@ export const en: Dictionary = {
     bracketStart: "Start bracket",
     bracketWaitingCopy: "Share the link, then start the room once at least 2 players have joined.",
     currentRound: "Current round",
+    timerEnabled: "Enable the timer (6 min per round)",
+    timerEnabledHint: "A short alert lets every player know when one minute remains.",
     collectiveVote: "Collective vote",
     timeElapsed: "Time elapsed",
     bracketFinished: "Tournament complete: here is the final collective vote.",

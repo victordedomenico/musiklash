@@ -208,6 +208,8 @@ export interface Dictionary {
     bracketStart: string;
     bracketWaitingCopy: string;
     currentRound: string;
+    timerEnabled: string;
+    timerEnabledHint: string;
     collectiveVote: string;
     timeElapsed: string;
     bracketFinished: string;
@@ -584,6 +586,8 @@ export const fr: Dictionary = {
     bracketStart: "Lancer le bracket",
     bracketWaitingCopy: "Partage le lien, puis lance la room à partir de 2 joueurs.",
     currentRound: "Tour en cours",
+    timerEnabled: "Activer le chronomètre (6 min par tour)",
+    timerEnabledHint: "Une courte sonnerie prévient tous les joueurs quand il reste une minute.",
     collectiveVote: "Vote collectif",
     timeElapsed: "Temps écoulé",
     bracketFinished: "Tournoi terminé : voici le vote collectif final.",

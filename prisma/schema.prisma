@@ -130,6 +130,7 @@ model BracketRoom {
   votes          Json      @default("[]") @db.JsonB
   ballots        Json      @default("[]") @db.JsonB
   lastResolution Json?     @map("last_resolution") @db.JsonB
+  timerEnabled   Boolean   @default(false) @map("timer_enabled")
   duelStartedAt  DateTime? @map("duel_started_at") @db.Timestamptz
   hostLastSeenAt DateTime  @default(now()) @map("host_last_seen_at") @db.Timestamptz
   winnerSeed     Int?      @map("winner_seed") @db.SmallInt
@@ -331,6 +332,7 @@ model TierlistRoom {
   placements        Json      @default("{}") @db.JsonB
   ballots           Json      @default("[]") @db.JsonB
   lastResolution    Json?     @map("last_resolution") @db.JsonB
+  timerEnabled      Boolean   @default(false) @map("timer_enabled")
   positionStartedAt DateTime? @map("position_started_at") @db.Timestamptz
   revision          Int       @default(0)
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz

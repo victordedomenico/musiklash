@@ -357,7 +357,7 @@ export async function startTierlistRoom(roomId: string) {
       placements: {},
       ballots: [],
       lastResolution: Prisma.DbNull,
-      positionStartedAt: new Date(),
+      positionStartedAt: room.timerEnabled ? new Date() : null,
       revision: { increment: 1 },
     },
   });
@@ -378,6 +378,7 @@ function currentTrack(room: TierlistVoteRoom) {
 }
 
 function hasExpired(room: TierlistVoteRoom) {
+  if (!room.timerEnabled) return false;
   const startedAt = room.positionStartedAt ?? (room.status === "playing" ? room.updatedAt : null);
   return Boolean(startedAt && Date.now() >= startedAt.getTime() + BRACKET_DUEL_SECONDS * 1000);
 }
@@ -410,7 +411,7 @@ function resolvedPositionData(room: TierlistVoteRoom, ballots: TierlistBallot[])
       resolvedAt: new Date().toISOString(),
     } as unknown as Prisma.JsonObject,
     status: finished ? "finished" : "playing",
-    positionStartedAt: finished ? null : new Date(),
+    positionStartedAt: finished || !room.timerEnabled ? null : new Date(),
     revision: { increment: 1 },
   };
 }

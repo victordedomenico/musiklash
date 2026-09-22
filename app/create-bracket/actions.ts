@@ -22,6 +22,7 @@ export async function createBracket(input: {
   genre?: string | null;
   visibility: "private" | "public" | "none";
   mode?: "solo" | "multi";
+  timerEnabled?: boolean;
   tracks: SelectedTrack[];
 }) {
   if (input.tracks.length < 3) {
@@ -53,6 +54,7 @@ export async function createBracket(input: {
   let bracketId: string;
   let roomId: string | null = null;
   const isCollaborative = input.mode === "multi";
+  const timerEnabled = isCollaborative && input.timerEnabled === true;
   const transient = input.visibility === "none" && !isCollaborative;
   const storedVisibility = transient ? "private" : input.visibility;
 
@@ -88,6 +90,7 @@ export async function createBracket(input: {
           bracketId,
           hostId: identity.playerId,
           hostLastSeenAt: new Date(),
+          timerEnabled,
           participants: [
             { playerId: identity.playerId, username: identity.username },
           ] as unknown as Prisma.JsonArray,

@@ -58,6 +58,7 @@ export type BracketRoomSnapshot = {
   votes: Vote[];
   ballots: BracketBallot[];
   lastResolution: BracketRoundResolution | null;
+  timerEnabled: boolean;
   duelStartedAt: string | null;
   winnerSeed: number | null;
   updatedAt: string;
@@ -84,6 +85,7 @@ export type TierlistRoomSnapshot = {
   placements: Record<string, string>;
   ballots: TierlistBallot[];
   lastResolution: TierlistRoundResolution | null;
+  timerEnabled: boolean;
   positionStartedAt: string | null;
   currentPosition: number;
   updatedAt: string;
@@ -330,6 +332,7 @@ export function toBracketRoomSnapshot(room: NonNullable<BracketRoomRaw>): Bracke
     votes,
     ballots: normalizeBracketBallots(room.ballots),
     lastResolution: normalizeBracketResolution(room.lastResolution),
+    timerEnabled: room.timerEnabled,
     duelStartedAt:
       (room.duelStartedAt ?? (room.status === "playing" ? room.updatedAt : null))?.toISOString() ??
       null,
@@ -377,6 +380,7 @@ export function toTierlistRoomSnapshot(room: NonNullable<TierlistRoomRaw>): Tier
     placements: normalizePlacements(room.placements),
     ballots: normalizeTierlistBallots(room.ballots),
     lastResolution: normalizeTierlistResolution(room.lastResolution),
+    timerEnabled: room.timerEnabled,
     positionStartedAt:
       (
         room.positionStartedAt ?? (room.status === "playing" ? room.updatedAt : null)
