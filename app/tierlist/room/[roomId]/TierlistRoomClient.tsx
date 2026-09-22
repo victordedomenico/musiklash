@@ -32,11 +32,13 @@ import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 import { DEFAULT_TIERS } from "@/lib/tierlist-tiers";
 import type { Dictionary } from "@/lib/i18n";
 import {
+  approveTierlistJoinRequest,
   clearTierlistVote,
   expireTierlistRound,
   finishTierlistRound,
   joinTierlistRoom,
   kickTierlistPlayer,
+  rejectTierlistJoinRequest,
   refreshTierlistRoom,
   skipTierlistVote,
   startTierlistRoom,
@@ -322,6 +324,9 @@ export default function TierlistRoomClient({
   const seenResolutionRef = useRef(initialRoom.lastResolution?.id ?? null);
   const expiryAttemptRef = useRef<string | null>(null);
   const me = room.participants.find((participant) => participant.playerId === userId) ?? null;
+  const isPending = room.pendingParticipants.some((participant) => participant.playerId === userId);
+  const isRejected = room.rejectedPlayerIds.includes(userId);
+  const isExcluded = room.excludedPlayerIds.includes(userId);
   const isHost = room.hostId === userId;
   const hasVoted = room.ballots.some((ballot) => ballot.playerId === userId);
   const myBallot = room.ballots.find((ballot) => ballot.playerId === userId) ?? null;
@@ -467,6 +472,36 @@ export default function TierlistRoomClient({
     </AnimatePresence>
   );
 
+  if (!me && isExcluded) {
+    return (
+      <section className="card border-red-400/30 p-6 text-center">
+        <UserMinus className="mx-auto text-red-300" size={30} />
+        <h2 className="mt-3 text-xl font-bold">{texts.excludedTitle}</h2>
+        <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.excludedHint}</p>
+      </section>
+    );
+  }
+
+  if (!me && isRejected) {
+    return (
+      <section className="card border-red-400/30 p-6 text-center">
+        <UserMinus className="mx-auto text-red-300" size={30} />
+        <h2 className="mt-3 text-xl font-bold">{texts.joinRequestRejectedTitle}</h2>
+        <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.joinRequestRejectedHint}</p>
+      </section>
+    );
+  }
+
+  if (!me && isPending) {
+    return (
+      <section className="card p-6 text-center">
+        <Users className="mx-auto text-sky-300" size={30} />
+        <h2 className="mt-3 text-xl font-bold">{texts.joinRequestPendingTitle}</h2>
+        <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.joinRequestPendingHint}</p>
+      </section>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {resolutionOverlay}
@@ -511,6 +546,45 @@ export default function TierlistRoomClient({
           ))}
         </div>
       </section>
+      {isHost && room.pendingParticipants.length > 0 ? (
+        <section className="card p-5">
+          <p className="font-bold">{texts.pendingRequests}</p>
+          <div className="mt-3 space-y-2">
+            {room.pendingParticipants.map((participant) => (
+              <div
+                key={participant.playerId}
+                className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-2 text-sm"
+              >
+                <span className="truncate">{participant.username}</span>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() =>
+                      run(() => approveTierlistJoinRequest(room.id, participant.playerId))
+                    }
+                    className="btn-ghost border-emerald-400/30 text-xs text-emerald-100 hover:bg-emerald-400/10"
+                  >
+                    <Check size={14} />
+                    {texts.approvePlayer}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() =>
+                      run(() => rejectTierlistJoinRequest(room.id, participant.playerId))
+                    }
+                    className="btn-ghost border-red-400/30 text-xs text-red-100 hover:bg-red-400/10"
+                  >
+                    <UserMinus size={14} />
+                    {texts.rejectPlayer}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
       {room.status === "waiting" ? (
         <section className="card p-6 text-center">
           <Users className="mx-auto text-sky-300" size={30} />
@@ -523,7 +597,7 @@ export default function TierlistRoomClient({
               onClick={() => run(() => joinTierlistRoom(room.id))}
               className="btn-primary mt-5"
             >
-              {texts.joinRoom}
+              {texts.requestToJoin}
             </button>
           ) : isHost ? (
             <button

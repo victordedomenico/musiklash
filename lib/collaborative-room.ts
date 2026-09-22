@@ -52,6 +52,8 @@ export type BracketRoomSnapshot = {
   previousHostId: string | null;
   status: "waiting" | "playing" | "paused" | "finished";
   participants: RoomParticipant[];
+  pendingParticipants: RoomParticipant[];
+  rejectedPlayerIds: string[];
   excludedPlayerIds: string[];
   votes: Vote[];
   ballots: BracketBallot[];
@@ -76,6 +78,9 @@ export type TierlistRoomSnapshot = {
   previousHostId: string | null;
   status: "waiting" | "playing" | "finished";
   participants: RoomParticipant[];
+  pendingParticipants: RoomParticipant[];
+  rejectedPlayerIds: string[];
+  excludedPlayerIds: string[];
   placements: Record<string, string>;
   ballots: TierlistBallot[];
   lastResolution: TierlistRoundResolution | null;
@@ -303,6 +308,8 @@ export function toBracketRoomSnapshot(room: NonNullable<BracketRoomRaw>): Bracke
     previousHostId: room.previousHostId,
     status: room.status as BracketRoomSnapshot["status"],
     participants,
+    pendingParticipants: normalizeParticipants(room.pendingParticipants),
+    rejectedPlayerIds: normalizeExcludedPlayerIds(room.rejectedPlayerIds),
     excludedPlayerIds: normalizeExcludedPlayerIds(room.excludedPlayerIds),
     votes,
     ballots: normalizeBracketBallots(room.ballots),
@@ -348,6 +355,9 @@ export function toTierlistRoomSnapshot(room: NonNullable<TierlistRoomRaw>): Tier
     previousHostId: room.previousHostId,
     status: room.status as TierlistRoomSnapshot["status"],
     participants,
+    pendingParticipants: normalizeParticipants(room.pendingParticipants),
+    rejectedPlayerIds: normalizeExcludedPlayerIds(room.rejectedPlayerIds),
+    excludedPlayerIds: normalizeExcludedPlayerIds(room.excludedPlayerIds),
     placements: normalizePlacements(room.placements),
     ballots: normalizeTierlistBallots(room.ballots),
     lastResolution: normalizeTierlistResolution(room.lastResolution),

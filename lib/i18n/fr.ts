@@ -168,6 +168,14 @@ export interface Dictionary {
     waitingPlayers: string;
     joiningRoom: string;
     joiningRoomHint: string;
+    requestToJoin: string;
+    pendingRequests: string;
+    approvePlayer: string;
+    rejectPlayer: string;
+    joinRequestPendingTitle: string;
+    joinRequestPendingHint: string;
+    joinRequestRejectedTitle: string;
+    joinRequestRejectedHint: string;
     excludedTitle: string;
     excludedHint: string;
     hostAwayTitle: string;
@@ -536,6 +544,14 @@ export const fr: Dictionary = {
     waitingPlayers: "En attente des joueurs",
     joiningRoom: "Connexion à la room…",
     joiningRoomHint: "Tu pourras voter dès que tu seras ajouté·e.",
+    requestToJoin: "Demander à rejoindre",
+    pendingRequests: "Demandes en attente",
+    approvePlayer: "Accepter",
+    rejectPlayer: "Refuser",
+    joinRequestPendingTitle: "Demande d’accès envoyée",
+    joinRequestPendingHint: "En attente de la décision de l’hôte.",
+    joinRequestRejectedTitle: "Demande d’accès refusée",
+    joinRequestRejectedHint: "L’hôte a refusé votre demande pour cette partie.",
     excludedTitle: "Vous avez été exclu de la room",
     excludedHint: "L’hôte vous a retiré. Vous ne pouvez plus rejoindre cette partie.",
     hostAwayTitle: "Partie en pause",

@@ -91,27 +91,48 @@ export async function joinBracketRoom(roomId: string) {
     }
 
     const participants = normalizeParticipants(room.participants);
+    const pendingParticipants = normalizeParticipants(room.pendingParticipants);
     if (normalizeExcludedPlayerIds(room.excludedPlayerIds).includes(user.playerId)) {
       return { ok: false as const, error: "Vous avez été exclu de cette room." };
+    }
+    if (normalizeExcludedPlayerIds(room.rejectedPlayerIds).includes(user.playerId)) {
+      return { ok: false as const, error: "Votre demande d’accès a été refusée." };
     }
     if (participants.some((participant) => participant.playerId === user.playerId)) {
       return response(roomId);
     }
 
     const isReturningHost = room.hostId === user.playerId && room.previousHostId === user.playerId;
+    if (!isReturningHost && room.status !== "waiting") {
+      return { ok: false as const, error: "La partie a déjà commencé." };
+    }
+    if (
+      !isReturningHost &&
+      pendingParticipants.some((player) => player.playerId === user.playerId)
+    ) {
+      return response(roomId);
+    }
     const updated = await prisma.bracketRoom.updateMany({
       where: { id: roomId, revision: room.revision, status: room.status },
       data: {
-        participants: [
-          ...participants,
-          { playerId: user.playerId, username: user.username },
-        ] as unknown as Prisma.JsonArray,
         ...(isReturningHost
           ? {
+              participants: [
+                ...participants,
+                { playerId: user.playerId, username: user.username },
+              ] as unknown as Prisma.JsonArray,
+              pendingParticipants: pendingParticipants.filter(
+                (player) => player.playerId !== user.playerId,
+              ) as unknown as Prisma.JsonArray,
               previousHostId: null,
               ...(room.status === "paused" ? { status: "playing" } : {}),
             }
-          : {}),
+          : {
+              pendingParticipants: [
+                ...pendingParticipants,
+                { playerId: user.playerId, username: user.username },
+              ] as unknown as Prisma.JsonArray,
+            }),
         revision: { increment: 1 },
       },
     });
@@ -133,6 +154,20 @@ export async function leaveBracketRoom(roomId: string) {
 
     const participants = normalizeParticipants(room.participants);
     if (!participants.some((participant) => participant.playerId === user.playerId)) {
+      const pendingParticipants = normalizeParticipants(room.pendingParticipants);
+      if (pendingParticipants.some((participant) => participant.playerId === user.playerId)) {
+        const updated = await prisma.bracketRoom.updateMany({
+          where: { id: roomId, revision: room.revision, status: room.status },
+          data: {
+            pendingParticipants: pendingParticipants.filter(
+              (participant) => participant.playerId !== user.playerId,
+            ) as unknown as Prisma.JsonArray,
+            revision: { increment: 1 },
+          },
+        });
+        if (updated.count === 1) return { ok: true as const };
+        continue;
+      }
       return { ok: true as const };
     }
 
@@ -196,6 +231,73 @@ export async function leaveBracketRoom(roomId: string) {
       data,
     });
     if (updated.count === 1) return { ok: true as const };
+  }
+
+  return { ok: false as const, error: "La room a changé, réessaie." };
+}
+
+export async function approveBracketJoinRequest(roomId: string, playerId: string) {
+  const user = await identity();
+  if (!user) return { ok: false as const, error: "Connexion requise." };
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const room = await prisma.bracketRoom.findUnique({ where: { id: roomId } });
+    if (!room) return { ok: false as const, error: "Room introuvable." };
+    if (room.hostId !== user.playerId)
+      return { ok: false as const, error: "Seul l’hôte peut accepter un joueur." };
+    if (room.status !== "waiting")
+      return { ok: false as const, error: "La partie a déjà commencé." };
+
+    const pendingParticipants = normalizeParticipants(room.pendingParticipants);
+    const player = pendingParticipants.find((candidate) => candidate.playerId === playerId);
+    if (!player) return { ok: false as const, error: "Cette demande n’est plus en attente." };
+    const participants = normalizeParticipants(room.participants);
+    const updated = await prisma.bracketRoom.updateMany({
+      where: { id: roomId, revision: room.revision, status: "waiting" },
+      data: {
+        participants: [...participants, player] as unknown as Prisma.JsonArray,
+        pendingParticipants: pendingParticipants.filter(
+          (candidate) => candidate.playerId !== playerId,
+        ) as unknown as Prisma.JsonArray,
+        revision: { increment: 1 },
+      },
+    });
+    if (updated.count === 1) return response(roomId);
+  }
+
+  return { ok: false as const, error: "La room a changé, réessaie." };
+}
+
+export async function rejectBracketJoinRequest(roomId: string, playerId: string) {
+  const user = await identity();
+  if (!user) return { ok: false as const, error: "Connexion requise." };
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const room = await prisma.bracketRoom.findUnique({ where: { id: roomId } });
+    if (!room) return { ok: false as const, error: "Room introuvable." };
+    if (room.hostId !== user.playerId)
+      return { ok: false as const, error: "Seul l’hôte peut refuser un joueur." };
+    if (room.status !== "waiting")
+      return { ok: false as const, error: "La partie a déjà commencé." };
+
+    const pendingParticipants = normalizeParticipants(room.pendingParticipants);
+    if (!pendingParticipants.some((candidate) => candidate.playerId === playerId)) {
+      return { ok: false as const, error: "Cette demande n’est plus en attente." };
+    }
+    const rejectedPlayerIds = [
+      ...new Set([...normalizeExcludedPlayerIds(room.rejectedPlayerIds), playerId]),
+    ];
+    const updated = await prisma.bracketRoom.updateMany({
+      where: { id: roomId, revision: room.revision, status: "waiting" },
+      data: {
+        pendingParticipants: pendingParticipants.filter(
+          (candidate) => candidate.playerId !== playerId,
+        ) as unknown as Prisma.JsonArray,
+        rejectedPlayerIds: rejectedPlayerIds as unknown as Prisma.JsonArray,
+        revision: { increment: 1 },
+      },
+    });
+    if (updated.count === 1) return response(roomId);
   }
 
   return { ok: false as const, error: "La room a changé, réessaie." };

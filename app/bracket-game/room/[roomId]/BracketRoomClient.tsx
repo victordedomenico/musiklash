@@ -19,11 +19,13 @@ import {
   rememberMultiplayerRoom,
 } from "@/lib/multiplayer-room-resume";
 import {
+  approveBracketJoinRequest,
   clearBracketVote,
   finishBracketRound,
   heartbeatBracketHost,
   joinBracketRoom,
   kickBracketPlayer,
+  rejectBracketJoinRequest,
   refreshBracketRoom,
   skipBracketVote,
   startBracketRoom,
@@ -192,6 +194,8 @@ export default function BracketRoomClient({
   const [pending, startTransition] = useTransition();
   const seenResolutionRef = useRef(initialRoom.lastResolution?.id ?? null);
   const me = room.participants.find((participant) => participant.playerId === userId) ?? null;
+  const isPending = room.pendingParticipants.some((participant) => participant.playerId === userId);
+  const isRejected = room.rejectedPlayerIds.includes(userId);
   const isExcluded = room.excludedPlayerIds.includes(userId);
   const isHost = room.hostId === userId;
   const hasVoted = room.ballots.some((ballot) => ballot.playerId === userId);
@@ -246,7 +250,7 @@ export default function BracketRoomClient({
   }, []);
 
   useEffect(() => {
-    if (me || isExcluded || room.status === "finished") return;
+    if (me || isPending || isRejected || isExcluded || room.status === "finished") return;
     void joinBracketRoom(room.id).then((result) => {
       if (result.ok) {
         acceptRoom(result.room);
@@ -254,7 +258,7 @@ export default function BracketRoomClient({
       }
       setError(texts.errors[result.error] ?? result.error);
     });
-  }, [acceptRoom, isExcluded, me, room.id, room.status, texts.errors]);
+  }, [acceptRoom, isExcluded, isPending, isRejected, me, room.id, room.status, texts.errors]);
 
   useEffect(() => {
     if (room.status === "finished") return;
@@ -355,6 +359,24 @@ export default function BracketRoomClient({
         </section>
       );
     }
+    if (isRejected) {
+      return (
+        <section className="card border-red-400/30 p-6 text-center">
+          <UserMinus className="mx-auto text-red-300" size={30} />
+          <h2 className="mt-3 text-xl font-bold">{texts.joinRequestRejectedTitle}</h2>
+          <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.joinRequestRejectedHint}</p>
+        </section>
+      );
+    }
+    if (isPending) {
+      return (
+        <section className="card p-6 text-center">
+          <Users className="mx-auto text-sky-300" size={30} />
+          <h2 className="mt-3 text-xl font-bold">{texts.joinRequestPendingTitle}</h2>
+          <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.joinRequestPendingHint}</p>
+        </section>
+      );
+    }
     return (
       <section className="card p-6 text-center">
         <Users className="mx-auto text-sky-300" size={30} />
@@ -434,6 +456,46 @@ export default function BracketRoomClient({
         </div>
       </section>
 
+      {isHost && room.pendingParticipants.length > 0 ? (
+        <section className="card p-5">
+          <p className="font-bold">{texts.pendingRequests}</p>
+          <div className="mt-3 space-y-2">
+            {room.pendingParticipants.map((participant) => (
+              <div
+                key={participant.playerId}
+                className="flex items-center justify-between gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-2 text-sm"
+              >
+                <span className="truncate">{participant.username}</span>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() =>
+                      run(() => approveBracketJoinRequest(room.id, participant.playerId))
+                    }
+                    className="btn-ghost border-emerald-400/30 text-xs text-emerald-100 hover:bg-emerald-400/10"
+                  >
+                    <Check size={14} />
+                    {texts.approvePlayer}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() =>
+                      run(() => rejectBracketJoinRequest(room.id, participant.playerId))
+                    }
+                    className="btn-ghost border-red-400/30 text-xs text-red-100 hover:bg-red-400/10"
+                  >
+                    <UserMinus size={14} />
+                    {texts.rejectPlayer}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {room.status === "waiting" ? (
         <section className="card p-6 text-center">
           <Users className="mx-auto text-sky-300" size={30} />
@@ -446,7 +508,7 @@ export default function BracketRoomClient({
               onClick={() => run(() => joinBracketRoom(room.id))}
               className="btn-primary mt-5"
             >
-              {texts.joinRoom}
+              {texts.requestToJoin}
             </button>
           ) : isHost ? (
             <button

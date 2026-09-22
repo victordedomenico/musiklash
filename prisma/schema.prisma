@@ -122,6 +122,8 @@ model BracketRoom {
   previousHostId String?   @map("previous_host_id") @db.Uuid
   status         String    @default("waiting")
   participants   Json      @default("[]") @db.JsonB
+  pendingParticipants Json @default("[]") @map("pending_participants") @db.JsonB
+  rejectedPlayerIds Json   @default("[]") @map("rejected_player_ids") @db.JsonB
   excludedPlayerIds Json   @default("[]") @map("excluded_player_ids") @db.JsonB
   votes          Json      @default("[]") @db.JsonB
   ballots        Json      @default("[]") @db.JsonB
@@ -319,6 +321,9 @@ model TierlistRoom {
   status            String    @default("waiting")
   currentPosition   Int       @default(0) @map("current_position") @db.SmallInt
   participants      Json      @default("[]") @db.JsonB
+  pendingParticipants Json    @default("[]") @map("pending_participants") @db.JsonB
+  rejectedPlayerIds Json      @default("[]") @map("rejected_player_ids") @db.JsonB
+  excludedPlayerIds Json      @default("[]") @map("excluded_player_ids") @db.JsonB
   placements        Json      @default("{}") @db.JsonB
   ballots           Json      @default("[]") @db.JsonB
   lastResolution    Json?     @map("last_resolution") @db.JsonB
