@@ -3,6 +3,7 @@
 import { useTransition, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { Languages } from "lucide-react";
 import { setLocale } from "@/app/preferences/actions";
 import Toast from "@/components/ui/Toast";
 
@@ -10,10 +11,14 @@ const MESSAGES = {
   fr: {
     toast: "Active les cookies de préférences pour sauvegarder ta langue.",
     action: "Gérer",
+    title: "Langue : Français (cliquer pour passer en anglais)",
+    ariaLabel: "Langue : Français. Passer en anglais",
   },
   en: {
     toast: "Enable preference cookies to save your language.",
     action: "Manage",
+    title: "Language: English (click to switch to French)",
+    ariaLabel: "Language: English. Switch to French",
   },
 };
 
@@ -45,7 +50,8 @@ export default function LocaleToggle({ current }: { current: "fr" | "en" }) {
       <button
         onClick={toggle}
         disabled={pending}
-        aria-label="Toggle language"
+        aria-label={msg.ariaLabel}
+        title={msg.title}
         className="btn-ghost"
         style={{
           padding: "0.4rem 0.65rem",
@@ -56,7 +62,10 @@ export default function LocaleToggle({ current }: { current: "fr" | "en" }) {
           opacity: pending ? 0.5 : 1,
         }}
       >
-        {locale === "fr" ? "EN" : "FR"}
+        <span className="flex items-center gap-1.5">
+          <Languages size={15} style={{ opacity: 0.85 }} />
+          <span>{locale === "fr" ? "FR" : "EN"}</span>
+        </span>
       </button>
 
       {showToast &&

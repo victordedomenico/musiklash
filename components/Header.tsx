@@ -73,7 +73,7 @@ export default async function Header() {
         {/* Right actions */}
         <div className="ml-auto flex items-center gap-2">
           <ResumeMultiplayerRooms />
-          <ThemeToggle current={theme} />
+          <ThemeToggle current={theme} locale={locale} />
           <LocaleToggle current={locale} />
 
           {user ? (

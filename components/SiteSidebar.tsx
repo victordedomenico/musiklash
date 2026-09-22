@@ -166,7 +166,7 @@ export default async function SiteSidebar({ theme, locale }: Readonly<SiteSideba
         </div>
 
         <div className="mt-5 flex items-center gap-2 px-2 lg:mt-7">
-          <ThemeToggle current={theme} />
+          <ThemeToggle current={theme} locale={locale} />
           <LocaleToggle current={locale} />
         </div>
         <SidebarVolumeControl label={t.sidebar.previewVolume} />

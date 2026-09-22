@@ -79,7 +79,7 @@ export default function MobileNavDrawer({
             </div>
           </Link>
           <div className="flex items-center gap-2">
-            <ThemeToggle current={theme} />
+            <ThemeToggle current={theme} locale={locale} />
             <LocaleToggle current={locale} />
             <button
               type="button"

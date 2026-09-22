@@ -48,6 +48,13 @@ export default async function RootLayout({
       className="h-full antialiased"
       suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'||t==='system'){document.documentElement.dataset.theme=t;}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className="min-h-full">
         <JsonLd
           data={{
