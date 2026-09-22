@@ -556,15 +556,15 @@ export default function BracketGame({
       roundNumber: number,
       side: "left" | "right",
       forExport: boolean,
-      sideBaseMatches: number,
     ) => {
       const half = round.length / 2;
       const matches =
         side === "left"
           ? round.filter((pairing) => pairing.matchIndex < half)
           : round.filter((pairing) => pairing.matchIndex >= half);
-      const slotsPerMatch = Math.max(1, Math.floor(sideBaseMatches / Math.max(1, matches.length)));
+      const matchCount = Math.max(1, matches.length);
       const size = coverSizeFor(roundNumber, forExport);
+      const columnHeight = forExport ? exportTreeMinHeight : visibleTreeMinHeight;
 
       const label = bracketRoundLabel(roundNumber, total);
       return (
@@ -586,13 +586,7 @@ export default function BracketGame({
               </>
             )}
           </p>
-          <div
-            className="grid"
-            style={{
-              minHeight: forExport ? exportTreeMinHeight : visibleTreeMinHeight,
-              gridTemplateRows: `repeat(${Math.max(1, sideBaseMatches)}, ${forExport ? exportRowHeight : visibleRowHeight}px)`,
-            }}
-          >
+          <div className="relative" style={{ height: columnHeight }}>
             {matches.map((pairing, localIndex) => {
               const trackA = tracksBySeed.get(pairing.seedA);
               const trackB = tracksBySeed.get(pairing.seedB);
@@ -602,9 +596,10 @@ export default function BracketGame({
               return (
                 <div
                   key={pairing.matchIndex}
-                  className="flex items-center justify-center"
+                  className="absolute left-0 right-0 flex items-center justify-center"
                   style={{
-                    gridRow: `${localIndex * slotsPerMatch + 1} / span ${slotsPerMatch}`,
+                    top: `${((localIndex + 0.5) / matchCount) * 100}%`,
+                    transform: "translateY(-50%)",
                   }}
                 >
                   <div className="relative flex flex-col items-center gap-1">
@@ -637,7 +632,6 @@ export default function BracketGame({
     };
 
     const renderTree = (rounds: typeof roundsForTree, startRound: number, forExport: boolean) => {
-      const sideBaseMatches = Math.max(1, (rounds[0]?.length ?? 2) / 2);
       const finalRoundNumber = startRound + rounds.length;
       const finalCoverSize = coverSizeFor(finalRoundNumber, forExport) + (forExport ? 6 : 8);
       const championSize = forExport ? 180 : 168;
@@ -654,13 +648,7 @@ export default function BracketGame({
             }}
           >
             {rounds.map((round, roundOffset) =>
-              renderRoundColumn(
-                round,
-                startRound + roundOffset,
-                "left",
-                forExport,
-                sideBaseMatches,
-              ),
+              renderRoundColumn(round, startRound + roundOffset, "left", forExport),
             )}
 
             <div className="relative flex flex-col items-center justify-center gap-4 px-2">
@@ -746,7 +734,6 @@ export default function BracketGame({
                   startRound + rounds.length - reverseOffset - 1,
                   "right",
                   forExport,
-                  sideBaseMatches,
                 ),
               )}
           </div>
