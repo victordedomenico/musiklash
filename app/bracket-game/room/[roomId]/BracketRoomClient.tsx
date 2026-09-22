@@ -368,23 +368,16 @@ export default function BracketRoomClient({
         </section>
       );
     }
-    if (isPending) {
+    if (!isPending) {
       return (
         <section className="card p-6 text-center">
           <Users className="mx-auto text-sky-300" size={30} />
-          <h2 className="mt-3 text-xl font-bold">{texts.joinRequestPendingTitle}</h2>
-          <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.joinRequestPendingHint}</p>
+          <h2 className="mt-3 text-xl font-bold">{texts.joiningRoom}</h2>
+          <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.joiningRoomHint}</p>
+          {error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null}
         </section>
       );
     }
-    return (
-      <section className="card p-6 text-center">
-        <Users className="mx-auto text-sky-300" size={30} />
-        <h2 className="mt-3 text-xl font-bold">{texts.joiningRoom}</h2>
-        <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.joiningRoomHint}</p>
-        {error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null}
-      </section>
-    );
   }
 
   if (room.status === "paused") {
@@ -456,6 +449,12 @@ export default function BracketRoomClient({
         </div>
       </section>
 
+      {isPending ? (
+        <p className="rounded-xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
+          <strong>{texts.joinRequestPendingTitle}.</strong> {texts.joinRequestPendingHint}
+        </p>
+      ) : null}
+
       {isHost && room.pendingParticipants.length > 0 ? (
         <section className="card p-5">
           <p className="font-bold">{texts.pendingRequests}</p>
@@ -501,7 +500,9 @@ export default function BracketRoomClient({
           <Users className="mx-auto text-sky-300" size={30} />
           <h2 className="mt-3 text-xl font-bold">{texts.waitingPlayers}</h2>
           <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.bracketWaitingCopy}</p>
-          {!me ? (
+          {isPending ? (
+            <p className="mt-5 text-sm text-sky-200">{texts.joinRequestPendingHint}</p>
+          ) : !me ? (
             <button
               type="button"
               disabled={pending}
