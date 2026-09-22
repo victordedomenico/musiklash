@@ -216,6 +216,20 @@ export async function setGuestUsername(preferredUsername: string) {
     return { error: "Profil invité introuvable." };
   }
 
+  // Keep the DB username in sync with the cookie-preferred pseudo: some read paths
+  // (e.g. a room's host display name once the host isn't in `participants`) fall back
+  // to the raw `Profile.username` column, which otherwise stays stuck on the
+  // auto-generated guest name forever.
+  if (profile.username !== normalized) {
+    const taken = await prisma.profile.findUnique({
+      where: { username: normalized },
+      select: { id: true },
+    });
+    if (!taken) {
+      await prisma.profile.update({ where: { id: profile.id }, data: { username: normalized } });
+    }
+  }
+
   const cookieStore = await cookies();
   cookieStore.set(GUEST_ID_COOKIE, profile.id, COOKIE_OPTIONS);
   cookieStore.set(GUEST_USERNAME_COOKIE, normalized, COOKIE_OPTIONS);

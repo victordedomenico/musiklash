@@ -266,6 +266,13 @@ export default function BracketRoomClient({
   }, []);
 
   useEffect(() => {
+    if (me || room.previousHostId !== userId) return;
+    void joinBracketRoom(room.id).then((result) => {
+      if (result.ok) acceptRoom(result.room);
+    });
+  }, [acceptRoom, me, room.id, room.previousHostId, userId]);
+
+  useEffect(() => {
     const activateAudio = () => unlock();
     window.addEventListener("pointerdown", activateAudio, { once: true });
     return () => window.removeEventListener("pointerdown", activateAudio);
@@ -512,7 +519,7 @@ export default function BracketRoomClient({
         </p>
       ) : null}
 
-      {room.status === "playing" && !me && !isPending ? (
+      {room.status === "playing" && !me && !isPending && !isHost ? (
         <section className="card p-5 text-center">
           <p className="text-sm text-[color:var(--muted)]">{texts.spectator}</p>
           <button
@@ -573,6 +580,16 @@ export default function BracketRoomClient({
           <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.bracketWaitingCopy}</p>
           {isPending ? (
             <p className="mt-5 text-sm text-sky-200">{texts.joinRequestPendingHint}</p>
+          ) : isHost ? (
+            <button
+              type="button"
+              disabled={pending || !me || room.participants.length < 2}
+              onClick={() => run(() => startBracketRoom(room.id))}
+              className="btn-primary mt-5"
+            >
+              <Swords size={16} />
+              {texts.bracketStart}
+            </button>
           ) : !me ? (
             <button
               type="button"
@@ -581,16 +598,6 @@ export default function BracketRoomClient({
               className="btn-primary mt-5"
             >
               {texts.requestToJoin}
-            </button>
-          ) : isHost ? (
-            <button
-              type="button"
-              disabled={pending || room.participants.length < 2}
-              onClick={() => run(() => startBracketRoom(room.id))}
-              className="btn-primary mt-5"
-            >
-              <Swords size={16} />
-              {texts.bracketStart}
             </button>
           ) : (
             <p className="mt-5 text-sm text-sky-200">{texts.waitingHost}</p>

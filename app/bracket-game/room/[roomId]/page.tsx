@@ -29,7 +29,7 @@ export default async function BracketRoomPage({ params }: { params: Promise<{ ro
   });
   return (
     <div className="page-shell max-w-3xl py-10">
-      <MultiplayerRoomDeparture roomId={room.id} kind="bracket" />
+      <MultiplayerRoomDeparture roomId={room.id} kind="bracket" isHost={room.hostId === playerId} />
       <div className="mb-6">
         <SectionHeader title={room.bracket.title} subtitle={t.multiplayerRoom.bracketSubtitle} />
         <p className="mt-1 text-sm text-[color:var(--muted)]">{t.multiplayerRoom.bracketRule}</p>

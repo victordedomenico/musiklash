@@ -570,7 +570,7 @@ export default function TierlistRoomClient({
           <strong>{texts.joinRequestPendingTitle}.</strong> {texts.joinRequestPendingHint}
         </p>
       ) : null}
-      {room.status === "playing" && !me && !isPending ? (
+      {room.status === "playing" && !me && !isPending && !isHost ? (
         <section className="card p-5 text-center">
           <p className="text-sm text-[color:var(--muted)]">{texts.spectator}</p>
           <button
@@ -629,6 +629,16 @@ export default function TierlistRoomClient({
           <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.tierlistWaitingCopy}</p>
           {isPending ? (
             <p className="mt-5 text-sm text-sky-200">{texts.joinRequestPendingHint}</p>
+          ) : isHost ? (
+            <button
+              type="button"
+              disabled={pending || !me || room.participants.length < 2}
+              onClick={() => run(() => startTierlistRoom(room.id))}
+              className="btn-primary mt-5"
+            >
+              <ListOrdered size={16} />
+              {texts.tierlistStart}
+            </button>
           ) : !me ? (
             <button
               type="button"
@@ -637,16 +647,6 @@ export default function TierlistRoomClient({
               className="btn-primary mt-5"
             >
               {texts.requestToJoin}
-            </button>
-          ) : isHost ? (
-            <button
-              type="button"
-              disabled={pending || room.participants.length < 2}
-              onClick={() => run(() => startTierlistRoom(room.id))}
-              className="btn-primary mt-5"
-            >
-              <ListOrdered size={16} />
-              {texts.tierlistStart}
             </button>
           ) : (
             <p className="mt-5 text-sm text-sky-200">{texts.waitingHost}</p>
