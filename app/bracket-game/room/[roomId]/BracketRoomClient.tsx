@@ -21,6 +21,7 @@ import {
 import {
   clearBracketVote,
   finishBracketRound,
+  heartbeatBracketHost,
   joinBracketRoom,
   kickBracketPlayer,
   refreshBracketRoom,
@@ -263,6 +264,23 @@ export default function BracketRoomClient({
     }, 1500);
     return () => window.clearInterval(id);
   }, [acceptRoom, room.id, room.status]);
+
+  useEffect(() => {
+    if (!isHost || room.status === "finished") return;
+    let cancelled = false;
+    const heartbeat = () => {
+      void heartbeatBracketHost(room.id).then((result) => {
+        if (!cancelled && result.ok) acceptRoom(result.room);
+      });
+    };
+
+    heartbeat();
+    const id = window.setInterval(heartbeat, 10_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [acceptRoom, isHost, room.id, room.status]);
 
   const run = (action: () => Promise<Awaited<ReturnType<typeof refreshBracketRoom>>>) => {
     setError("");

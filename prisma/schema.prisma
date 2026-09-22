@@ -126,6 +126,7 @@ model BracketRoom {
   ballots        Json      @default("[]") @db.JsonB
   lastResolution Json?     @map("last_resolution") @db.JsonB
   duelStartedAt  DateTime? @map("duel_started_at") @db.Timestamptz
+  hostLastSeenAt DateTime  @default(now()) @map("host_last_seen_at") @db.Timestamptz
   winnerSeed     Int?      @map("winner_seed") @db.SmallInt
   revision       Int       @default(0)
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz

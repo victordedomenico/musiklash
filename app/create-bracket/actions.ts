@@ -87,6 +87,7 @@ export async function createBracket(input: {
         data: {
           bracketId,
           hostId: identity.playerId,
+          hostLastSeenAt: new Date(),
           participants: [
             { playerId: identity.playerId, username: identity.username },
           ] as unknown as Prisma.JsonArray,

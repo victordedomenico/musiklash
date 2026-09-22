@@ -27,8 +27,56 @@ async function response(roomId: string) {
   return room ? { ok: true as const, room } : { ok: false as const, error: "Room introuvable." };
 }
 
+const HOST_HEARTBEAT_GRACE_MS = 45_000;
+
+async function pauseBracketRoomWhenHostIsInactive(roomId: string) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const room = await prisma.bracketRoom.findUnique({ where: { id: roomId } });
+    if (!room || room.status !== "playing") return;
+    if (Date.now() - room.hostLastSeenAt.getTime() < HOST_HEARTBEAT_GRACE_MS) return;
+
+    const updated = await prisma.bracketRoom.updateMany({
+      where: { id: roomId, revision: room.revision, status: "playing" },
+      data: {
+        status: "paused",
+        previousHostId: room.hostId,
+        revision: { increment: 1 },
+      },
+    });
+    if (updated.count === 1) return;
+  }
+}
+
 export async function refreshBracketRoom(roomId: string) {
+  await pauseBracketRoomWhenHostIsInactive(roomId);
   return response(roomId);
+}
+
+/** Records that the actual host still has an open game page and resumes a paused room on return. */
+export async function heartbeatBracketHost(roomId: string) {
+  const user = await identity();
+  if (!user) return { ok: false as const, error: "Connexion requise." };
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const room = await prisma.bracketRoom.findUnique({ where: { id: roomId } });
+    if (!room) return { ok: false as const, error: "Room introuvable." };
+    if (room.hostId !== user.playerId) return response(roomId);
+    if (room.status === "finished") return response(roomId);
+
+    const updated = await prisma.bracketRoom.updateMany({
+      where: { id: roomId, revision: room.revision, hostId: user.playerId },
+      data: {
+        hostLastSeenAt: new Date(),
+        ...(room.status === "paused" && room.previousHostId === user.playerId
+          ? { status: "playing", previousHostId: null }
+          : {}),
+        revision: { increment: 1 },
+      },
+    });
+    if (updated.count === 1) return response(roomId);
+  }
+
+  return { ok: false as const, error: "La room a changé, réessaie." };
 }
 
 export async function joinBracketRoom(roomId: string) {
