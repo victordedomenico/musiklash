@@ -104,7 +104,7 @@ export async function joinBracketRoom(roomId: string) {
     }
 
     const isReturningHost = room.hostId === user.playerId && room.previousHostId === user.playerId;
-    if (!isReturningHost && room.status !== "waiting") {
+    if (!isReturningHost && room.status !== "waiting" && room.status !== "playing") {
       return { ok: false as const, error: "La partie a déjà commencé." };
     }
     if (
@@ -246,15 +246,16 @@ export async function approveBracketJoinRequest(roomId: string, playerId: string
     if (!room) return { ok: false as const, error: "Room introuvable." };
     if (room.hostId !== user.playerId)
       return { ok: false as const, error: "Seul l’hôte peut accepter un joueur." };
-    if (room.status !== "waiting")
-      return { ok: false as const, error: "La partie a déjà commencé." };
+    if (room.status !== "waiting" && room.status !== "playing") {
+      return { ok: false as const, error: "La partie ne peut pas accueillir de joueur." };
+    }
 
     const pendingParticipants = normalizeParticipants(room.pendingParticipants);
     const player = pendingParticipants.find((candidate) => candidate.playerId === playerId);
     if (!player) return { ok: false as const, error: "Cette demande n’est plus en attente." };
     const participants = normalizeParticipants(room.participants);
     const updated = await prisma.bracketRoom.updateMany({
-      where: { id: roomId, revision: room.revision, status: "waiting" },
+      where: { id: roomId, revision: room.revision, status: room.status },
       data: {
         participants: [...participants, player] as unknown as Prisma.JsonArray,
         pendingParticipants: pendingParticipants.filter(
@@ -278,8 +279,9 @@ export async function rejectBracketJoinRequest(roomId: string, playerId: string)
     if (!room) return { ok: false as const, error: "Room introuvable." };
     if (room.hostId !== user.playerId)
       return { ok: false as const, error: "Seul l’hôte peut refuser un joueur." };
-    if (room.status !== "waiting")
-      return { ok: false as const, error: "La partie a déjà commencé." };
+    if (room.status !== "waiting" && room.status !== "playing") {
+      return { ok: false as const, error: "La partie ne peut pas accueillir de joueur." };
+    }
 
     const pendingParticipants = normalizeParticipants(room.pendingParticipants);
     if (!pendingParticipants.some((candidate) => candidate.playerId === playerId)) {
@@ -292,7 +294,7 @@ export async function rejectBracketJoinRequest(roomId: string, playerId: string)
         ? [...new Set([...normalizeExcludedPlayerIds(room.rejectedPlayerIds), playerId])]
         : normalizeExcludedPlayerIds(room.rejectedPlayerIds);
     const updated = await prisma.bracketRoom.updateMany({
-      where: { id: roomId, revision: room.revision, status: "waiting" },
+      where: { id: roomId, revision: room.revision, status: room.status },
       data: {
         pendingParticipants: pendingParticipants.filter(
           (candidate) => candidate.playerId !== playerId,

@@ -512,6 +512,20 @@ export default function BracketRoomClient({
         </p>
       ) : null}
 
+      {room.status === "playing" && !me && !isPending ? (
+        <section className="card p-5 text-center">
+          <p className="text-sm text-[color:var(--muted)]">{texts.spectator}</p>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => run(() => joinBracketRoom(room.id))}
+            className="btn-primary mt-3"
+          >
+            {texts.requestToJoin}
+          </button>
+        </section>
+      ) : null}
+
       {isHost && room.pendingParticipants.length > 0 ? (
         <section className="card p-5">
           <p className="font-bold">{texts.pendingRequests}</p>
