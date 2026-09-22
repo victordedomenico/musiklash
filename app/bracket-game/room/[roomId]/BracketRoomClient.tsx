@@ -250,17 +250,6 @@ export default function BracketRoomClient({
   }, []);
 
   useEffect(() => {
-    if (me || isPending || isRejected || isExcluded || room.status === "finished") return;
-    void joinBracketRoom(room.id).then((result) => {
-      if (result.ok) {
-        acceptRoom(result.room);
-        return;
-      }
-      setError(texts.errors[result.error] ?? result.error);
-    });
-  }, [acceptRoom, isExcluded, isPending, isRejected, me, room.id, room.status, texts.errors]);
-
-  useEffect(() => {
     if (room.status === "finished") return;
     const id = window.setInterval(() => {
       void refreshBracketRoom(room.id).then((result) => {
@@ -365,16 +354,6 @@ export default function BracketRoomClient({
           <UserMinus className="mx-auto text-red-300" size={30} />
           <h2 className="mt-3 text-xl font-bold">{texts.joinRequestRejectedTitle}</h2>
           <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.joinRequestRejectedHint}</p>
-        </section>
-      );
-    }
-    if (!isPending) {
-      return (
-        <section className="card p-6 text-center">
-          <Users className="mx-auto text-sky-300" size={30} />
-          <h2 className="mt-3 text-xl font-bold">{texts.joiningRoom}</h2>
-          <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.joiningRoomHint}</p>
-          {error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null}
         </section>
       );
     }

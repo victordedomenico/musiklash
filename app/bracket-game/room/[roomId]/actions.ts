@@ -10,6 +10,7 @@ import {
   getBracketRoomSnapshot,
   normalizeBracketBallots,
   normalizeExcludedPlayerIds,
+  normalizeRoomActionCounts,
   normalizeParticipants,
   normalizeVotes,
   type BracketBallot,
@@ -284,9 +285,12 @@ export async function rejectBracketJoinRequest(roomId: string, playerId: string)
     if (!pendingParticipants.some((candidate) => candidate.playerId === playerId)) {
       return { ok: false as const, error: "Cette demande n’est plus en attente." };
     }
-    const rejectedPlayerIds = [
-      ...new Set([...normalizeExcludedPlayerIds(room.rejectedPlayerIds), playerId]),
-    ];
+    const rejectionCounts = normalizeRoomActionCounts(room.rejectionCounts);
+    const rejectionCount = (rejectionCounts[playerId] ?? 0) + 1;
+    const rejectedPlayerIds =
+      rejectionCount >= 3
+        ? [...new Set([...normalizeExcludedPlayerIds(room.rejectedPlayerIds), playerId])]
+        : normalizeExcludedPlayerIds(room.rejectedPlayerIds);
     const updated = await prisma.bracketRoom.updateMany({
       where: { id: roomId, revision: room.revision, status: "waiting" },
       data: {
@@ -294,6 +298,10 @@ export async function rejectBracketJoinRequest(roomId: string, playerId: string)
           (candidate) => candidate.playerId !== playerId,
         ) as unknown as Prisma.JsonArray,
         rejectedPlayerIds: rejectedPlayerIds as unknown as Prisma.JsonArray,
+        rejectionCounts: {
+          ...rejectionCounts,
+          [playerId]: rejectionCount,
+        } as unknown as Prisma.JsonObject,
         revision: { increment: 1 },
       },
     });
@@ -332,9 +340,12 @@ export async function kickBracketPlayer(roomId: string, playerId: string) {
     }
 
     const nextBallots = removePlayerBallot(normalizeBracketBallots(room.ballots), playerId);
-    const excludedPlayerIds = [
-      ...new Set([...normalizeExcludedPlayerIds(room.excludedPlayerIds), playerId]),
-    ];
+    const kickCounts = normalizeRoomActionCounts(room.kickCounts);
+    const kickCount = (kickCounts[playerId] ?? 0) + 1;
+    const excludedPlayerIds =
+      kickCount >= 3
+        ? [...new Set([...normalizeExcludedPlayerIds(room.excludedPlayerIds), playerId])]
+        : normalizeExcludedPlayerIds(room.excludedPlayerIds);
     const { votes, round, pair } = getOpenDuel(room);
     const data =
       room.status === "playing" && pair && nextBallots.length >= nextParticipants.length
@@ -342,11 +353,13 @@ export async function kickBracketPlayer(roomId: string, playerId: string) {
             ...resolvedDuelData(room, nextBallots, pair, round, votes),
             participants: nextParticipants as unknown as Prisma.JsonArray,
             excludedPlayerIds: excludedPlayerIds as unknown as Prisma.JsonArray,
+            kickCounts: { ...kickCounts, [playerId]: kickCount } as unknown as Prisma.JsonObject,
           }
         : {
             participants: nextParticipants as unknown as Prisma.JsonArray,
             ballots: nextBallots as unknown as Prisma.JsonArray,
             excludedPlayerIds: excludedPlayerIds as unknown as Prisma.JsonArray,
+            kickCounts: { ...kickCounts, [playerId]: kickCount } as unknown as Prisma.JsonObject,
             revision: { increment: 1 as const },
           };
 

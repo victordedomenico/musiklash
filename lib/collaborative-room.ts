@@ -123,6 +123,22 @@ export function normalizeExcludedPlayerIds(value: unknown): string[] {
   });
 }
 
+export function normalizeRoomActionCounts(value: unknown): Record<string, number> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([playerId, count]) =>
+      playerId.length > 0 &&
+      playerId.length <= 128 &&
+      typeof count === "number" &&
+      Number.isInteger(count) &&
+      count >= 0 &&
+      count <= 3
+        ? ([[playerId, count]] as [string, number][])
+        : [],
+    ),
+  );
+}
+
 function getHostDisplayName(
   hostId: string,
   participants: RoomParticipant[],
