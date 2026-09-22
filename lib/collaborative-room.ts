@@ -42,6 +42,7 @@ export type CollaborativeTrack = {
   deezerTrackId: number;
   title: string;
   artist: string;
+  album?: string | null;
   coverUrl: string | null;
 };
 
@@ -302,6 +303,7 @@ export function toBracketRoomSnapshot(room: NonNullable<BracketRoomRaw>): Bracke
     deezerTrackId: Number(track.deezerTrackId),
     title: track.title,
     artist: track.artist,
+    album: (track as { album?: string | null }).album ?? null,
     coverUrl: track.coverUrl,
   }));
   const state = buildBracketState(

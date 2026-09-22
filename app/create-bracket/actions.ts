@@ -11,6 +11,7 @@ export type SelectedTrack = {
   deezer_track_id: number;
   title: string;
   artist: string;
+  album?: string | null;
   preview_url: string;
   cover_url: string | null;
   rank?: number;
@@ -76,6 +77,7 @@ export async function createBracket(input: {
             deezerTrackId: BigInt(t.deezer_track_id),
             title: t.title,
             artist: t.artist,
+            album: t.album ?? null,
             previewUrl: "",
             coverUrl: t.cover_url,
           })),

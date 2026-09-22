@@ -6,13 +6,14 @@ import { Pause, Play } from "lucide-react";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { useSoundFx } from "@/lib/use-sound-fx";
 import DeezerAttribution from "@/components/DeezerAttribution";
-import { fetchTrackPreview } from "@/lib/deezer-preview-client";
+import { fetchTrackDetails } from "@/lib/deezer-preview-client";
 
 export type BracketTrack = {
   seed: number;
   deezerTrackId: number;
   title: string;
   artist: string;
+  album?: string | null;
   cover_url: string | null;
 };
 
@@ -58,13 +59,25 @@ export default function MatchCard({
   const { play: playSound } = useSoundFx();
   const [previewA, setPreviewA] = useState<string | null>(null);
   const [previewB, setPreviewB] = useState<string | null>(null);
+  const [fallbackAlbumA, setFallbackAlbumA] = useState<string | null>(null);
+  const [fallbackAlbumB, setFallbackAlbumB] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchTrackPreview(a.deezerTrackId)
-      .then((url) => setPreviewA(url))
+    fetchTrackDetails(a.deezerTrackId)
+      .then((res) => {
+        if (res) {
+          setPreviewA(res.preview);
+          if (res.album) setFallbackAlbumA(res.album);
+        }
+      })
       .catch(() => {});
-    fetchTrackPreview(b.deezerTrackId)
-      .then((url) => setPreviewB(url))
+    fetchTrackDetails(b.deezerTrackId)
+      .then((res) => {
+        if (res) {
+          setPreviewB(res.preview);
+          if (res.album) setFallbackAlbumB(res.album);
+        }
+      })
       .catch(() => {});
   }, [a.deezerTrackId, b.deezerTrackId]);
 
@@ -136,7 +149,7 @@ export default function MatchCard({
       </p>
       <div className="mt-4 grid grid-cols-1 items-center gap-6 md:grid-cols-[1fr_auto_1fr] md:gap-4">
         <Side
-          track={a}
+          track={{ ...a, album: a.album ?? fallbackAlbumA }}
           previewUrl={previewA}
           playing={playing === a.seed}
           currentTime={currentTime}
@@ -153,7 +166,7 @@ export default function MatchCard({
           VS
         </div>
         <Side
-          track={b}
+          track={{ ...b, album: b.album ?? fallbackAlbumB }}
           previewUrl={previewB}
           playing={playing === b.seed}
           currentTime={currentTime}
@@ -221,14 +234,17 @@ function Side({
               key={voteCount}
               initial={{ scale: 0.72, opacity: 0.5 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="inline-flex shrink-0 items-center rounded-full border border-sky-300/25 bg-sky-300/10 px-2 py-0.5 text-xs font-black tabular-nums text-sky-100"
+              className="inline-flex shrink-0 items-center rounded-full border border-sky-500/25 bg-sky-500/10 px-2 py-0.5 text-xs font-black tabular-nums text-sky-900 dark:border-sky-300/25 dark:bg-sky-300/10 dark:text-sky-100"
               aria-label={`${voteCount} ${voteCount === 1 ? labels.voteSingular : labels.votePlural}`}
             >
               {voteCount} {voteCount === 1 ? labels.voteSingular : labels.votePlural}
             </motion.span>
           ) : null}
         </div>
-        <p className="text-sm text-[color:var(--muted)] line-clamp-1">{track.artist}</p>
+        <p className="mt-0.5 text-xs text-[color:var(--muted)] line-clamp-1">{track.artist}</p>
+        {track.album?.trim() ? (
+          <p className="mt-0.5 text-[11px] text-[color:var(--muted)]/75 line-clamp-1">{track.album.trim()}</p>
+        ) : null}
 
         {/* Audio Player Controls */}
         <div className="mt-4 flex flex-col gap-2">

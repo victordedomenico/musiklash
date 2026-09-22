@@ -14,6 +14,7 @@ import { buildBracketState, totalRounds } from "@/lib/bracket";
 import { bracketRoundLabel } from "@/lib/bracket-round-label";
 import { BRACKET_DUEL_SECONDS, remainingDuelSeconds } from "@/lib/bracket-room-rules";
 import type { Dictionary } from "@/lib/i18n";
+import { fetchTrackDetails } from "@/lib/deezer-preview-client";
 import { useSoundFx } from "@/lib/use-sound-fx";
 import {
   forgetMultiplayerRoom,
@@ -38,11 +39,15 @@ import {
 function ResolutionReveal({
   resolution,
   winner,
+  trackA,
+  trackB,
   onDone,
   texts,
 }: {
   resolution: BracketRoundResolution;
   winner: CollaborativeTrack | null;
+  trackA: CollaborativeTrack | null;
+  trackB: CollaborativeTrack | null;
   onDone: () => void;
   texts: Dictionary["multiplayerRoom"];
 }) {
@@ -80,6 +85,11 @@ function ResolutionReveal({
               {texts.tie} · {resolution.votesA}–{resolution.votesB}
             </motion.p>
             <h2 className="mt-3 text-3xl font-black tracking-tight text-white">{texts.coinFlip}</h2>
+            <p className="mt-2 text-sm text-white/60">
+              {texts.heads} · {trackA?.title ?? "?"}
+              <span className="mx-2 text-white/30">—</span>
+              {texts.tails} · {trackB?.title ?? "?"}
+            </p>
 
             <div className="mx-auto my-8 h-36 w-36 [perspective:900px]">
               <motion.div
@@ -166,7 +176,10 @@ function ResolutionReveal({
               <h3 className="mx-auto mt-4 max-w-sm truncate text-2xl font-black text-white">
                 {winner.title}
               </h3>
-              <p className="mt-1 truncate text-sm text-white/60">{winner.artist}</p>
+              <p className="mt-1 truncate text-sm text-white/70">{winner.artist}</p>
+              {winner.album ? (
+                <p className="mt-0.5 truncate text-xs text-white/50">{winner.album}</p>
+              ) : null}
               <button type="button" onClick={onDone} className="btn-primary mt-6">
                 {texts.nextDuel}
               </button>
@@ -215,6 +228,52 @@ export default function BracketRoomClient({
     () => new Map(room.bracket.tracks.map((track) => [track.seed, track])),
     [room.bracket.tracks],
   );
+  const [creditsByDeezerId, setCreditsByDeezerId] = useState<
+    Map<number, { artist: string | null; album: string | null }>
+  >(() => new Map());
+  const creditFor = useCallback(
+    (track: CollaborativeTrack) => {
+      const extra = creditsByDeezerId.get(track.deezerTrackId);
+      return {
+        artist: track.artist?.trim() || extra?.artist?.trim() || "",
+        album: track.album?.trim() || extra?.album?.trim() || "",
+      };
+    },
+    [creditsByDeezerId],
+  );
+
+  useEffect(() => {
+    if (!room.currentPair) return;
+    const pair = [tracksBySeed.get(room.currentPair.seedA), tracksBySeed.get(room.currentPair.seedB)].filter(
+      (track): track is CollaborativeTrack => Boolean(track),
+    );
+    const missing = pair.filter((track) => !track.album?.trim() || !track.artist?.trim());
+    if (missing.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      missing.map(async (track) => {
+        try {
+          const details = await fetchTrackDetails(track.deezerTrackId);
+          return details ? ([track.deezerTrackId, details] as const) : null;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((rows) => {
+      if (cancelled) return;
+      setCreditsByDeezerId((prev) => {
+        const next = new Map(prev);
+        for (const row of rows) {
+          if (!row) continue;
+          next.set(row[0], { artist: row[1].artist, album: row[1].album });
+        }
+        return next;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [room.currentPair, tracksBySeed]);
   const bracketState = useMemo(
     () =>
       buildBracketState(
@@ -399,12 +458,17 @@ export default function BracketRoomClient({
   const revealedWinner = activeResolution
     ? (tracksBySeed.get(activeResolution.winnerSeed) ?? null)
     : null;
+  const revealedWinnerWithCredits = revealedWinner
+    ? { ...revealedWinner, ...creditFor(revealedWinner) }
+    : null;
   const resolutionOverlay = (
     <AnimatePresence>
       {activeResolution ? (
         <ResolutionReveal
           resolution={activeResolution}
-          winner={revealedWinner}
+          winner={revealedWinnerWithCredits}
+          trackA={tracksBySeed.get(activeResolution.seedA) ?? null}
+          trackB={tracksBySeed.get(activeResolution.seedB) ?? null}
           onDone={() => setActiveResolution(null)}
           texts={texts}
         />
@@ -417,20 +481,24 @@ export default function BracketRoomClient({
       <>
         {resolutionOverlay}
         <div className="space-y-5">
-          <p className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-100">
+          <p className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-100">
             {texts.bracketFinished}
           </p>
           <BracketGame
             bracketId={room.bracket.id}
             size={room.bracket.size}
             drawVersion={room.bracket.drawVersion}
-            tracks={room.bracket.tracks.map((track) => ({
-              seed: track.seed!,
-              deezerTrackId: track.deezerTrackId,
-              title: track.title,
-              artist: track.artist,
-              cover_url: track.coverUrl,
-            }))}
+            tracks={room.bracket.tracks.map((track) => {
+              const credits = creditFor(track);
+              return {
+                seed: track.seed!,
+                deezerTrackId: track.deezerTrackId,
+                title: track.title,
+                artist: credits.artist || track.artist,
+                album: credits.album || null,
+                cover_url: track.coverUrl,
+              };
+            })}
             initialVotes={room.votes}
             readOnly
           />
@@ -530,13 +598,13 @@ export default function BracketRoomClient({
       </section>
 
       {kicked ? (
-        <p className="rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-100">
+        <p className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-900 dark:border-red-400/30 dark:bg-red-400/10 dark:text-red-100">
           {texts.kickedNotice}
         </p>
       ) : null}
 
       {isPending ? (
-        <p className="rounded-xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
+        <p className="rounded-xl border border-sky-500/25 bg-sky-500/10 px-4 py-3 text-sm text-sky-950 dark:border-sky-400/30 dark:bg-sky-400/10 dark:text-sky-100">
           <strong>{texts.joinRequestPendingTitle}.</strong> {texts.joinRequestPendingHint}
         </p>
       ) : null}
@@ -572,7 +640,7 @@ export default function BracketRoomClient({
                     onClick={() =>
                       run(() => approveBracketJoinRequest(room.id, participant.playerId))
                     }
-                    className="btn-ghost border-emerald-400/30 text-xs text-emerald-100 hover:bg-emerald-400/10"
+                    className="btn-ghost border-emerald-500/30 text-xs text-emerald-800 hover:bg-emerald-500/10 dark:border-emerald-400/30 dark:text-emerald-100 dark:hover:bg-emerald-400/10"
                   >
                     <Check size={14} />
                     {texts.approvePlayer}
@@ -583,7 +651,7 @@ export default function BracketRoomClient({
                     onClick={() =>
                       run(() => rejectBracketJoinRequest(room.id, participant.playerId))
                     }
-                    className="btn-ghost border-red-400/30 text-xs text-red-100 hover:bg-red-400/10"
+                    className="btn-ghost border-red-500/30 text-xs text-red-800 hover:bg-red-500/10 dark:border-red-400/30 dark:text-red-100 dark:hover:bg-red-400/10"
                   >
                     <UserMinus size={14} />
                     {texts.rejectPlayer}
@@ -597,11 +665,11 @@ export default function BracketRoomClient({
 
       {room.status === "waiting" ? (
         <section className="card p-6 text-center">
-          <Users className="mx-auto text-sky-300" size={30} />
+          <Users className="mx-auto text-sky-600 dark:text-sky-300" size={30} />
           <h2 className="mt-3 text-xl font-bold">{texts.waitingPlayers}</h2>
           <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.bracketWaitingCopy}</p>
           {isPending ? (
-            <p className="mt-5 text-sm text-sky-200">{texts.joinRequestPendingHint}</p>
+            <p className="mt-5 text-sm text-sky-800 dark:text-sky-200">{texts.joinRequestPendingHint}</p>
           ) : isHost ? (
             <button
               type="button"
@@ -622,17 +690,17 @@ export default function BracketRoomClient({
               {texts.requestToJoin}
             </button>
           ) : (
-            <p className="mt-5 text-sm text-sky-200">{texts.waitingHost}</p>
+            <p className="mt-5 text-sm text-sky-800 dark:text-sky-200">{texts.waitingHost}</p>
           )}
         </section>
       ) : trackA && trackB ? (
         <section className="space-y-4">
-          <div className="overflow-hidden rounded-2xl border border-sky-400/25 bg-sky-400/10">
-            <div className="border-b border-sky-300/15 px-4 py-4 text-center">
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-sky-200/70">
+          <div className="overflow-hidden rounded-2xl border border-sky-500/25 bg-sky-500/10 dark:border-sky-400/25 dark:bg-sky-400/10">
+            <div className="border-b border-sky-500/15 px-4 py-4 text-center dark:border-sky-300/15">
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-sky-800 dark:text-sky-200/80">
                 {texts.currentRound}
               </p>
-              <h2 className="mt-1 text-xl font-black tracking-tight text-sky-50 sm:text-2xl">
+              <h2 className="mt-1 text-xl font-black tracking-tight text-sky-950 dark:text-sky-50 sm:text-2xl">
                 {roundProgressLabel}
               </h2>
             </div>
@@ -643,7 +711,7 @@ export default function BracketRoomClient({
               <div className="flex flex-wrap items-center gap-2">
                 {hasVoted ? (
                   <>
-                    <span className="inline-flex items-center gap-1 text-emerald-200">
+                    <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-200">
                       <Check size={15} />
                       {myBallot?.winnerSeed === null ? texts.votePassed : texts.voteRecorded}
                     </span>
@@ -672,7 +740,7 @@ export default function BracketRoomClient({
                     type="button"
                     disabled={pending}
                     onClick={() => run(() => finishBracketRound(room.id))}
-                    className="btn-ghost border-amber-400/35 bg-amber-400/10 text-xs text-amber-100 hover:bg-amber-400/20"
+                    className="btn-ghost border-amber-500/35 bg-amber-500/10 text-xs text-amber-900 hover:bg-amber-500/20 dark:border-amber-400/35 dark:bg-amber-400/10 dark:text-amber-100 dark:hover:bg-amber-400/20"
                   >
                     <Swords size={15} />
                     {texts.finishRound}
@@ -684,14 +752,14 @@ export default function BracketRoomClient({
               <>
                 <div className="flex items-center justify-center px-4 pb-3">
                   <span
-                    className={`inline-flex min-w-20 items-center gap-2 rounded-full px-3 py-1 text-sm font-black tabular-nums ${timeLeft <= 5 ? "bg-red-400/20 text-red-200" : timeLeft <= 10 ? "bg-amber-400/20 text-amber-200" : "bg-sky-400/15 text-sky-100"}`}
+                    className={`inline-flex min-w-20 items-center gap-2 rounded-full px-3 py-1 text-sm font-black tabular-nums ${timeLeft <= 5 ? "bg-red-500/15 text-red-900 dark:bg-red-400/20 dark:text-red-200" : timeLeft <= 10 ? "bg-amber-500/15 text-amber-900 dark:bg-amber-400/20 dark:text-amber-200" : "bg-sky-500/15 text-sky-900 dark:bg-sky-400/15 dark:text-sky-100"}`}
                   >
                     <Clock3 size={15} />
                     {timeLabel}
                   </span>
                 </div>
                 <motion.div
-                  className={`h-1 origin-left ${timeLeft <= 5 ? "bg-red-400" : "bg-sky-400"}`}
+                  className={`h-1 origin-left ${timeLeft <= 5 ? "bg-red-500 dark:bg-red-400" : "bg-sky-500 dark:bg-sky-400"}`}
                   animate={{ scaleX: timeLeft / BRACKET_DUEL_SECONDS }}
                   transition={{ duration: 0.2, ease: "linear" }}
                 />
@@ -703,14 +771,16 @@ export default function BracketRoomClient({
               seed: trackA.seed!,
               deezerTrackId: trackA.deezerTrackId,
               title: trackA.title,
-              artist: trackA.artist,
+              artist: creditFor(trackA).artist || trackA.artist,
+              album: creditFor(trackA).album || null,
               cover_url: trackA.coverUrl,
             }}
             b={{
               seed: trackB.seed!,
               deezerTrackId: trackB.deezerTrackId,
               title: trackB.title,
-              artist: trackB.artist,
+              artist: creditFor(trackB).artist || trackB.artist,
+              album: creditFor(trackB).album || null,
               cover_url: trackB.coverUrl,
             }}
             onPick={(seed) => run(() => voteBracketRoom(room.id, seed))}
@@ -750,6 +820,7 @@ export default function BracketRoomClient({
                     : ballot?.winnerSeed === trackB.seed
                       ? trackB
                       : null;
+                const selectedCredits = selectedTrack ? creditFor(selectedTrack) : null;
                 return (
                   <div
                     key={participant.playerId}
@@ -759,17 +830,29 @@ export default function BracketRoomClient({
                       {participant.username}
                       {participant.playerId === userId ? ` · ${texts.youSuffix}` : ""}
                     </span>
-                    <span
-                      className={`max-w-[58%] truncate text-right text-xs font-semibold ${
-                        selectedTrack
-                          ? "text-sky-200"
-                          : ballot?.winnerSeed === null
-                            ? "text-amber-200"
-                            : "text-[color:var(--muted)]"
-                      }`}
-                    >
-                      {selectedTrack?.title ?? (ballot ? texts.passed : texts.waiting)}
-                    </span>
+                    <div className="flex flex-col items-end min-w-0 max-w-[58%] text-right">
+                      <span
+                        className={`truncate text-xs font-semibold ${
+                          selectedTrack
+                            ? "text-sky-800 dark:text-sky-200"
+                            : ballot?.winnerSeed === null
+                              ? "text-amber-800 dark:text-amber-200"
+                              : "text-[color:var(--muted)]"
+                        }`}
+                      >
+                        {selectedTrack?.title ?? (ballot ? texts.passed : texts.waiting)}
+                      </span>
+                      {selectedCredits?.artist ? (
+                        <span className="truncate text-[10px] text-[color:var(--muted)]">
+                          {selectedCredits.artist}
+                        </span>
+                      ) : null}
+                      {selectedCredits?.album ? (
+                        <span className="truncate text-[10px] text-[color:var(--muted)]/80">
+                          {selectedCredits.album}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 );
               })}

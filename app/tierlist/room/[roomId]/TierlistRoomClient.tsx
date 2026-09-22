@@ -202,7 +202,9 @@ function ResolutionReveal({
             </motion.p>
             <h2 className="mt-3 text-3xl font-black tracking-tight text-white">{texts.coinFlip}</h2>
             <p className="mt-2 text-sm text-white/60">
-              {pileTier?.label ?? "?"} vs {faceTier?.label ?? "?"}
+              {texts.heads} · {pileTier?.label ?? "?"}
+              <span className="mx-2 text-white/30">—</span>
+              {texts.tails} · {faceTier?.label ?? "?"}
             </p>
             <div className="mx-auto my-8 h-36 w-36 [perspective:900px]">
               <motion.div

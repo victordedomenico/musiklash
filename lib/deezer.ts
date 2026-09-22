@@ -99,16 +99,36 @@ export async function getAlbumGenreId(albumId: number): Promise<number | null> {
   return genreId;
 }
 
-export async function getTrackPreview(trackId: number | string): Promise<string | null> {
+export type DeezerTrackInfo = {
+  preview: string | null;
+  album: string | null;
+  artist: string | null;
+};
+
+export async function getTrackInfo(trackId: number | string): Promise<DeezerTrackInfo | null> {
   const url = `${BASE_URL}/track/${trackId}`;
   const res = await fetch(url, {
     headers: { Accept: "application/json" },
     cache: "no-store",
   });
   if (!res.ok) return null;
-  const data = (await res.json()) as { preview?: string; error?: unknown };
+  const data = (await res.json()) as {
+    preview?: string;
+    error?: unknown;
+    album?: { title?: string };
+    artist?: { name?: string };
+  };
   if (data.error) return null;
-  return sanitizePreviewUrl(data.preview);
+  return {
+    preview: sanitizePreviewUrl(data.preview),
+    album: data.album?.title?.trim() || null,
+    artist: data.artist?.name?.trim() || null,
+  };
+}
+
+export async function getTrackPreview(trackId: number | string): Promise<string | null> {
+  const info = await getTrackInfo(trackId);
+  return info?.preview ?? null;
 }
 
 export async function searchTracks(

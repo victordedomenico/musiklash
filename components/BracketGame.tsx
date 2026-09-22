@@ -9,7 +9,7 @@ import { bracketRoundLabel } from "@/lib/bracket-round-label";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { deleteTransientBracket, saveBracketGame } from "@/app/bracket-game/[id]/actions";
-import { fetchTrackPreview } from "@/lib/deezer-preview-client";
+import { fetchTrackDetails, fetchTrackPreview } from "@/lib/deezer-preview-client";
 import {
   bracketProgressStorageKey,
   clearBracketProgress,
@@ -49,6 +49,9 @@ export default function BracketGame({
   const [refreshedPreviewBySeed, setRefreshedPreviewBySeed] = useState<Map<number, string>>(
     () => new Map(),
   );
+  const [creditsBySeed, setCreditsBySeed] = useState<
+    Map<number, { artist: string | null; album: string | null }>
+  >(() => new Map());
   const exportRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const promotedRef = useRef(false);
@@ -231,19 +234,28 @@ export default function BracketGame({
         const results = await Promise.all(
           batch.map(async (track) => {
             try {
-              const fresh = await fetchTrackPreview(track.deezerTrackId);
-              return fresh ? ([track.seed, fresh] as const) : null;
+              const details = await fetchTrackDetails(track.deezerTrackId);
+              return details ? ([track.seed, details] as const) : null;
             } catch {
               return null;
             }
           }),
         );
         if (cancelled) return;
-        const valid = results.filter((pair): pair is readonly [number, string] => pair !== null);
+        const valid = results.flatMap((pair) => (pair ? [pair] : []));
         if (valid.length === 0) continue;
+        setCreditsBySeed((prev) => {
+          const next = new Map(prev);
+          for (const [seed, details] of valid) {
+            next.set(seed, { artist: details.artist, album: details.album });
+          }
+          return next;
+        });
         setRefreshedPreviewBySeed((prev) => {
           const next = new Map(prev);
-          for (const [seed, url] of valid) next.set(seed, url);
+          for (const [seed, details] of valid) {
+            if (details.preview) next.set(seed, details.preview);
+          }
           return next;
         });
       }
@@ -433,14 +445,15 @@ export default function BracketGame({
     const firstVisibleRoundSideMatches = (visibleRounds[0]?.length ?? 2) / 2;
     const firstExportRoundSideMatches = (roundsForTree[0]?.length ?? 2) / 2;
 
-    // Compact "poster" bracket: cover cells with tiny title/artist that grow
-    // toward the center. Row height must fit 2 tracks (cover + 2 text lines).
+    // Compact "poster" bracket: cover cells with tiny title, artist and album
+    // that grow toward the center. Row height must fit 2 tracks
+    // (cover + title + artist + album).
     const visibleBaseCover = 56;
     const visibleCoverStep = 6;
     const exportBaseCover = 50;
     const exportCoverStep = 5;
-    const visibleRowHeight = 184;
-    const exportRowHeight = 170;
+    const visibleRowHeight = 216;
+    const exportRowHeight = 200;
     const visibleTreeMinHeight = Math.max(260, firstVisibleRoundSideMatches * visibleRowHeight);
     const exportTreeMinHeight = Math.max(420, firstExportRoundSideMatches * exportRowHeight);
 
@@ -473,12 +486,15 @@ export default function BracketGame({
       const isLoading = loadingSeed === track.seed;
       const btnSize = Math.max(22, Math.round(size * 0.34));
       const iconSize = Math.max(11, Math.round(btnSize * 0.55));
+      const extra = creditsBySeed.get(track.seed);
+      const artist = track.artist?.trim() || extra?.artist?.trim() || "";
+      const album = track.album?.trim() || extra?.album?.trim() || "";
 
       return (
         <div
           key={key}
           className="flex w-full min-w-0 flex-col items-center gap-1"
-          title={`${track.title} — ${track.artist}`}
+          title={[track.title, artist, album].filter(Boolean).join(" — ")}
         >
           <div className="relative" style={{ width: size, height: size }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -524,7 +540,12 @@ export default function BracketGame({
             >
               {track.title}
             </p>
-            <p className="truncate text-[9px] text-[color:var(--muted)]">{track.artist}</p>
+            <p className="h-[1.15em] truncate text-[9px] text-[color:var(--muted)]">
+              {artist || "\u00a0"}
+            </p>
+            <p className="h-[1.15em] truncate text-[8px] text-[color:var(--muted)]/75">
+              {album || "\u00a0"}
+            </p>
           </div>
         </div>
       );
@@ -670,7 +691,13 @@ export default function BracketGame({
                   <div
                     className="relative overflow-hidden rounded-2xl ring-4 ring-[color:var(--accent-2)] shadow-2xl"
                     style={{ width: championSize, height: championSize }}
-                    title={`${champ.title} — ${champ.artist}`}
+                    title={[
+                      champ.title,
+                      champ.artist?.trim() || creditsBySeed.get(champ.seed)?.artist,
+                      champ.album?.trim() || creditsBySeed.get(champ.seed)?.album,
+                    ]
+                      .filter(Boolean)
+                      .join(" — ")}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -700,7 +727,12 @@ export default function BracketGame({
                   </div>
                   <div className="max-w-[220px]">
                     <p className="truncate text-sm font-extrabold">{champ.title}</p>
-                    <p className="truncate text-xs text-[color:var(--muted)]">{champ.artist}</p>
+                    <p className="truncate text-xs text-[color:var(--muted)]">
+                      {champ.artist?.trim() || creditsBySeed.get(champ.seed)?.artist?.trim() || "\u00a0"}
+                    </p>
+                    <p className="truncate text-[11px] text-[color:var(--muted)]/75">
+                      {champ.album?.trim() || creditsBySeed.get(champ.seed)?.album?.trim() || "\u00a0"}
+                    </p>
                   </div>
                 </div>
               ) : null}
