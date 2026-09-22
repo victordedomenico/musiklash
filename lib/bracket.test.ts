@@ -216,4 +216,79 @@ describe("buildBracketState", () => {
       ]);
     });
   });
+
+  describe("balanced dynamic draws (drawVersion 3)", () => {
+    it("splits round 1 into two even halves for 9 tracks", () => {
+      const state = buildBracketState(9, [], 9, 3);
+
+      // left half = seeds 1-5 (3 pairings: 2 real + 1 bye), right half = seeds 6-9 (2 real pairings)
+      expect(state.rounds[0]).toEqual([
+        { matchIndex: 0, seedA: 1, seedB: 2 },
+        { matchIndex: 1, seedA: 3, seedB: 4 },
+        { matchIndex: 2, seedA: 5, seedB: 10 },
+        { matchIndex: 3, seedA: 6, seedB: 7 },
+        { matchIndex: 4, seedA: 8, seedB: 9 },
+      ]);
+    });
+
+    it("never lets a match pair winners from both halves", () => {
+      // 9 tracks: left half (seeds 1-5) needs one more round than right half (seeds 6-9),
+      // so the resolved right side should keep waiting on its own bye instead of
+      // being paired against a left-side winner.
+      const votes = [
+        { round: 1, matchIndex: 0, winnerSeed: 1 },
+        { round: 1, matchIndex: 1, winnerSeed: 3 },
+        { round: 1, matchIndex: 3, winnerSeed: 6 },
+        { round: 1, matchIndex: 4, winnerSeed: 8 },
+      ];
+      const state = buildBracketState(9, votes, 9, 3);
+
+      expect(state.rounds[1]).toEqual([
+        { matchIndex: 0, seedA: 1, seedB: 3 },
+        { matchIndex: 1, seedA: 5, seedB: 10 },
+        { matchIndex: 2, seedA: 6, seedB: 8 },
+      ]);
+    });
+
+    it("resolves a 9-track tournament in exactly 4 rounds, matching totalRounds", () => {
+      const votes = [
+        { round: 1, matchIndex: 0, winnerSeed: 1 },
+        { round: 1, matchIndex: 1, winnerSeed: 3 },
+        { round: 1, matchIndex: 3, winnerSeed: 6 },
+        { round: 1, matchIndex: 4, winnerSeed: 8 },
+        { round: 2, matchIndex: 0, winnerSeed: 1 },
+        { round: 2, matchIndex: 2, winnerSeed: 6 },
+        { round: 3, matchIndex: 0, winnerSeed: 1 },
+        { round: 4, matchIndex: 0, winnerSeed: 1 },
+      ];
+      const state = buildBracketState(9, votes, 9, 3);
+
+      expect(state.rounds).toHaveLength(totalRounds(9));
+      expect(state.winner).toBe(1);
+    });
+
+    it("keeps each round's two halves within one match of each other, for a range of track counts", () => {
+      for (let trackCount = 3; trackCount <= 40; trackCount += 1) {
+        const votes: { round: number; matchIndex: number; winnerSeed: number }[] = [];
+        let state = buildBracketState(trackCount, votes, trackCount, 3);
+
+        while (state.winner === null) {
+          const roundNumber = state.rounds.length;
+          const round = state.rounds.at(-1)!;
+          const half = round.length / 2;
+          const leftCount = round.filter((p) => p.matchIndex < half).length;
+          const rightCount = round.length - leftCount;
+          expect(Math.abs(leftCount - rightCount)).toBeLessThanOrEqual(1);
+
+          for (const pairing of round) {
+            if (pairing.seedB > trackCount) continue;
+            votes.push({ round: roundNumber, matchIndex: pairing.matchIndex, winnerSeed: pairing.seedA });
+          }
+          state = buildBracketState(trackCount, votes, trackCount, 3);
+        }
+
+        expect(state.rounds).toHaveLength(totalRounds(trackCount));
+      }
+    });
+  });
 });

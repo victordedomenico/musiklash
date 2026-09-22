@@ -143,6 +143,70 @@ function buildDynamicBracketState(
 }
 
 /**
+ * Same dynamic, minimal-bye draw as `buildDynamicBracketState`, but the seeds
+ * are split into two independent halves up front (left/right) that each
+ * advance through their own rounds without ever pairing across the split,
+ * until a single finalist per half meets in the last round.
+ *
+ * This keeps the bracket tree visually balanced — both halves show the same
+ * number of matches each round (off by at most one when the track count is
+ * odd) — instead of the flat sequential pairing used by
+ * `buildDynamicBracketState`, which can bunch every early bye onto one side
+ * and let a winner from one half feed into a match drawn on the other half.
+ */
+function buildBalancedDynamicBracketState(
+  trackCount: number,
+  votes: Vote[],
+): { rounds: Pairing[][]; winner: number | null } {
+  const byeSeed = trackCount + 1;
+  const leftCount = Math.ceil(trackCount / 2);
+  let leftPool = Array.from({ length: leftCount }, (_, index) => index + 1);
+  let rightPool = Array.from({ length: trackCount - leftCount }, (_, index) => leftCount + index + 1);
+
+  const rounds: Pairing[][] = [];
+
+  for (let round = 1; ; round += 1) {
+    if (leftPool.length === 1 && rightPool.length === 1) {
+      const finalPairing: Pairing = { matchIndex: 0, seedA: leftPool[0]!, seedB: rightPool[0]! };
+      rounds.push([finalPairing]);
+      const vote = votes.find(
+        (candidate) => candidate.round === round && candidate.matchIndex === 0,
+      );
+      return vote ? { rounds, winner: vote.winnerSeed } : { rounds, winner: null };
+    }
+
+    const leftPairings = dynamicRoundPairings(leftPool, byeSeed);
+    const rightPairings = dynamicRoundPairings(rightPool, byeSeed).map((pairing) => ({
+      ...pairing,
+      matchIndex: pairing.matchIndex + leftPairings.length,
+    }));
+    rounds.push([...leftPairings, ...rightPairings]);
+
+    const resolveSide = (pairings: Pairing[]): number[] | null => {
+      const winners: number[] = [];
+      for (const pairing of pairings) {
+        if (pairing.seedB === byeSeed) {
+          winners.push(pairing.seedA);
+          continue;
+        }
+        const vote = votes.find(
+          (candidate) => candidate.round === round && candidate.matchIndex === pairing.matchIndex,
+        );
+        if (!vote) return null;
+        winners.push(vote.winnerSeed);
+      }
+      return winners;
+    };
+
+    const leftWinners = resolveSide(leftPairings);
+    const rightWinners = resolveSide(rightPairings);
+    if (!leftWinners || !rightWinners) return { rounds, winner: null };
+    leftPool = leftWinners;
+    rightPool = rightWinners;
+  }
+}
+
+/**
  * Returns the full list of pairings for every round given a vote history.
  * Useful to render progress so far or resume a game.
  *
@@ -153,7 +217,11 @@ function buildDynamicBracketState(
  *                      their opponent auto-advances without needing a vote.
  * @param drawVersion - 1 is the historic fixed power-of-two tree; 2 uses a
  *                      dynamic tree and gives one randomized bye whenever a
- *                      round has an odd number of remaining tracks.
+ *                      round has an odd number of remaining tracks, but can
+ *                      draw the two sides of the tree unevenly; 3 uses the
+ *                      same dynamic, minimal-bye draw but splits the seeds
+ *                      into independent left/right halves up front so the
+ *                      tree stays visually balanced on both sides.
  */
 export function buildBracketState(
   size: BracketSize,
@@ -164,6 +232,7 @@ export function buildBracketState(
   rounds: Pairing[][];
   winner: number | null;
 } {
+  if (drawVersion === 3) return buildBalancedDynamicBracketState(trackCount, votes);
   if (drawVersion === 2) return buildDynamicBracketState(trackCount, votes);
 
   const total = totalRounds(size);

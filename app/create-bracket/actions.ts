@@ -37,7 +37,8 @@ export async function createBracket(input: {
   }
 
   // Randomize the draw once. Stored seeds preserve it across resumed sessions;
-  // a dynamic round grants one bye whenever its participant count is odd.
+  // the balanced dynamic draw splits seeds into two halves that advance
+  // independently, granting a bye only when a half's remaining count is odd.
   const drawnTracks = shuffle(input.tracks);
 
   const prisma = (await import("@/lib/prisma")).default;
@@ -68,7 +69,7 @@ export async function createBracket(input: {
         theme: input.theme.trim() || null,
         genre: sanitizeGenre(input.genre),
         size: drawnTracks.length,
-        drawVersion: 2,
+        drawVersion: 3,
         visibility: storedVisibility,
         coverUrl: input.tracks[0]?.cover_url ?? null,
         tracks: {
