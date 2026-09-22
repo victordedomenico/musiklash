@@ -122,6 +122,7 @@ model BracketRoom {
   previousHostId String?   @map("previous_host_id") @db.Uuid
   status         String    @default("waiting")
   participants   Json      @default("[]") @db.JsonB
+  excludedPlayerIds Json   @default("[]") @map("excluded_player_ids") @db.JsonB
   votes          Json      @default("[]") @db.JsonB
   ballots        Json      @default("[]") @db.JsonB
   lastResolution Json?     @map("last_resolution") @db.JsonB

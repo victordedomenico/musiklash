@@ -52,6 +52,7 @@ export type BracketRoomSnapshot = {
   previousHostId: string | null;
   status: "waiting" | "playing" | "paused" | "finished";
   participants: RoomParticipant[];
+  excludedPlayerIds: string[];
   votes: Vote[];
   ballots: BracketBallot[];
   lastResolution: BracketRoundResolution | null;
@@ -102,6 +103,18 @@ export function normalizeParticipants(value: unknown): RoomParticipant[] {
     if (ids.has(entry.playerId)) return [];
     ids.add(entry.playerId);
     return [{ playerId: entry.playerId, username: entry.username.slice(0, 48) }];
+  });
+}
+
+export function normalizeExcludedPlayerIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const ids = new Set<string>();
+  return value.flatMap((entry) => {
+    if (typeof entry !== "string" || entry.length === 0 || entry.length > 128 || ids.has(entry)) {
+      return [];
+    }
+    ids.add(entry);
+    return [entry];
   });
 }
 
@@ -290,6 +303,7 @@ export function toBracketRoomSnapshot(room: NonNullable<BracketRoomRaw>): Bracke
     previousHostId: room.previousHostId,
     status: room.status as BracketRoomSnapshot["status"],
     participants,
+    excludedPlayerIds: normalizeExcludedPlayerIds(room.excludedPlayerIds),
     votes,
     ballots: normalizeBracketBallots(room.ballots),
     lastResolution: normalizeBracketResolution(room.lastResolution),

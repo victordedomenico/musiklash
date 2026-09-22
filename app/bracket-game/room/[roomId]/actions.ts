@@ -9,6 +9,7 @@ import { removePlayerBallot, replacePlayerBallot } from "@/lib/room-ballots";
 import {
   getBracketRoomSnapshot,
   normalizeBracketBallots,
+  normalizeExcludedPlayerIds,
   normalizeParticipants,
   normalizeVotes,
   type BracketBallot,
@@ -90,6 +91,9 @@ export async function joinBracketRoom(roomId: string) {
     }
 
     const participants = normalizeParticipants(room.participants);
+    if (normalizeExcludedPlayerIds(room.excludedPlayerIds).includes(user.playerId)) {
+      return { ok: false as const, error: "Vous avez été exclu de cette room." };
+    }
     if (participants.some((participant) => participant.playerId === user.playerId)) {
       return response(roomId);
     }
@@ -226,16 +230,21 @@ export async function kickBracketPlayer(roomId: string, playerId: string) {
     }
 
     const nextBallots = removePlayerBallot(normalizeBracketBallots(room.ballots), playerId);
+    const excludedPlayerIds = [
+      ...new Set([...normalizeExcludedPlayerIds(room.excludedPlayerIds), playerId]),
+    ];
     const { votes, round, pair } = getOpenDuel(room);
     const data =
       room.status === "playing" && pair && nextBallots.length >= nextParticipants.length
         ? {
             ...resolvedDuelData(room, nextBallots, pair, round, votes),
             participants: nextParticipants as unknown as Prisma.JsonArray,
+            excludedPlayerIds: excludedPlayerIds as unknown as Prisma.JsonArray,
           }
         : {
             participants: nextParticipants as unknown as Prisma.JsonArray,
             ballots: nextBallots as unknown as Prisma.JsonArray,
+            excludedPlayerIds: excludedPlayerIds as unknown as Prisma.JsonArray,
             revision: { increment: 1 as const },
           };
 

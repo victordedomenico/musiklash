@@ -192,6 +192,7 @@ export default function BracketRoomClient({
   const [pending, startTransition] = useTransition();
   const seenResolutionRef = useRef(initialRoom.lastResolution?.id ?? null);
   const me = room.participants.find((participant) => participant.playerId === userId) ?? null;
+  const isExcluded = room.excludedPlayerIds.includes(userId);
   const isHost = room.hostId === userId;
   const hasVoted = room.ballots.some((ballot) => ballot.playerId === userId);
   const myBallot = room.ballots.find((ballot) => ballot.playerId === userId) ?? null;
@@ -245,7 +246,7 @@ export default function BracketRoomClient({
   }, []);
 
   useEffect(() => {
-    if (me || room.status === "finished") return;
+    if (me || isExcluded || room.status === "finished") return;
     void joinBracketRoom(room.id).then((result) => {
       if (result.ok) {
         acceptRoom(result.room);
@@ -253,7 +254,7 @@ export default function BracketRoomClient({
       }
       setError(texts.errors[result.error] ?? result.error);
     });
-  }, [acceptRoom, me, room.id, room.status, texts.errors]);
+  }, [acceptRoom, isExcluded, me, room.id, room.status, texts.errors]);
 
   useEffect(() => {
     if (room.status === "finished") return;
@@ -345,6 +346,15 @@ export default function BracketRoomClient({
   }
 
   if (!me) {
+    if (isExcluded) {
+      return (
+        <section className="card border-red-400/30 p-6 text-center">
+          <UserMinus className="mx-auto text-red-300" size={30} />
+          <h2 className="mt-3 text-xl font-bold">{texts.excludedTitle}</h2>
+          <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.excludedHint}</p>
+        </section>
+      );
+    }
     return (
       <section className="card p-6 text-center">
         <Users className="mx-auto text-sky-300" size={30} />
