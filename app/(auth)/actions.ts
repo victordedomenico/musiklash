@@ -58,3 +58,13 @@ export async function updateGuestUsername(formData: FormData): Promise<void> {
     revalidatePath("/", "layout");
   }
 }
+
+export async function submitGuestPseudo(formData: FormData) {
+  const raw = String(formData.get("username") ?? "");
+  const { setGuestUsername } = await import("@/lib/guest");
+  const result = await setGuestUsername(raw);
+  if (!result.error) {
+    revalidatePath("/", "layout");
+  }
+  return result;
+}

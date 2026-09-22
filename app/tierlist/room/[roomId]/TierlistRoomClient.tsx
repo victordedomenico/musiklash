@@ -322,7 +322,11 @@ export default function TierlistRoomClient({
   const [activeResolution, setActiveResolution] = useState<TierlistRoundResolution | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [pending, startTransition] = useTransition();
+  const [kicked, setKicked] = useState(false);
   const seenResolutionRef = useRef(initialRoom.lastResolution?.id ?? null);
+  const wasParticipantRef = useRef(
+    initialRoom.participants.some((participant) => participant.playerId === userId),
+  );
   const expiryAttemptRef = useRef<string | null>(null);
   const warningAttemptRef = useRef<string | null>(null);
   const { play: playSound, unlock } = useSoundFx();
@@ -395,6 +399,18 @@ export default function TierlistRoomClient({
       if (result.ok) acceptRoom(result.room);
     });
   }, [acceptRoom, me, room.id, room.previousHostId, userId]);
+
+  useEffect(() => {
+    if (me) {
+      wasParticipantRef.current = true;
+      return;
+    }
+    if (!wasParticipantRef.current || isHost) return;
+    wasParticipantRef.current = false;
+    setKicked(true);
+    const id = window.setTimeout(() => setKicked(false), 6000);
+    return () => window.clearTimeout(id);
+  }, [isHost, me]);
 
   useEffect(() => {
     if (room.status === "finished") return;
@@ -565,6 +581,11 @@ export default function TierlistRoomClient({
           ))}
         </div>
       </section>
+      {kicked ? (
+        <p className="rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-100">
+          {texts.kickedNotice}
+        </p>
+      ) : null}
       {isPending ? (
         <p className="rounded-xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
           <strong>{texts.joinRequestPendingTitle}.</strong> {texts.joinRequestPendingHint}

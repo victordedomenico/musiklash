@@ -48,6 +48,13 @@ export const en: Dictionary = {
     guestNameHint: "Optional: without one, you play as Guest.",
     saveGuestName: "Save my username",
   },
+  pseudoPrompt: {
+    title: "Pick a pseudo for this game",
+    hint: "Other players will see it. Without one, you play as Guest.",
+    placeholder: "Your pseudo",
+    confirm: "Confirm",
+    skip: "Continue as Guest",
+  },
   introVideo: {
     title: "Discover MusiKlash",
     skip: "Skip",
@@ -188,6 +195,7 @@ export const en: Dictionary = {
     joinRequestRejectedHint: "The host declined your request for this game.",
     excludedTitle: "You have been excluded from the room",
     excludedHint: "The host removed you. You can no longer join this game.",
+    kickedNotice: "The host removed you from the game.",
     hostAwayTitle: "Game paused",
     hostAwayHint: "The host left the room. The game will resume when they return.",
     joinRoom: "Join room",

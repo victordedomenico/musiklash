@@ -46,6 +46,13 @@ export interface Dictionary {
     guestNameHint: string;
     saveGuestName: string;
   };
+  pseudoPrompt: {
+    title: string;
+    hint: string;
+    placeholder: string;
+    confirm: string;
+    skip: string;
+  };
   introVideo: {
     title: string;
     skip: string;
@@ -178,6 +185,7 @@ export interface Dictionary {
     joinRequestRejectedHint: string;
     excludedTitle: string;
     excludedHint: string;
+    kickedNotice: string;
     hostAwayTitle: string;
     hostAwayHint: string;
     joinRoom: string;
@@ -415,6 +423,13 @@ export const fr: Dictionary = {
     guestNameHint: "Facultatif : sans pseudo, tu joues en Guest.",
     saveGuestName: "Enregistrer mon pseudo",
   },
+  pseudoPrompt: {
+    title: "Choisis un pseudo pour cette partie",
+    hint: "Les autres joueurs le verront. Sans pseudo, tu joues en Guest.",
+    placeholder: "Ton pseudo",
+    confirm: "Valider",
+    skip: "Continuer en Guest",
+  },
   introVideo: {
     title: "Découvrir MusiKlash",
     skip: "Passer",
@@ -556,6 +571,7 @@ export const fr: Dictionary = {
     joinRequestRejectedHint: "L’hôte a refusé votre demande pour cette partie.",
     excludedTitle: "Vous avez été exclu de la room",
     excludedHint: "L’hôte vous a retiré. Vous ne pouvez plus rejoindre cette partie.",
+    kickedNotice: "L’hôte t’a retiré de la partie.",
     hostAwayTitle: "Partie en pause",
     hostAwayHint: "L’hôte a quitté la room. La partie reprendra à son retour.",
     joinRoom: "Rejoindre la room",

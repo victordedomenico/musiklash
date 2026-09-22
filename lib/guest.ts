@@ -199,6 +199,12 @@ export async function resolvePlayerIdentity() {
   };
 }
 
+/** Whether the current visitor has ever picked a custom pseudo (as opposed to an auto-generated guest name). */
+export async function hasCustomGuestUsername(): Promise<boolean> {
+  const cookieStore = await cookies();
+  return Boolean(normalizePreferredUsername(cookieStore.get(GUEST_USERNAME_COOKIE)?.value));
+}
+
 export async function setGuestUsername(preferredUsername: string) {
   const normalized = normalizePreferredUsername(preferredUsername);
   if (!normalized) {
