@@ -221,6 +221,7 @@ export default function BracketRoomClient({
   const isPending = room.pendingParticipants.some((participant) => participant.playerId === userId);
   const isRejected = room.rejectedPlayerIds.includes(userId);
   const isExcluded = room.excludedPlayerIds.includes(userId);
+  const removedForAfk = room.lastResolution?.afkPlayerIds.includes(userId) ?? false;
   const isHost = room.hostId === userId;
   const hasVoted = room.ballots.some((ballot) => ballot.playerId === userId);
   const myBallot = room.ballots.find((ballot) => ballot.playerId === userId) ?? null;
@@ -244,9 +245,10 @@ export default function BracketRoomClient({
 
   useEffect(() => {
     if (!room.currentPair) return;
-    const pair = [tracksBySeed.get(room.currentPair.seedA), tracksBySeed.get(room.currentPair.seedB)].filter(
-      (track): track is CollaborativeTrack => Boolean(track),
-    );
+    const pair = [
+      tracksBySeed.get(room.currentPair.seedA),
+      tracksBySeed.get(room.currentPair.seedB),
+    ].filter((track): track is CollaborativeTrack => Boolean(track));
     const missing = pair.filter((track) => !track.album?.trim() || !track.artist?.trim());
     if (missing.length === 0) return;
     let cancelled = false;
@@ -340,12 +342,12 @@ export default function BracketRoomClient({
       wasParticipantRef.current = true;
       return;
     }
-    if (!wasParticipantRef.current || isHost) return;
+    if (!wasParticipantRef.current || isHost || removedForAfk) return;
     wasParticipantRef.current = false;
     setKicked(true);
     const id = window.setTimeout(() => setKicked(false), 6000);
     return () => window.clearTimeout(id);
-  }, [isHost, me]);
+  }, [isHost, me, removedForAfk]);
 
   useEffect(() => {
     const activateAudio = () => unlock();
@@ -669,7 +671,9 @@ export default function BracketRoomClient({
           <h2 className="mt-3 text-xl font-bold">{texts.waitingPlayers}</h2>
           <p className="mt-2 text-sm text-[color:var(--muted)]">{texts.bracketWaitingCopy}</p>
           {isPending ? (
-            <p className="mt-5 text-sm text-sky-800 dark:text-sky-200">{texts.joinRequestPendingHint}</p>
+            <p className="mt-5 text-sm text-sky-800 dark:text-sky-200">
+              {texts.joinRequestPendingHint}
+            </p>
           ) : isHost ? (
             <button
               type="button"

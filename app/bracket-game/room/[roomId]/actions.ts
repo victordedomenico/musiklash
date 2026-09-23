@@ -6,6 +6,7 @@ import { resolvePlayerIdentity } from "@/lib/guest";
 import { buildBracketState, type Pairing } from "@/lib/bracket";
 import { BRACKET_DUEL_SECONDS, resolveBracketBallots } from "@/lib/bracket-room-rules";
 import { removePlayerBallot, replacePlayerBallot } from "@/lib/room-ballots";
+import { resolveCollaborativeRoomAfkParticipants } from "@/lib/collaborative-room-afk";
 import {
   getBracketRoomSnapshot,
   normalizeBracketBallots,
@@ -215,13 +216,10 @@ export async function leaveBracketRoom(roomId: string) {
     const { votes, round, pair } = getOpenDuel(room);
     const resolutionData =
       room.status === "playing" && pair && nextBallots.length >= nextParticipants.length
-        ? resolvedDuelData(room, nextBallots, pair, round, votes)
+        ? resolvedDuelData(room, nextBallots, pair, round, votes, nextParticipants)
         : null;
     const data = resolutionData
-      ? {
-          ...resolutionData,
-          participants: nextParticipants as unknown as Prisma.JsonArray,
-        }
+      ? resolutionData
       : {
           participants: nextParticipants as unknown as Prisma.JsonArray,
           ballots: nextBallots as unknown as Prisma.JsonArray,
@@ -261,6 +259,11 @@ export async function approveBracketJoinRequest(roomId: string, playerId: string
         pendingParticipants: pendingParticipants.filter(
           (candidate) => candidate.playerId !== playerId,
         ) as unknown as Prisma.JsonArray,
+        missedVoteCounts: Object.fromEntries(
+          Object.entries(normalizeRoomActionCounts(room.missedVoteCounts)).filter(
+            ([candidatePlayerId]) => candidatePlayerId !== playerId,
+          ),
+        ) as unknown as Prisma.JsonObject,
         revision: { increment: 1 },
       },
     });
@@ -352,8 +355,7 @@ export async function kickBracketPlayer(roomId: string, playerId: string) {
     const data =
       room.status === "playing" && pair && nextBallots.length >= nextParticipants.length
         ? {
-            ...resolvedDuelData(room, nextBallots, pair, round, votes),
-            participants: nextParticipants as unknown as Prisma.JsonArray,
+            ...resolvedDuelData(room, nextBallots, pair, round, votes, nextParticipants),
             excludedPlayerIds: excludedPlayerIds as unknown as Prisma.JsonArray,
             kickCounts: { ...kickCounts, [playerId]: kickCount } as unknown as Prisma.JsonObject,
           }
@@ -391,6 +393,7 @@ export async function startBracketRoom(roomId: string) {
     data: {
       status: "playing",
       ballots: [],
+      missedVoteCounts: {},
       lastResolution: Prisma.DbNull,
       duelStartedAt: room.timerEnabled ? new Date() : null,
       revision: { increment: 1 },
@@ -434,6 +437,7 @@ function resolvedDuelData(
   pair: Pairing,
   round: number,
   votes: ReturnType<typeof normalizeVotes>,
+  activeParticipants = normalizeParticipants(room.participants),
 ) {
   const resolution = resolveBracketBallots(ballots, pair.seedA, pair.seedB);
   const nextVotes = [
@@ -446,10 +450,21 @@ function resolvedDuelData(
     room.bracket.tracks.length,
     room.bracket.drawVersion,
   );
+  const afk = resolveCollaborativeRoomAfkParticipants(
+    activeParticipants,
+    ballots,
+    normalizeRoomActionCounts(room.missedVoteCounts),
+  );
+  const hasActiveHost = afk.participants.some(
+    (participant) => participant.playerId === room.hostId,
+  );
+  const nextHost = hasActiveHost ? null : (afk.participants[0] ?? null);
 
   return {
     votes: nextVotes as unknown as Prisma.JsonArray,
     ballots: [] as Prisma.JsonArray,
+    participants: afk.participants as unknown as Prisma.JsonArray,
+    missedVoteCounts: afk.missedVoteCounts as unknown as Prisma.JsonObject,
     lastResolution: {
       id: `${round}:${pair.matchIndex}:${nextVotes.length}`,
       round,
@@ -462,11 +477,15 @@ function resolvedDuelData(
       skippedCount: resolution.skippedCount,
       tie: resolution.tie,
       coinSide: resolution.coinSide,
+      afkPlayerIds: afk.removedPlayerIds,
       resolvedAt: new Date().toISOString(),
     } as unknown as Prisma.JsonObject,
     status: state.winner ? "finished" : "playing",
     winnerSeed: state.winner,
     duelStartedAt: state.winner ? null : room.timerEnabled ? new Date() : null,
+    ...(nextHost
+      ? { hostId: nextHost.playerId, previousHostId: null, hostLastSeenAt: new Date() }
+      : {}),
     revision: { increment: 1 },
   };
 }

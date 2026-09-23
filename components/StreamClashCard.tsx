@@ -182,10 +182,7 @@ export function StreamClashRoomCard({
       {room.canEditVisibility ? (
         <LibraryVisibilityToggle entity="stream_clash_room" id={room.id} visibility={vis} />
       ) : (
-        <p
-          className="rounded-xl border px-3 py-2 text-xs text-[color:var(--muted)]"
-          style={{ borderColor: "#283041", background: "#131822" }}
-        >
+        <p className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-2 text-xs text-[color:var(--muted)]">
           Visibilité définie par l&apos;hôte ({vis === "public" ? "public" : "privé"}).
         </p>
       )}

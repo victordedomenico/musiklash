@@ -6,6 +6,7 @@ import { resolvePlayerIdentity } from "@/lib/guest";
 import { BRACKET_DUEL_SECONDS } from "@/lib/bracket-room-rules";
 import { removePlayerBallot, replacePlayerBallot } from "@/lib/room-ballots";
 import { resolveTierlistBallots } from "@/lib/tierlist-room-rules";
+import { resolveCollaborativeRoomAfkParticipants } from "@/lib/collaborative-room-afk";
 import {
   getTierlistRoomSnapshot,
   normalizeExcludedPlayerIds,
@@ -156,13 +157,12 @@ export async function leaveTierlistRoom(roomId: string) {
       room.status === "playing" &&
       currentTrack(room) &&
       (hasExpired(room) || nextBallots.length >= nextParticipants.length)
-        ? resolvedPositionData(room, nextBallots)
+        ? resolvedPositionData(room, nextBallots, nextParticipants)
         : null;
     const nextHost = room.hostId === user.playerId ? nextParticipants[0] : null;
     const data = resolutionData
       ? {
           ...resolutionData,
-          participants: nextParticipants as unknown as Prisma.JsonArray,
           ...(nextHost
             ? {
                 hostId: nextHost.playerId,
@@ -216,6 +216,11 @@ export async function approveTierlistJoinRequest(roomId: string, playerId: strin
         pendingParticipants: pendingParticipants.filter(
           (candidate) => candidate.playerId !== playerId,
         ) as unknown as Prisma.JsonArray,
+        missedVoteCounts: Object.fromEntries(
+          Object.entries(normalizeRoomActionCounts(room.missedVoteCounts)).filter(
+            ([candidatePlayerId]) => candidatePlayerId !== playerId,
+          ),
+        ) as unknown as Prisma.JsonObject,
         revision: { increment: 1 },
       },
     });
@@ -308,12 +313,11 @@ export async function kickTierlistPlayer(roomId: string, playerId: string) {
       room.status === "playing" &&
       currentTrack(room) &&
       (hasExpired(room) || nextBallots.length >= nextParticipants.length)
-        ? resolvedPositionData(room, nextBallots)
+        ? resolvedPositionData(room, nextBallots, nextParticipants)
         : null;
     const data = resolutionData
       ? {
           ...resolutionData,
-          participants: nextParticipants as unknown as Prisma.JsonArray,
           excludedPlayerIds: excludedPlayerIds as unknown as Prisma.JsonArray,
           kickCounts: { ...kickCounts, [playerId]: kickCount } as unknown as Prisma.JsonObject,
         }
@@ -358,6 +362,7 @@ export async function startTierlistRoom(roomId: string) {
       currentPosition: firstTrack.position,
       placements: {},
       ballots: [],
+      missedVoteCounts: {},
       lastResolution: Prisma.DbNull,
       positionStartedAt: room.timerEnabled ? new Date() : null,
       revision: { increment: 1 },
@@ -385,7 +390,11 @@ function hasExpired(room: TierlistVoteRoom) {
   return Boolean(startedAt && Date.now() >= startedAt.getTime() + BRACKET_DUEL_SECONDS * 1000);
 }
 
-function resolvedPositionData(room: TierlistVoteRoom, ballots: TierlistBallot[]) {
+function resolvedPositionData(
+  room: TierlistVoteRoom,
+  ballots: TierlistBallot[],
+  activeParticipants = normalizeParticipants(room.participants),
+) {
   const track = currentTrack(room);
   if (!track) return null;
   const resolution = resolveTierlistBallots(ballots);
@@ -395,10 +404,21 @@ function resolvedPositionData(room: TierlistVoteRoom, ballots: TierlistBallot[])
   const currentIndex = positions.indexOf(room.currentPosition);
   const finished = currentIndex === -1 || currentIndex >= positions.length - 1;
   const nextPosition = positions[currentIndex + 1] ?? room.currentPosition;
+  const afk = resolveCollaborativeRoomAfkParticipants(
+    activeParticipants,
+    ballots,
+    normalizeRoomActionCounts(room.missedVoteCounts),
+  );
+  const hasActiveHost = afk.participants.some(
+    (participant) => participant.playerId === room.hostId,
+  );
+  const nextHost = hasActiveHost ? null : (afk.participants[0] ?? null);
 
   return {
     placements: nextPlacements as unknown as Prisma.JsonObject,
     ballots: [] as Prisma.JsonArray,
+    participants: afk.participants as unknown as Prisma.JsonArray,
+    missedVoteCounts: afk.missedVoteCounts as unknown as Prisma.JsonObject,
     currentPosition: nextPosition,
     lastResolution: {
       id: `${room.currentPosition}:${Object.keys(nextPlacements).length}`,
@@ -410,10 +430,19 @@ function resolvedPositionData(room: TierlistVoteRoom, ballots: TierlistBallot[])
       coinSide: resolution.coinSide,
       pileTierId: resolution.pileTierId,
       faceTierId: resolution.faceTierId,
+      afkPlayerIds: afk.removedPlayerIds,
       resolvedAt: new Date().toISOString(),
     } as unknown as Prisma.JsonObject,
     status: finished ? "finished" : "playing",
     positionStartedAt: finished || !room.timerEnabled ? null : new Date(),
+    ...(nextHost
+      ? {
+          hostId: nextHost.playerId,
+          previousHostId: room.previousHostId ?? room.hostId,
+        }
+      : !hasActiveHost
+        ? { previousHostId: room.previousHostId ?? room.hostId }
+        : {}),
     revision: { increment: 1 },
   };
 }

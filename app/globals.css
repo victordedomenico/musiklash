@@ -468,14 +468,15 @@ body {
     white-space: nowrap;
   }
   .btn-chip[data-active="true"] {
-    background: #ffffff;
-    color: #09090b;
+    background: var(--foreground);
+    color: var(--background);
     border-color: transparent;
     font-weight: 700;
   }
   .btn-chip:hover:not([data-active="true"]) {
     border-color: var(--border-strong);
     color: var(--foreground);
+    background: var(--surface-hover);
   }
 
   /* ── Cards ────────────────────────────────────────────────────────────────── */

@@ -572,25 +572,22 @@ export default async function ExplorePage({
           <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl lg:text-7xl">
             {e.title}
           </h1>
-          <p className="mt-2 text-base sm:text-xl lg:text-3xl" style={{ color: "#8f93a0" }}>
+          <p className="mt-2 text-base sm:text-xl lg:text-3xl text-[color:var(--muted)]">
             {e.subtitle}
           </p>
         </div>
-        <div
-          className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto lg:max-w-[min(100%,680px)]"
-          style={{ borderColor: "#283041", background: "#181b24" }}
-        >
+        <div className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-1 lg:w-auto lg:max-w-[min(100%,680px)]">
           {tabItems.map((item) => {
             const active = tab === item.key;
             return (
               <Link
                 key={item.key}
                 href={exploreUrl({ tab: item.key })}
-                className="whitespace-nowrap rounded-xl px-3 py-2 text-xs font-bold tracking-wide no-underline sm:px-4 sm:text-sm lg:px-5"
-                style={{
-                  background: active ? "#f3f4f6" : "transparent",
-                  color: active ? "#09090b" : "#868b98",
-                }}
+                className={`whitespace-nowrap rounded-xl px-3 py-2 text-xs font-bold tracking-wide no-underline transition-colors sm:px-4 sm:text-sm lg:px-5 ${
+                  active
+                    ? "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-xs"
+                    : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
+                }`}
               >
                 {item.label}
               </Link>
@@ -609,7 +606,6 @@ export default async function ExplorePage({
           name="q"
           placeholder={e.searchPlaceholder}
           className="input h-14 rounded-2xl pl-11 text-lg sm:h-16 sm:rounded-[22px] sm:pl-12 sm:text-2xl lg:h-20 lg:rounded-[26px] lg:pl-14 lg:text-4xl"
-          style={{ background: "#171a23", borderColor: "#2a3242" }}
         />
         <input type="hidden" name="tab" value={tab} />
         {genre ? <input type="hidden" name="genre" value={genre} /> : null}
@@ -636,10 +632,7 @@ export default async function ExplorePage({
       </div>
 
       {isEmpty ? (
-        <div
-          className="mt-10 rounded-[26px] border p-7 text-center sm:rounded-[30px] sm:p-10 lg:rounded-[34px] lg:p-14"
-          style={{ borderColor: "#232b3a", background: "#10141d" }}
-        >
+        <div className="card mt-10 rounded-[26px] p-7 text-center sm:rounded-[30px] sm:p-10 lg:rounded-[34px] lg:p-14">
           <p className="text-lg font-semibold">
             {e.emptyTitle}{" "}
             {term

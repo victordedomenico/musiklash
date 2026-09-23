@@ -128,6 +128,7 @@ model BracketRoom {
   excludedPlayerIds Json   @default("[]") @map("excluded_player_ids") @db.JsonB
   kickCounts       Json    @default("{}") @map("kick_counts") @db.JsonB
   rejectionCounts  Json    @default("{}") @map("rejection_counts") @db.JsonB
+  missedVoteCounts Json    @default("{}") @map("missed_vote_counts") @db.JsonB
   votes          Json      @default("[]") @db.JsonB
   ballots        Json      @default("[]") @db.JsonB
   lastResolution Json?     @map("last_resolution") @db.JsonB
@@ -330,6 +331,7 @@ model TierlistRoom {
   excludedPlayerIds Json      @default("[]") @map("excluded_player_ids") @db.JsonB
   kickCounts         Json    @default("{}") @map("kick_counts") @db.JsonB
   rejectionCounts    Json    @default("{}") @map("rejection_counts") @db.JsonB
+  missedVoteCounts   Json    @default("{}") @map("missed_vote_counts") @db.JsonB
   placements        Json      @default("{}") @db.JsonB
   ballots           Json      @default("[]") @db.JsonB
   lastResolution    Json?     @map("last_resolution") @db.JsonB

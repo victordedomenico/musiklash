@@ -194,17 +194,13 @@ export default function LibraryVisibilityToggle({
 
   return (
     <div
-      className="rounded-xl border px-3 py-2.5"
-      style={{ borderColor: "#283041", background: "#131822" }}
+      className="card p-3 shadow-xs"
       role="group"
       aria-label="Visibilité"
     >
       {showVisibility ? (
         <>
-          <p
-            className="text-[10px] font-bold uppercase tracking-wide"
-            style={{ color: "var(--muted-strong)" }}
-          >
+          <p className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--muted-strong)]">
             Publication
           </p>
           <div className="mt-1.5 flex flex-wrap gap-2">
@@ -234,8 +230,7 @@ export default function LibraryVisibilityToggle({
           type="button"
           disabled={pending}
           onClick={remove}
-          className="btn-chip mt-2"
-          style={{ borderColor: "#7f1d1d", color: "#fca5a5", background: "rgba(127, 29, 29, 0.2)" }}
+          className="btn-chip mt-2 border-red-500/30 text-red-600 hover:bg-red-500/10 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-950/30"
         >
           Supprimer
         </button>

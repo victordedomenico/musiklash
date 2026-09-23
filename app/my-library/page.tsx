@@ -649,7 +649,7 @@ export default async function MyBracketsPage({
           <h1 className="text-4xl font-black tracking-[-0.04em] sm:text-5xl lg:text-7xl">
             {ml.title}
           </h1>
-          <p className="mt-2 text-base sm:text-xl lg:text-3xl" style={{ color: "#8f93a0" }}>
+          <p className="mt-2 text-base text-[color:var(--muted)] sm:text-xl lg:text-3xl">
             {ml.subtitle}
           </p>
         </div>
@@ -663,28 +663,19 @@ export default async function MyBracketsPage({
       </div>
 
       {welcome ? (
-        <p
-          className="mt-4 rounded-2xl border p-3 text-sm text-[color:var(--muted)]"
-          style={{ borderColor: "#2a3242", background: "#131822" }}
-        >
+        <p className="card mt-4 p-3 text-sm text-[color:var(--muted)]">
           {ml.welcomeMsg}
         </p>
       ) : null}
       {!user ? (
-        <p
-          className="mt-4 rounded-2xl border p-3 text-sm text-[color:var(--muted)]"
-          style={{ borderColor: "#2a3242", background: "#131822" }}
-        >
+        <p className="card mt-4 p-3 text-sm text-[color:var(--muted)]">
           {ml.guestMsg}
           {guestIdentity?.username ? ` (${guestIdentity.username})` : ""}
         </p>
       ) : null}
 
       <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:flex-wrap">
-        <div
-          className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
-          style={{ borderColor: "#283041", background: "#181b24" }}
-        >
+        <div className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-1 lg:w-auto">
           <TabItem current={tab} value="all" label={`${ml.filterAll} (${totalCount})`} />
           <TabItem current={tab} value="brackets" label={`Brackets (${brackets.length})`} />
           <TabItem current={tab} value="tierlists" label={`Tierlists (${tierlists.length})`} />
@@ -711,10 +702,7 @@ export default async function MyBracketsPage({
         </div>
 
         {/* Visibility filter */}
-        <div
-          className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border p-1 lg:w-auto"
-          style={{ borderColor: "#283041", background: "#181b24" }}
-        >
+        <div className="inline-flex w-full gap-2 overflow-x-auto rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-1 lg:w-auto">
           <FilterLink current={filter} value="all" label={ml.filterAll} tab={tab} />
           <FilterLink current={filter} value="private" label={ml.filterPrivate} tab={tab} />
           <FilterLink current={filter} value="public" label={ml.filterPublic} tab={tab} />
@@ -1215,10 +1203,7 @@ function SubSection({ label, children }: { label: string; children: ReactNode })
 
 function EmptySub({ label }: { label: string }) {
   return (
-    <p
-      className="rounded-xl border px-3 py-3 text-xs text-[color:var(--muted)]"
-      style={{ borderColor: "#232b3a", background: "#10141d" }}
-    >
+    <p className="card px-3 py-3 text-xs text-[color:var(--muted)]">
       {label}
     </p>
   );
@@ -1233,11 +1218,11 @@ function TabItem({ current, value, label }: { current: Tab; value: Tab; label: s
   return (
     <Link
       href={`/my-library?tab=${value}`}
-      className="whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold tracking-wide no-underline sm:px-5 sm:text-sm"
-      style={{
-        background: active ? "#f3f4f6" : "transparent",
-        color: active ? "#09090b" : "#868b98",
-      }}
+      className={`whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold tracking-wide no-underline transition-all sm:px-5 sm:text-sm ${
+        active
+          ? "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-xs"
+          : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
+      }`}
     >
       {label}
     </Link>
@@ -1257,14 +1242,15 @@ function FilterLink({
 }) {
   const href =
     value === "all" ? `/my-library?tab=${tab}` : `/my-library?tab=${tab}&filter=${value}`;
+  const active = current === value;
   return (
     <Link
       href={href}
-      className="whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold tracking-wide no-underline sm:px-5 sm:text-sm"
-      style={{
-        background: current === value ? "#2f3442" : "transparent",
-        color: current === value ? "#ffffff" : "#868b98",
-      }}
+      className={`whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold tracking-wide no-underline transition-all sm:px-5 sm:text-sm ${
+        active
+          ? "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-xs"
+          : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
+      }`}
     >
       {label}
     </Link>
@@ -1273,11 +1259,8 @@ function FilterLink({
 
 function EmptyState({ label, cta, href }: { label: string; cta: string; href: string }) {
   return (
-    <div
-      className="mt-10 rounded-[24px] border p-7 text-center sm:rounded-[28px] sm:p-10 lg:rounded-[34px] lg:p-16"
-      style={{ borderColor: "#232b3a", background: "#10141d" }}
-    >
-      <p className="text-lg font-semibold sm:text-2xl lg:text-3xl" style={{ color: "#9298a8" }}>
+    <div className="card mt-10 p-7 text-center sm:p-10 lg:p-16">
+      <p className="text-lg font-semibold text-[color:var(--muted)] sm:text-2xl lg:text-3xl">
         {label}
       </p>
       <Link href={href} className="btn-primary mt-8 inline-flex">

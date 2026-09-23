@@ -20,6 +20,7 @@ export type BracketRoundResolution = {
   skippedCount: number;
   tie: boolean;
   coinSide: "pile" | "face" | null;
+  afkPlayerIds: string[];
   resolvedAt: string;
 };
 
@@ -33,6 +34,7 @@ export type TierlistRoundResolution = {
   coinSide: "pile" | "face" | null;
   pileTierId: string | null;
   faceTierId: string | null;
+  afkPlayerIds: string[];
   resolvedAt: string;
 };
 
@@ -207,8 +209,9 @@ export function normalizeBracketResolution(value: unknown): BracketRoundResoluti
     return null;
   }
   return {
-    ...(value as unknown as Omit<BracketRoundResolution, "skippedCount">),
+    ...(value as unknown as Omit<BracketRoundResolution, "skippedCount" | "afkPlayerIds">),
     skippedCount: Number.isInteger(value.skippedCount) ? (value.skippedCount as number) : 0,
+    afkPlayerIds: normalizeExcludedPlayerIds(value.afkPlayerIds),
   };
 }
 
@@ -258,8 +261,9 @@ export function normalizeTierlistResolution(value: unknown): TierlistRoundResolu
     ]),
   );
   return {
-    ...(value as unknown as Omit<TierlistRoundResolution, "votesByTier">),
+    ...(value as unknown as Omit<TierlistRoundResolution, "votesByTier" | "afkPlayerIds">),
     votesByTier,
+    afkPlayerIds: normalizeExcludedPlayerIds(value.afkPlayerIds),
   };
 }
 

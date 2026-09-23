@@ -47,22 +47,19 @@ export default async function LeaderboardPage({
       <h1 className="flex items-center gap-2 text-5xl font-black tracking-[-0.03em]">
         <Trophy size={28} className="text-yellow-400" /> Classement
       </h1>
-      <p className="mt-2 text-xl" style={{ color: "#8f93a0" }}>
+      <p className="mt-2 text-xl text-[color:var(--muted)]">
         Top scores en mode solo
       </p>
 
-      <div
-        className="mt-6 inline-flex gap-2 rounded-2xl border p-1 text-sm"
-        style={{ borderColor: "#283041", background: "#181b24" }}
-      >
+      <div className="mt-6 inline-flex gap-2 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-1 text-sm">
         {diffConfig.map((dc) => (
           <Link
             key={dc.value}
             href={`/battle-feat/leaderboard?d=${dc.value}`}
             className={`rounded-xl px-4 py-2 font-bold transition ${
               difficulty === dc.value
-                ? "bg-white text-black"
-                : "text-[color:var(--muted)] hover:text-white"
+                ? "bg-[color:var(--surface)] text-[color:var(--foreground)] shadow-xs"
+                : "text-[color:var(--muted)] hover:text-[color:var(--foreground)]"
             }`}
           >
             {dc.label}
@@ -71,10 +68,7 @@ export default async function LeaderboardPage({
       </div>
 
       {sessions.length === 0 ? (
-        <div
-          className="mt-10 rounded-[28px] border p-10 text-center"
-          style={{ borderColor: "#2a3242", background: "#10141d" }}
-        >
+        <div className="card mt-10 rounded-[28px] p-10 text-center">
           <p className="text-lg font-semibold">Aucun score pour le moment.</p>
           <p className="mt-1 text-sm text-[color:var(--muted)]">Sois le premier à jouer !</p>
           <Link href="/battle-feat/solo" className="btn-primary mt-6 inline-flex">
@@ -89,8 +83,7 @@ export default async function LeaderboardPage({
               <Link
                 href={`/battle-feat/results/${s.id}`}
                 key={s.id}
-                className="flex items-center gap-3 rounded-xl border px-4 py-3 transition hover:bg-[color:var(--surface-2)]"
-                style={{ borderColor: "#252d3c", background: "#141924" }}
+                className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-3 transition hover:bg-[color:var(--surface-hover)]"
               >
                 <span className="w-8 text-center font-bold">
                   {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}.`}

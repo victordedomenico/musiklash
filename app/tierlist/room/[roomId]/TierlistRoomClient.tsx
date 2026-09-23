@@ -336,6 +336,7 @@ export default function TierlistRoomClient({
   const isPending = room.pendingParticipants.some((participant) => participant.playerId === userId);
   const isRejected = room.rejectedPlayerIds.includes(userId);
   const isExcluded = room.excludedPlayerIds.includes(userId);
+  const removedForAfk = room.lastResolution?.afkPlayerIds.includes(userId) ?? false;
   const isHost = room.hostId === userId;
   const hasVoted = room.ballots.some((ballot) => ballot.playerId === userId);
   const myBallot = room.ballots.find((ballot) => ballot.playerId === userId) ?? null;
@@ -407,12 +408,12 @@ export default function TierlistRoomClient({
       wasParticipantRef.current = true;
       return;
     }
-    if (!wasParticipantRef.current || isHost) return;
+    if (!wasParticipantRef.current || isHost || removedForAfk) return;
     wasParticipantRef.current = false;
     setKicked(true);
     const id = window.setTimeout(() => setKicked(false), 6000);
     return () => window.clearTimeout(id);
-  }, [isHost, me]);
+  }, [isHost, me, removedForAfk]);
 
   useEffect(() => {
     if (room.status === "finished") return;

@@ -363,10 +363,7 @@ export default function BlindtestGame({
             {/* Inputs */}
             <div className="flex-1 w-full space-y-4">
               {singleArtistMode ? (
-                <p
-                  className="rounded-xl border px-3 py-2 text-sm text-[color:var(--muted)]"
-                  style={{ borderColor: "#2a3242", background: "#131822" }}
-                >
+                <p className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-3 py-2 text-sm text-[color:var(--muted)]">
                   Un seul artiste sur tout le blindtest : devine uniquement le{" "}
                   <strong className="text-[color:var(--foreground)]">titre</strong>. L&apos;artiste
                   ne rapporte pas de points. Plus tu réponds vite, plus tu marques !
