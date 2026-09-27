@@ -1,7 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 
-export const LEGACY_DOMAIN = "musiklash.vercel.app";
-export const CANONICAL_ORIGIN = "https://musiklash.fun";
+export { LEGACY_DOMAIN, CANONICAL_ORIGIN } from "./domain-transfer-config";
 
 const TICKET_VERSION = 1;
 const IV_BYTES = 12;
@@ -12,6 +11,7 @@ const MAX_STORAGE_VALUE_BYTES = 256 * 1024;
 const MAX_STORAGE_TOTAL_BYTES = 1024 * 1024;
 
 export type DomainTransferPayload = {
+  purpose?: "complete";
   version: typeof TICKET_VERSION;
   expiresAt: number;
   redirectTo: string;
@@ -44,6 +44,7 @@ function isValidPayload(value: unknown): value is DomainTransferPayload {
 
   return (
     payload.version === TICKET_VERSION &&
+    (payload.purpose === undefined || payload.purpose === "complete") &&
     typeof payload.expiresAt === "number" &&
     Number.isFinite(payload.expiresAt) &&
     isSafeRedirect(payload.redirectTo) &&
@@ -92,7 +93,8 @@ export function readDomainTransferTicket(ticket: string, secret: string, now = D
     const iv = decode(ivPart);
     const tag = decode(tagPart);
     const encrypted = decode(encryptedPart);
-    if (iv.length !== IV_BYTES || tag.length !== AUTH_TAG_BYTES || encrypted.length === 0) return null;
+    if (iv.length !== IV_BYTES || tag.length !== AUTH_TAG_BYTES || encrypted.length === 0)
+      return null;
 
     const decipher = createDecipheriv("aes-256-gcm", encryptionKey(secret), iv);
     decipher.setAuthTag(tag);
@@ -124,7 +126,8 @@ export function sanitizeTransferredStorage(value: unknown): Record<string, strin
   const saved: Record<string, string> = {};
   let totalBytes = 0;
   for (const [key, item] of Object.entries(value)) {
-    if (Object.keys(saved).length >= MAX_STORAGE_ENTRIES || !isTransferableStorageKey(key)) continue;
+    if (Object.keys(saved).length >= MAX_STORAGE_ENTRIES || !isTransferableStorageKey(key))
+      continue;
     if (typeof item !== "string") continue;
 
     const bytes = Buffer.byteLength(item, "utf8");

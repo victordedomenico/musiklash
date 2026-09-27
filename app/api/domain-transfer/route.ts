@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGuestIdentityFromCookies } from "@/lib/guest";
+import { DOMAIN_TRANSFER_COMPLETE_COOKIE } from "@/lib/domain-transfer-config";
 import {
   CANONICAL_ORIGIN,
   LEGACY_DOMAIN,
@@ -45,9 +46,9 @@ function htmlResponse(html: string, status = 200) {
 
 function transferForm(ticket: string) {
   return `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><title>Transfert vers MusiKlash</title></head>
-<body><p>Transfert sécurisé vers musiklash.fun…</p>
-<form id="transfer" method="post" action="${CANONICAL_ORIGIN}/api/domain-transfer">
+<html lang="fr"><head><meta charset="utf-8"><title>MusiKlash</title></head>
+<body>
+<form hidden id="transfer" method="post" action="${CANONICAL_ORIGIN}/api/domain-transfer">
   <input type="hidden" name="ticket" value="${ticket}">
   <input id="storage" type="hidden" name="storage" value="{}">
 </form>
@@ -78,17 +79,24 @@ function transferForm(ticket: string) {
 </body></html>`;
 }
 
-function restorePage(storage: Record<string, string>, redirectTo: string) {
+function restorePage(storage: Record<string, string>, redirectTo: string, receipt: string) {
   const serializedStorage = JSON.stringify(storage).replace(/</g, "\\u003c");
   const serializedRedirect = JSON.stringify(redirectTo).replace(/</g, "\\u003c");
+  const completionUrl = new URL("/api/domain-transfer", LEGACY_ORIGIN);
+  completionUrl.searchParams.set("complete", receipt);
+  const serializedCompletion = JSON.stringify(completionUrl.toString());
   return `<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><title>Transfert terminé</title></head>
-<body><p>Transfert terminé, ouverture de MusiKlash…</p>
+<html lang="fr"><head><meta charset="utf-8"><title>MusiKlash</title></head>
+<body>
 <script>
+let restored = false;
 try {
-  for (const [key, value] of Object.entries(${serializedStorage})) localStorage.setItem(key, value);
+  for (const [key, value] of Object.entries(${serializedStorage})) {
+    if (localStorage.getItem(key) === null) localStorage.setItem(key, value);
+  }
+  restored = true;
 } catch (_) {}
-window.location.replace(${serializedRedirect});
+window.location.replace(restored ? ${serializedCompletion} : ${serializedRedirect});
 </script>
 <noscript><a href="${escapeHtmlAttribute(redirectTo)}">Continuer vers MusiKlash</a></noscript>
 </body></html>`;
@@ -96,6 +104,25 @@ window.location.replace(${serializedRedirect});
 
 export async function GET(request: NextRequest) {
   if (!isLegacyRequest(request)) return NextResponse.redirect(new URL("/", CANONICAL_ORIGIN), 308);
+
+  const completion = request.nextUrl.searchParams.get("complete");
+  if (completion) {
+    const receipt = readDomainTransferTicket(completion, getDomainTransferSecret());
+    if (!receipt || receipt.purpose !== "complete") return new NextResponse(null, { status: 400 });
+    const response = NextResponse.redirect(
+      new URL(safeRedirect(receipt.redirectTo), CANONICAL_ORIGIN),
+      303,
+    );
+    response.headers.set("cache-control", "private, no-store");
+    response.cookies.set(DOMAIN_TRANSFER_COMPLETE_COOKIE, "1", {
+      path: "/",
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    return response;
+  }
 
   const redirectTo = safeRedirect(request.nextUrl.searchParams.get("redirect"));
   const supabase = await createClient();
@@ -135,7 +162,7 @@ export async function POST(request: NextRequest) {
   if (typeof ticket !== "string") return new NextResponse(null, { status: 400 });
 
   const payload = readDomainTransferTicket(ticket, getDomainTransferSecret());
-  if (!payload) return new NextResponse(null, { status: 400 });
+  if (!payload || payload.purpose === "complete") return new NextResponse(null, { status: 400 });
 
   if (payload.session) {
     const supabase = await createClient();
@@ -156,7 +183,13 @@ export async function POST(request: NextRequest) {
     }
   }
   const storage = sanitizeTransferredStorage(rawStorage);
-  const response = htmlResponse(restorePage(storage, payload.redirectTo));
+  // A separate receipt contains no session credentials. Only the successful
+  // destination page acknowledges completion, after restoring local storage.
+  const receipt = createDomainTransferTicket(
+    { purpose: "complete", redirectTo: payload.redirectTo, guest: null, session: null },
+    getDomainTransferSecret(),
+  );
+  const response = htmlResponse(restorePage(storage, payload.redirectTo, receipt));
   if (payload.guest) {
     response.cookies.set("mk_guest_id", payload.guest.id, {
       path: "/",
