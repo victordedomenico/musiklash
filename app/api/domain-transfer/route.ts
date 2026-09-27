@@ -36,7 +36,9 @@ function htmlResponse(html: string, status = 200) {
     headers: {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store, max-age=0",
-      "referrer-policy": "no-referrer",
+      // Form POSTs use no-cors mode: no-referrer also turns Origin into "null",
+      // which the receiving endpoint correctly refuses. Send only the origin.
+      "referrer-policy": "strict-origin",
     },
   });
 }
