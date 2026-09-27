@@ -68,4 +68,3 @@ identifiants_seed.txt
 test-auth.js
 test-deezer-live.ts
 test-process.ts
-proxy.ts
