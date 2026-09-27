@@ -51,7 +51,7 @@ export function buildPageMetadata({
   image,
 }: PageMetaInput): Metadata {
   const url = path ? absoluteUrl(path) : getSiteUrl();
-  const ogImage = image ?? absoluteUrl("/opengraph-image");
+  const ogImage = image ?? absoluteUrl("/social-share.png");
 
   return {
     title,
@@ -109,7 +109,7 @@ export const rootMetadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [
       {
-        url: "/opengraph-image",
+        url: "/social-share.png",
         width: 1200,
         height: 630,
         alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
@@ -120,7 +120,7 @@ export const rootMetadata: Metadata = {
     card: "summary_large_image",
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
-    images: ["/opengraph-image"],
+    images: ["/social-share.png"],
   },
   robots: {
     index: true,
