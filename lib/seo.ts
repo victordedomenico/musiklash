@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 
 export const SITE_NAME = "MusiKlash";
 export const SITE_TAGLINE = "Fais s'affronter tes sons";
+/**
+ * Domaine stable utilisé pour l'image par les crawlers de partage. Il correspond
+ * à l'alias Vercel public que les utilisateurs partagent sur Discord.
+ */
+export const SITE_SHARE_IMAGE_URL = "https://musiklash.vercel.app/social-share.png";
 export const SITE_DESCRIPTION =
   "Crée des tournois musicaux, vote en écoutant chaque extrait et partage tes classements. Brackets, tierlists, blindtests, BattleFeat et Stream Clash — gratuit, sans pub.";
 export const SITE_KEYWORDS = [
@@ -51,7 +56,7 @@ export function buildPageMetadata({
   image,
 }: PageMetaInput): Metadata {
   const url = path ? absoluteUrl(path) : getSiteUrl();
-  const ogImage = image ?? absoluteUrl("/social-share.png");
+  const ogImage = image ?? SITE_SHARE_IMAGE_URL;
 
   return {
     title,
@@ -64,7 +69,7 @@ export function buildPageMetadata({
       siteName: SITE_NAME,
       title: `${title} — ${SITE_NAME}`,
       description,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: SITE_NAME }],
+      images: [{ url: ogImage, width: 1200, height: 630, type: "image/png", alt: SITE_NAME }],
     },
     twitter: {
       card: "summary_large_image",
@@ -109,9 +114,10 @@ export const rootMetadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [
       {
-        url: "/social-share.png",
+        url: SITE_SHARE_IMAGE_URL,
         width: 1200,
         height: 630,
+        type: "image/png",
         alt: `${SITE_NAME} — ${SITE_TAGLINE}`,
       },
     ],
@@ -120,7 +126,7 @@ export const rootMetadata: Metadata = {
     card: "summary_large_image",
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
     description: SITE_DESCRIPTION,
-    images: ["/social-share.png"],
+    images: [SITE_SHARE_IMAGE_URL],
   },
   robots: {
     index: true,
