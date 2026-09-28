@@ -24,10 +24,11 @@ import type {
 } from "@/lib/stream-clash-room";
 import { POINTS_PER_CORRECT } from "@/lib/stream-clash";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
+import PreviewSourceSwitch from "@/components/PreviewSourceSwitch";
 import StreamClashTrackCard from "@/components/StreamClashTrackCard";
 import TrackPreviewBar from "@/components/TrackPreviewBar";
 import RoomChat from "@/components/RoomChat";
-import { useTrackPreview } from "@/lib/use-track-preview";
+import { useMusicPreview } from "@/lib/use-music-preview";
 import { joinRoom, startGame, submitAnswer, nextRound, rematch, refreshRoomState } from "./actions";
 
 const TIMER_SECONDS = 15;
@@ -70,7 +71,20 @@ export default function StreamClashRoomClient({
   const channelRef = useRef<RealtimeChannel | null>(null);
   const roomRef = useRef(room);
   const phaseRef = useRef<Phase>("picking");
-  const { nowPlaying, isPlaying, playTrack, toggle, stop, isPlayingKey } = useTrackPreview();
+  const {
+    source,
+    setSource,
+    playDeezerTrack,
+    playYoutubeTrack,
+    toggle,
+    stop,
+    isPlayingKey,
+    isPlaying,
+    nowPlayingTitle,
+    nowPlayingDeezerId,
+    youtubeNow,
+    youtubePlaying,
+  } = useMusicPreview();
 
   useEffect(() => {
     roomRef.current = room;
@@ -614,14 +628,21 @@ export default function StreamClashRoomClient({
         )}
       </div>
 
-      {nowPlaying && (
+      <div className="flex justify-center">
+        <PreviewSourceSwitch source={source} onChange={setSource} />
+      </div>
+
+      {nowPlayingTitle ? (
         <TrackPreviewBar
-          title={nowPlaying.title}
-          deezerTrackId={nowPlaying.deezerTrackId}
+          title={nowPlayingTitle}
+          deezerTrackId={nowPlayingDeezerId}
           isPlaying={isPlaying}
           onToggle={toggle}
+          source={source}
+          youtubeVideoId={youtubeNow?.videoId ?? null}
+          youtubeActive={youtubePlaying}
         />
-      )}
+      ) : null}
 
       {/* Tracks */}
       {!isSpectator && (
@@ -633,13 +654,14 @@ export default function StreamClashRoomClient({
             isWinner={pair.trackA.rank >= pair.trackB.rank}
             onPick={() => handlePick(pair.trackA.position)}
             disabled={hasAnsweredThisRound || submitting}
-            onPlayPreview={() =>
-              void playTrack(
-                String(pair.trackA.position),
-                pair.trackA.title,
-                pair.trackA.deezerTrackId,
-              )
-            }
+            onPlayPreview={() => {
+              const key = String(pair.trackA.position);
+              if (source === "youtube") {
+                void playYoutubeTrack(key, pair.trackA.title, pair.trackA.artist);
+              } else {
+                void playDeezerTrack(key, pair.trackA.title, pair.trackA.deezerTrackId);
+              }
+            }}
             isPlayingPreview={isPlayingKey(String(pair.trackA.position))}
             coverClassName="h-28 w-28"
           />
@@ -650,13 +672,14 @@ export default function StreamClashRoomClient({
             isWinner={pair.trackB.rank > pair.trackA.rank}
             onPick={() => handlePick(pair.trackB.position)}
             disabled={hasAnsweredThisRound || submitting}
-            onPlayPreview={() =>
-              void playTrack(
-                String(pair.trackB.position),
-                pair.trackB.title,
-                pair.trackB.deezerTrackId,
-              )
-            }
+            onPlayPreview={() => {
+              const key = String(pair.trackB.position);
+              if (source === "youtube") {
+                void playYoutubeTrack(key, pair.trackB.title, pair.trackB.artist);
+              } else {
+                void playDeezerTrack(key, pair.trackB.title, pair.trackB.deezerTrackId);
+              }
+            }}
             isPlayingPreview={isPlayingKey(String(pair.trackB.position))}
             coverClassName="h-28 w-28"
           />

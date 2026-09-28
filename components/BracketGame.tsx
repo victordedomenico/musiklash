@@ -8,8 +8,12 @@ import { buildBracketState, totalRounds, type BracketSize, type Vote } from "@/l
 import { bracketRoundLabel } from "@/lib/bracket-round-label";
 import { downloadNodeAsPng } from "@/lib/download-png";
 import { usePreviewVolume } from "@/lib/audio-volume";
+import { useBracketPreviewSource } from "@/lib/bracket-preview-source";
 import { deleteTransientBracket, saveBracketGame } from "@/app/bracket-game/[id]/actions";
 import { fetchTrackDetails, fetchTrackPreview } from "@/lib/deezer-preview-client";
+import { fetchYoutubeVideoId } from "@/lib/youtube-client";
+import YoutubeEmbed from "@/components/YoutubeEmbed";
+import PreviewSourceSwitch from "@/components/PreviewSourceSwitch";
 import {
   bracketProgressStorageKey,
   clearBracketProgress,
@@ -49,6 +53,13 @@ export default function BracketGame({
   const [refreshedPreviewBySeed, setRefreshedPreviewBySeed] = useState<Map<number, string>>(
     () => new Map(),
   );
+  const [youtubeBySeed, setYoutubeBySeed] = useState<Map<number, string>>(() => new Map());
+  const [youtubeNow, setYoutubeNow] = useState<{
+    seed: number;
+    videoId: string;
+    title: string;
+  } | null>(null);
+  const [youtubePlaying, setYoutubePlaying] = useState(false);
   const [creditsBySeed, setCreditsBySeed] = useState<
     Map<number, { artist: string | null; album: string | null }>
   >(() => new Map());
@@ -58,6 +69,7 @@ export default function BracketGame({
   const [promoted, setPromoted] = useState(false);
   const [sharing, setSharing] = useState(false);
   const { volume } = usePreviewVolume();
+  const { source, setSource } = useBracketPreviewSource();
   const total = totalRounds(size);
 
   const trackCount = tracks.length;
@@ -127,6 +139,15 @@ export default function BracketGame({
     if (!audioRef.current) return;
     audioRef.current.volume = volume;
   }, [volume]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setPlayingSeed(null);
+    }
+    setYoutubeNow(null);
+    setYoutubePlaying(false);
+  }, [source]);
 
   // A choice is kept in this browser as soon as it is made. The server only
   // stores completed results, so this draft is what lets a large tournament
@@ -406,6 +427,51 @@ export default function BracketGame({
   };
 
   const togglePreview = (track: BracketTrack) => {
+    if (source === "youtube") {
+      if (youtubeNow?.seed === track.seed) {
+        setYoutubePlaying((playing) => !playing);
+        return;
+      }
+
+      const cached = youtubeBySeed.get(track.seed);
+      if (cached) {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          setPlayingSeed(null);
+        }
+        setYoutubeNow({ seed: track.seed, videoId: cached, title: track.title });
+        setYoutubePlaying(true);
+        return;
+      }
+
+      setLoadingSeed(track.seed);
+      const extra = creditsBySeed.get(track.seed);
+      const album = track.album?.trim() || extra?.album?.trim() || null;
+      void fetchYoutubeVideoId(track.artist, track.title, album)
+        .then((res) => {
+          const videoId = res?.videoId ?? null;
+          if (!videoId) return;
+          setYoutubeBySeed((prev) => {
+            const next = new Map(prev);
+            next.set(track.seed, videoId);
+            return next;
+          });
+          if (audioRef.current) {
+            audioRef.current.pause();
+            setPlayingSeed(null);
+          }
+          setYoutubeNow({ seed: track.seed, videoId, title: track.title });
+          setYoutubePlaying(true);
+        })
+        .finally(() => {
+          setLoadingSeed((current) => (current === track.seed ? null : current));
+        });
+      return;
+    }
+
+    setYoutubeNow(null);
+    setYoutubePlaying(false);
+
     if (playingSeed === track.seed && audioRef.current) {
       audioRef.current.pause();
       setPlayingSeed(null);
@@ -482,7 +548,10 @@ export default function BracketGame({
         );
       }
 
-      const isPlaying = playingSeed === track.seed;
+      const isPlaying =
+        source === "youtube"
+          ? youtubeNow?.seed === track.seed && youtubePlaying
+          : playingSeed === track.seed;
       const isLoading = loadingSeed === track.seed;
       const btnSize = Math.max(22, Math.round(size * 0.34));
       const iconSize = Math.max(11, Math.round(btnSize * 0.55));
@@ -700,12 +769,22 @@ export default function BracketGame({
                         disabled={loadingSeed === champ.seed}
                         className="no-export absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100 disabled:opacity-50"
                         aria-label={
-                          playingSeed === champ.seed ? "Mettre en pause" : "Écouter l'extrait"
+                          source === "youtube"
+                            ? youtubeNow?.seed === champ.seed && youtubePlaying
+                              ? "Mettre en pause"
+                              : "Écouter l'extrait"
+                            : playingSeed === champ.seed
+                              ? "Mettre en pause"
+                              : "Écouter l'extrait"
                         }
                       >
                         {loadingSeed === champ.seed ? (
                           <span className="text-sm">…</span>
-                        ) : playingSeed === champ.seed ? (
+                        ) : (
+                            source === "youtube"
+                              ? youtubeNow?.seed === champ.seed && youtubePlaying
+                              : playingSeed === champ.seed
+                          ) ? (
                           <Pause size={36} />
                         ) : (
                           <Play size={36} />
@@ -755,6 +834,24 @@ export default function BracketGame({
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[color:var(--muted)]">
               Arbre des résultats
             </h3>
+            <div className="no-export mb-3 flex justify-center">
+              <PreviewSourceSwitch source={source} onChange={setSource} />
+            </div>
+            {youtubeNow ? (
+              <div className="no-export mb-4 overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+                <div className="relative mx-auto aspect-video w-full max-w-md">
+                  <YoutubeEmbed
+                    videoId={youtubeNow.videoId}
+                    title={youtubeNow.title}
+                    active={youtubePlaying}
+                    className="absolute inset-0 h-full w-full"
+                  />
+                </div>
+                <p className="truncate px-3 py-2 text-center text-xs font-medium">
+                  {youtubeNow.title}
+                </p>
+              </div>
+            ) : null}
             {renderTree(visibleRounds, clampedWindowStart + 1, false)}
           </div>
         </div>

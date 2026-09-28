@@ -124,5 +124,5 @@ export function useTrackPreview() {
     [nowPlaying?.key, isPlaying],
   );
 
-  return { nowPlaying, isPlaying, playTrack, toggle, stop, isPlayingKey };
+  return { nowPlaying, isPlaying, playTrack, playUrl, toggle, stop, isPlayingKey };
 }

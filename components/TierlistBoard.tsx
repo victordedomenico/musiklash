@@ -19,9 +19,13 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import DeezerAttribution from "@/components/DeezerAttribution";
+import MusicSourceAttribution from "@/components/MusicSourceAttribution";
+import PreviewSourceSwitch from "@/components/PreviewSourceSwitch";
+import YoutubeEmbed from "@/components/YoutubeEmbed";
 import DeezerTrackLink from "@/components/DeezerTrackLink";
 import { fetchTrackPreview } from "@/lib/deezer-preview-client";
+import { useBracketPreviewSource } from "@/lib/bracket-preview-source";
+import { fetchYoutubeVideoId } from "@/lib/youtube-client";
 import {
   Play,
   Pause,
@@ -498,6 +502,13 @@ export default function TierlistBoard({
   const [state, setState] = useState<TierState>(() => buildInitialState(tracks, DEFAULT_TIERS));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [playingPosition, setPlayingPosition] = useState<number | null>(null);
+  const [youtubeNow, setYoutubeNow] = useState<{
+    position: number;
+    videoId: string;
+    title: string;
+  } | null>(null);
+  const [youtubePlaying, setYoutubePlaying] = useState(false);
+  const [youtubeLoadingPos, setYoutubeLoadingPos] = useState<number | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [editingTierId, setEditingTierId] = useState<string | null>(null);
   const [progressReady, setProgressReady] = useState(false);
@@ -505,7 +516,9 @@ export default function TierlistBoard({
   const exportRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const nextTierIndexRef = useRef(DEFAULT_TIERS.length);
+  const youtubeCacheRef = useRef<Map<string, string | null>>(new Map());
   const { volume } = usePreviewVolume();
+  const { source, setSource } = useBracketPreviewSource();
   // Cache des URLs fraîches (les URLs Deezer signées expirent)
   const freshUrlCache = useRef<Map<number, string>>(new Map());
   const trackSignature = useMemo(
@@ -560,6 +573,16 @@ export default function TierlistBoard({
   }, [volume]);
 
   useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setPlayingPosition(null);
+    }
+    setYoutubeNow(null);
+    setYoutubePlaying(false);
+    setYoutubeLoadingPos(null);
+  }, [source]);
+
+  useEffect(() => {
     if (!progressReady) return;
     try {
       const placements = Object.fromEntries(
@@ -581,6 +604,46 @@ export default function TierlistBoard({
 
   const handlePreview = useCallback(
     async (pos: number, deezerTrackId: number) => {
+      const item =
+        Object.values(state)
+          .flat()
+          .find((candidate) => candidate.position === pos) ??
+        tracks.find((candidate) => candidate.position === pos);
+
+      if (source === "youtube") {
+        if (!item) return;
+        if (youtubeNow?.position === pos) {
+          setYoutubePlaying((playing) => !playing);
+          return;
+        }
+
+        const cacheKey = `${item.artist}::${item.title}`;
+        let videoId = youtubeCacheRef.current.get(cacheKey);
+        if (videoId === undefined) {
+          setYoutubeLoadingPos(pos);
+          try {
+            const res = await fetchYoutubeVideoId(item.artist, item.title);
+            videoId = res?.videoId ?? null;
+            youtubeCacheRef.current.set(cacheKey, videoId);
+          } finally {
+            setYoutubeLoadingPos(null);
+          }
+        }
+        if (!videoId) {
+          setYoutubeNow(null);
+          setYoutubePlaying(false);
+          return;
+        }
+
+        if (audioRef.current) {
+          audioRef.current.pause();
+          setPlayingPosition(null);
+        }
+        setYoutubeNow({ position: pos, videoId, title: item.title });
+        setYoutubePlaying(true);
+        return;
+      }
+
       if (!audioRef.current) {
         audioRef.current = new Audio();
         audioRef.current.onended = () => setPlayingPosition(null);
@@ -600,6 +663,8 @@ export default function TierlistBoard({
       }
       if (!url) return;
 
+      setYoutubeNow(null);
+      setYoutubePlaying(false);
       a.pause();
       a.volume = volume;
       a.src = url;
@@ -610,7 +675,7 @@ export default function TierlistBoard({
         setPlayingPosition(null);
       });
     },
-    [playingPosition, volume],
+    [playingPosition, volume, source, state, tracks, youtubeNow?.position],
   );
 
   const findContainer = (id: string) => {
@@ -681,6 +746,8 @@ export default function TierlistBoard({
   const handleReset = () => {
     audioRef.current?.pause();
     setPlayingPosition(null);
+    setYoutubeNow(null);
+    setYoutubePlaying(false);
     setState(buildInitialState(tracks, tiers));
     setResumedProgress(false);
     try {
@@ -796,6 +863,13 @@ export default function TierlistBoard({
     );
   }
 
+  const activePlayingPosition =
+    source === "youtube"
+      ? youtubePlaying
+        ? (youtubeNow?.position ?? null)
+        : null
+      : playingPosition;
+
   return (
     <DndContext
       id="tierlist-dnd"
@@ -822,7 +896,8 @@ export default function TierlistBoard({
             {texts.resultTitle}
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <DeezerAttribution compact className="no-export" />
+            <PreviewSourceSwitch source={source} onChange={setSource} className="no-export" />
+            <MusicSourceAttribution compact source={source} className="no-export" />
             <p className="text-xs text-[color:var(--muted)]">
               {formatText(texts.rankedCount, { placed: placedCount, total: tracks.length })}
             </p>
@@ -837,6 +912,25 @@ export default function TierlistBoard({
           </div>
         </div>
 
+        {youtubeNow ? (
+          <div className="no-export mb-3 overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)]">
+            <div className="relative aspect-video max-h-48 w-full max-w-md">
+              <YoutubeEmbed
+                videoId={youtubeNow.videoId}
+                title={youtubeNow.title}
+                active={youtubePlaying}
+                className="absolute inset-0 h-full w-full"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-2 px-3 py-2 text-xs">
+              <span className="min-w-0 truncate font-medium">{youtubeNow.title}</span>
+              {youtubeLoadingPos !== null ? (
+                <span className="shrink-0 text-[color:var(--muted)]">…</span>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
         <div className="space-y-1">
           {tiers.map((tier, index) => (
             <TierRow
@@ -849,7 +943,7 @@ export default function TierlistBoard({
               canMoveUp={index > 0}
               canMoveDown={index < tiers.length - 1}
               onPreview={handlePreview}
-              playingPosition={playingPosition}
+              playingPosition={activePlayingPosition}
               texts={texts}
             />
           ))}
@@ -860,7 +954,7 @@ export default function TierlistBoard({
           poolItems={poolItems}
           tracks={tracks}
           onPreview={handlePreview}
-          playingPosition={playingPosition}
+          playingPosition={activePlayingPosition}
           texts={texts}
         />
       </div>

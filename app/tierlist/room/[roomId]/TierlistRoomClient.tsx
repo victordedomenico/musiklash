@@ -15,7 +15,9 @@ import {
   UserMinus,
   Users,
 } from "lucide-react";
-import DeezerAttribution from "@/components/DeezerAttribution";
+import MusicSourceAttribution from "@/components/MusicSourceAttribution";
+import PreviewSourceSwitch from "@/components/PreviewSourceSwitch";
+import YoutubeEmbed from "@/components/YoutubeEmbed";
 import DeezerTrackLink from "@/components/DeezerTrackLink";
 import type {
   CollaborativeTrack,
@@ -23,6 +25,7 @@ import type {
   TierlistRoundResolution,
 } from "@/lib/collaborative-room";
 import { usePreviewVolume } from "@/lib/audio-volume";
+import { useBracketPreviewSource } from "@/lib/bracket-preview-source";
 import { BRACKET_DUEL_SECONDS, remainingDuelSeconds } from "@/lib/bracket-room-rules";
 import { useSoundFx } from "@/lib/use-sound-fx";
 import {
@@ -31,6 +34,7 @@ import {
   rememberMultiplayerRoom,
 } from "@/lib/multiplayer-room-resume";
 import { fetchTrackPreview } from "@/lib/deezer-preview-client";
+import { fetchYoutubeVideoId } from "@/lib/youtube-client";
 import { DEFAULT_TIERS } from "@/lib/tierlist-tiers";
 import type { Dictionary } from "@/lib/i18n";
 import {
@@ -56,10 +60,14 @@ function TrackPreview({
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { volume } = usePreviewVolume();
+  const { source, setSource } = useBracketPreviewSource();
   const [url, setUrl] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(30);
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
+  const [youtubePlaying, setYoutubePlaying] = useState(false);
+  const [youtubeLoading, setYoutubeLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +82,27 @@ function TrackPreview({
       cancelled = true;
     };
   }, [track.deezerTrackId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setYoutubeVideoId(null);
+    setYoutubePlaying(false);
+    setYoutubeLoading(true);
+    void fetchYoutubeVideoId(track.artist, track.title)
+      .then((res) => {
+        if (!cancelled) setYoutubeVideoId(res?.videoId ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setYoutubeVideoId(null);
+      })
+      .finally(() => {
+        if (!cancelled) setYoutubeLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [track.artist, track.title]);
+
   useEffect(
     () => () => {
       const audio = audioRef.current;
@@ -89,7 +118,21 @@ function TrackPreview({
     if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
 
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setPlaying(false);
+      setCurrentTime(0);
+    }
+    setYoutubePlaying(false);
+  }, [source]);
+
   const toggle = () => {
+    if (source === "youtube") {
+      if (!youtubeVideoId) return;
+      setYoutubePlaying((prev) => !prev);
+      return;
+    }
     if (!url) return;
     if (!audioRef.current) {
       const audio = new Audio();
@@ -120,39 +163,79 @@ function TrackPreview({
       .then(() => setPlaying(true))
       .catch(() => setPlaying(false));
   };
+
   const labelTime = (value: number) =>
     `${Math.floor(value / 60)}:${String(Math.floor(value % 60)).padStart(2, "0")}`;
+
+  const isYoutube = source === "youtube";
+  const canPlay = isYoutube ? Boolean(youtubeVideoId) : Boolean(url);
+  const isPlaying = isYoutube ? youtubePlaying : playing;
+
   return (
-    <div className="mx-auto mt-5 flex max-w-xs items-center gap-2">
-      <button
-        type="button"
-        disabled={!url}
-        onClick={toggle}
-        className="btn-ghost shrink-0 text-xs disabled:cursor-not-allowed"
-        aria-label={playing ? texts.pausePreview : texts.listenPreview}
-      >
-        {playing ? <Pause size={15} /> : <Play size={15} />}
-        {url ? (playing ? texts.pause : texts.listenPreview) : texts.previewUnavailable}
-      </button>
-      <DeezerAttribution compact variant="icon" className="shrink-0" />
-      <DeezerTrackLink deezerTrackId={track.deezerTrackId} compact className="shrink-0" />
-      <input
-        type="range"
-        min={0}
-        max={Math.max(duration, 1)}
-        value={Math.min(currentTime, duration)}
-        disabled={!url}
-        onChange={(event) => {
-          const value = Number(event.target.value);
-          if (audioRef.current) audioRef.current.currentTime = value;
-          setCurrentTime(value);
-        }}
-        className="h-1 flex-1 accent-sky-300 disabled:opacity-40"
-        aria-label={texts.previewPosition}
-      />
-      <span className="w-9 text-right text-[11px] tabular-nums text-[color:var(--muted)]">
-        {labelTime(playing ? currentTime : 0)}
-      </span>
+    <div className="mx-auto mt-5 w-full max-w-md space-y-3">
+      <div className="flex justify-center">
+        <PreviewSourceSwitch source={source} onChange={setSource} />
+      </div>
+      {isYoutube && youtubeVideoId ? (
+        <div className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)]">
+          <div className="relative aspect-video w-full">
+            <YoutubeEmbed
+              videoId={youtubeVideoId}
+              title={`${track.title} — ${track.artist}`}
+              active={youtubePlaying}
+              className="absolute inset-0 h-full w-full"
+            />
+          </div>
+        </div>
+      ) : null}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={!canPlay || youtubeLoading}
+          onClick={toggle}
+          className="btn-ghost shrink-0 text-xs disabled:cursor-not-allowed"
+          aria-label={isPlaying ? texts.pausePreview : texts.listenPreview}
+        >
+          {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+          {canPlay
+            ? isPlaying
+              ? texts.pause
+              : texts.listenPreview
+            : youtubeLoading
+              ? "…"
+              : texts.previewUnavailable}
+        </button>
+        <MusicSourceAttribution
+          source={source}
+          compact
+          deezerVariant="icon"
+          className="shrink-0"
+        />
+        {!isYoutube ? (
+          <DeezerTrackLink deezerTrackId={track.deezerTrackId} compact className="shrink-0" />
+        ) : null}
+        {!isYoutube ? (
+          <>
+            <input
+              type="range"
+              min={0}
+              max={Math.max(duration, 1)}
+              value={Math.min(currentTime, duration)}
+              disabled={!url}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (audioRef.current) audioRef.current.currentTime = value;
+                setCurrentTime(value);
+              }}
+              className="h-1 flex-1 accent-sky-300 disabled:opacity-40"
+              aria-label={texts.previewPosition}
+            />
+            <span className="w-9 text-right text-[11px] tabular-nums text-[color:var(--muted)]">
+              {labelTime(playing ? currentTime : 0)}
+            </span>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }

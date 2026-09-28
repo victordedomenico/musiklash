@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getI18n } from "@/lib/i18n";
 import { BrandMark } from "@/components/BrandLogo";
 import { DeezerLogo } from "@/components/DeezerLogo";
+import { YoutubeMusicLogo } from "@/components/YoutubeMusicLogo";
 
 export default async function Footer() {
   const { t } = await getI18n();
@@ -126,6 +127,18 @@ export default async function Footer() {
                 className="inline-flex"
               >
                 <DeezerLogo height={18} />
+              </a>
+              <span style={{ color: "var(--border-strong)" }} aria-hidden>
+                ·
+              </span>
+              <a
+                href="https://music.youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="YouTube Music"
+                className="inline-flex text-[color:var(--foreground)]"
+              >
+                <YoutubeMusicLogo height={18} />
               </a>
             </span>
           </div>

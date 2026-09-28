@@ -5,9 +5,14 @@ import { motion } from "framer-motion";
 import { Pause, Play } from "lucide-react";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { useSoundFx } from "@/lib/use-sound-fx";
-import DeezerAttribution from "@/components/DeezerAttribution";
 import DeezerTrackLink from "@/components/DeezerTrackLink";
+import MusicSourceAttribution from "@/components/MusicSourceAttribution";
+import PreviewSourceSwitch from "@/components/PreviewSourceSwitch";
+import YoutubeEmbed from "@/components/YoutubeEmbed";
+import YoutubeMusicTrackLink from "@/components/YoutubeMusicTrackLink";
+import { useBracketPreviewSource } from "@/lib/bracket-preview-source";
 import { fetchTrackDetails } from "@/lib/deezer-preview-client";
+import { fetchYoutubeVideoId } from "@/lib/youtube-client";
 
 export type BracketTrack = {
   seed: number;
@@ -62,25 +67,80 @@ export default function MatchCard({
   const [previewB, setPreviewB] = useState<string | null>(null);
   const [fallbackAlbumA, setFallbackAlbumA] = useState<string | null>(null);
   const [fallbackAlbumB, setFallbackAlbumB] = useState<string | null>(null);
+  const [youtubeA, setYoutubeA] = useState<string | null>(null);
+  const [youtubeB, setYoutubeB] = useState<string | null>(null);
+  const [youtubeLoadingA, setYoutubeLoadingA] = useState(true);
+  const [youtubeLoadingB, setYoutubeLoadingB] = useState(true);
+  const [activeYoutube, setActiveYoutube] = useState<number | null>(null);
+  const { source, setSource } = useBracketPreviewSource();
 
   useEffect(() => {
+    let cancelled = false;
     fetchTrackDetails(a.deezerTrackId)
       .then((res) => {
-        if (res) {
-          setPreviewA(res.preview);
-          if (res.album) setFallbackAlbumA(res.album);
-        }
+        if (cancelled || !res) return;
+        setPreviewA(res.preview);
+        if (res.album) setFallbackAlbumA(res.album);
       })
       .catch(() => {});
     fetchTrackDetails(b.deezerTrackId)
       .then((res) => {
-        if (res) {
-          setPreviewB(res.preview);
-          if (res.album) setFallbackAlbumB(res.album);
-        }
+        if (cancelled || !res) return;
+        setPreviewB(res.preview);
+        if (res.album) setFallbackAlbumB(res.album);
       })
       .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, [a.deezerTrackId, b.deezerTrackId]);
+
+  const albumA = a.album?.trim() || fallbackAlbumA;
+  const albumB = b.album?.trim() || fallbackAlbumB;
+
+  useEffect(() => {
+    let cancelled = false;
+    setYoutubeLoadingA(true);
+    setYoutubeA(null);
+    setActiveYoutube(null);
+
+    fetchYoutubeVideoId(a.artist, a.title, albumA)
+      .then((res) => {
+        if (!cancelled) setYoutubeA(res?.videoId ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setYoutubeA(null);
+      })
+      .finally(() => {
+        if (!cancelled) setYoutubeLoadingA(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [a.artist, a.title, albumA]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setYoutubeLoadingB(true);
+    setYoutubeB(null);
+    setActiveYoutube(null);
+
+    fetchYoutubeVideoId(b.artist, b.title, albumB)
+      .then((res) => {
+        if (!cancelled) setYoutubeB(res?.videoId ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setYoutubeB(null);
+      })
+      .finally(() => {
+        if (!cancelled) setYoutubeLoadingB(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [b.artist, b.title, albumB]);
 
   useEffect(() => {
     return () => {
@@ -97,8 +157,25 @@ export default function MatchCard({
     audioRef.current.volume = volume;
   }, [volume]);
 
-  const toggle = (seed: number, url: string | null) => {
+  const stopAudio = () => {
+    if (!audioRef.current) return;
+    audioRef.current.pause();
+    setPlaying(null);
+    setCurrentTime(0);
+  };
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setPlaying(null);
+      setCurrentTime(0);
+    }
+    setActiveYoutube(null);
+  }, [source]);
+
+  const toggleAudio = (seed: number, url: string | null) => {
     if (!url) return;
+    setActiveYoutube(null);
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.onended = () => {
@@ -131,6 +208,11 @@ export default function MatchCard({
     });
   };
 
+  const toggleYoutube = (seed: number) => {
+    stopAudio();
+    setActiveYoutube((current) => (current === seed ? null : seed));
+  };
+
   const handleSeek = (newTime: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = newTime;
@@ -148,14 +230,22 @@ export default function MatchCard({
       <p className="text-center text-xs font-semibold uppercase tracking-wider text-[color:var(--muted)]">
         {roundLabel}
       </p>
-      <div className="mt-4 grid grid-cols-1 items-center gap-6 md:grid-cols-[1fr_auto_1fr] md:gap-4">
+      <div className="mt-3 flex justify-center">
+        <PreviewSourceSwitch source={source} onChange={setSource} />
+      </div>
+      <div className="mt-4 grid grid-cols-1 items-start gap-6 md:grid-cols-[1fr_auto_1fr] md:gap-4">
         <Side
           track={{ ...a, album: a.album ?? fallbackAlbumA }}
           previewUrl={previewA}
+          youtubeVideoId={youtubeA}
+          youtubeLoading={youtubeLoadingA}
+          youtubeActive={activeYoutube === a.seed}
           playing={playing === a.seed}
           currentTime={currentTime}
           duration={duration}
-          onToggle={toggle}
+          source={source}
+          onToggleAudio={toggleAudio}
+          onToggleYoutube={toggleYoutube}
           onPick={handlePick}
           onSeek={handleSeek}
           voteCount={voteCounts?.[a.seed]}
@@ -163,16 +253,25 @@ export default function MatchCard({
           disabledVoteLabel={disabledVoteLabel}
           labels={resolvedLabels}
         />
-        <div className="mx-auto text-lg font-black text-[color:var(--muted)] h-10 w-10 flex items-center justify-center rounded-full bg-[color:var(--surface-2)]">
+        <div
+          className={`mx-auto text-lg font-black text-[color:var(--muted)] h-10 w-10 flex items-center justify-center rounded-full bg-[color:var(--surface-2)] ${
+            source === "youtube" ? "md:mt-16" : "md:mt-12"
+          }`}
+        >
           VS
         </div>
         <Side
           track={{ ...b, album: b.album ?? fallbackAlbumB }}
           previewUrl={previewB}
+          youtubeVideoId={youtubeB}
+          youtubeLoading={youtubeLoadingB}
+          youtubeActive={activeYoutube === b.seed}
           playing={playing === b.seed}
           currentTime={currentTime}
           duration={duration}
-          onToggle={toggle}
+          source={source}
+          onToggleAudio={toggleAudio}
+          onToggleYoutube={toggleYoutube}
           onPick={handlePick}
           onSeek={handleSeek}
           voteCount={voteCounts?.[b.seed]}
@@ -181,7 +280,7 @@ export default function MatchCard({
           labels={resolvedLabels}
         />
       </div>
-      <DeezerAttribution compact className="mt-4 justify-center" />
+      <MusicSourceAttribution source={source} compact className="mt-4 justify-center" />
     </div>
   );
 }
@@ -189,10 +288,15 @@ export default function MatchCard({
 function Side({
   track,
   previewUrl,
+  youtubeVideoId,
+  youtubeLoading,
+  youtubeActive,
   playing,
   currentTime,
   duration,
-  onToggle,
+  source,
+  onToggleAudio,
+  onToggleYoutube,
   onPick,
   onSeek,
   voteCount,
@@ -202,10 +306,15 @@ function Side({
 }: {
   track: BracketTrack;
   previewUrl: string | null;
+  youtubeVideoId: string | null;
+  youtubeLoading: boolean;
+  youtubeActive: boolean;
   playing: boolean;
   currentTime: number;
   duration: number;
-  onToggle: (seed: number, url: string | null) => void;
+  source: "deezer" | "youtube";
+  onToggleAudio: (seed: number, url: string | null) => void;
+  onToggleYoutube: (seed: number) => void;
   onPick: (seed: number) => void;
   onSeek: (time: number) => void;
   voteCount?: number;
@@ -219,15 +328,44 @@ function Side({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const showYoutube = source === "youtube";
+  const hasYoutube = Boolean(youtubeVideoId);
+
   return (
     <div className="flex flex-col items-center flex-1 w-full text-center">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={track.cover_url ?? ""}
-        alt=""
-        className="h-32 w-32 rounded-xl bg-[color:var(--surface-2)] object-cover shadow-lg sm:h-40 sm:w-40 md:h-48 md:w-48"
-      />
-      <div className="mt-4 w-full px-2 max-w-[240px]">
+      {showYoutube ? (
+        <div className="relative w-full max-w-[320px] overflow-hidden rounded-xl bg-[color:var(--surface-2)] shadow-lg aspect-video">
+          {youtubeVideoId ? (
+            <YoutubeEmbed
+              videoId={youtubeVideoId}
+              title={`${track.title} — ${track.artist}`}
+              active={youtubeActive}
+              className="absolute inset-0 h-full w-full"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={track.cover_url ?? ""}
+                alt=""
+                className="h-full w-full object-cover opacity-40"
+              />
+              <p className="absolute text-xs font-medium text-[color:var(--muted)]">
+                {youtubeLoading ? "Recherche YouTube…" : "Pas de version officielle"}
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={track.cover_url ?? ""}
+          alt=""
+          className="h-32 w-32 rounded-xl bg-[color:var(--surface-2)] object-cover shadow-lg sm:h-40 sm:w-40 md:h-48 md:w-48"
+        />
+      )}
+
+      <div className="mt-4 w-full px-2 max-w-[280px]">
         <div className="flex items-center justify-center gap-2">
           <p className="min-w-0 truncate font-semibold">{track.title}</p>
           {voteCount !== undefined ? (
@@ -248,54 +386,76 @@ function Side({
             {track.album.trim()}
           </p>
         ) : null}
-        <DeezerTrackLink deezerTrackId={track.deezerTrackId} className="mt-2" />
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          {showYoutube ? (
+            youtubeVideoId ? <YoutubeMusicTrackLink videoId={youtubeVideoId} /> : null
+          ) : (
+            <DeezerTrackLink deezerTrackId={track.deezerTrackId} />
+          )}
+        </div>
 
-        {/* Audio Player Controls */}
         <div className="mt-4 flex flex-col gap-2">
-          {/* Progress Bar */}
-          <div className="flex items-center gap-2 text-[10px] text-[color:var(--muted)]">
-            <span className="w-6 text-right">{playing ? formatTime(currentTime) : "0:00"}</span>
-            <input
-              type="range"
-              min={0}
-              max={playing ? duration : 30}
-              step={0.1}
-              value={playing ? currentTime : 0}
-              onChange={(e) => {
-                if (playing) onSeek(parseFloat(e.target.value));
-              }}
-              disabled={!playing}
-              className="flex-1 h-1.5 appearance-none rounded-full bg-[color:var(--surface-2)] outline-none accent-[color:var(--accent)] cursor-pointer disabled:cursor-auto disabled:opacity-50"
-            />
-            <span className="w-6 text-left">{playing ? formatTime(duration) : "0:30"}</span>
-          </div>
+          {showYoutube ? (
+            hasYoutube ? (
+              <button
+                type="button"
+                onClick={() => onToggleYoutube(track.seed)}
+                className="btn-ghost w-full justify-center text-sm"
+              >
+                {youtubeActive ? (
+                  <Pause size={14} className="shrink-0" />
+                ) : (
+                  <Play size={14} className="shrink-0" />
+                )}
+                {youtubeActive ? labels.pause : labels.listen}
+              </button>
+            ) : !youtubeLoading ? (
+              <p className="text-xs text-[color:var(--muted)]">Extrait YouTube indisponible</p>
+            ) : null
+          ) : (
+            <>
+              <div className="flex items-center gap-2 text-[10px] text-[color:var(--muted)]">
+                <span className="w-6 text-right">{playing ? formatTime(currentTime) : "0:00"}</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={playing ? duration : 30}
+                  step={0.1}
+                  value={playing ? currentTime : 0}
+                  onChange={(e) => {
+                    if (playing) onSeek(parseFloat(e.target.value));
+                  }}
+                  disabled={!playing}
+                  className="flex-1 h-1.5 appearance-none rounded-full bg-[color:var(--surface-2)] outline-none accent-[color:var(--accent)] cursor-pointer disabled:cursor-auto disabled:opacity-50"
+                />
+                <span className="w-6 text-left">{playing ? formatTime(duration) : "0:30"}</span>
+              </div>
+              <button
+                type="button"
+                disabled={!previewUrl}
+                onClick={() => onToggleAudio(track.seed, previewUrl)}
+                className="btn-ghost w-full justify-center text-sm disabled:opacity-50"
+              >
+                {playing ? (
+                  <Pause size={14} className="shrink-0" />
+                ) : (
+                  <Play size={14} className="shrink-0" />
+                )}
+                {playing ? labels.pause : labels.listen}
+              </button>
+            </>
+          )}
 
-          {/* Action Buttons */}
-          <div className="mt-2 flex w-full flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              disabled={!previewUrl}
-              onClick={() => onToggle(track.seed, previewUrl)}
-              className="btn-ghost w-full justify-center text-sm sm:flex-1 disabled:opacity-50"
-            >
-              {playing ? (
-                <Pause size={14} className="shrink-0" />
-              ) : (
-                <Play size={14} className="shrink-0" />
-              )}
-              {playing ? labels.pause : labels.listen}
-            </button>
-            <motion.button
-              type="button"
-              onClick={() => onPick(track.seed)}
-              disabled={!canVote}
-              className="btn-primary min-h-10 w-full justify-center whitespace-normal break-words text-center text-sm leading-tight sm:flex-1"
-              whileTap={canVote ? { scale: 0.9 } : undefined}
-              whileHover={canVote ? { scale: 1.05 } : undefined}
-            >
-              {canVote ? labels.vote : disabledVoteLabel}
-            </motion.button>
-          </div>
+          <motion.button
+            type="button"
+            onClick={() => onPick(track.seed)}
+            disabled={!canVote}
+            className="btn-primary min-h-10 w-full justify-center whitespace-normal break-words text-center text-sm leading-tight"
+            whileTap={canVote ? { scale: 0.9 } : undefined}
+            whileHover={canVote ? { scale: 1.05 } : undefined}
+          >
+            {canVote ? labels.vote : disabledVoteLabel}
+          </motion.button>
         </div>
       </div>
     </div>

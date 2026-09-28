@@ -7,7 +7,9 @@ import SmashPassGameCard from "@/components/smash-pass/SmashPassGameCard";
 import SmashPassControls from "@/components/smash-pass/SmashPassControls";
 import SmashPassProgress from "@/components/smash-pass/SmashPassProgress";
 import SmashPassCommunityStats from "@/components/smash-pass/SmashPassCommunityStats";
+import PreviewSourceSwitch from "@/components/PreviewSourceSwitch";
 import TrackPreviewBar from "@/components/TrackPreviewBar";
+import { useMusicPreview } from "@/lib/use-music-preview";
 import { useTrackPreview } from "@/lib/use-track-preview";
 import type {
   SmashPassChoice,
@@ -54,10 +56,32 @@ export default function SmashPassPlayer({
   const [resumedProgress, setResumedProgress] = useState(false);
   const [pending] = useTransition();
   const initRef = useRef(false);
-  const { nowPlaying, isPlaying, playTrack, toggle, stop, isPlayingKey } = useTrackPreview();
+  const {
+    source,
+    setSource,
+    playDeezerTrack,
+    playYoutubeTrack,
+    toggle,
+    stop,
+    isPlayingKey,
+    isPlaying,
+    nowPlayingTitle,
+    nowPlayingDeezerId,
+    youtubeNow,
+    youtubePlaying,
+  } = useMusicPreview();
+  const {
+    playTrack: playDeezerOnly,
+    toggle: toggleDeezerOnly,
+    stop: stopDeezerOnly,
+    isPlayingKey: isPlayingDeezerOnly,
+    isPlaying: isPlayingDeezerOnlyState,
+    nowPlaying: nowPlayingDeezerOnly,
+  } = useTrackPreview();
 
   const currentItem = items[position] ?? null;
   const itemLabel = ITEM_LABELS[itemType];
+  const canUseYoutube = itemType === "track";
 
   useEffect(() => {
     if (initRef.current) return;
@@ -80,21 +104,66 @@ export default function SmashPassPlayer({
     };
   }, [transient, smashPassId, finished]);
 
+  useEffect(() => {
+    if (canUseYoutube) return;
+    stop();
+  }, [canUseYoutube, stop]);
+
   const handlePreview = useCallback(() => {
     if (!currentItem?.deezerId) return;
     const key = `sp-${currentItem.deezerId}`;
+
+    if (!canUseYoutube) {
+      if (isPlayingDeezerOnly(key)) {
+        toggleDeezerOnly();
+        return;
+      }
+      void playDeezerOnly(key, currentItem.title, currentItem.deezerId);
+      return;
+    }
+
     if (isPlayingKey(key)) {
       toggle();
       return;
     }
-    void playTrack(key, currentItem.title, currentItem.deezerId);
-  }, [currentItem, isPlayingKey, toggle, playTrack]);
+    if (source === "youtube") {
+      void playYoutubeTrack(key, currentItem.title, currentItem.subtitle ?? "");
+      return;
+    }
+    void playDeezerTrack(key, currentItem.title, currentItem.deezerId);
+  }, [
+    currentItem,
+    canUseYoutube,
+    isPlayingDeezerOnly,
+    toggleDeezerOnly,
+    playDeezerOnly,
+    isPlayingKey,
+    toggle,
+    source,
+    playYoutubeTrack,
+    playDeezerTrack,
+  ]);
+
+  const stopPreview = useCallback(() => {
+    stop();
+    stopDeezerOnly();
+  }, [stop, stopDeezerOnly]);
+
+  const previewPlayingKey = canUseYoutube ? isPlayingKey : isPlayingDeezerOnly;
+  const previewBarTitle = canUseYoutube
+    ? nowPlayingTitle
+    : (nowPlayingDeezerOnly?.title ?? null);
+  const previewBarDeezerId = canUseYoutube
+    ? nowPlayingDeezerId
+    : (nowPlayingDeezerOnly?.deezerTrackId ?? null);
+  const previewBarPlaying = canUseYoutube ? isPlaying : isPlayingDeezerOnlyState;
+  const previewBarToggle = canUseYoutube ? toggle : toggleDeezerOnly;
 
   const handleVote = useCallback(
     (choice: SmashPassChoice) => {
       if (!sessionId || !currentItem || voting || finished) return;
       setVoting(true);
-      stop();
+      stopPreview();
 
       void submitSmashPassChoice(sessionId, itemType, currentItem.deezerId, position, choice).then(
         (res) => {
@@ -126,7 +195,7 @@ export default function SmashPassPlayer({
       items.length,
       smashCount,
       passCount,
-      stop,
+      stopPreview,
     ],
   );
 
@@ -176,11 +245,19 @@ export default function SmashPassPlayer({
         <h1 className="mt-1 text-lg font-bold text-[color:var(--muted)]">{title}</h1>
       </div>
 
+      {canUseYoutube ? (
+        <div className="flex justify-center">
+          <PreviewSourceSwitch source={source} onChange={setSource} />
+        </div>
+      ) : null}
+
       <SmashPassGameCard
         item={currentItem}
         itemType={itemType}
         onPreview={currentItem.deezerId ? handlePreview : undefined}
-        isPreviewPlaying={currentItem.deezerId ? isPlayingKey(`sp-${currentItem.deezerId}`) : false}
+        isPreviewPlaying={
+          currentItem.deezerId ? previewPlayingKey(`sp-${currentItem.deezerId}`) : false
+        }
       />
 
       <SmashPassProgress current={position + 1} total={items.length} itemLabel={itemLabel} />
@@ -194,12 +271,15 @@ export default function SmashPassPlayer({
 
       <SmashPassCommunityStats item={previousItem} stats={previousStats} />
 
-      {nowPlaying ? (
+      {previewBarTitle ? (
         <TrackPreviewBar
-          title={nowPlaying.title}
-          deezerTrackId={nowPlaying.deezerTrackId}
-          isPlaying={isPlaying}
-          onToggle={toggle}
+          title={previewBarTitle}
+          deezerTrackId={previewBarDeezerId}
+          isPlaying={previewBarPlaying}
+          onToggle={previewBarToggle}
+          source={canUseYoutube ? source : "deezer"}
+          youtubeVideoId={canUseYoutube ? (youtubeNow?.videoId ?? null) : null}
+          youtubeActive={canUseYoutube ? youtubePlaying : false}
         />
       ) : null}
     </div>

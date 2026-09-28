@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, X, Trophy, ArrowRight, ChevronRight, Loader2, Zap } from "lucide-react";
 import Link from "next/link";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
+import PreviewSourceSwitch from "@/components/PreviewSourceSwitch";
 import StreamClashTrackCard from "@/components/StreamClashTrackCard";
 import TrackPreviewBar from "@/components/TrackPreviewBar";
-import { useTrackPreview } from "@/lib/use-track-preview";
+import { useMusicPreview } from "@/lib/use-music-preview";
 import {
   generatePairs,
   checkAnswer,
@@ -56,7 +57,20 @@ export default function StreamClashPlayer({
   const [timeLeft, setTimeLeft] = useState(ANSWER_TIMEOUT_MS / 1000);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoSubmittedRef = useRef(false);
-  const { nowPlaying, isPlaying, playTrack, toggle, stop, isPlayingKey } = useTrackPreview();
+  const {
+    source,
+    setSource,
+    playDeezerTrack,
+    playYoutubeTrack,
+    toggle,
+    stop,
+    isPlayingKey,
+    isPlaying,
+    nowPlayingTitle,
+    nowPlayingDeezerId,
+    youtubeNow,
+    youtubePlaying,
+  } = useMusicPreview();
 
   const pair = pairs[roundIndex] ?? null;
   const isLastRound = roundIndex >= pairs.length - 1;
@@ -297,14 +311,21 @@ export default function StreamClashPlayer({
         )}
       </div>
 
-      {nowPlaying && (
+      <div className="flex justify-center">
+        <PreviewSourceSwitch source={source} onChange={setSource} />
+      </div>
+
+      {nowPlayingTitle ? (
         <TrackPreviewBar
-          title={nowPlaying.title}
-          deezerTrackId={nowPlaying.deezerTrackId}
+          title={nowPlayingTitle}
+          deezerTrackId={nowPlayingDeezerId}
           isPlaying={isPlaying}
           onToggle={toggle}
+          source={source}
+          youtubeVideoId={youtubeNow?.videoId ?? null}
+          youtubeActive={youtubePlaying}
         />
-      )}
+      ) : null}
 
       {/* Tracks */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -315,13 +336,14 @@ export default function StreamClashPlayer({
           isWinner={pair.trackA.rank >= pair.trackB.rank}
           onPick={() => handlePick(pair.trackA.position)}
           disabled={phase === "revealed" || submitting}
-          onPlayPreview={() =>
-            void playTrack(
-              String(pair.trackA.position),
-              pair.trackA.title,
-              pair.trackA.deezerTrackId,
-            )
-          }
+          onPlayPreview={() => {
+            const key = String(pair.trackA.position);
+            if (source === "youtube") {
+              void playYoutubeTrack(key, pair.trackA.title, pair.trackA.artist);
+            } else {
+              void playDeezerTrack(key, pair.trackA.title, pair.trackA.deezerTrackId);
+            }
+          }}
           isPlayingPreview={isPlayingKey(String(pair.trackA.position))}
         />
         <StreamClashTrackCard
@@ -331,13 +353,14 @@ export default function StreamClashPlayer({
           isWinner={pair.trackB.rank > pair.trackA.rank}
           onPick={() => handlePick(pair.trackB.position)}
           disabled={phase === "revealed" || submitting}
-          onPlayPreview={() =>
-            void playTrack(
-              String(pair.trackB.position),
-              pair.trackB.title,
-              pair.trackB.deezerTrackId,
-            )
-          }
+          onPlayPreview={() => {
+            const key = String(pair.trackB.position);
+            if (source === "youtube") {
+              void playYoutubeTrack(key, pair.trackB.title, pair.trackB.artist);
+            } else {
+              void playDeezerTrack(key, pair.trackB.title, pair.trackB.deezerTrackId);
+            }
+          }}
           isPlayingPreview={isPlayingKey(String(pair.trackB.position))}
         />
       </div>

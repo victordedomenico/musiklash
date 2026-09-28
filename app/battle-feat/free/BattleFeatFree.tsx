@@ -10,19 +10,18 @@ import {
   Loader2,
   CheckCircle,
   Play,
-  Pause,
-  Volume2,
   Zap,
   Link2,
   Download,
   Share2,
 } from "lucide-react";
 import ArtistSearchInput from "@/components/ArtistSearchInput";
+import PreviewSourceSwitch from "@/components/PreviewSourceSwitch";
+import TrackPreviewBar from "@/components/TrackPreviewBar";
 import type { ArtistResult, FeatMove } from "@/lib/battle-feat";
 import { saveSoloSession } from "@/app/battle-feat/solo/actions";
 import { downloadNodeAsPng } from "@/lib/download-png";
-import DeezerAttribution from "@/components/DeezerAttribution";
-import { usePreviewVolume } from "@/lib/audio-volume";
+import { useMusicPreview } from "@/lib/use-music-preview";
 import { clearGameProgress, readGameProgress, writeGameProgress } from "@/lib/local-game-progress";
 
 type Phase = "setup" | "playing" | "validating" | "joker" | "game-over";
@@ -58,6 +57,7 @@ function ArtistChip({
   pictureUrl,
   trackTitle,
   previewUrl,
+  canListen,
   isNew,
   onPlayPreview,
 }: {
@@ -65,9 +65,11 @@ function ArtistChip({
   pictureUrl: string | null;
   trackTitle?: string | null;
   previewUrl?: string | null;
+  canListen?: boolean;
   isNew?: boolean;
-  onPlayPreview?: (title: string | null, previewUrl: string | null) => void;
+  onPlayPreview?: (artist: string, title: string, previewUrl: string | null) => void;
 }) {
+  const listen = canListen ?? Boolean(trackTitle && previewUrl);
   return (
     <div
       className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 bg-[color:var(--surface)] transition ${
@@ -90,10 +92,10 @@ function ArtistChip({
           <p className="truncate text-xs text-[color:var(--muted)]">🎵 {trackTitle}</p>
         )}
       </div>
-      {trackTitle && previewUrl && onPlayPreview && (
+      {trackTitle && listen && onPlayPreview && (
         <button
           type="button"
-          onClick={() => onPlayPreview(trackTitle, previewUrl)}
+          onClick={() => onPlayPreview(name, trackTitle, previewUrl ?? null)}
           className="btn-ghost !px-2.5 !py-1.5 text-xs"
         >
           <Play size={12} />
@@ -121,14 +123,18 @@ export default function BattleFeatFree() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [publishMode, setPublishMode] = useState<"none" | "private" | "public">("private");
 
-  // Audio
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [nowPlaying, setNowPlaying] = useState<{
-    title: string;
-    previewUrl: string;
-  } | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const { volume } = usePreviewVolume();
+  // Audio (Deezer / YouTube Music)
+  const {
+    source,
+    setSource,
+    playFeatPreview,
+    toggle,
+    stop,
+    isPlaying,
+    nowPlayingTitle,
+    youtubeNow,
+    youtubePlaying,
+  } = useMusicPreview();
 
   const exportRef = useRef<HTMLDivElement | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -170,11 +176,6 @@ export default function BattleFeatFree() {
   const usedIds = [...(startingArtist ? [startingArtist.id] : []), ...moves.map((m) => m.artistId)];
 
   useEffect(() => {
-    if (!audioRef.current) return;
-    audioRef.current.volume = volume;
-  }, [volume]);
-
-  useEffect(() => {
     if (!progressReady || phase !== "playing" || !startingArtist) return;
     try {
       writeGameProgress(window.localStorage, "battle-feat-free", "current", "v1", {
@@ -192,48 +193,22 @@ export default function BattleFeatFree() {
 
   // ── Audio ─────────────────────────────────────────────────────────────────
   const playPreview = useCallback(
-    (title: string | null, previewUrl: string | null) => {
-      if (!previewUrl) return;
-      const url = previewUrl.replace(/^http:\/\//i, "https://");
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = url;
-        audioRef.current.volume = volume;
-        setNowPlaying({ title: title ?? "Extrait", previewUrl: url });
-        void audioRef.current.play().catch(() => null);
-      } else {
-        const audio = new Audio(url);
-        audio.volume = volume;
-        audio.onplay = () => setIsPlaying(true);
-        audio.onpause = () => setIsPlaying(false);
-        audio.onended = () => {
-          setIsPlaying(false);
-          setNowPlaying(null);
-        };
-        audioRef.current = audio;
-        setNowPlaying({ title: title ?? "Extrait", previewUrl: url });
-        void audio.play().catch(() => null);
-      }
+    (artist: string, title: string, previewUrl: string | null) => {
+      void playFeatPreview({
+        key: `${artist}::${title}`,
+        title,
+        artist,
+        previewUrl,
+      });
     },
-    [volume],
+    [playFeatPreview],
   );
 
-  const togglePlayPause = () => {
-    if (!audioRef.current) return;
-    if (audioRef.current.paused) void audioRef.current.play().catch(() => null);
-    else audioRef.current.pause();
-  };
-
-  // Stop and dispose audio when leaving the page.
-  useEffect(() => {
-    return () => {
-      if (!audioRef.current) return;
-      audioRef.current.pause();
-      audioRef.current.src = "";
-      audioRef.current.load();
-      audioRef.current = null;
-    };
-  }, []);
+  const canListenTrack = useCallback(
+    (trackTitle: string | null | undefined, previewUrl: string | null | undefined) =>
+      Boolean(trackTitle && (source === "youtube" || previewUrl)),
+    [source],
+  );
 
   // ── Start ─────────────────────────────────────────────────────────────────
   const startGame = () => {
@@ -244,6 +219,7 @@ export default function BattleFeatFree() {
     setJokersUsed(0);
     setSessionId(null);
     setResumedProgress(false);
+    stop();
     try {
       clearGameProgress(window.localStorage, "battle-feat-free", "current");
     } catch {
@@ -261,8 +237,7 @@ export default function BattleFeatFree() {
       finalJokersUsed = jokersUsed,
     ) => {
       if (!startingArtist) return;
-      audioRef.current?.pause();
-      setNowPlaying(null);
+      stop();
       setGameOverReason(reason);
       setPhase("game-over");
       try {
@@ -290,7 +265,7 @@ export default function BattleFeatFree() {
       }
       setSaving(false);
     },
-    [startingArtist, jokersUsed, publishMode],
+    [startingArtist, jokersUsed, publishMode, stop],
   );
 
   const handleDownload = async () => {
@@ -577,6 +552,7 @@ export default function BattleFeatFree() {
                   pictureUrl={m.pictureUrl}
                   trackTitle={m.trackTitle}
                   previewUrl={m.previewUrl}
+                  canListen={canListenTrack(m.trackTitle, m.previewUrl)}
                   onPlayPreview={playPreview}
                 />
               ))}
@@ -663,24 +639,20 @@ export default function BattleFeatFree() {
         </button>
       </div>
 
-      {/* Audio mini-player */}
-      {nowPlaying && (
-        <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5">
-          <Volume2 size={14} className="shrink-0 text-[color:var(--accent)]" />
-          <p className="min-w-0 flex-1 truncate text-sm">
-            <span className="text-[color:var(--muted)]">En écoute : </span>
-            <span className="font-medium">{nowPlaying.title}</span>
-          </p>
-          <button
-            onClick={togglePlayPause}
-            className="shrink-0 rounded-full p-1 transition hover:bg-[color:var(--surface-2)]"
-            aria-label={isPlaying ? "Pause" : "Play"}
-          >
-            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-          </button>
-          <DeezerAttribution compact variant="icon" className="shrink-0" />
-        </div>
-      )}
+      {/* Source switch + audio player */}
+      <div className="flex justify-center">
+        <PreviewSourceSwitch source={source} onChange={setSource} />
+      </div>
+      {nowPlayingTitle ? (
+        <TrackPreviewBar
+          title={nowPlayingTitle}
+          isPlaying={isPlaying}
+          onToggle={toggle}
+          source={source}
+          youtubeVideoId={youtubeNow?.videoId ?? null}
+          youtubeActive={youtubePlaying}
+        />
+      ) : null}
 
       {/* Chain */}
       <div className="card space-y-2 p-5">
@@ -697,6 +669,7 @@ export default function BattleFeatFree() {
             pictureUrl={m.pictureUrl}
             trackTitle={m.trackTitle}
             previewUrl={m.previewUrl}
+            canListen={canListenTrack(m.trackTitle, m.previewUrl)}
             onPlayPreview={playPreview}
             isNew={i === arr.length - 1}
           />

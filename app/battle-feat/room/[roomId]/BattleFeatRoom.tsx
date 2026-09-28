@@ -17,14 +17,14 @@ import {
   Loader2,
   ArrowRight,
   Play,
-  Pause,
-  Volume2,
   Download,
   Share2,
 } from "lucide-react";
 import ArtistSearchInput from "@/components/ArtistSearchInput";
 import ChallengeOutcomeFx from "@/components/ChallengeOutcomeFx";
+import PreviewSourceSwitch from "@/components/PreviewSourceSwitch";
 import RoomChat from "@/components/RoomChat";
+import TrackPreviewBar from "@/components/TrackPreviewBar";
 import type {
   ArtistResult,
   BattleFeatParticipant,
@@ -40,8 +40,7 @@ import {
   submitMove,
   useJoker as playJoker,
 } from "./actions";
-import DeezerAttribution from "@/components/DeezerAttribution";
-import { usePreviewVolume } from "@/lib/audio-volume";
+import { useMusicPreview } from "@/lib/use-music-preview";
 import { downloadNodeAsPng } from "@/lib/download-png";
 
 const TURN_SECONDS = 20;
@@ -63,6 +62,7 @@ function ArtistBadge({
   label,
   trackTitle,
   previewUrl,
+  canListen,
   onPlayPreview,
 }: {
   name: string;
@@ -70,8 +70,10 @@ function ArtistBadge({
   label?: string;
   trackTitle?: string | null;
   previewUrl?: string | null;
-  onPlayPreview?: (title: string | null, previewUrl: string | null) => void;
+  canListen?: boolean;
+  onPlayPreview?: (artist: string, title: string, previewUrl: string | null) => void;
 }) {
+  const listen = canListen ?? Boolean(trackTitle && previewUrl);
   return (
     <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] px-4 py-2.5 bg-[color:var(--surface)]">
       {pictureUrl ? (
@@ -88,10 +90,10 @@ function ArtistBadge({
           <p className="truncate text-xs text-[color:var(--muted)]">🎵 {trackTitle}</p>
         ) : null}
       </div>
-      {trackTitle && previewUrl && onPlayPreview ? (
+      {trackTitle && listen && onPlayPreview ? (
         <button
           type="button"
-          onClick={() => onPlayPreview(trackTitle, previewUrl)}
+          onClick={() => onPlayPreview(name, trackTitle, previewUrl ?? null)}
           className="btn-ghost !px-2.5 !py-1.5 text-xs"
         >
           <Play size={12} />
@@ -150,68 +152,45 @@ export default function BattleFeatRoom({
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [nowPlaying, setNowPlaying] = useState<{ title: string } | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [waitingRematch, setWaitingRematch] = useState(false);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const timeoutClaimRef = useRef<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const exportRef = useRef<HTMLDivElement | null>(null);
-  const { volume } = usePreviewVolume();
+  const {
+    source,
+    setSource,
+    playFeatPreview,
+    toggle,
+    isPlaying,
+    nowPlayingTitle,
+    youtubeNow,
+    youtubePlaying,
+  } = useMusicPreview();
 
   useEffect(() => {
     roomRef.current = room;
   }, [room]);
 
-  useEffect(() => {
-    if (!audioRef.current) return;
-    audioRef.current.volume = volume;
-  }, [volume]);
-
   const playPreview = useCallback(
-    (title: string | null, previewUrl: string | null) => {
-      if (!previewUrl) return;
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = previewUrl;
-        audioRef.current.volume = volume;
-        setNowPlaying({ title: title ?? "Extrait" });
-        void audioRef.current.play().catch(() => null);
-      } else {
-        const audio = new Audio(previewUrl);
-        audio.volume = volume;
-        audio.onplay = () => setIsPlaying(true);
-        audio.onpause = () => setIsPlaying(false);
-        audio.onended = () => {
-          setIsPlaying(false);
-          setNowPlaying(null);
-        };
-        audioRef.current = audio;
-        setNowPlaying({ title: title ?? "Extrait" });
-        void audio.play().catch(() => null);
-      }
+    (artist: string, title: string, previewUrl: string | null) => {
+      void playFeatPreview({
+        key: `${artist}::${title}`,
+        title,
+        artist,
+        previewUrl,
+      });
     },
-    [volume],
+    [playFeatPreview],
   );
 
-  const togglePlayPause = () => {
-    if (!audioRef.current) return;
-    if (audioRef.current.paused) void audioRef.current.play().catch(() => null);
-    else audioRef.current.pause();
-  };
-
-  useEffect(() => {
-    return () => {
-      if (!audioRef.current) return;
-      audioRef.current.pause();
-      audioRef.current.src = "";
-      audioRef.current.load();
-      audioRef.current = null;
-    };
-  }, []);
+  const canListenTrack = useCallback(
+    (trackTitle: string | null | undefined, previewUrl: string | null | undefined) =>
+      Boolean(trackTitle && (source === "youtube" || previewUrl)),
+    [source],
+  );
 
   const isHost = userId === room.hostId;
   const me = useMemo(
@@ -673,6 +652,7 @@ export default function BattleFeatRoom({
                   pictureUrl={move.pictureUrl}
                   trackTitle={move.trackTitle}
                   previewUrl={move.previewUrl}
+                  canListen={canListenTrack(move.trackTitle, move.previewUrl)}
                   onPlayPreview={playPreview}
                 />
               ))}
@@ -835,22 +815,19 @@ export default function BattleFeatRoom({
         />
       </div>
 
-      {nowPlaying && (
-        <div className="flex items-center gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5">
-          <Volume2 size={14} className="shrink-0 text-[color:var(--accent)]" />
-          <p className="min-w-0 flex-1 truncate text-sm">
-            <span className="text-[color:var(--muted)]">En écoute : </span>
-            <span className="font-medium">{nowPlaying.title}</span>
-          </p>
-          <button
-            onClick={togglePlayPause}
-            className="shrink-0 rounded-full p-1 hover:bg-[color:var(--surface-2)] transition"
-          >
-            {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-          </button>
-          <DeezerAttribution compact variant="icon" className="shrink-0" />
-        </div>
-      )}
+      <div className="flex justify-center">
+        <PreviewSourceSwitch source={source} onChange={setSource} />
+      </div>
+      {nowPlayingTitle ? (
+        <TrackPreviewBar
+          title={nowPlayingTitle}
+          isPlaying={isPlaying}
+          onToggle={toggle}
+          source={source}
+          youtubeVideoId={youtubeNow?.videoId ?? null}
+          youtubeActive={youtubePlaying}
+        />
+      ) : null}
 
       <div className="card space-y-3 p-6">
         <h3 className="text-xs font-bold uppercase tracking-wide text-[color:var(--muted)]">
@@ -870,6 +847,7 @@ export default function BattleFeatRoom({
             pictureUrl={move.pictureUrl}
             trackTitle={move.trackTitle}
             previewUrl={move.previewUrl}
+            canListen={canListenTrack(move.trackTitle, move.previewUrl)}
             onPlayPreview={playPreview}
           />
         ))}
