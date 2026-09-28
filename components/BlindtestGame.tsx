@@ -15,6 +15,7 @@ import {
   POINTS_ARTIST_MAX,
 } from "@/lib/blindtest-utils";
 import DeezerAttribution from "@/components/DeezerAttribution";
+import DeezerTrackLink from "@/components/DeezerTrackLink";
 import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 
 // Ré-exports pour les modules qui importaient ces constantes depuis ce composant.
@@ -473,6 +474,8 @@ export default function BlindtestGame({
                   points={lastAnswer.artistPoints ?? 0}
                 />
               )}
+
+              <DeezerTrackLink deezerTrackId={track.deezerTrackId} />
 
               <div className="flex items-center justify-between pt-1">
                 <motion.p

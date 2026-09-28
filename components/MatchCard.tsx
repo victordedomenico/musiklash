@@ -6,6 +6,7 @@ import { Pause, Play } from "lucide-react";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { useSoundFx } from "@/lib/use-sound-fx";
 import DeezerAttribution from "@/components/DeezerAttribution";
+import DeezerTrackLink from "@/components/DeezerTrackLink";
 import { fetchTrackDetails } from "@/lib/deezer-preview-client";
 
 export type BracketTrack = {
@@ -243,8 +244,11 @@ function Side({
         </div>
         <p className="mt-0.5 text-xs text-[color:var(--muted)] line-clamp-1">{track.artist}</p>
         {track.album?.trim() ? (
-          <p className="mt-0.5 text-[11px] text-[color:var(--muted)]/75 line-clamp-1">{track.album.trim()}</p>
+          <p className="mt-0.5 text-[11px] text-[color:var(--muted)]/75 line-clamp-1">
+            {track.album.trim()}
+          </p>
         ) : null}
+        <DeezerTrackLink deezerTrackId={track.deezerTrackId} className="mt-2" />
 
         {/* Audio Player Controls */}
         <div className="mt-4 flex flex-col gap-2">

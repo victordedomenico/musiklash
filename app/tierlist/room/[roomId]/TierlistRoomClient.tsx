@@ -16,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import DeezerAttribution from "@/components/DeezerAttribution";
+import DeezerTrackLink from "@/components/DeezerTrackLink";
 import type {
   CollaborativeTrack,
   TierlistRoomSnapshot,
@@ -134,6 +135,7 @@ function TrackPreview({
         {url ? (playing ? texts.pause : texts.listenPreview) : texts.previewUnavailable}
       </button>
       <DeezerAttribution compact variant="icon" className="shrink-0" />
+      <DeezerTrackLink deezerTrackId={track.deezerTrackId} compact className="shrink-0" />
       <input
         type="range"
         min={0}

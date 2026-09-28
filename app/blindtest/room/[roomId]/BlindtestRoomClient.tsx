@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import DeezerAttribution from "@/components/DeezerAttribution";
+import DeezerTrackLink from "@/components/DeezerTrackLink";
 import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 import type {
   BlindtestRoomSnapshot,
@@ -1179,6 +1180,8 @@ export default function BlindtestRoomClient({
                   points={myLastAnswer.artistPoints ?? 0}
                 />
               )}
+
+              <DeezerTrackLink deezerTrackId={track.deezerTrackId} />
 
               <div className="flex items-center justify-between pt-1">
                 <p className="font-bold text-lg">

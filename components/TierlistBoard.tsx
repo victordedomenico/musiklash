@@ -20,6 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import DeezerAttribution from "@/components/DeezerAttribution";
+import DeezerTrackLink from "@/components/DeezerTrackLink";
 import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 import {
   Play,
@@ -183,6 +184,17 @@ function TrackChip({
           {isPlaying ? <Pause size={20} /> : <Play size={20} />}
         </button>
       </div>
+      <span
+        className="absolute right-1 top-1"
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <DeezerTrackLink
+          deezerTrackId={item.deezerTrackId}
+          compact
+          className="rounded-full bg-black/65 p-1 text-white hover:text-white"
+        />
+      </span>
       <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5 text-[9px] leading-tight truncate text-white">
         {item.title}
       </div>

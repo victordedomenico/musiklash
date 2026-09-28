@@ -195,7 +195,12 @@ export default function SmashPassPlayer({
       <SmashPassCommunityStats item={previousItem} stats={previousStats} />
 
       {nowPlaying ? (
-        <TrackPreviewBar title={nowPlaying.title} isPlaying={isPlaying} onToggle={toggle} />
+        <TrackPreviewBar
+          title={nowPlaying.title}
+          deezerTrackId={nowPlaying.deezerTrackId}
+          isPlaying={isPlaying}
+          onToggle={toggle}
+        />
       ) : null}
     </div>
   );

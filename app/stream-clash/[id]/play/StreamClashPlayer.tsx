@@ -298,7 +298,12 @@ export default function StreamClashPlayer({
       </div>
 
       {nowPlaying && (
-        <TrackPreviewBar title={nowPlaying.title} isPlaying={isPlaying} onToggle={toggle} />
+        <TrackPreviewBar
+          title={nowPlaying.title}
+          deezerTrackId={nowPlaying.deezerTrackId}
+          isPlaying={isPlaying}
+          onToggle={toggle}
+        />
       )}
 
       {/* Tracks */}

@@ -6,7 +6,11 @@ import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 
 export function useTrackPreview() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [nowPlaying, setNowPlaying] = useState<{ key: string; title: string } | null>(null);
+  const [nowPlaying, setNowPlaying] = useState<{
+    key: string;
+    title: string;
+    deezerTrackId: number;
+  } | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const { volume } = usePreviewVolume();
 
@@ -66,7 +70,7 @@ export function useTrackPreview() {
       audio.pause();
       audio.volume = volume;
       audio.src = previewUrl;
-      setNowPlaying({ key, title });
+      setNowPlaying({ key, title, deezerTrackId });
       void audio.play().catch(async () => {
         const fresh = await fetchTrackPreview(deezerTrackId);
         if (!fresh) {
