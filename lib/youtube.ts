@@ -2,9 +2,13 @@ import { searchYoutubeMusicCatalog } from "./youtube-music";
 import {
   channelIncludesArtist,
   channelMatchesArtist,
+  isTopicChannel,
+  isVevoChannel,
   normalizeMusicText,
   titleContainsTrack,
   titleLooksFake,
+  titleMatchRatio,
+  titleSearchVariants,
 } from "./youtube-match";
 
 export type YoutubeSearchResult = {
@@ -22,12 +26,22 @@ type YoutubeCandidate = {
 };
 
 const memoryCache = new Map<string, YoutubeSearchResult | null>();
-const CACHE_VERSION = "official-v3-ytm";
+const CACHE_VERSION = "official-v5-episode";
 
-export { normalizeMusicText, significantTokensForMatch } from "./youtube-match";
+export { normalizeMusicText, significantTokensForMatch, titleSearchVariants } from "./youtube-match";
 
 function cacheKey(artist: string, title: string, album?: string | null): string {
   return `${CACHE_VERSION}::${artist.trim().toLowerCase()}::${title.trim().toLowerCase()}::${(album ?? "").trim().toLowerCase()}`;
+}
+
+function buildSearchQueries(artist: string, trackTitle: string): string[] {
+  const queries: string[] = [];
+  for (const variant of titleSearchVariants(trackTitle)) {
+    queries.push(`"${artist}" "${variant}"`);
+    queries.push(`${artist} ${variant} official`);
+    queries.push(`${artist} ${variant}`);
+  }
+  return [...new Set(queries)];
 }
 
 /** Exported for unit tests — ranks official sources above fan uploads. */
@@ -42,21 +56,31 @@ export function scoreYoutubeCandidate(
   const channel = candidate.channelTitle;
   const isArtistChannel = channelMatchesArtist(channel, artist);
   const includesArtist = channelIncludesArtist(channel, artist);
+  const topic = isTopicChannel(channel) && includesArtist;
+  const vevo = isVevoChannel(channel) && includesArtist;
+  const ratio = titleMatchRatio(candidate.title, trackTitle);
   const titleNorm = normalizeMusicText(candidate.title);
   const officialMarker =
-    /\b(official (video|audio|music video)|clip officiel|audio officiel|official lyric|lyric video)\b/.test(
+    /\b(official (video|audio|music video)|clip officiel|audio officiel|official lyric|lyric video|freestyle)\b/.test(
       titleNorm,
     ) || /\b(official|officiel)\b/.test(titleNorm);
 
   let score = 0;
-  if (isArtistChannel) score += 100;
-  if (normalizeMusicText(channel).includes("topic") && includesArtist) score += 90;
-  if (normalizeMusicText(channel).includes("vevo") && includesArtist) score += 95;
-  if (candidate.verified && isArtistChannel) score += 40;
-  if (candidate.verified && includesArtist) score += 20;
-  if (officialMarker && isArtistChannel) score += 30;
-  if (officialMarker && candidate.verified && includesArtist) score += 15;
+
+  // Strong official sources only — unverified channels that steal the artist
+  // name (e.g. "djadja & dinaz") must not clear the acceptance threshold.
+  if (topic) score += 110;
+  if (vevo) score += 105;
+  if (candidate.verified && isArtistChannel) score += 120;
+  if (candidate.verified && includesArtist && !isArtistChannel) score += 70;
+  // Verified non-artist channels (e.g. Booska-P freestyles) when title is strong.
+  if (candidate.verified && !isArtistChannel && officialMarker && ratio >= 0.75) score += 100;
+  if (candidate.verified && ratio >= 0.9) score += 20;
+
+  if (isArtistChannel && !candidate.verified && !topic && !vevo) score += 25;
   if (officialMarker) score += 5;
+  if (ratio >= 1) score += 8;
+  else if (ratio >= 0.85) score += 4;
 
   if (score >= 100) {
     score += Math.min(10, Math.log10(Math.max(candidate.views, 1)));
@@ -106,11 +130,7 @@ async function searchWithYoutubeDataApi(
   trackTitle: string,
   apiKey: string,
 ): Promise<YoutubeSearchResult | null> {
-  const queries = [
-    `"${artist}" "${trackTitle}"`,
-    `${artist} ${trackTitle} official`,
-    `${artist} ${trackTitle}`,
-  ];
+  const queries = buildSearchQueries(artist, trackTitle);
 
   const candidates: YoutubeCandidate[] = [];
   const seen = new Set<string>();
@@ -167,11 +187,7 @@ async function searchWithPiped(
     "https://pipedapi.reallyaweso.me",
     "https://pipedapi.kavin.rocks",
   ];
-  const queries = [
-    `"${artist}" "${trackTitle}"`,
-    `${artist} ${trackTitle} official`,
-    `${artist} ${trackTitle}`,
-  ];
+  const queries = buildSearchQueries(artist, trackTitle);
 
   for (const base of endpoints) {
     const candidates: YoutubeCandidate[] = [];

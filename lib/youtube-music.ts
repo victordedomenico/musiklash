@@ -1,4 +1,8 @@
-import { normalizeMusicText, significantTokensForMatch } from "./youtube-match";
+import {
+  normalizeMusicText,
+  titleMatchRatio,
+  titleSearchVariants,
+} from "./youtube-match";
 
 const YTM_ENDPOINT = "https://music.youtube.com/youtubei/v1";
 const YTM_CONTEXT = {
@@ -12,6 +16,7 @@ const YTM_CONTEXT = {
 
 const ARTISTS_FILTER = "EgWKAQIgAWoKEAMQBBAJEAoQBQ%3D%3D";
 const ALBUMS_FILTER = "EgWKAQIYAWoKEAMQBBAJEAoQBQ%3D%3D";
+const SONGS_FILTER = "EgWKAQIIAWoKEAMQBBAJEAoQBQ%3D%3D";
 
 type YtmTrackHit = {
   videoId: string;
@@ -78,10 +83,51 @@ function flexTexts(renderer: Record<string, unknown>): string[] {
 }
 
 function titleMatchesTrack(candidateTitle: string, trackTitle: string): boolean {
-  const candidate = normalizeMusicText(candidateTitle);
-  const tokens = significantTokensForMatch(trackTitle);
-  if (!candidate || tokens.length === 0) return false;
-  return tokens.every((token) => candidate.includes(token));
+  return titleMatchRatio(candidateTitle, trackTitle) >= 0.75;
+}
+
+function extractSongHits(
+  payload: unknown,
+  trackTitle: string,
+  artist: string,
+): YtmTrackHit[] {
+  const artistNorm = normalizeMusicText(artist);
+  const hits: YtmTrackHit[] = [];
+  const seen = new Set<string>();
+  walk(payload, (node) => {
+    const renderer = node.musicResponsiveListItemRenderer;
+    if (!renderer || typeof renderer !== "object") return;
+    const videoId = ((renderer as { playlistItemData?: { videoId?: string } }).playlistItemData || {})
+      .videoId;
+    if (!videoId || seen.has(videoId)) return;
+    const texts = flexTexts(renderer as Record<string, unknown>);
+    const title = texts[0] || "";
+    const meta = texts[1] || "";
+    if (!titleMatchesTrack(title, trackTitle)) return;
+    const metaNorm = normalizeMusicText(`${title} ${meta}`);
+    if (artistNorm && !metaNorm.includes(artistNorm) && !normalizeMusicText(title).includes(artistNorm)) {
+      return;
+    }
+    seen.add(videoId);
+    hits.push({
+      videoId,
+      title,
+      channelTitle: meta.includes("Topic") ? `${artist} - Topic` : artist,
+    });
+  });
+  return hits;
+}
+
+async function searchSongsCatalog(artist: string, title: string): Promise<YtmTrackHit | null> {
+  for (const variant of titleSearchVariants(title)) {
+    const search = await ytmPost<unknown>("search", {
+      query: `${artist} ${variant}`.trim(),
+      params: SONGS_FILTER,
+    });
+    const hits = extractSongHits(search, title, artist);
+    if (hits[0]) return hits[0];
+  }
+  return null;
 }
 
 function albumNameMatches(candidateAlbum: string, album: string): boolean {
@@ -212,6 +258,10 @@ export async function searchYoutubeMusicCatalog(options: {
   if (!artist || !title) return null;
 
   try {
+    // Direct songs search with Deezer→YouTube title variants first.
+    const fromSongs = await searchSongsCatalog(artist, title);
+    if (fromSongs) return fromSongs;
+
     if (album) {
       const albumBrowseId = await findAlbumBrowseId(artist, album);
       if (albumBrowseId) {

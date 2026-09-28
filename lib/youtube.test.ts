@@ -4,10 +4,108 @@ import {
   pickOfficialYoutubeMatch,
   scoreYoutubeCandidate,
 } from "./youtube";
+import { titleMatchRatio, titleSearchVariants } from "./youtube-match";
 
 describe("youtube official matching", () => {
   it("normalizes accents and punctuation", () => {
     expect(normalizeMusicText("A l'ammoniaque")).toBe("a l ammoniaque");
+  });
+
+  it("builds Booska freestyle title variants", () => {
+    expect(titleSearchVariants("Booska tenue 2 motard 3")).toEqual(
+      expect.arrayContaining(["Booska tenue 2 motard 3", "tenue 2 motard 3", "tenue de motard 3"]),
+    );
+  });
+
+  it("matches official Tenue De Motard 3 despite Deezer Booska naming", () => {
+    expect(
+      titleMatchRatio("Djadja & Dinaz - Tenue De Motard 3", "Booska tenue 2 motard 3"),
+    ).toBeGreaterThanOrEqual(0.75);
+  });
+
+  it("rejects Tenue de motard 2 when Deezer asks for episode 3", () => {
+    expect(
+      scoreYoutubeCandidate(
+        {
+          title: "Djadja & Dinaz - Tenue de motard 2 [Audio Officiel]",
+          channelTitle: "Djadja & Dinaz",
+          verified: true,
+          views: 1_000_000,
+        },
+        "Djadja & Dinaz",
+        "Booska tenue 2 motard 3",
+      ),
+    ).toBe(-Infinity);
+  });
+
+  it("rejects unverified artist-named uploads", () => {
+    expect(
+      scoreYoutubeCandidate(
+        {
+          title: "Djadja et dinaz- freestyle booska tenue de motard 3",
+          channelTitle: "djadja & dinaz",
+          verified: false,
+          views: 967,
+        },
+        "Djadja & Dinaz",
+        "Booska tenue 2 motard 3",
+      ),
+    ).toBeLessThan(100);
+  });
+
+  it("prefers the verified artist upload over Booska-P when both qualify", () => {
+    const picked = pickOfficialYoutubeMatch(
+      [
+        {
+          videoId: "m0yA7CV1uVE",
+          title: "Djadja et dinaz- freestyle booska tenue de motard 3",
+          channelTitle: "djadja & dinaz",
+          verified: false,
+          views: 967,
+        },
+        {
+          videoId: "dzM70Nt22js",
+          title: "Djadja et Dinaz - Freestyle Booska Tenue de Motard 3",
+          channelTitle: "Booska-P",
+          verified: true,
+          views: 6_134_419,
+        },
+        {
+          videoId: "_WNBH6h5zeU",
+          title: "Djadja & Dinaz - Tenue De Motard 3",
+          channelTitle: "Djadja & Dinaz",
+          verified: true,
+          views: 1_531_757,
+        },
+      ],
+      "Djadja & Dinaz",
+      "Booska tenue 2 motard 3",
+    );
+    expect(picked?.videoId).toBe("_WNBH6h5zeU");
+  });
+
+  it("accepts verified Booska-P when the artist upload is missing", () => {
+    const picked = pickOfficialYoutubeMatch(
+      [
+        {
+          videoId: "m0yA7CV1uVE",
+          title: "Djadja et dinaz- freestyle booska tenue de motard 3",
+          channelTitle: "djadja & dinaz",
+          verified: false,
+          views: 967,
+        },
+        {
+          videoId: "dzM70Nt22js",
+          title: "Djadja et Dinaz - Freestyle Booska Tenue de Motard 3",
+          channelTitle: "Booska-P",
+          verified: true,
+          views: 6_134_419,
+        },
+      ],
+      "Djadja & Dinaz",
+      "Booska tenue 2 motard 3",
+    );
+    expect(picked?.videoId).toBe("dzM70Nt22js");
   });
 
   it("prefers the verified artist official upload", () => {
