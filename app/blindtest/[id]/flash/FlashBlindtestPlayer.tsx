@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Pause, Play, RotateCcw, Search, SkipForward } from "lucide-react";
+import DeezerAttribution from "@/components/DeezerAttribution";
 import { usePreviewVolume } from "@/lib/audio-volume";
 import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 import { normalize } from "@/lib/blindtest-utils";
@@ -448,6 +449,7 @@ export default function FlashBlindtestPlayer({
           </span>
         </div>
       </header>
+      <DeezerAttribution compact className="justify-center" />
       {finished ? (
         <div className={styles.results}>
           <h2>{foundAtFirstTry === draft.answers.length ? "Éclair parfait" : "Bien joué !"}</h2>
