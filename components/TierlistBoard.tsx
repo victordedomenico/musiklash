@@ -558,6 +558,12 @@ export default function TierlistBoard({
   }, [tierlistId, trackSignature, tracks]);
 
   useEffect(() => {
+    if (!resumedProgress) return;
+    const timer = window.setTimeout(() => setResumedProgress(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [resumedProgress]);
+
+  useEffect(() => {
     return () => {
       if (!audioRef.current) return;
       audioRef.current.pause();
@@ -885,7 +891,7 @@ export default function TierlistBoard({
         {resumedProgress ? (
           <div
             role="status"
-            className="mb-3 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100"
+            className="no-export mb-3 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
             Tierlist reprise : tes placements et tes tiers personnalisés sont restaurés.

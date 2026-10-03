@@ -1,6 +1,6 @@
 import {
   normalizeMusicText,
-  titleMatchRatio,
+  titleContainsTrack,
   titleSearchVariants,
 } from "./youtube-match";
 
@@ -22,6 +22,12 @@ type YtmTrackHit = {
   videoId: string;
   title: string;
   channelTitle: string;
+};
+
+type YtmAlbumHit = {
+  name: string;
+  browseId: string;
+  subtitle: string;
 };
 
 async function ytmPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
@@ -82,8 +88,30 @@ function flexTexts(renderer: Record<string, unknown>): string[] {
   });
 }
 
-function titleMatchesTrack(candidateTitle: string, trackTitle: string): boolean {
-  return titleMatchRatio(candidateTitle, trackTitle) >= 0.75;
+function browseIdFrom(renderer: Record<string, unknown>): string | null {
+  const browseId = (
+    ((renderer as { navigationEndpoint?: { browseEndpoint?: { browseId?: string } } })
+      .navigationEndpoint || {}).browseEndpoint || {}
+  ).browseId;
+  return browseId || null;
+}
+
+function isAlbumBrowseId(browseId: string): boolean {
+  return browseId.startsWith("MPRE");
+}
+
+function albumNameMatches(candidateAlbum: string, album: string): boolean {
+  const left = normalizeMusicText(candidateAlbum);
+  const right = normalizeMusicText(album);
+  if (!left || !right) return false;
+  return left === right || left.includes(right) || right.includes(left);
+}
+
+function albumBelongsToArtist(album: YtmAlbumHit, artist: string): boolean {
+  const artistNorm = normalizeMusicText(artist);
+  if (!artistNorm) return true;
+  const haystack = normalizeMusicText(`${album.name} ${album.subtitle}`);
+  return haystack.includes(artistNorm);
 }
 
 function extractSongHits(
@@ -103,11 +131,14 @@ function extractSongHits(
     const texts = flexTexts(renderer as Record<string, unknown>);
     const title = texts[0] || "";
     const meta = texts[1] || "";
-    if (!titleMatchesTrack(title, trackTitle)) return;
+    if (!titleContainsTrack(title, trackTitle, artist)) return;
     const metaNorm = normalizeMusicText(`${title} ${meta}`);
     if (artistNorm && !metaNorm.includes(artistNorm) && !normalizeMusicText(title).includes(artistNorm)) {
       return;
     }
+    // Premium / catalog songs expose Song|Album|Single — skip fan video hits.
+    const catalogMeta = /\b(song|chanson|album|single|ep)\b/i.test(meta) || /\btopic\b/i.test(meta);
+    if (!catalogMeta) return;
     seen.add(videoId);
     hits.push({
       videoId,
@@ -130,13 +161,6 @@ async function searchSongsCatalog(artist: string, title: string): Promise<YtmTra
   return null;
 }
 
-function albumNameMatches(candidateAlbum: string, album: string): boolean {
-  const left = normalizeMusicText(candidateAlbum);
-  const right = normalizeMusicText(album);
-  if (!left || !right) return false;
-  return left === right || left.includes(right) || right.includes(left);
-}
-
 function extractArtistBrowseId(searchPayload: unknown, artist: string): string | null {
   const artistNorm = normalizeMusicText(artist);
   let fallback: string | null = null;
@@ -145,10 +169,7 @@ function extractArtistBrowseId(searchPayload: unknown, artist: string): string |
     if (!renderer || typeof renderer !== "object") return;
     const texts = flexTexts(renderer as Record<string, unknown>);
     const name = texts[0] || "";
-    const browseId = (
-      ((renderer as { navigationEndpoint?: { browseEndpoint?: { browseId?: string } } })
-        .navigationEndpoint || {}).browseEndpoint || {}
-    ).browseId;
+    const browseId = browseIdFrom(renderer as Record<string, unknown>);
     if (!browseId || !name) return;
     if (normalizeMusicText(name) === artistNorm) {
       fallback = browseId;
@@ -157,40 +178,33 @@ function extractArtistBrowseId(searchPayload: unknown, artist: string): string |
   return fallback;
 }
 
-function extractAlbums(
-  payload: unknown,
-): Array<{ name: string; browseId: string }> {
-  const albums: Array<{ name: string; browseId: string }> = [];
+function extractAlbums(payload: unknown): YtmAlbumHit[] {
+  const albums: YtmAlbumHit[] = [];
   const seen = new Set<string>();
+
   walk(payload, (node) => {
     const renderer = node.musicTwoRowItemRenderer;
     if (!renderer || typeof renderer !== "object") return;
-    const title = runsText(
-      ((renderer as { title?: { runs?: unknown } }).title || {}).runs,
+    const title = runsText(((renderer as { title?: { runs?: unknown } }).title || {}).runs);
+    const subtitle = runsText(
+      ((renderer as { subtitle?: { runs?: unknown } }).subtitle || {}).runs,
     );
-    const browseId = (
-      ((renderer as { navigationEndpoint?: { browseEndpoint?: { browseId?: string } } })
-        .navigationEndpoint || {}).browseEndpoint || {}
-    ).browseId;
-    if (!title || !browseId || seen.has(browseId)) return;
+    const browseId = browseIdFrom(renderer as Record<string, unknown>);
+    if (!title || !browseId || !isAlbumBrowseId(browseId) || seen.has(browseId)) return;
     seen.add(browseId);
-    albums.push({ name: title, browseId });
+    albums.push({ name: title, browseId, subtitle });
   });
-  // Album search list items
+
   walk(payload, (node) => {
     const renderer = node.musicResponsiveListItemRenderer;
     if (!renderer || typeof renderer !== "object") return;
     const texts = flexTexts(renderer as Record<string, unknown>);
-    const browseId = (
-      ((renderer as { navigationEndpoint?: { browseEndpoint?: { browseId?: string } } })
-        .navigationEndpoint || {}).browseEndpoint || {}
-    ).browseId;
-    if (!browseId || !texts[0] || seen.has(browseId)) return;
-    // Album browse ids typically start with MPRE
-    if (!browseId.startsWith("MPRE") && !browseId.startsWith("MPRL")) return;
+    const browseId = browseIdFrom(renderer as Record<string, unknown>);
+    if (!browseId || !texts[0] || !isAlbumBrowseId(browseId) || seen.has(browseId)) return;
     seen.add(browseId);
-    albums.push({ name: texts[0], browseId });
+    albums.push({ name: texts[0], browseId, subtitle: texts[1] || "" });
   });
+
   return albums;
 }
 
@@ -209,7 +223,7 @@ function extractTracksFromAlbum(
     if (!videoId) return;
     const texts = flexTexts(renderer as Record<string, unknown>);
     const title = texts[0] || "";
-    if (!titleMatchesTrack(title, trackTitle)) return;
+    if (!titleContainsTrack(title, trackTitle, artist)) return;
     hit = {
       videoId,
       title,
@@ -219,13 +233,22 @@ function extractTracksFromAlbum(
   return hit;
 }
 
+async function browseAlbumForTrack(
+  browseId: string,
+  trackTitle: string,
+  artist: string,
+): Promise<YtmTrackHit | null> {
+  const albumPage = await ytmPost<unknown>("browse", { browseId });
+  return extractTracksFromAlbum(albumPage, trackTitle, artist);
+}
+
 async function findAlbumBrowseId(artist: string, album: string): Promise<string | null> {
   const query = `${artist} ${album}`.trim();
   const search = await ytmPost<unknown>("search", {
     query,
     params: ALBUMS_FILTER,
   });
-  const albums = extractAlbums(search);
+  const albums = extractAlbums(search).filter((entry) => albumBelongsToArtist(entry, artist));
   const exact = albums.find((entry) => albumNameMatches(entry.name, album));
   if (exact) return exact.browseId;
 
@@ -243,9 +266,64 @@ async function findAlbumBrowseId(artist: string, album: string): Promise<string 
   return matched?.browseId ?? null;
 }
 
+/** Premium ATVs often miss song search — resolve via album pages instead. */
+async function findTrackViaAlbumSearch(
+  artist: string,
+  title: string,
+): Promise<YtmTrackHit | null> {
+  const queries = new Set<string>();
+  for (const variant of titleSearchVariants(title)) {
+    queries.add(`${artist} ${variant}`.trim());
+  }
+
+  const seenAlbums = new Set<string>();
+  for (const query of queries) {
+    const search = await ytmPost<unknown>("search", {
+      query,
+      params: ALBUMS_FILTER,
+    });
+    const albums = extractAlbums(search).filter((entry) => albumBelongsToArtist(entry, artist));
+    for (const entry of albums.slice(0, 6)) {
+      if (seenAlbums.has(entry.browseId)) continue;
+      seenAlbums.add(entry.browseId);
+      const hit = await browseAlbumForTrack(entry.browseId, title, artist);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
+
+async function findTrackViaArtistAlbums(
+  artist: string,
+  title: string,
+  album?: string | null,
+): Promise<YtmTrackHit | null> {
+  const artistSearch = await ytmPost<unknown>("search", {
+    query: artist,
+    params: ARTISTS_FILTER,
+  });
+  const browseId = extractArtistBrowseId(artistSearch, artist);
+  if (!browseId) return null;
+
+  const artistPage = await ytmPost<unknown>("browse", { browseId });
+  const albums = extractAlbums(artistPage);
+  const prioritized = album
+    ? [
+        ...albums.filter((entry) => albumNameMatches(entry.name, album)),
+        ...albums.filter((entry) => !albumNameMatches(entry.name, album)),
+      ]
+    : albums;
+
+  for (const entry of prioritized.slice(0, 16)) {
+    const hit = await browseAlbumForTrack(entry.browseId, title, artist);
+    if (hit) return hit;
+  }
+  return null;
+}
+
 /**
  * Resolve official Topic / YouTube Music catalog audio for a track.
- * Uses album metadata when available (e.g. PNL "Ryuk" on Deux frères).
+ * Prefers album browse — Premium-only ATVs often never appear in song search.
  */
 export async function searchYoutubeMusicCatalog(options: {
   artist: string;
@@ -258,41 +336,26 @@ export async function searchYoutubeMusicCatalog(options: {
   if (!artist || !title) return null;
 
   try {
-    // Direct songs search with Deezer→YouTube title variants first.
-    const fromSongs = await searchSongsCatalog(artist, title);
-    if (fromSongs) return fromSongs;
-
+    // 1) Named album → browse its tracklist (works for Music Premium ATVs).
     if (album) {
       const albumBrowseId = await findAlbumBrowseId(artist, album);
       if (albumBrowseId) {
-        const albumPage = await ytmPost<unknown>("browse", { browseId: albumBrowseId });
-        const fromAlbum = extractTracksFromAlbum(albumPage, title, artist);
+        const fromAlbum = await browseAlbumForTrack(albumBrowseId, title, artist);
         if (fromAlbum) return fromAlbum;
       }
     }
 
-    // Artist page: scan visible albums for the track title.
-    const artistSearch = await ytmPost<unknown>("search", {
-      query: artist,
-      params: ARTISTS_FILTER,
-    });
-    const browseId = extractArtistBrowseId(artistSearch, artist);
-    if (!browseId) return null;
+    // 2) Album search by artist + title (surfaces the parent album even when
+    //    the song itself is Premium-hidden from song search).
+    const viaAlbumSearch = await findTrackViaAlbumSearch(artist, title);
+    if (viaAlbumSearch) return viaAlbumSearch;
 
-    const artistPage = await ytmPost<unknown>("browse", { browseId });
-    const albums = extractAlbums(artistPage);
-    const prioritized = album
-      ? [
-          ...albums.filter((entry) => albumNameMatches(entry.name, album)),
-          ...albums.filter((entry) => !albumNameMatches(entry.name, album)),
-        ]
-      : albums;
+    // 3) Scan the artist discography shelves.
+    const viaArtist = await findTrackViaArtistAlbums(artist, title, album);
+    if (viaArtist) return viaArtist;
 
-    for (const entry of prioritized.slice(0, 8)) {
-      const albumPage = await ytmPost<unknown>("browse", { browseId: entry.browseId });
-      const hit = extractTracksFromAlbum(albumPage, title, artist);
-      if (hit) return hit;
-    }
+    // 4) Last resort: catalog song search (non-Premium indexed tracks).
+    return await searchSongsCatalog(artist, title);
   } catch (err) {
     console.warn("YouTube Music catalog search failed:", err);
   }

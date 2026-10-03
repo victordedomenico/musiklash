@@ -26,7 +26,7 @@ type YoutubeCandidate = {
 };
 
 const memoryCache = new Map<string, YoutubeSearchResult | null>();
-const CACHE_VERSION = "official-v5-episode";
+const CACHE_VERSION = "official-v8-album-browse";
 
 export { normalizeMusicText, significantTokensForMatch, titleSearchVariants } from "./youtube-match";
 
@@ -50,7 +50,7 @@ export function scoreYoutubeCandidate(
   artist: string,
   trackTitle: string,
 ): number {
-  if (!titleContainsTrack(candidate.title, trackTitle)) return -Infinity;
+  if (!titleContainsTrack(candidate.title, trackTitle, artist)) return -Infinity;
   if (titleLooksFake(candidate.title, trackTitle)) return -Infinity;
 
   const channel = candidate.channelTitle;
@@ -256,13 +256,14 @@ export async function searchYoutubeVideo(
 
   let result: YoutubeSearchResult | null = null;
   try {
-    // 1) YouTube Music catalog (Topic / album tracks) — finds official audio like PNL Ryuk
+    // 1) YouTube Music album browse — required for Music Premium ATVs that
+    //    never appear in song/video search (e.g. Maes Vue on Pure).
     const catalog = await searchYoutubeMusicCatalog({
       artist: artistTrim,
       title: titleTrim,
       album: albumTrim,
     });
-    if (catalog) {
+    if (catalog && titleContainsTrack(catalog.title, titleTrim, artistTrim)) {
       result = {
         videoId: catalog.videoId,
         title: catalog.title,

@@ -185,6 +185,12 @@ export default function BracketGame({
     };
   }, [bracketId, drawVersion, readOnly, size, trackCount, trackSignature]);
 
+  useEffect(() => {
+    if (!restoredProgress) return;
+    const timer = window.setTimeout(() => setRestoredProgress(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [restoredProgress]);
+
   // Deezer preview URLs are signed and expire quickly. Once the bracket is
   // over and the tree is on screen, refresh every track's preview in the
   // background so a click immediately plays without an await (which would

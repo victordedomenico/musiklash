@@ -4,7 +4,7 @@ import {
   pickOfficialYoutubeMatch,
   scoreYoutubeCandidate,
 } from "./youtube";
-import { titleMatchRatio, titleSearchVariants } from "./youtube-match";
+import { titleContainsTrack, titleMatchRatio, titleSearchVariants } from "./youtube-match";
 
 describe("youtube official matching", () => {
   it("normalizes accents and punctuation", () => {
@@ -21,6 +21,39 @@ describe("youtube official matching", () => {
     expect(
       titleMatchRatio("Djadja & Dinaz - Tenue De Motard 3", "Booska tenue 2 motard 3"),
     ).toBeGreaterThanOrEqual(0.75);
+  });
+
+  it("rejects Pacha Mama / Maa Vue for short Maes titles", () => {
+    expect(titleContainsTrack("Pacha Mama", "Mama", "Maes")).toBe(false);
+    expect(titleContainsTrack("Maa Vue- Kuv Niam", "Vue", "Maes")).toBe(false);
+    expect(titleContainsTrack("Maes - Mama (Clip Officiel)", "Mama", "Maes")).toBe(true);
+    expect(titleContainsTrack("Maes - Vue", "Vue", "Maes")).toBe(true);
+
+    expect(
+      scoreYoutubeCandidate(
+        {
+          title: "Pacha Mama",
+          channelTitle: "Maes - Topic",
+          verified: false,
+          views: 1_000_000,
+        },
+        "Maes",
+        "Mama",
+      ),
+    ).toBe(-Infinity);
+
+    expect(
+      scoreYoutubeCandidate(
+        {
+          title: "Maes - Mama (Clip Officiel)",
+          channelTitle: "Maes officiel",
+          verified: true,
+          views: 10_000_000,
+        },
+        "Maes",
+        "Mama",
+      ),
+    ).toBeGreaterThanOrEqual(100);
   });
 
   it("rejects Tenue de motard 2 when Deezer asks for episode 3", () => {

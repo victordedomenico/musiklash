@@ -75,12 +75,12 @@ export function titleLooksFake(videoTitle: string, trackTitle: string): boolean 
   return FAKE_TITLE_RE.test(normalizedVideo) && !FAKE_TITLE_RE.test(normalizedTrack);
 }
 
-/** Share of significant track tokens found in the video title (promo words ignored). */
+/** Share of significant track tokens found as whole words in the video title. */
 export function titleMatchRatio(videoTitle: string, trackTitle: string): number {
-  const video = normalizeMusicText(videoTitle);
+  const videoTokens = new Set(significantTokensForMatch(stripPromoTitleNoise(videoTitle)));
   const tokens = significantTokensForMatch(stripPromoTitleNoise(trackTitle));
-  if (!video || tokens.length === 0) return 0;
-  const matched = tokens.filter((token) => video.includes(token)).length;
+  if (tokens.length === 0) return 0;
+  const matched = tokens.filter((token) => videoTokens.has(token)).length;
   return matched / tokens.length;
 }
 
@@ -92,16 +92,41 @@ export function trailingEpisodeNumber(title: string): string | null {
   return digits.length > 0 ? digits[digits.length - 1]! : null;
 }
 
-export function titleContainsTrack(videoTitle: string, trackTitle: string): boolean {
-  const video = normalizeMusicText(videoTitle);
+/**
+ * True when the video title really is this track.
+ * Uses whole-word tokens (so "Mama" ≠ "Pacha Mama") and, for single-word
+ * titles, requires an exact core match after stripping artist / promo noise.
+ */
+export function titleContainsTrack(
+  videoTitle: string,
+  trackTitle: string,
+  artist?: string | null,
+): boolean {
+  const trackTokens = significantTokensForMatch(stripPromoTitleNoise(trackTitle));
+  if (trackTokens.length === 0) return false;
+
+  const videoTokens = significantTokensForMatch(stripPromoTitleNoise(videoTitle));
+  const videoSet = new Set(videoTokens);
+  const wordTokens = trackTokens.filter((token) => !/^\d+$/.test(token));
   const episode = trailingEpisodeNumber(trackTitle);
+
   // Deezer sometimes inserts a middle digit ("tenue 2 motard 3") that is not on
   // YouTube ("Tenue De Motard 3"). Still require the final episode number.
-  if (episode) {
-    const videoTokens = new Set(video.split(" ").filter(Boolean));
-    if (!videoTokens.has(episode)) return false;
+  if (episode && !videoSet.has(episode)) return false;
+  // Non-digit words must appear as whole tokens (not substrings).
+  if (wordTokens.length === 0) return Boolean(episode && videoSet.has(episode));
+  if (!wordTokens.every((token) => videoSet.has(token))) return false;
+
+  if (wordTokens.length === 1) {
+    const artistTokens = new Set(significantTokensForMatch(artist ?? ""));
+    const coreWords = videoTokens.filter(
+      (token) => !artistTokens.has(token) && !/^\d+$/.test(token),
+    );
+    // "Mama" OK; "Pacha Mama" / "Maa Vue Kuv Niam" rejected.
+    return coreWords.length === 1 && coreWords[0] === wordTokens[0];
   }
-  // Allow one missing non-episode token while rejecting weak matches.
+
+  // Multi-word: allow one missing middle digit while keeping word overlap high.
   return titleMatchRatio(videoTitle, trackTitle) >= 0.75;
 }
 
@@ -111,7 +136,20 @@ export function channelMatchesArtist(channelTitle: string, artist: string): bool
   if (!channel || !artistNorm) return false;
   if (channel === artistNorm) return true;
   if (channel === `${artistNorm} topic` || channel === `${artistNorm} vevo`) return true;
-  if (channel.startsWith(`${artistNorm} `) && (channel.includes("topic") || channel.endsWith("vevo"))) {
+  if (
+    channel === `${artistNorm} officiel` ||
+    channel === `${artistNorm} official` ||
+    channel === `${artistNorm} vevo`
+  ) {
+    return true;
+  }
+  if (
+    channel.startsWith(`${artistNorm} `) &&
+    (channel.includes("topic") ||
+      channel.endsWith("vevo") ||
+      channel.includes("officiel") ||
+      channel.includes("official"))
+  ) {
     return true;
   }
   if (channel.replace(/\s/g, "") === `${artistNorm.replace(/\s/g, "")}vevo`) return true;
