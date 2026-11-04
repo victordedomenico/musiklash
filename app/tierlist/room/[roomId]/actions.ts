@@ -53,7 +53,9 @@ export async function joinTierlistRoom(roomId: string) {
     if (participants.some((participant) => participant.playerId === user.playerId))
       return response(roomId);
     const pendingParticipants = normalizeParticipants(room.pendingParticipants);
-    const isReturningHost = room.hostId === user.playerId && room.previousHostId === user.playerId;
+    // The original host may come back after a refresh/disconnect even though the
+    // host role was temporarily handed to another player: they reclaim it.
+    const isReturningHost = room.previousHostId === user.playerId;
     if (!isReturningHost && room.status !== "waiting" && room.status !== "playing") {
       return { ok: false as const, error: "La partie a déjà commencé." };
     }
@@ -76,6 +78,7 @@ export async function joinTierlistRoom(roomId: string) {
               pendingParticipants: pendingParticipants.filter(
                 (participant) => participant.playerId !== user.playerId,
               ) as unknown as Prisma.JsonArray,
+              hostId: user.playerId,
               previousHostId: null,
             }
           : {
