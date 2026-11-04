@@ -1,5 +1,6 @@
 "use server";
 
+import { MAX_BRACKET_TRACKS } from "@/lib/bracket";
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
@@ -55,7 +56,9 @@ export async function createStreamClash(input: {
 
   if (!input.title.trim()) return { error: "Le titre est requis." };
   if (input.tracks.length < 4) return { error: "Il faut au moins 4 morceaux." };
-  if (input.tracks.length > 50) return { error: "50 morceaux maximum." };
+  if (input.tracks.length > MAX_BRACKET_TRACKS) {
+    return { error: `Un Stream Clash peut contenir jusqu’à ${MAX_BRACKET_TRACKS} morceaux.` };
+  }
 
   if (input.mode === "multi" && input.visibility === "none") {
     return {

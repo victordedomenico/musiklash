@@ -50,7 +50,7 @@ export default function GuidePage() {
       icon: <Music2 size={26} />,
       tone: "#ef4444",
       steps: [
-        "Création: de 3 à 50 morceaux.",
+        "Création: minimum 3 morceaux, sans limite de sélection pratique.",
         "Chaque morceau dure 30 secondes.",
         "Barème par morceau: +2 points pour le titre, +1 point pour l'artiste (max 3 points).",
         "La validation peut être manuelle ou automatique à la fin du timer; score final sauvegardé et partageable.",
@@ -105,7 +105,7 @@ export default function GuidePage() {
       icon: <Zap size={26} />,
       tone: "#a855f7",
       steps: [
-        "Création: de 4 à 50 morceaux avec extrait audio, choisis via TrackPicker.",
+        "Création: minimum 4 morceaux avec extrait audio.",
         "Chaque manche oppose deux morceaux: devine lequel a le meilleur score de popularité Deezer (indice rank).",
         "Tu peux écouter les extraits avant de choisir. Difficultés: Facile (tout écart), Normal (≤ 500K), Difficile (≤ 100K).",
         "10 secondes par manche, +100 pts par bonne réponse. De 5 à 20 manches selon ta configuration.",
@@ -116,7 +116,7 @@ export default function GuidePage() {
       icon: <Heart size={26} />,
       tone: "#ec4899",
       steps: [
-        "Création: choisis morceaux, albums ou artistes (5 à 100 éléments par deck).",
+        "Création: choisis au moins 5 morceaux, albums ou artistes par deck.",
         "Pour chaque élément: vote Smash ou Pass — les stats communautaires globales s'affichent sur l'élément précédent.",
         "Compteurs de session en direct sur les boutons PASS et SMASH.",
         "Partage ton deck en public ou joue en mode éphémère (non publié).",

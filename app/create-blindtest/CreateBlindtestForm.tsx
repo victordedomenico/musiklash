@@ -1,5 +1,6 @@
 "use client";
 
+import { MAX_BRACKET_TRACKS } from "@/lib/bracket";
 import { useState, useTransition } from "react";
 import TrackPicker from "@/components/TrackPicker";
 import GenrePicker from "@/components/GenrePicker";
@@ -23,15 +24,11 @@ export default function CreateBlindtestForm({
   const [pending, startTransition] = useTransition();
   const isFlash = variant === "flash";
   const minimumTracks = isFlash ? FLASH_TRACKS_PER_SESSION : 3;
-  const maximumTracks = isFlash ? FLASH_TRACKS_PER_SESSION : 50;
+  const maximumTracks = MAX_BRACKET_TRACKS;
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (isFlash && tracks.length !== FLASH_TRACKS_PER_SESSION) {
-      setError(`Il faut ${FLASH_TRACKS_PER_SESSION} morceaux : un par difficulté.`);
-      return;
-    }
     if (tracks.length < minimumTracks) {
       setError(`Il faut au moins ${minimumTracks} morceaux.`);
       return;
@@ -97,7 +94,7 @@ export default function CreateBlindtestForm({
         size={maximumTracks}
         selected={tracks}
         onChange={setTracks}
-        freeMode={!isFlash}
+        unlimited
         genre={genre}
       />
 
@@ -111,7 +108,7 @@ export default function CreateBlindtestForm({
       <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
         <p className="text-sm text-[color:var(--muted)]">
           {isFlash
-            ? `${tracks.length} / ${FLASH_TRACKS_PER_SESSION} morceaux · un par difficulté`
+            ? `${tracks.length} morceaux sélectionnés · min. ${FLASH_TRACKS_PER_SESSION} ; 5 tirés par partie`
             : `${tracks.length} morceau${tracks.length > 1 ? "x" : ""} sélectionné${tracks.length > 1 ? "s" : ""} · min. ${minimumTracks}`}
         </p>
         <button

@@ -1,5 +1,6 @@
 "use server";
 
+import { MAX_BRACKET_TRACKS } from "@/lib/bracket";
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
@@ -30,7 +31,9 @@ export async function createSmashPass(input: {
 }) {
   if (!input.title.trim()) return { error: "Le titre est requis." };
   if (input.items.length < 5) return { error: "Il faut au moins 5 éléments." };
-  if (input.items.length > 100) return { error: "100 éléments maximum." };
+  if (input.items.length > MAX_BRACKET_TRACKS) {
+    return { error: `Un deck peut contenir jusqu’à ${MAX_BRACKET_TRACKS} éléments.` };
+  }
 
   let identity: { playerId: string };
   try {

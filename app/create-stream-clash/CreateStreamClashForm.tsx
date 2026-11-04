@@ -1,5 +1,6 @@
 "use client";
 
+import { MAX_BRACKET_TRACKS } from "@/lib/bracket";
 import { useState, useTransition } from "react";
 import TrackPicker from "@/components/TrackPicker";
 import GenrePicker from "@/components/GenrePicker";
@@ -148,7 +149,13 @@ export default function CreateStreamClashForm({ mode }: { mode: "solo" | "multi"
       </div>
 
       {/* Picker */}
-      <TrackPicker size={50} selected={tracks} onChange={setTracks} freeMode genre={genre} />
+      <TrackPicker
+        size={MAX_BRACKET_TRACKS}
+        selected={tracks}
+        onChange={setTracks}
+        unlimited
+        genre={genre}
+      />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">

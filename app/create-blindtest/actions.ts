@@ -1,5 +1,6 @@
 "use server";
 
+import { MAX_BRACKET_TRACKS } from "@/lib/bracket";
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
@@ -29,14 +30,16 @@ export async function createBlindtest(input: {
 }) {
   if (!input.title.trim()) return { error: "Le titre est requis." };
   if (input.variant === "flash") {
-    if (input.tracks.length !== FLASH_TRACKS_PER_SESSION) {
+    if (input.tracks.length < FLASH_TRACKS_PER_SESSION) {
       return {
-        error: `Le Blindtest éclair se joue avec ${FLASH_TRACKS_PER_SESSION} morceaux : un par difficulté.`,
+        error: `Il faut au moins ${FLASH_TRACKS_PER_SESSION} morceaux pour le Blindtest éclair.`,
       };
     }
   } else {
     if (input.tracks.length < 3) return { error: "Il faut au moins 3 morceaux." };
-    if (input.tracks.length > 50) return { error: "50 morceaux maximum." };
+  }
+  if (input.tracks.length > MAX_BRACKET_TRACKS) {
+    return { error: `Un blindtest peut contenir jusqu’à ${MAX_BRACKET_TRACKS} morceaux.` };
   }
 
   let identity: { playerId: string };

@@ -1,5 +1,6 @@
 "use client";
 
+import { MAX_BRACKET_TRACKS } from "@/lib/bracket";
 import { useState } from "react";
 import { Search, Plus, X, Disc3, User, Music } from "lucide-react";
 import type { DeezerTrack, DeezerAlbum, DeezerArtist } from "@/lib/deezer";
@@ -10,7 +11,7 @@ import { useDeezerSearch } from "@/components/deezer/useDeezerSearch";
 import { genreLabel, type MusicGenre } from "@/lib/genres";
 
 const MIN_ITEMS = 5;
-const MAX_ITEMS = 100;
+const MAX_ITEMS = MAX_BRACKET_TRACKS;
 
 type Props = {
   itemType: SmashPassItemType;
