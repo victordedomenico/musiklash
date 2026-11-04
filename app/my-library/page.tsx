@@ -159,12 +159,18 @@ export default async function MyBracketsPage({
             orderBy: { createdAt: "desc" },
           }),
           prisma.bracketRoom.findMany({
-            where: { hostId: activePlayerId, status: { not: "finished" } },
+            where: {
+              OR: [{ hostId: activePlayerId }, { previousHostId: activePlayerId }],
+              status: { not: "finished" },
+            },
             select: { id: true, bracketId: true },
             orderBy: { updatedAt: "desc" },
           }),
           prisma.tierlistRoom.findMany({
-            where: { hostId: activePlayerId, status: { not: "finished" } },
+            where: {
+              OR: [{ hostId: activePlayerId }, { previousHostId: activePlayerId }],
+              status: { not: "finished" },
+            },
             select: { id: true, tierlistId: true },
             orderBy: { updatedAt: "desc" },
           }),

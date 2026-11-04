@@ -104,7 +104,8 @@ export async function joinBracketRoom(roomId: string) {
       return response(roomId);
     }
 
-    const isReturningHost = room.hostId === user.playerId && room.previousHostId === user.playerId;
+    // The original host reclaims the role even if it was handed to another player.
+    const isReturningHost = room.previousHostId === user.playerId;
     if (!isReturningHost && room.status !== "waiting" && room.status !== "playing") {
       return { ok: false as const, error: "La partie a déjà commencé." };
     }
@@ -126,6 +127,8 @@ export async function joinBracketRoom(roomId: string) {
               pendingParticipants: pendingParticipants.filter(
                 (player) => player.playerId !== user.playerId,
               ) as unknown as Prisma.JsonArray,
+              hostId: user.playerId,
+              hostLastSeenAt: new Date(),
               previousHostId: null,
               ...(room.status === "paused" ? { status: "playing" } : {}),
             }
@@ -484,7 +487,11 @@ function resolvedDuelData(
     winnerSeed: state.winner,
     duelStartedAt: state.winner ? null : room.timerEnabled ? new Date() : null,
     ...(nextHost
-      ? { hostId: nextHost.playerId, previousHostId: null, hostLastSeenAt: new Date() }
+      ? {
+          hostId: nextHost.playerId,
+          previousHostId: room.previousHostId ?? room.hostId,
+          hostLastSeenAt: new Date(),
+        }
       : {}),
     revision: { increment: 1 },
   };
