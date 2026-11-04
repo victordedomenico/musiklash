@@ -1,9 +1,13 @@
-import { DEFAULT_TIERS } from "./tierlist-tiers";
+import { DEFAULT_TIERS, type TierConfig } from "./tierlist-tiers";
 
 type Ballot = { tierId: string | null };
 
-export function resolveTierlistBallots(ballots: Ballot[], random: () => number = Math.random) {
-  const votesByTier = Object.fromEntries(DEFAULT_TIERS.map((tier) => [tier.id, 0]));
+export function resolveTierlistBallots(
+  ballots: Ballot[],
+  random: () => number = Math.random,
+  tiers: TierConfig[] = DEFAULT_TIERS,
+) {
+  const votesByTier = Object.fromEntries(tiers.map((tier) => [tier.id, 0]));
   let skippedCount = 0;
 
   for (const ballot of ballots) {

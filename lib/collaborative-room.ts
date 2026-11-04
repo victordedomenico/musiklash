@@ -2,7 +2,7 @@ import "server-only";
 
 import prisma from "@/lib/prisma";
 import { buildBracketState, type BracketSize, type Pairing, type Vote } from "@/lib/bracket";
-import { DEFAULT_TIERS } from "@/lib/tierlist-tiers";
+import { DEFAULT_TIERS, roomTierConfig, type TierConfig } from "@/lib/tierlist-tiers";
 
 export type RoomParticipant = { playerId: string; username: string };
 export type BracketBallot = { playerId: string; winnerSeed: number | null };
@@ -77,6 +77,7 @@ export type BracketRoomSnapshot = {
 
 export type TierlistRoomSnapshot = {
   id: string;
+  revision: number;
   hostId: string;
   hostName: string;
   previousHostId: string | null;
@@ -86,6 +87,7 @@ export type TierlistRoomSnapshot = {
   rejectedPlayerIds: string[];
   excludedPlayerIds: string[];
   placements: Record<string, string>;
+  tiers: TierConfig[];
   ballots: TierlistBallot[];
   lastResolution: TierlistRoundResolution | null;
   timerEnabled: boolean;
@@ -215,10 +217,13 @@ export function normalizeBracketResolution(value: unknown): BracketRoundResoluti
   };
 }
 
-export function normalizeTierlistBallots(value: unknown): TierlistBallot[] {
+export function normalizeTierlistBallots(
+  value: unknown,
+  tiers: TierConfig[] = DEFAULT_TIERS,
+): TierlistBallot[] {
   if (!Array.isArray(value)) return [];
   const ids = new Set<string>();
-  const validTiers = new Set(DEFAULT_TIERS.map((tier) => tier.id));
+  const validTiers = new Set(tiers.map((tier) => tier.id));
   return value.flatMap((entry) => {
     if (
       !isRecord(entry) ||
@@ -233,10 +238,13 @@ export function normalizeTierlistBallots(value: unknown): TierlistBallot[] {
   });
 }
 
-export function normalizeTierlistResolution(value: unknown): TierlistRoundResolution | null {
+export function normalizeTierlistResolution(
+  value: unknown,
+  tiers: TierConfig[] = DEFAULT_TIERS,
+): TierlistRoundResolution | null {
   if (!isRecord(value)) return null;
   const votesByTierValue = value.votesByTier;
-  const validTiers = new Set(DEFAULT_TIERS.map((tier) => tier.id));
+  const validTiers = new Set(tiers.map((tier) => tier.id));
   if (
     typeof value.id !== "string" ||
     !Number.isInteger(value.position) ||
@@ -255,7 +263,7 @@ export function normalizeTierlistResolution(value: unknown): TierlistRoundResolu
     return null;
   }
   const votesByTier = Object.fromEntries(
-    DEFAULT_TIERS.map((tier) => [
+    tiers.map((tier) => [
       tier.id,
       Number.isInteger(votesByTierValue[tier.id]) ? (votesByTierValue[tier.id] as number) : 0,
     ]),
@@ -267,9 +275,12 @@ export function normalizeTierlistResolution(value: unknown): TierlistRoundResolu
   };
 }
 
-export function normalizePlacements(value: unknown): Record<string, string> {
+export function normalizePlacements(
+  value: unknown,
+  tiers: TierConfig[] = DEFAULT_TIERS,
+): Record<string, string> {
   if (!isRecord(value)) return {};
-  const validTiers = new Set(DEFAULT_TIERS.map((tier) => tier.id));
+  const validTiers = new Set(tiers.map((tier) => tier.id));
   return Object.fromEntries(
     Object.entries(value).flatMap(([position, tierId]) =>
       /^\d+$/.test(position) && typeof tierId === "string" && validTiers.has(tierId)
@@ -373,19 +384,22 @@ async function findTierlistRoom(roomId: string) {
 
 export function toTierlistRoomSnapshot(room: NonNullable<TierlistRoomRaw>): TierlistRoomSnapshot {
   const participants = normalizeParticipants(room.participants);
+  const tiers = roomTierConfig(room.placements);
   return {
     id: room.id,
     hostId: room.hostId,
     hostName: getHostDisplayName(room.hostId, participants, room.host.username),
     previousHostId: room.previousHostId,
     status: room.status as TierlistRoomSnapshot["status"],
+    revision: room.revision,
     participants,
     pendingParticipants: normalizeParticipants(room.pendingParticipants),
     rejectedPlayerIds: normalizeExcludedPlayerIds(room.rejectedPlayerIds),
     excludedPlayerIds: normalizeExcludedPlayerIds(room.excludedPlayerIds),
-    placements: normalizePlacements(room.placements),
-    ballots: normalizeTierlistBallots(room.ballots),
-    lastResolution: normalizeTierlistResolution(room.lastResolution),
+    tiers,
+    placements: normalizePlacements(room.placements, tiers),
+    ballots: normalizeTierlistBallots(room.ballots, tiers),
+    lastResolution: normalizeTierlistResolution(room.lastResolution, tiers),
     timerEnabled: room.timerEnabled,
     positionStartedAt:
       (

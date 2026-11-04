@@ -64,7 +64,7 @@ type TierState = Record<string, TierItem[]>;
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const POOL_ID = "__pool__";
-const TIER_LABEL_COLORS = [
+export const TIER_LABEL_COLORS = [
   "#f67f7f",
   "#ebb56f",
   "#ecd172",
@@ -330,7 +330,7 @@ function TierRow({
   );
 }
 
-function TierRowEditorModal({
+export function TierRowEditorModal({
   tier,
   canDelete,
   onClose,
@@ -348,9 +348,9 @@ function TierRowEditorModal({
   onColorChange: (tierId: string, color: string) => void;
   onLabelChange: (tierId: string, nextLabel: string) => void;
   onDelete: (tierId: string) => void;
-  onClearRow: (tierId: string) => void;
-  onAddAbove: (tierId: string) => void;
-  onAddBelow: (tierId: string) => void;
+  onClearRow?: (tierId: string) => void;
+  onAddAbove?: (tierId: string) => void;
+  onAddBelow?: (tierId: string) => void;
   texts: TierlistBoardTexts;
 }) {
   return (
@@ -405,6 +405,7 @@ function TierRowEditorModal({
           >
             {texts.deleteRow}
           </button>
+          {onClearRow ? (
           <button
             type="button"
             onClick={() => onClearRow(tier.id)}
@@ -412,6 +413,8 @@ function TierRowEditorModal({
           >
             {texts.clearRowImages}
           </button>
+          ) : null}
+          {onAddAbove ? (
           <button
             type="button"
             onClick={() => onAddAbove(tier.id)}
@@ -419,6 +422,8 @@ function TierRowEditorModal({
           >
             {texts.addRowAbove}
           </button>
+          ) : null}
+          {onAddBelow ? (
           <button
             type="button"
             onClick={() => onAddBelow(tier.id)}
@@ -426,6 +431,7 @@ function TierRowEditorModal({
           >
             {texts.addRowBelow}
           </button>
+          ) : null}
         </div>
       </div>
     </div>

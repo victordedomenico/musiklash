@@ -8,8 +8,12 @@ import {
   Copy,
   Crown,
   ListOrdered,
+  ChevronDown,
+  ChevronUp,
   Pause,
   Play,
+  Plus,
+  Settings,
   SkipForward,
   Swords,
   UserMinus,
@@ -35,11 +39,14 @@ import {
 } from "@/lib/multiplayer-room-resume";
 import { fetchTrackPreview } from "@/lib/deezer-preview-client";
 import { fetchYoutubeVideoId } from "@/lib/youtube-client";
-import { DEFAULT_TIERS } from "@/lib/tierlist-tiers";
+import type { TierConfig } from "@/lib/tierlist-tiers";
+import { TierRowEditorModal, type TierlistBoardTexts } from "@/components/TierlistBoard";
 import type { Dictionary } from "@/lib/i18n";
 import {
   approveTierlistJoinRequest,
   clearTierlistVote,
+  editTierlistRoomTiers,
+  revoteTierlistTrack,
   expireTierlistRound,
   finishTierlistRound,
   joinTierlistRoom,
@@ -242,19 +249,21 @@ function TrackPreview({
 function ResolutionReveal({
   resolution,
   winner,
+  tiers,
   onDone,
   texts,
 }: {
   resolution: TierlistRoundResolution;
   winner: CollaborativeTrack | null;
+  tiers: TierConfig[];
   onDone: () => void;
   texts: Dictionary["multiplayerRoom"];
 }) {
   const reducedMotion = useReducedMotion();
   const [coinLanded, setCoinLanded] = useState(!resolution.tie);
-  const pileTier = DEFAULT_TIERS.find((tier) => tier.id === resolution.pileTierId);
-  const faceTier = DEFAULT_TIERS.find((tier) => tier.id === resolution.faceTierId);
-  const winnerTier = DEFAULT_TIERS.find((tier) => tier.id === resolution.tierId);
+  const pileTier = tiers.find((tier) => tier.id === resolution.pileTierId);
+  const faceTier = tiers.find((tier) => tier.id === resolution.faceTierId);
+  const winnerTier = tiers.find((tier) => tier.id === resolution.tierId);
   const winningVotes = resolution.votesByTier[resolution.tierId] ?? 0;
   const rotation = resolution.coinSide === "face" ? 1620 : 1440;
   return (
@@ -396,13 +405,18 @@ export default function TierlistRoomClient({
   initialRoom,
   userId,
   texts,
+  boardTexts,
 }: {
   initialRoom: TierlistRoomSnapshot;
   userId: string;
   username: string;
   texts: Dictionary["multiplayerRoom"];
+  boardTexts: TierlistBoardTexts;
 }) {
   const [room, setRoom] = useState(initialRoom);
+  const [editingTierId, setEditingTierId] = useState<string | null>(null);
+  const [labelDraft, setLabelDraft] = useState<string | null>(null);
+  const latestRevisionRef = useRef(initialRoom.revision);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [activeResolution, setActiveResolution] = useState<TierlistRoundResolution | null>(null);
@@ -449,23 +463,25 @@ export default function TierlistRoomClient({
   const byTier = useMemo(
     () =>
       Object.fromEntries(
-        DEFAULT_TIERS.map((tier) => [
+        room.tiers.map((tier) => [
           tier.id,
           room.tierlist.tracks.filter(
             (track) => room.placements[String(track.position)] === tier.id,
           ),
         ]),
       ),
-    [room.placements, room.tierlist.tracks],
+    [room.placements, room.tierlist.tracks, room.tiers],
   );
   const voteCounts = room.ballots.reduce<Record<string, number>>(
     (counts, ballot) => {
       if (ballot.tierId !== null) counts[ballot.tierId] = (counts[ballot.tierId] ?? 0) + 1;
       return counts;
     },
-    Object.fromEntries(DEFAULT_TIERS.map((tier) => [tier.id, 0])),
+    Object.fromEntries(room.tiers.map((tier) => [tier.id, 0])),
   );
   const acceptRoom = useCallback((nextRoom: TierlistRoomSnapshot) => {
+    if (nextRoom.revision < latestRevisionRef.current) return;
+    latestRevisionRef.current = nextRoom.revision;
     const resolution = nextRoom.lastResolution;
     if (resolution && resolution.id !== seenResolutionRef.current) {
       seenResolutionRef.current = resolution.id;
@@ -500,7 +516,6 @@ export default function TierlistRoomClient({
   }, [isHost, me, removedForAfk]);
 
   useEffect(() => {
-    if (room.status === "finished") return;
     const id = window.setInterval(() => {
       void refreshTierlistRoom(room.id).then((result) => {
         if (result.ok) acceptRoom(result.room);
@@ -597,6 +612,7 @@ export default function TierlistRoomClient({
           key={activeResolution.id}
           resolution={activeResolution}
           winner={revealedWinner}
+          tiers={room.tiers}
           onDone={() => setActiveResolution(null)}
           texts={texts}
         />
@@ -799,7 +815,7 @@ export default function TierlistRoomClient({
                   <button
                     type="button"
                     disabled={pending || timerExpired}
-                    onClick={() => run(() => skipTierlistVote(room.id))}
+                    onClick={() => run(() => skipTierlistVote(room.id, room.currentPosition))}
                     className="btn-ghost text-xs"
                   >
                     <SkipForward size={15} />
@@ -840,12 +856,14 @@ export default function TierlistRoomClient({
             <p className="text-sm text-[color:var(--muted)]">{currentTrack.artist}</p>
             <TrackPreview key={currentTrack.deezerTrackId} track={currentTrack} texts={texts} />
             <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-              {DEFAULT_TIERS.map((tier) => (
+              {room.tiers.map((tier) => (
                 <button
                   key={tier.id}
                   type="button"
                   disabled={!me || hasVoted || pending || timerExpired}
-                  onClick={() => run(() => voteTierlistRoom(room.id, tier.id))}
+                  onClick={() =>
+                    run(() => voteTierlistRoom(room.id, tier.id, room.currentPosition))
+                  }
                   className="rounded-xl border px-2 py-3 font-black text-black transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
                   style={{ background: tier.color, borderColor: tier.color }}
                 >
@@ -876,7 +894,7 @@ export default function TierlistRoomClient({
                 const ballot = room.ballots.find(
                   (candidate) => candidate.playerId === participant.playerId,
                 );
-                const tier = DEFAULT_TIERS.find((candidate) => candidate.id === ballot?.tierId);
+                const tier = room.tiers.find((candidate) => candidate.id === ballot?.tierId);
                 return (
                   <div
                     key={participant.playerId}
@@ -909,20 +927,38 @@ export default function TierlistRoomClient({
           {texts.tierlistFinished}
         </p>
       ) : null}
-      {room.status !== "waiting" ? (
-        <section className="overflow-hidden rounded-xl border border-[color:var(--border)]">
-          {DEFAULT_TIERS.map((tier) => (
+      <section className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3 md:p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold uppercase tracking-wider text-[color:var(--muted)]">
+            {boardTexts.resultTitle}
+          </p>
+          {isHost ? (
+            <button
+              type="button"
+              className="btn-ghost h-8 px-2 text-xs"
+              disabled={pending || room.tiers.length >= 30}
+              onClick={() => run(() => editTierlistRoomTiers(room.id, { kind: "add" }))}
+            >
+              <Plus size={14} />
+              {boardTexts.addTier}
+            </button>
+          ) : null}
+        </div>
+        <div className="space-y-1">
+          {room.tiers.map((tier, index) => (
             <div
               key={tier.id}
-              className="flex min-h-16 border-b border-[color:var(--border)] last:border-b-0"
+              className="flex min-h-[74px] items-stretch overflow-hidden border border-black/80 bg-[#181818]"
             >
               <div
-                className="flex w-16 items-center justify-center font-black text-black"
-                style={{ background: tier.color }}
+                className="flex w-[88px] shrink-0 items-center justify-center border-r border-black/60 px-2 py-2"
+                style={{ backgroundColor: tier.color }}
               >
-                {tier.label}
+                <p className="select-none break-all text-center text-xl font-bold tracking-wide text-black/75">
+                  {tier.label || boardTexts.rowFallbackLabel}
+                </p>
               </div>
-              <div className="flex flex-1 flex-wrap gap-2 bg-[color:var(--surface-2)] p-2">
+              <div className="flex min-h-[72px] flex-1 flex-wrap gap-2 bg-[#141414] p-2">
                 {byTier[tier.id]?.map((track) => (
                   <div
                     key={track.position}
@@ -937,12 +973,109 @@ export default function TierlistRoomClient({
                       />
                     ) : null}
                     <span>{track.title}</span>
+                    {me ? (
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => run(() => revoteTierlistTrack(room.id, track.position))}
+                        className="rounded px-1 text-sky-300 hover:text-white"
+                        title="Relancer un vote pour déplacer ce morceau"
+                        aria-label={`Revoter pour ${track.title}`}
+                      >
+                        Revoter
+                      </button>
+                    ) : null}
                   </div>
                 ))}
               </div>
+              {isHost ? (
+                <div className="flex w-[46px] shrink-0 flex-col border-l border-black/80 bg-black">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLabelDraft(tier.label);
+                      setEditingTierId(tier.id);
+                    }}
+                    className="inline-flex h-[24px] items-center justify-center border-b border-white/10 text-white/90 transition hover:bg-white/10"
+                    aria-label={boardTexts.rowSettings}
+                    title={boardTexts.rowSettings}
+                  >
+                    <Settings size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending || index === 0}
+                    onClick={() =>
+                      run(() =>
+                        editTierlistRoomTiers(room.id, { kind: "move", id: tier.id, direction: "up" }),
+                      )
+                    }
+                    className="inline-flex h-[24px] items-center justify-center border-b border-white/10 text-white/90 transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label={boardTexts.rowMoveUp}
+                    title={boardTexts.rowMoveUp}
+                  >
+                    <ChevronUp size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending || index === room.tiers.length - 1}
+                    onClick={() =>
+                      run(() =>
+                        editTierlistRoomTiers(room.id, {
+                          kind: "move",
+                          id: tier.id,
+                          direction: "down",
+                        }),
+                      )
+                    }
+                    className="inline-flex h-[24px] items-center justify-center text-white/90 transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
+                    aria-label={boardTexts.rowMoveDown}
+                    title={boardTexts.rowMoveDown}
+                  >
+                    <ChevronDown size={18} />
+                  </button>
+                </div>
+              ) : null}
             </div>
           ))}
-        </section>
+        </div>
+      </section>
+      {isHost && editingTierId && room.tiers.some((tier) => tier.id === editingTierId) ? (
+        <TierRowEditorModal
+          tier={{
+            ...room.tiers.find((tier) => tier.id === editingTierId)!,
+            label: labelDraft ?? room.tiers.find((tier) => tier.id === editingTierId)!.label,
+          }}
+          canDelete={room.tiers.length > 1}
+          onClose={() => {
+            const current = room.tiers.find((tier) => tier.id === editingTierId);
+            if (current && labelDraft !== null && labelDraft !== current.label) {
+              const id = current.id;
+              const value = labelDraft;
+              run(() => editTierlistRoomTiers(room.id, { kind: "label", id, value }));
+            }
+            setEditingTierId(null);
+            setLabelDraft(null);
+          }}
+          onColorChange={(id, value) =>
+            run(() => editTierlistRoomTiers(room.id, { kind: "color", id, value }))
+          }
+          onLabelChange={(_id, value) => setLabelDraft(value)}
+          onDelete={(id) => {
+            setEditingTierId(null);
+            setLabelDraft(null);
+            run(() => editTierlistRoomTiers(room.id, { kind: "delete", id }));
+          }}
+          onAddAbove={(id) => {
+            const at = room.tiers.findIndex((tier) => tier.id === id);
+            run(() => editTierlistRoomTiers(room.id, { kind: "add", index: at }));
+          }}
+          onAddBelow={(id) => {
+            const at = room.tiers.findIndex((tier) => tier.id === id);
+            run(() => editTierlistRoomTiers(room.id, { kind: "add", index: at + 1 }));
+          }}
+          texts={boardTexts}
+        />
       ) : null}
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
     </div>

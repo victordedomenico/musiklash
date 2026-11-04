@@ -29,3 +29,14 @@ describe("resolveTierlistBallots", () => {
     });
   });
 });
+
+it("counts votes for custom tiers and uses only those tiers in a draw", () => {
+  const tiers = [
+    { id: "custom-1", label: "Favoris", color: "#123456" },
+    { id: "custom-2", label: "Autres", color: "#abcdef" },
+  ];
+  expect(resolveTierlistBallots([{ tierId: "custom-2" }], () => 0, tiers)).toMatchObject({
+    tierId: "custom-2",
+    votesByTier: { "custom-1": 0, "custom-2": 1 },
+  });
+});

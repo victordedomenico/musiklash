@@ -43,6 +43,7 @@ export default async function TierlistRoomPage({
         userId={playerId}
         username={profile?.username ?? t.multiplayerRoom.defaultPlayer}
         texts={t.multiplayerRoom}
+        boardTexts={t.tierlistBoard}
       />
     </div>
   );
