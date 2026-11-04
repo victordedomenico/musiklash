@@ -83,11 +83,25 @@ export function titleLooksFake(videoTitle: string, trackTitle: string): boolean 
 
 /** Share of significant track tokens found as whole words in the video title. */
 export function titleMatchRatio(videoTitle: string, trackTitle: string): number {
-  const videoTokens = new Set(significantTokensForMatch(stripPromoTitleNoise(videoTitle)));
+  const videoCounts = countTokens(significantTokensForMatch(stripPromoTitleNoise(videoTitle)));
   const tokens = significantTokensForMatch(stripPromoTitleNoise(trackTitle));
   if (tokens.length === 0) return 0;
-  const matched = tokens.filter((token) => videoTokens.has(token)).length;
+  // Repeated words count: "En vrai" must not fully match "En Vrai de Vrai".
+  let matched = 0;
+  for (const token of tokens) {
+    const left = videoCounts.get(token) ?? 0;
+    if (left > 0) {
+      matched += 1;
+      videoCounts.set(token, left - 1);
+    }
+  }
   return matched / tokens.length;
+}
+
+function countTokens(tokens: string[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const token of tokens) counts.set(token, (counts.get(token) ?? 0) + 1);
+  return counts;
 }
 
 /** Last digit in the cleaned title — usually the freestyle / series episode. */
@@ -122,6 +136,11 @@ export function titleContainsTrack(
   // Non-digit words must appear as whole tokens (not substrings).
   if (wordTokens.length === 0) return Boolean(episode && videoSet.has(episode));
   if (!wordTokens.every((token) => videoSet.has(token))) return false;
+  // A word repeated in the track title ("En Vrai de Vrai") must be repeated in the video too.
+  const videoWordCounts = countTokens(videoTokens);
+  for (const [token, needed] of countTokens(wordTokens)) {
+    if ((videoWordCounts.get(token) ?? 0) < needed) return false;
+  }
 
   if (wordTokens.length === 1) {
     const artistTokens = new Set(significantTokensForMatch(artist ?? ""));

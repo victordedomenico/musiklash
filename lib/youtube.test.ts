@@ -3,6 +3,11 @@ import { normalizeMusicText, pickOfficialYoutubeMatch, scoreYoutubeCandidate } f
 import { titleContainsTrack, titleMatchRatio, titleSearchVariants } from "./youtube-match";
 
 describe("youtube official matching", () => {
+  it("rejects a shorter title when the track repeats a word", () => {
+    expect(titleContainsTrack("En vrai", "En Vrai de Vrai", "Djadja & Dinaz")).toBe(false);
+    expect(titleContainsTrack("En Vrai de Vrai", "En Vrai de Vrai", "Djadja & Dinaz")).toBe(true);
+  });
+
   it("normalizes accents and punctuation", () => {
     expect(normalizeMusicText("A l'ammoniaque")).toBe("a l ammoniaque");
   });
