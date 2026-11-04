@@ -28,7 +28,11 @@ type YoutubeCandidate = {
 const memoryCache = new Map<string, YoutubeSearchResult | null>();
 const CACHE_VERSION = "official-v8-album-browse";
 
-export { normalizeMusicText, significantTokensForMatch, titleSearchVariants } from "./youtube-match";
+export {
+  normalizeMusicText,
+  significantTokensForMatch,
+  titleSearchVariants,
+} from "./youtube-match";
 
 function cacheKey(artist: string, title: string, album?: string | null): string {
   return `${CACHE_VERSION}::${artist.trim().toLowerCase()}::${title.trim().toLowerCase()}::${(album ?? "").trim().toLowerCase()}`;

@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  normalizeMusicText,
-  pickOfficialYoutubeMatch,
-  scoreYoutubeCandidate,
-} from "./youtube";
+import { normalizeMusicText, pickOfficialYoutubeMatch, scoreYoutubeCandidate } from "./youtube";
 import { titleContainsTrack, titleMatchRatio, titleSearchVariants } from "./youtube-match";
 
 describe("youtube official matching", () => {

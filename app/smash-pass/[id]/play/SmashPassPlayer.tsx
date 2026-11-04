@@ -150,9 +150,7 @@ export default function SmashPassPlayer({
   }, [stop, stopDeezerOnly]);
 
   const previewPlayingKey = canUseYoutube ? isPlayingKey : isPlayingDeezerOnly;
-  const previewBarTitle = canUseYoutube
-    ? nowPlayingTitle
-    : (nowPlayingDeezerOnly?.title ?? null);
+  const previewBarTitle = canUseYoutube ? nowPlayingTitle : (nowPlayingDeezerOnly?.title ?? null);
   const previewBarDeezerId = canUseYoutube
     ? nowPlayingDeezerId
     : (nowPlayingDeezerOnly?.deezerTrackId ?? null);

@@ -583,6 +583,8 @@ export default function TierlistBoard({
       audioRef.current.pause();
       setPlayingPosition(null);
     }
+    // Keep playback state synchronized with the external audio player.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setYoutubeNow(null);
     setYoutubePlaying(false);
     setYoutubeLoadingPos(null);

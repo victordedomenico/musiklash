@@ -282,7 +282,11 @@ describe("buildBracketState", () => {
 
           for (const pairing of round) {
             if (pairing.seedB > trackCount) continue;
-            votes.push({ round: roundNumber, matchIndex: pairing.matchIndex, winnerSeed: pairing.seedA });
+            votes.push({
+              round: roundNumber,
+              matchIndex: pairing.matchIndex,
+              winnerSeed: pairing.seedA,
+            });
           }
           state = buildBracketState(trackCount, votes, trackCount, 3);
         }

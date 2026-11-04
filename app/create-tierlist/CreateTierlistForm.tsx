@@ -7,6 +7,7 @@ import { createTierlist, type TierlistTrackInput } from "./actions";
 import Input from "@/components/ui/Input";
 import type { MusicGenre } from "@/lib/genres";
 import type { Dictionary } from "@/lib/i18n";
+import { MAX_BRACKET_TRACKS } from "@/lib/bracket";
 
 const VIS_HINTS = {
   public: "Visible dans Explorer. Accessible à tous par lien.",
@@ -128,7 +129,13 @@ export default function CreateTierlistForm({
       </div>
 
       {/* Picker */}
-      <TrackPicker size={50} selected={tracks} onChange={setTracks} freeMode genre={genre} />
+      <TrackPicker
+        size={MAX_BRACKET_TRACKS}
+        selected={tracks}
+        onChange={setTracks}
+        unlimited
+        genre={genre}
+      />
 
       {error ? (
         <div className="rounded-xl border border-red-900/40 bg-red-950/20 px-4 py-3 text-sm text-red-400">

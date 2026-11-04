@@ -663,9 +663,7 @@ export default async function MyBracketsPage({
       </div>
 
       {welcome ? (
-        <p className="card mt-4 p-3 text-sm text-[color:var(--muted)]">
-          {ml.welcomeMsg}
-        </p>
+        <p className="card mt-4 p-3 text-sm text-[color:var(--muted)]">{ml.welcomeMsg}</p>
       ) : null}
       {!user ? (
         <p className="card mt-4 p-3 text-sm text-[color:var(--muted)]">
@@ -1202,11 +1200,7 @@ function SubSection({ label, children }: { label: string; children: ReactNode })
 }
 
 function EmptySub({ label }: { label: string }) {
-  return (
-    <p className="card px-3 py-3 text-xs text-[color:var(--muted)]">
-      {label}
-    </p>
-  );
+  return <p className="card px-3 py-3 text-xs text-[color:var(--muted)]">{label}</p>;
 }
 
 function CardsGrid({ children }: { children: ReactNode }) {

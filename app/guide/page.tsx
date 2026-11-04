@@ -39,7 +39,7 @@ export default function GuidePage() {
       icon: <ChartNoAxesColumn size={26} />,
       tone: "#3b82f6",
       steps: [
-        "Création: de 2 à 50 morceaux.",
+        "Création: minimum 2 morceaux, sans limite de sélection pratique.",
         "Classement par glisser-déposer sur 7 rangs fixes: S+, S, A, B, C, D, F.",
         "Les morceaux non classés restent dans la zone « À placer » tant qu'ils ne sont pas déplacés.",
         "Chaque session peut être sauvegardée puis partagée via un lien de résultat.",

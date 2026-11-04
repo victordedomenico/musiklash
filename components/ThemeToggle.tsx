@@ -12,10 +12,7 @@ const NEXT_THEME: Record<Theme, Theme> = {
   system: "dark",
 };
 
-const THEME_LABELS: Record<
-  "fr" | "en",
-  Record<Theme, { current: string; next: string }>
-> = {
+const THEME_LABELS: Record<"fr" | "en", Record<Theme, { current: string; next: string }>> = {
   fr: {
     dark: { current: "sombre", next: "clair" },
     light: { current: "clair", next: "automatique" },
@@ -42,13 +39,14 @@ export default function ThemeToggle({
     const active = (document.documentElement.dataset.theme ||
       localStorage.getItem("theme")) as Theme | null;
     if (active && (active === "dark" || active === "light" || active === "system")) {
+      // Restore the browser preference after hydration.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setThemeState(active);
     }
 
     function onThemeChange(e: Event) {
       const custom = e as CustomEvent<Theme>;
-      const t =
-        custom.detail || (document.documentElement.dataset.theme as Theme | undefined);
+      const t = custom.detail || (document.documentElement.dataset.theme as Theme | undefined);
       if (t && (t === "dark" || t === "light" || t === "system")) {
         setThemeState(t);
       }

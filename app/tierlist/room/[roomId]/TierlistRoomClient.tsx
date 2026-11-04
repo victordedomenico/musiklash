@@ -85,6 +85,8 @@ function TrackPreview({
 
   useEffect(() => {
     let cancelled = false;
+    // Reset the previous track while its replacement is being fetched.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setYoutubeVideoId(null);
     setYoutubePlaying(false);
     setYoutubeLoading(true);
@@ -124,6 +126,8 @@ function TrackPreview({
       setPlaying(false);
       setCurrentTime(0);
     }
+    // Keep playback state synchronized with the external audio player.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setYoutubePlaying(false);
   }, [source]);
 
@@ -205,12 +209,7 @@ function TrackPreview({
               ? "…"
               : texts.previewUnavailable}
         </button>
-        <MusicSourceAttribution
-          source={source}
-          compact
-          deezerVariant="icon"
-          className="shrink-0"
-        />
+        <MusicSourceAttribution source={source} compact deezerVariant="icon" className="shrink-0" />
         {!isYoutube ? (
           <DeezerTrackLink deezerTrackId={track.deezerTrackId} compact className="shrink-0" />
         ) : null}

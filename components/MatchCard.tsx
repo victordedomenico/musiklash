@@ -100,6 +100,8 @@ export default function MatchCard({
 
   useEffect(() => {
     let cancelled = false;
+    // Clear the previous lookup before fetching the new track.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setYoutubeLoadingA(true);
     setYoutubeA(null);
     setActiveYoutube(null);
@@ -122,6 +124,8 @@ export default function MatchCard({
 
   useEffect(() => {
     let cancelled = false;
+    // Clear the previous lookup before fetching the new track.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setYoutubeLoadingB(true);
     setYoutubeB(null);
     setActiveYoutube(null);
@@ -170,6 +174,8 @@ export default function MatchCard({
       setPlaying(null);
       setCurrentTime(0);
     }
+    // Keep playback state synchronized with the external audio player.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveYoutube(null);
   }, [source]);
 
@@ -388,7 +394,9 @@ function Side({
         ) : null}
         <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
           {showYoutube ? (
-            youtubeVideoId ? <YoutubeMusicTrackLink videoId={youtubeVideoId} /> : null
+            youtubeVideoId ? (
+              <YoutubeMusicTrackLink videoId={youtubeVideoId} />
+            ) : null
           ) : (
             <DeezerTrackLink deezerTrackId={track.deezerTrackId} />
           )}

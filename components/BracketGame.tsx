@@ -145,6 +145,8 @@ export default function BracketGame({
       audioRef.current.pause();
       setPlayingSeed(null);
     }
+    // Keep playback state synchronized with the external audio player.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setYoutubeNow(null);
     setYoutubePlaying(false);
   }, [source]);
@@ -801,10 +803,14 @@ export default function BracketGame({
                   <div className="max-w-[220px]">
                     <p className="truncate text-sm font-extrabold">{champ.title}</p>
                     <p className="truncate text-xs text-[color:var(--muted)]">
-                      {champ.artist?.trim() || creditsBySeed.get(champ.seed)?.artist?.trim() || "\u00a0"}
+                      {champ.artist?.trim() ||
+                        creditsBySeed.get(champ.seed)?.artist?.trim() ||
+                        "\u00a0"}
                     </p>
                     <p className="truncate text-[11px] text-[color:var(--muted)]/75">
-                      {champ.album?.trim() || creditsBySeed.get(champ.seed)?.album?.trim() || "\u00a0"}
+                      {champ.album?.trim() ||
+                        creditsBySeed.get(champ.seed)?.album?.trim() ||
+                        "\u00a0"}
                     </p>
                   </div>
                 </div>

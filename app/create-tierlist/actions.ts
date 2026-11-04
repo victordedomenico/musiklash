@@ -6,6 +6,7 @@ import { ensureGenreColumns } from "@/lib/ensure-genre-columns";
 import { sanitizeGenre } from "@/lib/genres";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import type { Prisma } from "@prisma/client";
+import { MAX_BRACKET_TRACKS } from "@/lib/bracket";
 
 export type TierlistTrackInput = {
   deezer_track_id: number;
@@ -26,7 +27,9 @@ export async function createTierlist(input: {
 }) {
   if (!input.title.trim()) return { error: "Le titre est requis." };
   if (input.tracks.length < 2) return { error: "Il faut au moins 2 morceaux." };
-  if (input.tracks.length > 50) return { error: "50 morceaux maximum." };
+  if (input.tracks.length > MAX_BRACKET_TRACKS) {
+    return { error: `Une tierlist peut contenir jusqu’à ${MAX_BRACKET_TRACKS} morceaux.` };
+  }
 
   let identity: { playerId: string; username: string };
   try {

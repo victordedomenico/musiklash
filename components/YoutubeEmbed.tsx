@@ -20,12 +20,16 @@ export default function YoutubeEmbed({
   const [src, setSrc] = useState("");
 
   useEffect(() => {
+    // Browser origin is only available after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOrigin(window.location.origin);
   }, []);
 
   useEffect(() => {
     if (!origin) return;
     hasStartedRef.current = false;
+    // Reset the iframe URL when its video or browser origin changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSrc(youtubeEmbedUrl(videoId, { origin }));
   }, [videoId, origin]);
 

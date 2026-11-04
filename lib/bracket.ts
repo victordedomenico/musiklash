@@ -161,7 +161,10 @@ function buildBalancedDynamicBracketState(
   const byeSeed = trackCount + 1;
   const leftCount = Math.ceil(trackCount / 2);
   let leftPool = Array.from({ length: leftCount }, (_, index) => index + 1);
-  let rightPool = Array.from({ length: trackCount - leftCount }, (_, index) => leftCount + index + 1);
+  let rightPool = Array.from(
+    { length: trackCount - leftCount },
+    (_, index) => leftCount + index + 1,
+  );
 
   const rounds: Pairing[][] = [];
 

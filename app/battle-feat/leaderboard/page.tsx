@@ -47,9 +47,7 @@ export default async function LeaderboardPage({
       <h1 className="flex items-center gap-2 text-5xl font-black tracking-[-0.03em]">
         <Trophy size={28} className="text-yellow-400" /> Classement
       </h1>
-      <p className="mt-2 text-xl text-[color:var(--muted)]">
-        Top scores en mode solo
-      </p>
+      <p className="mt-2 text-xl text-[color:var(--muted)]">Top scores en mode solo</p>
 
       <div className="mt-6 inline-flex gap-2 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-1 text-sm">
         {diffConfig.map((dc) => (

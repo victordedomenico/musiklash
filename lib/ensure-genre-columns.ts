@@ -24,5 +24,7 @@ async function run(prisma: PrismaClient): Promise<void> {
   for (const table of GENRE_TABLES) {
     await prisma.$executeRawUnsafe(`ALTER TABLE "${table}" ADD COLUMN IF NOT EXISTS "genre" TEXT;`);
   }
-  await prisma.$executeRawUnsafe(`ALTER TABLE "bracket_tracks" ADD COLUMN IF NOT EXISTS "album" TEXT;`);
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "bracket_tracks" ADD COLUMN IF NOT EXISTS "album" TEXT;`,
+  );
 }

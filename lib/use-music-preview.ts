@@ -26,6 +26,8 @@ export function useMusicPreview() {
 
   useEffect(() => {
     deezer.stop();
+    // Keep playback state synchronized with the external audio player.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setYoutubeNow(null);
     setYoutubePlaying(false);
     setYoutubeLoadingKey(null);

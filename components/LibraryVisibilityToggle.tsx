@@ -193,11 +193,7 @@ export default function LibraryVisibilityToggle({
   }
 
   return (
-    <div
-      className="card p-3 shadow-xs"
-      role="group"
-      aria-label="Visibilité"
-    >
+    <div className="card p-3 shadow-xs" role="group" aria-label="Visibilité">
       {showVisibility ? (
         <>
           <p className="text-[10px] font-bold uppercase tracking-wide text-[color:var(--muted-strong)]">

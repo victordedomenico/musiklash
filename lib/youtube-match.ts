@@ -34,7 +34,10 @@ export function significantTokensForMatch(value: string): string[] {
     .filter((token) => {
       if (!token) return false;
       if (/^\d+$/.test(token)) return true;
-      return token.length > 1 && !["feat", "ft", "the", "and", "vs", "de", "du", "la", "le", "les"].includes(token);
+      return (
+        token.length > 1 &&
+        !["feat", "ft", "the", "and", "vs", "de", "du", "la", "le", "les"].includes(token)
+      );
     });
 }
 
@@ -55,11 +58,14 @@ export function titleSearchVariants(title: string): string[] {
   if (!raw) return [];
 
   const withoutPromo = stripPromoTitleNoise(raw);
-  const tenueMotard = withoutPromo.replace(/\btenue\s+\d+\s+motard\s+(\d+)\b/i, "tenue de motard $1");
+  const tenueMotard = withoutPromo.replace(
+    /\btenue\s+\d+\s+motard\s+(\d+)\b/i,
+    "tenue de motard $1",
+  );
   // Drop lone middle digits but keep a trailing episode number when present.
   const tokens = withoutPromo.split(" ").filter(Boolean);
   const withoutMiddleDigits = tokens
-    .filter((token, index) => !( /^\d+$/.test(token) && index < tokens.length - 1))
+    .filter((token, index) => !(/^\d+$/.test(token) && index < tokens.length - 1))
     .join(" ");
 
   const variants = [raw, withoutPromo, tenueMotard, withoutMiddleDigits]
