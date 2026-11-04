@@ -224,23 +224,20 @@ export default function LuckyWheelClient({ t }: { t: LuckyWheelTranslations }) {
       {/* ── Wheel ─────────────────────────────────────────────────────────────── */}
       <div className="flex flex-col items-center gap-6">
         {/* Wheel + pointer container */}
-        <div
-          className="relative flex items-center justify-center"
-          style={{ width: 380, height: 380 }}
-        >
+        <div className="relative flex aspect-square w-full max-w-[380px] items-center justify-center">
           {/* Rotating canvas */}
           <div
             style={{
               ...wheelStyle,
-              width: 360,
-              height: 360,
+              width: "94.7368%",
+              aspectRatio: "1",
               borderRadius: "50%",
               overflow: "hidden",
               boxShadow: "0 8px 40px rgba(0,0,0,0.25)",
             }}
             onTransitionEnd={handleTransitionEnd}
           >
-            <canvas ref={canvasRef} width={360} height={360} />
+            <canvas ref={canvasRef} width={360} height={360} className="h-full w-full" />
           </div>
 
           {/* Pointer arrow (right side, pointing left) */}

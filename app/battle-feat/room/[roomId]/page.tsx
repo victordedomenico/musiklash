@@ -59,7 +59,7 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
         className="mb-6 rounded-[28px] border px-6 py-5"
         style={{ borderColor: "#2a3242", background: "#10141d" }}
       >
-        <h1 className="text-5xl font-black tracking-[-0.03em]">BattleFeat Multi</h1>
+        <h1 className="text-3xl sm:text-5xl font-black tracking-[-0.03em]">BattleFeat Multi</h1>
         <p className="mt-1 text-lg" style={{ color: "#8f93a0" }}>
           Defi en temps reel · Room {roomData.id.slice(0, 8)}
         </p>

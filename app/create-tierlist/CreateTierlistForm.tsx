@@ -144,7 +144,7 @@ export default function CreateTierlistForm({
       ) : null}
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[color:var(--border)] pt-4">
         <p className="text-sm text-[color:var(--muted)]">
           {tracks.length} morceau{tracks.length > 1 ? "x" : ""} sélectionné
           {tracks.length > 1 ? "s" : ""} · min. 2

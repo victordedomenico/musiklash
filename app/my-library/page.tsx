@@ -1210,7 +1210,11 @@ function EmptySub({ label }: { label: string }) {
 }
 
 function CardsGrid({ children }: { children: ReactNode }) {
-  return <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3">{children}</div>;
+  return (
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
+      {children}
+    </div>
+  );
 }
 
 function TabItem({ current, value, label }: { current: Tab; value: Tab; label: string }) {

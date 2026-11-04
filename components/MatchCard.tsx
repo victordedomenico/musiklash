@@ -434,7 +434,7 @@ function Side({
                     if (playing) onSeek(parseFloat(e.target.value));
                   }}
                   disabled={!playing}
-                  className="flex-1 h-1.5 appearance-none rounded-full bg-[color:var(--surface-2)] outline-none accent-[color:var(--accent)] cursor-pointer disabled:cursor-auto disabled:opacity-50"
+                  className="min-w-0 flex-1 h-1.5 appearance-none rounded-full bg-[color:var(--surface-2)] outline-none accent-[color:var(--accent)] cursor-pointer disabled:cursor-auto disabled:opacity-50"
                 />
                 <span className="w-6 text-left">{playing ? formatTime(duration) : "0:30"}</span>
               </div>

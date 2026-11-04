@@ -105,7 +105,7 @@ export default function CreateBlindtestForm({
       ) : null}
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[color:var(--border)] pt-4">
         <p className="text-sm text-[color:var(--muted)]">
           {isFlash
             ? `${tracks.length} morceaux sélectionnés · min. ${FLASH_TRACKS_PER_SESSION} ; 5 tirés par partie`

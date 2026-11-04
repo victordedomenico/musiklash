@@ -1,3 +1,4 @@
+import type { Viewport } from "next";
 import { cookies } from "next/headers";
 import "./globals.css";
 import SiteSidebar from "@/components/SiteSidebar";
@@ -14,6 +15,12 @@ import { createClient } from "@/lib/supabase/server";
 import { hasCustomGuestUsername } from "@/lib/guest";
 
 export const metadata = rootMetadata;
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export default async function RootLayout({
   children,

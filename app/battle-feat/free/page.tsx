@@ -19,7 +19,9 @@ export default function BattleFeatFreePage() {
           <User size={12} />
           Mode solo libre
         </p>
-        <h1 className="mt-3 text-7xl font-black tracking-[-0.04em]">BattleFeat</h1>
+        <h1 className="mt-3 text-4xl sm:text-6xl lg:text-7xl font-black tracking-[-0.04em]">
+          BattleFeat
+        </h1>
         <p className="mx-auto mt-2 max-w-3xl text-3xl" style={{ color: "var(--muted-strong)" }}>
           Enchaîne les featurings sans limite de temps. Jusqu&apos;où peux-tu aller ?
         </p>

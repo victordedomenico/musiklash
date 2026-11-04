@@ -119,7 +119,7 @@ export default function RoomChat({
           setOpen(true);
           setUnread(0);
         }}
-        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full border px-4 py-2.5 shadow-lg backdrop-blur transition hover:scale-[1.02]"
+        className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(1.25rem,env(safe-area-inset-right))] z-40 flex items-center gap-2 rounded-full border px-4 py-2.5 shadow-lg backdrop-blur transition hover:scale-[1.02]"
         style={{
           borderColor: "var(--border)",
           background: "var(--surface)",
@@ -142,7 +142,7 @@ export default function RoomChat({
 
   return (
     <div
-      className="fixed bottom-5 right-5 z-40 flex w-[min(360px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border shadow-2xl"
+      className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-[max(1.25rem,env(safe-area-inset-right))] z-40 flex max-h-[calc(100dvh-2.5rem)] w-[min(360px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border shadow-2xl"
       style={{
         borderColor: "var(--border)",
         background: "var(--surface)",
@@ -180,7 +180,7 @@ export default function RoomChat({
 
       <div
         ref={scrollRef}
-        className="max-h-[45vh] min-h-[180px] flex-1 space-y-2 overflow-y-auto px-4 py-3"
+        className="max-h-[45dvh] min-h-[180px] flex-1 space-y-2 overflow-y-auto px-4 py-3"
       >
         {sorted.length === 0 ? (
           <p className="text-center text-xs text-[color:var(--muted)]">

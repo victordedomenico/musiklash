@@ -199,7 +199,7 @@ function TrackPreview({
           </div>
         </div>
       ) : null}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         <button
           type="button"
           disabled={!canPlay || youtubeLoading}
@@ -221,7 +221,7 @@ function TrackPreview({
           <DeezerTrackLink deezerTrackId={track.deezerTrackId} compact className="shrink-0" />
         ) : null}
         {!isYoutube ? (
-          <>
+          <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
             <input
               type="range"
               min={0}
@@ -233,13 +233,13 @@ function TrackPreview({
                 if (audioRef.current) audioRef.current.currentTime = value;
                 setCurrentTime(value);
               }}
-              className="h-1 flex-1 accent-sky-300 disabled:opacity-40"
+              className="h-1 min-w-0 flex-1 accent-sky-300 disabled:opacity-40"
               aria-label={texts.previewPosition}
             />
-            <span className="w-9 text-right text-[11px] tabular-nums text-[color:var(--muted)]">
+            <span className="w-9 shrink-0 text-right text-[11px] tabular-nums text-[color:var(--muted)]">
               {labelTime(playing ? currentTime : 0)}
             </span>
-          </>
+          </div>
         ) : null}
       </div>
     </div>
@@ -951,7 +951,7 @@ export default function TierlistRoomClient({
               className="flex min-h-[74px] items-stretch overflow-hidden border border-black/80 bg-[#181818]"
             >
               <div
-                className="flex w-[88px] shrink-0 items-center justify-center border-r border-black/60 px-2 py-2"
+                className="flex w-14 sm:w-[88px] shrink-0 items-center justify-center border-r border-black/60 px-2 py-2"
                 style={{ backgroundColor: tier.color }}
               >
                 <p className="select-none break-all text-center text-xl font-bold tracking-wide text-black/75">
@@ -989,7 +989,7 @@ export default function TierlistRoomClient({
                 ))}
               </div>
               {isHost ? (
-                <div className="flex w-[46px] shrink-0 flex-col border-l border-black/80 bg-black">
+                <div className="flex w-9 sm:w-[46px] shrink-0 flex-col border-l border-black/80 bg-black">
                   <button
                     type="button"
                     onClick={() => {
@@ -1007,7 +1007,11 @@ export default function TierlistRoomClient({
                     disabled={pending || index === 0}
                     onClick={() =>
                       run(() =>
-                        editTierlistRoomTiers(room.id, { kind: "move", id: tier.id, direction: "up" }),
+                        editTierlistRoomTiers(room.id, {
+                          kind: "move",
+                          id: tier.id,
+                          direction: "up",
+                        }),
                       )
                     }
                     className="inline-flex h-[24px] items-center justify-center border-b border-white/10 text-white/90 transition enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"

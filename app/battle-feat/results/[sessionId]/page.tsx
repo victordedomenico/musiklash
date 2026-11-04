@@ -71,7 +71,7 @@ export default async function BattleFeatResultsPage({
         style={{ borderColor: "#2a3242", background: "#10141d" }}
       >
         <Trophy size={48} className="mx-auto text-yellow-400 mb-4" />
-        <h1 className="text-5xl font-black tracking-[-0.03em]">
+        <h1 className="text-3xl sm:text-5xl font-black tracking-[-0.03em]">
           {session.score} point{session.score !== 1 ? "s" : ""}
         </h1>
         <p className="mt-2 text-lg" style={{ color: "#8f93a0" }}>

@@ -80,7 +80,7 @@ export default async function BlindtestResultsPage({
           })}
         </p>
 
-        <div className="mt-6 flex justify-center gap-3">
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link href={`/blindtest/${id}`} className="btn-primary">
             Recommencer
           </Link>

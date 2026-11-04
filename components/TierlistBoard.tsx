@@ -4,7 +4,8 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useDroppable,
   useSensor,
   useSensors,
@@ -270,7 +271,7 @@ function TierRow({
   return (
     <div className="flex min-h-[74px] items-stretch overflow-hidden border border-black/80 bg-[#181818]">
       <div
-        className="flex w-[88px] shrink-0 items-center justify-center border-r border-black/60 px-2 py-2 text-white"
+        className="flex w-14 sm:w-[88px] shrink-0 items-center justify-center border-r border-black/60 px-2 py-2 text-white"
         style={{ backgroundColor: color }}
       >
         <p className="select-none text-xl font-bold tracking-wide text-black/75">
@@ -295,7 +296,7 @@ function TierRow({
           ))}
         </div>
       </SortableContext>
-      <div className="no-export flex w-[46px] shrink-0 flex-col border-l border-black/80 bg-black">
+      <div className="no-export flex w-9 sm:w-[46px] shrink-0 flex-col border-l border-black/80 bg-black">
         <button
           type="button"
           onClick={() => onOpenEditor(tierId)}
@@ -354,10 +355,10 @@ export function TierRowEditorModal({
   texts: TierlistBoardTexts;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 px-4 py-6 sm:items-center">
       <div className="w-full max-w-4xl rounded-sm border border-white/10 bg-[#252222] px-5 py-4 text-white shadow-2xl">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-center text-[2rem] font-extrabold leading-none">
+          <h3 className="text-center text-2xl font-extrabold leading-none sm:text-[2rem]">
             {texts.modalTitle}
           </h3>
           <button
@@ -386,7 +387,7 @@ export function TierRowEditorModal({
             );
           })}
         </div>
-        <p className="mb-2 text-center text-[2rem] font-bold leading-none">
+        <p className="mb-2 text-center text-2xl font-bold leading-none sm:text-[2rem]">
           {texts.modalEditLabel}
         </p>
         <textarea
@@ -406,31 +407,31 @@ export function TierRowEditorModal({
             {texts.deleteRow}
           </button>
           {onClearRow ? (
-          <button
-            type="button"
-            onClick={() => onClearRow(tier.id)}
-            className="rounded bg-[#d7d7d7] px-4 py-2 text-lg font-medium text-black transition hover:bg-white"
-          >
-            {texts.clearRowImages}
-          </button>
+            <button
+              type="button"
+              onClick={() => onClearRow(tier.id)}
+              className="rounded bg-[#d7d7d7] px-4 py-2 text-lg font-medium text-black transition hover:bg-white"
+            >
+              {texts.clearRowImages}
+            </button>
           ) : null}
           {onAddAbove ? (
-          <button
-            type="button"
-            onClick={() => onAddAbove(tier.id)}
-            className="rounded bg-[#d7d7d7] px-4 py-2 text-lg font-medium text-black transition hover:bg-white"
-          >
-            {texts.addRowAbove}
-          </button>
+            <button
+              type="button"
+              onClick={() => onAddAbove(tier.id)}
+              className="rounded bg-[#d7d7d7] px-4 py-2 text-lg font-medium text-black transition hover:bg-white"
+            >
+              {texts.addRowAbove}
+            </button>
           ) : null}
           {onAddBelow ? (
-          <button
-            type="button"
-            onClick={() => onAddBelow(tier.id)}
-            className="rounded bg-[#d7d7d7] px-4 py-2 text-lg font-medium text-black transition hover:bg-white"
-          >
-            {texts.addRowBelow}
-          </button>
+            <button
+              type="button"
+              onClick={() => onAddBelow(tier.id)}
+              className="rounded bg-[#d7d7d7] px-4 py-2 text-lg font-medium text-black transition hover:bg-white"
+            >
+              {texts.addRowBelow}
+            </button>
           ) : null}
         </div>
       </div>
@@ -614,7 +615,11 @@ export default function TierlistBoard({
     }
   }, [progressReady, state, tierlistId, tiers, trackSignature]);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    // Appui court avant de glisser : le doigt peut encore faire défiler la page.
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+  );
 
   const handlePreview = useCallback(
     async (pos: number, deezerTrackId: number) => {

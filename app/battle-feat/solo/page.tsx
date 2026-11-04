@@ -57,7 +57,9 @@ export default async function BattleFeatSoloPage({
           <Bot size={12} />
           Mode solo vs IA
         </p>
-        <h1 className="mt-3 text-7xl font-black tracking-[-0.04em]">BattleFeat</h1>
+        <h1 className="mt-3 text-4xl sm:text-6xl lg:text-7xl font-black tracking-[-0.04em]">
+          BattleFeat
+        </h1>
         <p className="mx-auto mt-2 max-w-3xl text-3xl" style={{ color: "#8f93a0" }}>
           Enchaînez les artistes qui ont collaboré ensemble. Jusqu&apos;où pouvez-vous aller ?
         </p>

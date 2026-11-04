@@ -25,9 +25,9 @@ export default function CookieConsentBanner({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-4 z-[70] px-4">
+    <div className="fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[70] px-4">
       <div
-        className="mx-auto w-full max-w-4xl rounded-2xl border p-4 md:p-5"
+        className="mx-auto max-h-[85dvh] w-full max-w-4xl overflow-y-auto rounded-2xl border p-4 md:p-5"
         style={{
           borderColor: "var(--border-strong)",
           background: "color-mix(in srgb, var(--surface) 95%, black 5%)",

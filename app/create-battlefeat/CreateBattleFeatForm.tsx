@@ -66,14 +66,14 @@ export default function CreateBattleFeatForm() {
         <p className="mt-0.5 text-xs text-[color:var(--muted)]">
           Détermine le temps par tour et la force de l&apos;IA.
         </p>
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
           {DIFFICULTY_OPTIONS.map((d) => (
             <button
               key={d.value}
               type="button"
               onClick={() => setDifficulty(d.value)}
               data-active={difficulty === d.value}
-              className="btn-chip flex-col items-start gap-0.5 py-3 text-left"
+              className="btn-chip min-w-0 flex-col items-start gap-0.5 whitespace-normal py-3 text-left"
             >
               <span className="font-semibold">{d.label}</span>
               <span className="text-xs text-[color:var(--muted)]">{d.desc}</span>
@@ -148,7 +148,7 @@ export default function CreateBattleFeatForm() {
       ) : null}
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-[color:var(--border)] pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[color:var(--border)] pt-4">
         <p className="text-sm text-[color:var(--muted)]">
           {startingArtist ? `Artiste : ${startingArtist.name}` : "Aucun artiste sélectionné"}
         </p>

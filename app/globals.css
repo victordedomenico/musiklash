@@ -119,6 +119,7 @@ body {
     Roboto,
     sans-serif;
   min-height: 100vh;
+  min-height: 100dvh;
   font-size: 16px;
   font-weight: 400;
   line-height: 1.6;
@@ -128,7 +129,7 @@ body {
 
 .site-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   width: 100%;
   max-width: 1800px;
@@ -182,7 +183,7 @@ body {
 
 @media (min-width: 1024px) {
   .site-layout {
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 260px minmax(0, 1fr);
     padding: 1.25rem;
   }
 
@@ -208,6 +209,16 @@ body {
   }
 }
 
+@media (max-width: 400px) {
+  .site-main {
+    padding: 0.65rem;
+  }
+
+  .page-shell {
+    padding-inline: 0.5rem;
+  }
+}
+
 @media (max-width: 1023px) {
   .site-layout {
     gap: 0.75rem;
@@ -217,6 +228,15 @@ body {
   .site-main {
     border-radius: 1.1rem;
     padding: 0.9rem;
+  }
+}
+
+/* iOS Safari zoome sur tout champ dont la police est < 16px : on l'évite sur mobile. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
   }
 }
 

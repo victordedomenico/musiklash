@@ -44,7 +44,7 @@ export default async function LeaderboardPage({
       >
         <ArrowLeft size={14} /> BattleFeat
       </Link>
-      <h1 className="flex items-center gap-2 text-5xl font-black tracking-[-0.03em]">
+      <h1 className="flex items-center gap-2 text-3xl sm:text-5xl font-black tracking-[-0.03em]">
         <Trophy size={28} className="text-yellow-400" /> Classement
       </h1>
       <p className="mt-2 text-xl text-[color:var(--muted)]">Top scores en mode solo</p>
