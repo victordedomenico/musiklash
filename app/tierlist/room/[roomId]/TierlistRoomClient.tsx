@@ -260,12 +260,8 @@ function ResolutionReveal({
   texts: Dictionary["multiplayerRoom"];
 }) {
   const reducedMotion = useReducedMotion();
-  const [coinLanded, setCoinLanded] = useState(!resolution.tie);
-  const pileTier = tiers.find((tier) => tier.id === resolution.pileTierId);
-  const faceTier = tiers.find((tier) => tier.id === resolution.faceTierId);
   const winnerTier = tiers.find((tier) => tier.id === resolution.tierId);
-  const winningVotes = resolution.votesByTier[resolution.tierId] ?? 0;
-  const rotation = resolution.coinSide === "face" ? 1620 : 1440;
+  const winningVotes = Object.values(resolution.votesByTier).reduce((sum, count) => sum + count, 0);
   return (
     <motion.div
       role="status"
@@ -284,73 +280,17 @@ function ResolutionReveal({
         transition={{ duration: reducedMotion ? 0.1 : 0.7 }}
       />
       <div className="relative w-full max-w-md text-center">
-        {resolution.tie ? (
-          <>
-            <motion.p
-              className="text-xs font-black uppercase tracking-[0.3em] text-amber-300"
-              initial={{ y: -12, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-            >
-              {texts.tie} · {winningVotes} {winningVotes === 1 ? texts.vote : texts.votes}
-            </motion.p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-white">{texts.coinFlip}</h2>
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <Crown className="mx-auto text-amber-300" size={34} />
+          <p className="mt-3 text-xs font-black uppercase tracking-[0.3em] text-amber-300">
+            {resolution.tierId === null ? texts.tierlistNoVotes : texts.tierlistAverage}
+          </p>
+          {resolution.tierId !== null ? (
             <p className="mt-2 text-sm text-white/60">
-              {texts.heads} · {pileTier?.label ?? "?"}
-              <span className="mx-2 text-white/30">—</span>
-              {texts.tails} · {faceTier?.label ?? "?"}
+              {winningVotes} {winningVotes === 1 ? texts.vote : texts.votes}
             </p>
-            <div className="mx-auto my-8 h-36 w-36 [perspective:900px]">
-              <motion.div
-                className="relative h-full w-full [transform-style:preserve-3d]"
-                initial={{ rotateY: 0, y: -36 }}
-                animate={{ rotateY: rotation, y: [0, -62, 0] }}
-                transition={{
-                  rotateY: { duration: reducedMotion ? 0.2 : 2.25, ease: [0.12, 0.72, 0.18, 1] },
-                  y: {
-                    duration: reducedMotion ? 0.2 : 2.25,
-                    times: [0, 0.45, 1],
-                    ease: "easeInOut",
-                  },
-                }}
-                onAnimationComplete={() => setCoinLanded(true)}
-              >
-                <div className="absolute inset-0 grid place-items-center rounded-full border-[5px] border-amber-200 bg-[radial-gradient(circle_at_35%_28%,#fff2a8,#f59e0b_52%,#92400e)] text-xl font-black text-amber-950 shadow-[0_0_50px_rgba(245,158,11,0.42)] [backface-visibility:hidden]">
-                  {texts.heads}
-                </div>
-                <div className="absolute inset-0 grid place-items-center rounded-full border-[5px] border-orange-200 bg-[radial-gradient(circle_at_35%_28%,#fed7aa,#ea580c_52%,#7c2d12)] text-xl font-black text-orange-950 shadow-[0_0_50px_rgba(234,88,12,0.42)] [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                  {texts.tails}
-                </div>
-              </motion.div>
-            </div>
-            <AnimatePresence mode="wait">
-              {coinLanded ? (
-                <motion.p
-                  key="landed"
-                  className="text-sm font-black uppercase tracking-[0.28em] text-amber-200"
-                  initial={{ opacity: 0, scale: 0.85 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                >
-                  {resolution.coinSide === "face" ? texts.tails : texts.heads}!
-                </motion.p>
-              ) : (
-                <motion.p
-                  key="spinning"
-                  className="text-sm uppercase tracking-[0.22em] text-white/55"
-                  exit={{ opacity: 0 }}
-                >
-                  {texts.coinDecides}
-                </motion.p>
-              )}
-            </AnimatePresence>
-          </>
-        ) : (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-            <Crown className="mx-auto text-amber-300" size={34} />
-            <p className="mt-3 text-xs font-black uppercase tracking-[0.3em] text-amber-300">
-              {texts.majority} · {winningVotes} {winningVotes === 1 ? texts.vote : texts.votes}
-            </p>
-          </motion.div>
-        )}
+          ) : null}
+        </motion.div>
         {resolution.skippedCount > 0 ? (
           <p className="mt-3 text-xs text-white/45">
             {resolution.skippedCount}{" "}
@@ -358,7 +298,7 @@ function ResolutionReveal({
           </p>
         ) : null}
         <AnimatePresence>
-          {coinLanded && winner ? (
+          {winner ? (
             <motion.div
               className="mt-6"
               initial={{ opacity: 0, y: 24, scale: 0.88 }}
@@ -1080,6 +1020,42 @@ export default function TierlistRoomClient({
           }}
           texts={boardTexts}
         />
+      ) : null}
+      {room.status !== "waiting" &&
+      room.tierlist.tracks.some(
+        (track, index) =>
+          !room.placements[String(track.position)] &&
+          (room.status === "finished" || index < currentTrackIndex),
+      ) ? (
+        <section className="card p-4">
+          <p className="text-sm font-bold">{texts.tierlistUnplaced}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {room.tierlist.tracks
+              .filter(
+                (track, index) =>
+                  !room.placements[String(track.position)] &&
+                  (room.status === "finished" || index < currentTrackIndex),
+              )
+              .map((track) => (
+                <div
+                  key={track.position}
+                  className="flex items-center gap-2 rounded-lg bg-black/20 px-3 py-2 text-xs"
+                >
+                  <span>{track.title}</span>
+                  {me ? (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => run(() => revoteTierlistTrack(room.id, track.position))}
+                      className="text-sky-300 hover:text-white"
+                    >
+                      Revoter
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+          </div>
+        </section>
       ) : null}
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
     </div>

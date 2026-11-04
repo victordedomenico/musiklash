@@ -27,7 +27,7 @@ export type BracketRoundResolution = {
 export type TierlistRoundResolution = {
   id: string;
   position: number;
-  tierId: string;
+  tierId: string | null;
   votesByTier: Record<string, number>;
   skippedCount: number;
   tie: boolean;
@@ -248,8 +248,8 @@ export function normalizeTierlistResolution(
   if (
     typeof value.id !== "string" ||
     !Number.isInteger(value.position) ||
-    typeof value.tierId !== "string" ||
-    !validTiers.has(value.tierId) ||
+    (value.tierId !== null &&
+      (typeof value.tierId !== "string" || !validTiers.has(value.tierId))) ||
     !isRecord(votesByTierValue) ||
     !Number.isInteger(value.skippedCount) ||
     typeof value.tie !== "boolean" ||

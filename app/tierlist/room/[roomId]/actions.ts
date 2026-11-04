@@ -407,9 +407,11 @@ function resolvedPositionData(
   const track = currentTrack(room);
   if (!track) return null;
   const tiers = roomTierConfig(room.placements);
-  const resolution = resolveTierlistBallots(ballots, Math.random, tiers);
+  const resolution = resolveTierlistBallots(ballots, tiers);
   const placements = normalizePlacements(room.placements, tiers);
-  const nextPlacements = { ...placements, [String(room.currentPosition)]: resolution.tierId };
+  const nextPlacements = { ...placements };
+  if (resolution.tierId !== null) nextPlacements[String(room.currentPosition)] = resolution.tierId;
+  else delete nextPlacements[String(room.currentPosition)];
   const metadata = room.placements as Record<string, unknown>;
   const resume = metadata?.__resume as { position: number; finished: boolean } | undefined;
   const positions = room.tierlist.tracks.map((candidate) => candidate.position);
@@ -443,9 +445,9 @@ function resolvedPositionData(
       votesByTier: resolution.votesByTier,
       skippedCount: resolution.skippedCount,
       tie: resolution.tie,
-      coinSide: resolution.coinSide,
-      pileTierId: resolution.pileTierId,
-      faceTierId: resolution.faceTierId,
+      coinSide: null,
+      pileTierId: null,
+      faceTierId: null,
       afkPlayerIds: afk.removedPlayerIds,
       resolvedAt: new Date().toISOString(),
     } as unknown as Prisma.JsonObject,
@@ -699,7 +701,11 @@ export async function revoteTierlistTrack(roomId: string, position: number) {
     if (
       !Number.isInteger(position) ||
       !room.tierlist.tracks.some((t) => t.position === position) ||
-      !placements[String(position)]
+      (!placements[String(position)] &&
+        !(
+          room.status === "finished" ||
+          (room.status === "playing" && position < room.currentPosition)
+        ))
     )
       return { ok: false as const, error: "Ce morceau n’est pas classé." };
     if (

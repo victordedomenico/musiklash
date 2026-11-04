@@ -83,8 +83,9 @@ export default function CreateTierlistForm({
       {mode === "multi" ? (
         <div className="space-y-3">
           <p className="rounded-xl border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-sm text-sky-100">
-            Room collaborative : chaque joueur vote pour le rang d’un morceau. La majorité l’emporte
-            ; un tirage au sort départage une égalité.
+            Room collaborative : chaque joueur vote pour le rang d’un morceau. La moyenne de tous
+            les votes détermine son rang, arrondie à la ligne supérieure si elle tombe entre deux
+            lignes.
           </p>
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-3 transition hover:border-sky-400/45">
             <input

@@ -204,6 +204,9 @@ export interface Dictionary {
     vote: string;
     votes: string;
     tie: string;
+    tierlistAverage: string;
+    tierlistNoVotes: string;
+    tierlistUnplaced: string;
     coinFlip: string;
     heads: string;
     tails: string;
@@ -546,7 +549,7 @@ export const fr: Dictionary = {
     bracketRule: "Les duels sont décidés à la majorité ; une égalité est tranchée au hasard.",
     tierlistSubtitle: "Tierlist collaborative",
     tierlistRule:
-      "Chaque morceau est placé dans le rang choisi par la majorité, avec pile ou face en cas d’égalité.",
+      "Chaque morceau est placé selon la moyenne de tous les votes, arrondie à la ligne supérieure si elle tombe entre deux lignes.",
     roomTitle: "Room collaborative",
     player: "joueur",
     players: "joueurs",
@@ -590,6 +593,9 @@ export const fr: Dictionary = {
     vote: "vote",
     votes: "votes",
     tie: "Égalité",
+    tierlistAverage: "Moyenne des votes",
+    tierlistNoVotes: "Aucun vote : morceau non classé",
+    tierlistUnplaced: "Morceaux non classés",
     coinFlip: "Pile ou face",
     heads: "PILE",
     tails: "FACE",

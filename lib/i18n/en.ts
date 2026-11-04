@@ -170,7 +170,7 @@ export const en: Dictionary = {
     bracketRule: "Duels are decided by majority vote; ties are settled at random.",
     tierlistSubtitle: "Collaborative tierlist",
     tierlistRule:
-      "Each track is placed in the rank chosen by the majority, with a coin flip to settle ties.",
+      "Each track is placed according to the average of all votes, rounded towards the higher row when between two rows.",
     roomTitle: "Collaborative room",
     player: "player",
     players: "players",
@@ -214,6 +214,9 @@ export const en: Dictionary = {
     vote: "vote",
     votes: "votes",
     tie: "Tie",
+    tierlistAverage: "Average of votes",
+    tierlistNoVotes: "No votes: track unranked",
+    tierlistUnplaced: "Unranked tracks",
     coinFlip: "Coin flip",
     heads: "HEADS",
     tails: "TAILS",

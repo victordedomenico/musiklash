@@ -1,42 +1,57 @@
 import { describe, expect, it } from "vitest";
 import { resolveTierlistBallots } from "./tierlist-room-rules";
 
+const vote = (tierId: string | null) => ({ tierId });
+
 describe("resolveTierlistBallots", () => {
-  it("selects the most-voted tier and ignores skipped ballots", () => {
-    expect(
-      resolveTierlistBallots([{ tierId: "A" }, { tierId: null }, { tierId: "A" }, { tierId: "B" }]),
-    ).toMatchObject({ tierId: "A", skippedCount: 1, tie: false, votesByTier: { A: 2, B: 1 } });
-  });
-
-  it("uses the coin to resolve a two-tier tie", () => {
-    const randomValues = [0, 0, 0.8];
-    expect(
-      resolveTierlistBallots([{ tierId: "S+" }, { tierId: "S" }], () => randomValues.shift() ?? 0),
-    ).toMatchObject({
-      tierId: "S",
-      tie: true,
-      coinSide: "face",
-      pileTierId: "S+",
-      faceTierId: "S",
+  it("averages all votes even when one rank has a majority", () => {
+    expect(resolveTierlistBallots([vote("A"), vote(null), vote("A"), vote("F")])).toMatchObject({
+      tierId: "B",
+      skippedCount: 1,
+      tie: false,
+      votesByTier: { A: 2, F: 1 },
     });
   });
-
-  it("draws fairly from every tier when all players skip", () => {
-    expect(resolveTierlistBallots([{ tierId: null }, { tierId: null }], () => 0.8)).toMatchObject({
+  it("uses the middle rank for tied votes, even if nobody voted for that rank", () => {
+    expect(resolveTierlistBallots([vote("S+"), vote("F")])).toMatchObject({
+      tierId: "B",
+      tie: true,
+    });
+    expect(resolveTierlistBallots([vote("S"), vote("B")])).toMatchObject({
+      tierId: "A",
+      tie: true,
+    });
+    expect(resolveTierlistBallots([vote("S+"), vote("A"), vote("C")])).toMatchObject({
+      tierId: "A",
+      tie: true,
+    });
+  });
+  it("rounds between two ranks towards the higher rank", () => {
+    expect(resolveTierlistBallots([vote("S+"), vote("S")]).tierId).toBe("S+");
+    expect(resolveTierlistBallots([vote("S+"), vote("B")]).tierId).toBe("S");
+  });
+  it("weights every vote and ignores skipped votes", () => {
+    expect(
+      resolveTierlistBallots([vote("S+"), vote("S+"), vote("C"), vote("C"), vote("F"), vote(null)]),
+    ).toMatchObject({ tierId: "B", skippedCount: 1, tie: true });
+  });
+  it("leaves the track unranked if nobody votes", () => {
+    expect(resolveTierlistBallots([vote(null), vote(null)])).toMatchObject({
+      tierId: null,
       skippedCount: 2,
-      tie: true,
-      votesByTier: { "S+": 0, S: 0, A: 0, B: 0, C: 0, D: 0, F: 0 },
+      tie: false,
     });
+    expect(resolveTierlistBallots([]).tierId).toBeNull();
   });
-});
-
-it("counts votes for custom tiers and uses only those tiers in a draw", () => {
-  const tiers = [
-    { id: "custom-1", label: "Favoris", color: "#123456" },
-    { id: "custom-2", label: "Autres", color: "#abcdef" },
-  ];
-  expect(resolveTierlistBallots([{ tierId: "custom-2" }], () => 0, tiers)).toMatchObject({
-    tierId: "custom-2",
-    votesByTier: { "custom-1": 0, "custom-2": 1 },
+  it("uses the current order of custom rows", () => {
+    const tiers = [
+      { id: "x", label: "X", color: "#123456" },
+      { id: "y", label: "Y", color: "#123456" },
+      { id: "z", label: "Z", color: "#abcdef" },
+    ];
+    expect(resolveTierlistBallots([vote("x"), vote("z")], tiers)).toMatchObject({
+      tierId: "y",
+      tie: true,
+    });
   });
 });
