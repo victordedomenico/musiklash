@@ -704,6 +704,8 @@ export async function revoteTierlistTrack(roomId: string, position: number) {
   for (let attempt = 0; attempt < 3; attempt++) {
     const room = await findRoomForVote(roomId);
     if (!room) return { ok: false as const, error: "Room introuvable." };
+    if (room.hostId !== user.playerId)
+      return { ok: false as const, error: "Seul l’hôte peut relancer un vote." };
     if (!normalizeParticipants(room.participants).some((p) => p.playerId === user.playerId))
       return { ok: false as const, error: "Rejoins la room avant de participer." };
     const tiers = roomTierConfig(room.placements);
@@ -731,7 +733,7 @@ export async function revoteTierlistTrack(roomId: string, position: number) {
       };
     delete placements[String(position)];
     const updated = await prisma.tierlistRoom.updateMany({
-      where: { id: roomId, revision: room.revision, status: room.status },
+      where: { id: roomId, hostId: user.playerId, revision: room.revision, status: room.status },
       data: {
         placements: {
           ...placements,

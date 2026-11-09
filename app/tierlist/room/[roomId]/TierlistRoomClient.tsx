@@ -270,7 +270,7 @@ function ResolutionReveal({
     <motion.div
       role="status"
       aria-live="polite"
-      className="fixed inset-0 z-[80] grid place-items-center overflow-hidden bg-[#05070c]/95 px-4 backdrop-blur-xl"
+      className="fixed inset-0 z-[80] !m-0 grid place-items-center overflow-y-auto bg-[#05070c]/95 px-4 py-6 backdrop-blur-xl"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -999,7 +999,7 @@ export default function TierlistRoomClient({
                       />
                     ) : null}
                     <span>{track.title}</span>
-                    {me ? (
+                    {isHost && me ? (
                       <button
                         type="button"
                         disabled={pending}
@@ -1128,7 +1128,7 @@ export default function TierlistRoomClient({
                   className="flex items-center gap-2 rounded-lg bg-black/20 px-3 py-2 text-xs"
                 >
                   <span>{track.title}</span>
-                  {me ? (
+                  {isHost && me ? (
                     <button
                       type="button"
                       disabled={pending}
