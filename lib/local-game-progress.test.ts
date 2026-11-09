@@ -23,6 +23,17 @@ describe("local game progress", () => {
     ).toEqual({ placed: [1, 2] });
   });
 
+  it("can restore a draft after a compatible list edit", () => {
+    const local = storage();
+    writeGameProgress(local, "tierlist", "a", "old", { placed: [1] });
+    const valid = (value: unknown): value is { placed: number[] } =>
+      Boolean(value && typeof value === "object" && "placed" in value);
+    expect(readGameProgress(local, "tierlist", "a", "new", valid, () => true)).toEqual({
+      placed: [1],
+    });
+    expect(readGameProgress(local, "tierlist", "a", "new", valid, () => false)).toBeNull();
+  });
+
   it("rejects a draft for a changed item list", () => {
     const local = storage();
     writeGameProgress(local, "tierlist", "a", "old", { placed: [1] });

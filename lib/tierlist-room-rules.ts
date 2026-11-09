@@ -23,3 +23,50 @@ export function resolveTierlistBallots(ballots: Ballot[], tiers: TierConfig[] = 
     tie: counts.filter((count) => count === topVotes).length > 1,
   };
 }
+
+/** Keep the current vote unless its track was removed. */
+export function planTierlistRoomTrackEdit(
+  status: "waiting" | "playing" | "finished",
+  placements: Record<string, string>,
+  activePositions: number[],
+  firstAddedPosition: number | undefined,
+  currentPosition: number,
+  resume?: { position: number; finished: boolean },
+) {
+  const ordered = [...activePositions].sort((a, b) => a - b);
+  const active = new Set(ordered);
+  const keptPlacements = Object.fromEntries(
+    Object.entries(placements).filter(([position]) => active.has(Number(position))),
+  );
+  const nextAfterResume = resume
+    ? resume.finished
+      ? firstAddedPosition
+      : ordered.find((position) => position >= resume.position)
+    : undefined;
+  const adjustedResume = resume
+    ? nextAfterResume === undefined
+      ? { position: resume.position, finished: true }
+      : { position: nextAfterResume, finished: false }
+    : undefined;
+
+  let nextStatus: "waiting" | "playing" | "finished" = status;
+  let nextPosition = currentPosition;
+  let resetVote = false;
+  if (status === "finished" && firstAddedPosition !== undefined) {
+    nextStatus = "playing";
+    nextPosition = firstAddedPosition;
+    resetVote = true;
+  } else if (status === "playing" && !active.has(currentPosition)) {
+    const next = resume ? nextAfterResume : ordered.find((position) => position > currentPosition);
+    nextStatus = next === undefined ? "finished" : "playing";
+    nextPosition = next ?? currentPosition;
+    resetVote = true;
+  }
+  return {
+    placements: keptPlacements,
+    status: nextStatus,
+    currentPosition: nextPosition,
+    resetVote,
+    resume: status === "playing" && !resetVote ? adjustedResume : undefined,
+  };
+}

@@ -291,6 +291,7 @@ model TierlistTrack {
   artist        String
   previewUrl    String  @map("preview_url")
   coverUrl      String? @map("cover_url")
+  archived      Boolean @default(false)
 
   tierlist Tierlist @relation(fields: [tierlistId], references: [id], onDelete: Cascade)
 

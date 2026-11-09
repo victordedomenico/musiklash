@@ -11,6 +11,7 @@ export function readGameProgress<T>(
   id: string,
   signature: string,
   isValid: (value: unknown) => value is T,
+  compatibleSignature?: (previous: string, current: string) => boolean,
 ): T | null {
   try {
     const raw = storage.getItem(gameProgressKey(game, id));
@@ -20,7 +21,12 @@ export function readGameProgress<T>(
       signature?: unknown;
       data?: unknown;
     };
-    if (parsed.version !== PROGRESS_VERSION || parsed.signature !== signature) return null;
+    if (
+      parsed.version !== PROGRESS_VERSION ||
+      typeof parsed.signature !== "string" ||
+      (parsed.signature !== signature && !compatibleSignature?.(parsed.signature, signature))
+    )
+      return null;
     return isValid(parsed.data) ? parsed.data : null;
   } catch {
     return null;

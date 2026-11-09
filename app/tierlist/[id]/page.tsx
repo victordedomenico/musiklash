@@ -5,6 +5,8 @@ import TierlistPlayer from "./TierlistPlayer";
 import type { TierItem } from "@/components/TierlistBoard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import { getI18n } from "@/lib/i18n";
+import { createClient } from "@/lib/supabase/server";
+import { getGuestIdentityFromCookies } from "@/lib/guest";
 import { buildPageMetadata } from "@/lib/seo";
 
 export async function generateMetadata({
@@ -50,7 +52,10 @@ export default async function TierlistPage({
       title: true,
       theme: true,
       visibility: true,
+      ownerId: true,
+      _count: { select: { rooms: true } },
       tracks: {
+        where: { archived: false },
         orderBy: { position: "asc" },
         select: {
           position: true,
@@ -64,6 +69,21 @@ export default async function TierlistPage({
   });
 
   if (!tl) notFound();
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const guest = user ? null : await getGuestIdentityFromCookies();
+  const canEdit = tl.ownerId === (user?.id ?? guest?.id) && tl._count.rooms === 0;
+
+  const latestSession = canEdit
+    ? await prisma.tierlistSession.findFirst({
+        where: { tierlistId: tl.id, playerId: tl.ownerId },
+        orderBy: { createdAt: "desc" },
+        select: { placements: true },
+      })
+    : null;
 
   const tracks: TierItem[] = tl.tracks.map((t) => ({
     position: t.position,
@@ -83,6 +103,8 @@ export default async function TierlistPage({
       <TierlistPlayer
         tierlistId={tl.id}
         tracks={tracks}
+        canEdit={canEdit}
+        savedDraft={latestSession?.placements ?? null}
         boardTexts={t.tierlistBoard}
         playerTexts={t.tierlistPlayer}
         transient={transient === "1"}

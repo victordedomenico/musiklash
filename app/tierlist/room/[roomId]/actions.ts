@@ -5,7 +5,9 @@ import prisma from "@/lib/prisma";
 import { resolvePlayerIdentity } from "@/lib/guest";
 import { BRACKET_DUEL_SECONDS } from "@/lib/bracket-room-rules";
 import { removePlayerBallot, replacePlayerBallot } from "@/lib/room-ballots";
-import { resolveTierlistBallots } from "@/lib/tierlist-room-rules";
+import { z } from "zod";
+import { MAX_BRACKET_TRACKS } from "@/lib/bracket";
+import { resolveTierlistBallots, planTierlistRoomTrackEdit } from "@/lib/tierlist-room-rules";
 import { resolveCollaborativeRoomAfkParticipants } from "@/lib/collaborative-room-afk";
 import {
   getTierlistRoomSnapshot,
@@ -353,7 +355,11 @@ export async function startTierlistRoom(roomId: string) {
   if (!user) return { ok: false as const, error: "Connexion requise." };
   const room = await prisma.tierlistRoom.findUnique({
     where: { id: roomId },
-    include: { tierlist: { select: { tracks: { orderBy: { position: "asc" }, take: 1 } } } },
+    include: {
+      tierlist: {
+        select: { tracks: { where: { archived: false }, orderBy: { position: "asc" }, take: 1 } },
+      },
+    },
   });
   if (!room) return { ok: false as const, error: "Room introuvable." };
   if (room.hostId !== user.playerId)
@@ -364,8 +370,8 @@ export async function startTierlistRoom(roomId: string) {
   const firstTrack = room.tierlist.tracks[0];
   if (!firstTrack)
     return { ok: false as const, error: "Cette tierlist ne contient aucun morceau." };
-  await prisma.tierlistRoom.update({
-    where: { id: roomId },
+  const started = await prisma.tierlistRoom.updateMany({
+    where: { id: roomId, revision: room.revision, status: "waiting" },
     data: {
       status: "playing",
       currentPosition: firstTrack.position,
@@ -377,13 +383,18 @@ export async function startTierlistRoom(roomId: string) {
       revision: { increment: 1 },
     },
   });
+  if (started.count !== 1) return { ok: false as const, error: "La room a changé, réessaie." };
   return response(roomId);
 }
 
 async function findRoomForVote(roomId: string) {
   return prisma.tierlistRoom.findUnique({
     where: { id: roomId },
-    include: { tierlist: { select: { tracks: { orderBy: { position: "asc" } } } } },
+    include: {
+      tierlist: {
+        select: { tracks: { where: { archived: false }, orderBy: { position: "asc" } } },
+      },
+    },
   });
 }
 
@@ -738,4 +749,148 @@ export async function revoteTierlistTrack(roomId: string, position: number) {
     if (updated.count) return response(roomId);
   }
   return { ok: false as const, error: "La room a changé, réessaie." };
+}
+
+const roomTrackSchema = z
+  .array(
+    z.object({
+      deezer_track_id: z.number().int().positive().safe(),
+      title: z.string().trim().min(1).max(300),
+      artist: z.string().trim().min(1).max(300),
+      cover_url: z.string().url().max(2048).nullable(),
+    }),
+  )
+  .min(2)
+  .max(MAX_BRACKET_TRACKS);
+
+export async function editTierlistRoomTracks(
+  roomId: string,
+  originalPositions: number[],
+  input: unknown,
+) {
+  const parsed = roomTrackSchema.safeParse(input);
+  if (
+    !parsed.success ||
+    !Array.isArray(originalPositions) ||
+    !originalPositions.every(Number.isInteger) ||
+    new Set(parsed.data.map((track) => track.deezer_track_id)).size !== parsed.data.length
+  ) {
+    return { ok: false as const, error: "Sélection de morceaux invalide." };
+  }
+  const user = await identity();
+  if (!user) return { ok: false as const, error: "Connexion requise." };
+  try {
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const room = await tx.tierlistRoom.findUnique({
+          where: { id: roomId },
+          include: {
+            tierlist: {
+              include: {
+                tracks: { orderBy: { position: "asc" } },
+                _count: { select: { rooms: true } },
+              },
+            },
+          },
+        });
+        if (!room) return { error: "Room introuvable." };
+        if (
+          room.hostId !== user.playerId ||
+          !normalizeParticipants(room.participants).some((p) => p.playerId === user.playerId)
+        )
+          return { error: "Seul l’hôte peut modifier les morceaux." };
+        if (room.status !== "waiting" && room.status !== "playing" && room.status !== "finished")
+          return { error: "État de la room invalide." };
+        if (room.tierlist._count.rooms !== 1)
+          return {
+            error: "Cette tierlist est utilisée par plusieurs rooms et ne peut pas être modifiée.",
+          };
+        const active = room.tierlist.tracks.filter((track) => !track.archived);
+        if (active.map((track) => track.position).join(",") !== originalPositions.join(","))
+          return { error: "La sélection a changé. Recharge la room et réessaie." };
+        const selectedIds = new Set(parsed.data.map((track) => track.deezer_track_id));
+        const removed = active.filter((track) => !selectedIds.has(Number(track.deezerTrackId)));
+        const existing = new Set(active.map((track) => Number(track.deezerTrackId)));
+        const added = parsed.data.filter((track) => !existing.has(track.deezer_track_id));
+        let position = room.tierlist.tracks.reduce(
+          (max, track) => Math.max(max, track.position),
+          -1,
+        );
+        if (position + added.length > 32767)
+          return { error: "Cette tierlist ne peut plus recevoir de morceaux." };
+        const newTracks = added.map((track) => ({
+          tierlistId: room.tierlistId,
+          position: ++position,
+          deezerTrackId: BigInt(track.deezer_track_id),
+          title: track.title,
+          artist: track.artist,
+          coverUrl: track.cover_url,
+          previewUrl: "",
+        }));
+        const retainedPositions = active
+          .filter((track) => selectedIds.has(Number(track.deezerTrackId)))
+          .map((track) => track.position);
+        const tiers = roomTierConfig(room.placements);
+        const metadata = room.placements as Record<string, unknown> | null;
+        const rawResume = metadata?.__resume;
+        const resume =
+          rawResume &&
+          typeof rawResume === "object" &&
+          Number.isInteger((rawResume as { position?: unknown }).position) &&
+          typeof (rawResume as { finished?: unknown }).finished === "boolean"
+            ? (rawResume as { position: number; finished: boolean })
+            : undefined;
+        const plan = planTierlistRoomTrackEdit(
+          room.status,
+          normalizePlacements(room.placements, tiers),
+          [...retainedPositions, ...newTracks.map((track) => track.position)],
+          newTracks[0]?.position,
+          room.currentPosition,
+          resume,
+        );
+        const updated = await tx.tierlistRoom.updateMany({
+          where: {
+            id: roomId,
+            revision: room.revision,
+            status: room.status,
+            hostId: user.playerId,
+          },
+          data: {
+            placements: {
+              ...plan.placements,
+              __tiers: tiers,
+              ...(plan.resume ? { __resume: plan.resume } : {}),
+            } as unknown as Prisma.JsonObject,
+            status: plan.status,
+            currentPosition: plan.currentPosition,
+            ...(plan.resetVote
+              ? {
+                  ballots: [],
+                  lastResolution: Prisma.DbNull,
+                  positionStartedAt:
+                    plan.status === "playing" && room.timerEnabled ? new Date() : null,
+                }
+              : {}),
+            revision: { increment: 1 },
+          },
+        });
+        if (updated.count !== 1) throw new Error("Concurrent update");
+        if (removed.length)
+          await tx.tierlistTrack.updateMany({
+            where: {
+              tierlistId: room.tierlistId,
+              position: { in: removed.map((track) => track.position) },
+            },
+            data: { archived: true },
+          });
+        if (newTracks.length) await tx.tierlistTrack.createMany({ data: newTracks });
+        return { ok: true as const };
+      },
+      { isolationLevel: "Serializable" },
+    );
+    if ("error" in result) return { ok: false as const, error: result.error };
+    return response(roomId);
+  } catch {
+    return { ok: false as const, error: "La room a changé ou la modification a échoué. Réessaie." };
+  }
 }

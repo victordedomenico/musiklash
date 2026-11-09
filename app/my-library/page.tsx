@@ -168,8 +168,11 @@ export default async function MyBracketsPage({
           }),
           prisma.tierlistRoom.findMany({
             where: {
-              OR: [{ hostId: activePlayerId }, { previousHostId: activePlayerId }],
-              status: { not: "finished" },
+              OR: [
+                { hostId: activePlayerId },
+                { previousHostId: activePlayerId },
+                { tierlist: { ownerId: activePlayerId } },
+              ],
             },
             select: { id: true, tierlistId: true },
             orderBy: { updatedAt: "desc" },

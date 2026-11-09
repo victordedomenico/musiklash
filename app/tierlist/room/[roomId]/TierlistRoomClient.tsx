@@ -19,6 +19,9 @@ import {
   UserMinus,
   Users,
 } from "lucide-react";
+import TrackPicker from "@/components/TrackPicker";
+import type { SelectedTrack } from "@/app/create-bracket/actions";
+import { MAX_BRACKET_TRACKS } from "@/lib/bracket";
 import MusicSourceAttribution from "@/components/MusicSourceAttribution";
 import PreviewSourceSwitch from "@/components/PreviewSourceSwitch";
 import YoutubeEmbed from "@/components/YoutubeEmbed";
@@ -46,6 +49,7 @@ import {
   approveTierlistJoinRequest,
   clearTierlistVote,
   editTierlistRoomTiers,
+  editTierlistRoomTracks,
   revoteTierlistTrack,
   expireTierlistRound,
   finishTierlistRound,
@@ -354,6 +358,9 @@ export default function TierlistRoomClient({
   boardTexts: TierlistBoardTexts;
 }) {
   const [room, setRoom] = useState(initialRoom);
+  const [editingTracks, setEditingTracks] = useState(false);
+  const [trackSelection, setTrackSelection] = useState<SelectedTrack[]>([]);
+  const [originalPositions, setOriginalPositions] = useState<number[]>([]);
   const [editingTierId, setEditingTierId] = useState<string | null>(null);
   const [labelDraft, setLabelDraft] = useState<string | null>(null);
   const latestRevisionRef = useRef(initialRoom.revision);
@@ -624,6 +631,85 @@ export default function TierlistRoomClient({
           ))}
         </div>
       </section>
+      {isHost && me ? (
+        <section className="card p-5">
+          {!editingTracks ? (
+            <button
+              type="button"
+              className="btn-ghost text-sm"
+              onClick={() => {
+                setOriginalPositions(room.tierlist.tracks.map((track) => track.position));
+                setTrackSelection(
+                  room.tierlist.tracks.map((track) => ({
+                    deezer_track_id: track.deezerTrackId,
+                    title: track.title,
+                    artist: track.artist,
+                    cover_url: track.coverUrl,
+                    preview_url: "",
+                  })),
+                );
+                setError("");
+                setEditingTracks(true);
+              }}
+            >
+              Modifier les morceaux
+            </button>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <h2 className="font-bold">Modifier les morceaux</h2>
+                <p className="mt-1 text-sm text-[color:var(--muted)]">
+                  Les classements et le vote en cours sont conservés. Si le morceau en cours est
+                  retiré, son vote est annulé et la partie passe au suivant. Les nouveaux morceaux
+                  seront soumis au vote à la suite.
+                </p>
+              </div>
+              {error ? (
+                <p role="alert" className="text-sm text-red-400">
+                  {error}
+                </p>
+              ) : null}
+              <TrackPicker
+                size={MAX_BRACKET_TRACKS}
+                selected={trackSelection}
+                onChange={setTrackSelection}
+                unlimited
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={pending || trackSelection.length < 2}
+                  className="btn-primary disabled:opacity-50"
+                  onClick={() => {
+                    setError("");
+                    startTransition(async () => {
+                      const result = await editTierlistRoomTracks(
+                        room.id,
+                        originalPositions,
+                        trackSelection,
+                      );
+                      if (result.ok) {
+                        acceptRoom(result.room);
+                        setEditingTracks(false);
+                      } else setError(result.error ?? "Impossible de modifier les morceaux.");
+                    });
+                  }}
+                >
+                  {pending ? "Enregistrement…" : "Enregistrer les modifications"}
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  disabled={pending}
+                  onClick={() => setEditingTracks(false)}
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      ) : null}
       {kicked ? (
         <p className="rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-100">
           {texts.kickedNotice}

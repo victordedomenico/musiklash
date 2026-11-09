@@ -377,7 +377,13 @@ async function findTierlistRoom(roomId: string) {
     where: { id: roomId },
     include: {
       host: { select: { username: true } },
-      tierlist: { select: { id: true, title: true, tracks: { orderBy: { position: "asc" } } } },
+      tierlist: {
+        select: {
+          id: true,
+          title: true,
+          tracks: { where: { archived: false }, orderBy: { position: "asc" } },
+        },
+      },
     },
   });
 }

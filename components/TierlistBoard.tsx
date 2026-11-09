@@ -133,7 +133,8 @@ function restoreTierlistState(draft: TierlistDraft, tracks: TierItem[]): TierSta
     if (!Array.isArray(positions) || !positions.every(Number.isInteger)) return null;
     for (const position of positions) {
       const track = byPosition.get(position);
-      if (!track || seen.has(position)) return null;
+      if (!track) continue;
+      if (seen.has(position)) return null;
       seen.add(position);
       restored[container].push(track);
     }
@@ -496,9 +497,11 @@ export default function TierlistBoard({
   onSave,
   saving,
   texts,
+  savedDraft,
 }: {
   tierlistId: string;
   tracks: TierItem[];
+  savedDraft?: unknown;
   onSave: (payload: TierlistSavePayload) => void;
   saving: boolean;
   texts: TierlistBoardTexts;
@@ -541,15 +544,28 @@ export default function TierlistBoard({
       tierlistId,
       trackSignature,
       isTierlistDraft,
+      (previous, current) => {
+        const oldTracks = new Map(
+          previous.split(",").map((item) => {
+            const [position, id] = item.split(":");
+            return [position, id] as const;
+          }),
+        );
+        return current.split(",").every((item) => {
+          const [position, id] = item.split(":");
+          return !oldTracks.has(position) || oldTracks.get(position) === id;
+        });
+      },
     );
-    const restored = draft ? restoreTierlistState(draft, tracks) : null;
+    const resumeDraft = draft ?? (isTierlistDraft(savedDraft) ? savedDraft : null);
+    const restored = resumeDraft ? restoreTierlistState(resumeDraft, tracks) : null;
 
     queueMicrotask(() => {
       if (cancelled) return;
-      if (draft && restored) {
-        setTiers(draft.tiers);
+      if (resumeDraft && restored) {
+        setTiers(resumeDraft.tiers);
         setState(restored);
-        const highestCustomTier = draft.tiers.reduce((highest, tier) => {
+        const highestCustomTier = resumeDraft.tiers.reduce((highest, tier) => {
           const match = /^tier-(\d+)$/.exec(tier.id);
           return Math.max(highest, match ? Number(match[1]) : 0);
         }, DEFAULT_TIERS.length);
@@ -562,7 +578,7 @@ export default function TierlistBoard({
     return () => {
       cancelled = true;
     };
-  }, [tierlistId, trackSignature, tracks]);
+  }, [tierlistId, trackSignature, tracks, savedDraft]);
 
   useEffect(() => {
     if (!resumedProgress) return;
