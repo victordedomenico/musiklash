@@ -8,6 +8,33 @@ describe("youtube official matching", () => {
     expect(titleContainsTrack("En Vrai de Vrai", "En Vrai de Vrai", "Djadja & Dinaz")).toBe(true);
   });
 
+  it("rejects a longer distinct song title while accepting the requested track", () => {
+    expect(titleContainsTrack("J'veux plus les voir", "J'veux plus", "Djadja & Dinaz")).toBe(false);
+    expect(titleContainsTrack("J'veux plus", "J'veux plus", "Djadja & Dinaz")).toBe(true);
+    expect(
+      pickOfficialYoutubeMatch(
+        [
+          {
+            videoId: "wrong",
+            title: "J'veux plus les voir",
+            channelTitle: "Djadja & Dinaz - Topic",
+            verified: false,
+            views: 10,
+          },
+          {
+            videoId: "right",
+            title: "J'veux plus",
+            channelTitle: "Djadja & Dinaz - Topic",
+            verified: false,
+            views: 10,
+          },
+        ],
+        "Djadja & Dinaz",
+        "J'veux plus",
+      )?.videoId,
+    ).toBe("right");
+  });
+
   it("normalizes accents and punctuation", () => {
     expect(normalizeMusicText("A l'ammoniaque")).toBe("a l ammoniaque");
   });

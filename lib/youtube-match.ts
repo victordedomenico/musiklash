@@ -142,17 +142,34 @@ export function titleContainsTrack(
     if ((videoWordCounts.get(token) ?? 0) < needed) return false;
   }
 
-  if (wordTokens.length === 1) {
-    const artistTokens = new Set(significantTokensForMatch(artist ?? ""));
-    const coreWords = videoTokens.filter(
-      (token) => !artistTokens.has(token) && !/^\d+$/.test(token),
-    );
-    // "Mama" OK; "Pacha Mama" / "Maa Vue Kuv Niam" rejected.
-    return coreWords.length === 1 && coreWords[0] === wordTokens[0];
+  // Compare both sides: a title containing every requested word may still be a
+  // different song ("J'veux plus les voir" vs "J'veux plus"). Remove the
+  // artist prefix and featured-artist credit before checking for extra words.
+  let coreTitle = normalizeMusicText(videoTitle);
+  const artistPrefixes = [
+    normalizeMusicText(artist ?? ""),
+    normalizeMusicText((artist ?? "").replace(/&/g, " et ")),
+  ];
+  const artistPrefix = artistPrefixes.find(
+    (prefix) => prefix && coreTitle.startsWith(`${prefix} `),
+  );
+  if (artistPrefix) coreTitle = coreTitle.slice(artistPrefix.length).trim();
+  coreTitle = coreTitle.replace(/\b(?:feat|ft)\b.*$/, "");
+  const coreWords = significantTokensForMatch(stripPromoTitleNoise(coreTitle)).filter(
+    (token) => !/^\d+$/.test(token),
+  );
+  const requestedCounts = countTokens(wordTokens);
+  const coreCounts = countTokens(coreWords);
+  if (coreCounts.size !== requestedCounts.size) return false;
+  for (const [token, count] of requestedCounts) {
+    if (coreCounts.get(token) !== count) return false;
   }
 
-  // Multi-word: allow one missing middle digit while keeping word overlap high.
-  return titleMatchRatio(videoTitle, trackTitle) >= 0.75;
+  // Allow an omitted middle digit in Deezer's freestyle naming, but reject
+  // additional episode numbers in a different YouTube title.
+  const trackDigits = trackTokens.filter((token) => /^\d+$/.test(token));
+  const videoDigits = significantTokensForMatch(coreTitle).filter((token) => /^\d+$/.test(token));
+  return videoDigits.every((digit) => trackDigits.includes(digit));
 }
 
 export function channelMatchesArtist(channelTitle: string, artist: string): boolean {

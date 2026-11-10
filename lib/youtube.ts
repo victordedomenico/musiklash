@@ -26,7 +26,7 @@ type YoutubeCandidate = {
 };
 
 const memoryCache = new Map<string, YoutubeSearchResult | null>();
-const CACHE_VERSION = "official-v9-repeated-words";
+const CACHE_VERSION = "official-v10-exact-title";
 
 export {
   normalizeMusicText,
